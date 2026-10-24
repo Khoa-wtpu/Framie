@@ -6,7 +6,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin   # trang quản trị User mẫu của Django
 
-from .models import User                          # dấu . = lấy từ models.py cùng app
+from .models import User, YeuCauDatLaiMatKhau  # lấy thêm model mới từ models.py cùng app
 
 
 @admin.register(User)          # đăng ký bảng User vào trang quản trị
@@ -30,3 +30,9 @@ class CustomUserAdmin(UserAdmin):
 
     # Ô tìm kiếm: tìm theo cả số điện thoại.
     search_fields = UserAdmin.search_fields + ('so_dien_thoai',)
+
+@admin.register(YeuCauDatLaiMatKhau)  # đăng ký bảng YEUCAUDATLAIMATKHAU vào trang quản trị
+class YeuCauDatLaiMatKhauAdmin(admin.ModelAdmin):  # cấu hình cách hiển thị bảng này
+    list_display = ('MaYeuCauDatLai', 'MaTaiKhoan', 'TrangThai',  # các cột hiện ở danh sách: mã, người yêu cầu, trạng thái
+                    'ThoiDiemGui', 'ThoiDiemHetHan')  # (tiếp) thêm giờ gửi mã và giờ hết hạn
+    list_filter = ('TrangThai',)  # bộ lọc bên phải: lọc theo trạng thái
