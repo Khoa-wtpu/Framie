@@ -1,0 +1,18 @@
+{# {% include "includes/pagination.html" with page_obj=page_obj %} #}
+{% load ui %}
+{% if page_obj.paginator.num_pages > 1 %}
+<nav class="pagination" aria-label="Phân trang">
+  {% if page_obj.has_previous %}<a class="pagination__item pagination__item--wide" href="{% page_url page_obj.previous_page_number %}" rel="prev">‹ Trước</a>
+  {% else %}<span class="pagination__item pagination__item--wide is-disabled" aria-disabled="true">‹ Trước</span>{% endif %}
+
+  {% page_range page_obj as pages %}
+  {% for p in pages %}
+    {% if p.ellipsis %}<span class="pagination__gap" aria-hidden="true">…</span>
+    {% elif p.number == page_obj.number %}<span class="pagination__item is-current" aria-current="page">{{ p.number }}</span>
+    {% else %}<a class="pagination__item" href="{% page_url p.number %}" aria-label="Trang {{ p.number }}">{{ p.number }}</a>{% endif %}
+  {% endfor %}
+
+  {% if page_obj.has_next %}<a class="pagination__item pagination__item--wide" href="{% page_url page_obj.next_page_number %}" rel="next">Sau ›</a>
+  {% else %}<span class="pagination__item pagination__item--wide is-disabled" aria-disabled="true">Sau ›</span>{% endif %}
+</nav>
+{% endif %}

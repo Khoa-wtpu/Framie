@@ -1,0 +1,11 @@
+{# {% include "includes/card.html" with title="..." text="..." meta="..." image=url href=url status="da_dat_lich" %} #}
+{% load ui %}
+<article class="card{% if href %} card--link{% endif %}">
+  <div class="card__media">{% if image %}<img src="{{ image }}" alt="" loading="lazy">{% endif %}</div>
+  <div class="card__body">
+    {% if status %}{% status_badge status %}{% endif %}
+    <h3 class="card__title">{% if href %}<a class="card__link" href="{{ href }}">{{ title }}</a>{% else %}{{ title }}{% endif %}</h3>
+    {% if meta %}<p class="card__meta">{{ meta }}</p>{% endif %}
+    {% if text %}<p class="card__text">{{ text }}</p>{% endif %}
+  </div>
+</article>
