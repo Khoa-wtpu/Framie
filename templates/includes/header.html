@@ -1,8 +1,7 @@
-<header class="site-header" data-role="{{ role|slugify }}">
+{% load static %}<header class="site-header" data-role="{{ role|slugify }}">
   <div class="container site-header__inner">
     <a class="brand" href="{{ urls.home }}" aria-label="{{ site_name }} – Trang chủ">
-      <span class="brand__mark" aria-hidden="true"></span>
-      <span class="brand__name">{{ site_name }}</span>
+      <img class="brand__logo" src="{% static 'img/logo.png' %}" alt="{{ site_name }}">
     </a>
 
     <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" data-nav-toggle>
