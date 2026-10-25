@@ -1,21 +1,33 @@
-==============================================================================
-                        QUY ƯỚC GIAO DIỆN FRAMIE
-==============================================================================
+======================================================================
+                     QUY ƯỚC GIAO DIỆN FRAMIE
+======================================================================
 
-File này để cả nhóm làm giao diện ĐỒNG BỘ.
+Mục đích: cả nhóm làm giao diện ĐỒNG BỘ.
 Trước khi tự viết CSS hoặc chọn màu, hãy đọc file này.
 
-Xem thử mọi thành phần tại:  http://127.0.0.1:8000/ui-kit/
+Xem thử mọi thành phần tại:
+    http://127.0.0.1:8000/ui-kit/
+
+MỤC LỤC
+    1. Nguyên tắc chung
+    2. Bảng màu chính
+    3. Các loại nút
+    4. Màu nhãn trạng thái và hộp thông báo
+    5. Thẻ (card) và ảnh trong thẻ
+    6. Thêm hoặc sửa giao diện
+    7. Bản đồ file
 
 
-------------------------------------------------------------------------------
+----------------------------------------------------------------------
 1. NGUYÊN TẮC CHUNG
-------------------------------------------------------------------------------
+----------------------------------------------------------------------
 
-  1) KHÔNG gõ mã màu (#1A1A1A, black...) trực tiếp trong template hoặc CSS.
-     Luôn dùng biến, ví dụ:  var(--color-black)
+  1) KHÔNG gõ mã màu (như #1A1A1A hoặc black) trực tiếp
+     trong template hay CSS. Luôn dùng biến, ví dụ:
+         var(--color-black)
 
-  2) Màu và font CHỈ khai báo ở một nơi: static/css/tokens.css
+  2) Màu và font CHỈ khai báo ở một nơi:
+         static/css/tokens.css
      Muốn đổi màu cho cả web thì sửa ở đó, không sửa rải rác.
 
   3) KHÔNG tự viết CSS cho nút.
@@ -29,117 +41,203 @@ Xem thử mọi thành phần tại:  http://127.0.0.1:8000/ui-kit/
      Không dùng "OK", "Click".
 
 
-------------------------------------------------------------------------------
+----------------------------------------------------------------------
 2. BẢNG MÀU CHÍNH (cốt quét nhóm 5: trắng / đen / xám)
-------------------------------------------------------------------------------
+----------------------------------------------------------------------
 
-  Tên biến                 Mã màu              Dùng cho
-  -----------------------  ------------------  -----------------------------
-  --color-white            #FFFFFF             Nền trang, nền thẻ
-  --color-black            #1A1A1A             Chữ, nút chính
-  --color-gray             #D9D9D9             Viền, đường kẻ
-  --color-black-hover      #3A3A3A             Nút chính khi rê chuột
-  --color-gray-soft        #F3F3F3             Nền nhạt khi rê chuột, nền phụ
-  --color-text-muted       #5C5C5C             Chữ phụ, chú thích
-  --gradient-white-gray    trắng -> xám        Nền nút "soft"
-  --gradient-white-black   trắng -> đen        Trang trí
+  --color-white
+      Mã: #FFFFFF
+      Dùng cho: nền trang, nền thẻ
 
-  Font: Be Vietnam Pro (tiêu đề đậm 600, văn bản thường 400).
+  --color-black
+      Mã: #1A1A1A
+      Dùng cho: chữ, nút chính
+
+  --color-gray
+      Mã: #D9D9D9
+      Dùng cho: viền, đường kẻ
+
+  --color-black-hover
+      Mã: #3A3A3A
+      Dùng cho: nút chính khi rê chuột
+
+  --color-gray-soft
+      Mã: #F3F3F3
+      Dùng cho: nền nhạt khi rê chuột, nền phụ
+
+  --color-text-muted
+      Mã: #5C5C5C
+      Dùng cho: chữ phụ, chú thích
+
+  --gradient-white-gray
+      Chuyển màu từ trắng sang xám
+      Dùng cho: nền nút "soft"
+
+  --gradient-white-black
+      Chuyển màu từ trắng sang đen
+      Dùng cho: trang trí
+
+  Font: Be Vietnam Pro
+      Tiêu đề: đậm 600.  Văn bản: thường 400.
 
 
-------------------------------------------------------------------------------
+----------------------------------------------------------------------
 3. CÁC LOẠI NÚT
-------------------------------------------------------------------------------
+----------------------------------------------------------------------
 
-  [1] NÚT CHÍNH            class="btn btn--primary"
-      Hình dạng : nền đen, chữ trắng
-      Dùng khi  : hành động CHÍNH của màn hình (mỗi màn hình chỉ 1 nút)
-      Ví dụ     : Đặt lịch, Gửi, Lưu, Đăng ký
+  [1] NÚT CHÍNH
+      Class    : btn btn--primary
+      Hình dạng: nền đen, chữ trắng
+      Dùng khi : hành động CHÍNH của màn hình (chỉ 1 nút)
+      Ví dụ    : Đặt lịch, Gửi, Lưu, Đăng ký
 
-  [2] NÚT PHỤ              class="btn btn--secondary"
-      Hình dạng : nền trắng, viền đen
-      Dùng khi  : hành động quan trọng thứ hai, đi cạnh nút chính
-      Ví dụ     : Xem chi tiết, Chỉnh sửa
+  [2] NÚT PHỤ
+      Class    : btn btn--secondary
+      Hình dạng: nền trắng, viền đen
+      Dùng khi : hành động quan trọng thứ hai, đi cạnh nút chính
+      Ví dụ    : Xem chi tiết, Chỉnh sửa
 
-  [3] NÚT GRADIENT XÁM     class="btn btn--soft"
-      Hình dạng : nền chuyển từ trắng sang xám, viền xám
-      Dùng khi  : hành động phụ, nhấn vừa phải
-      Ví dụ     : Lọc, Xem thêm, Tải thêm
+  [3] NÚT GRADIENT XÁM
+      Class    : btn btn--soft
+      Hình dạng: nền chuyển từ trắng sang xám, viền xám
+      Dùng khi : hành động phụ, nhấn vừa phải
+      Ví dụ    : Lọc, Xem thêm, Tải thêm
 
-  [4] NÚT GHOST            class="btn btn--ghost"
-      Hình dạng : không nền, không viền, chỉ có chữ đen
-      Dùng khi  : hành động ít quan trọng, hoặc nút nằm trong header, menu
-      Ví dụ     : Hủy, Quay lại, Đăng nhập (ở header)
+  [4] NÚT GHOST
+      Class    : btn btn--ghost
+      Hình dạng: không nền, không viền, chỉ có chữ đen
+      Dùng khi : hành động ít quan trọng, hoặc nút trong header
+      Ví dụ    : Hủy, Quay lại, Đăng nhập (ở header)
 
-  [5] NÚT NGUY HIỂM        class="btn btn--danger"
-      Hình dạng : nền đỏ, chữ trắng
-      Dùng khi  : hành động nguy hiểm, khó hoàn tác
-      Ví dụ     : Hủy Booking, Xóa tài khoản, Từ chối hồ sơ
+  [5] NÚT NGUY HIỂM
+      Class    : btn btn--danger
+      Hình dạng: nền đỏ, chữ trắng
+      Dùng khi : hành động nguy hiểm, khó hoàn tác
+      Ví dụ    : Hủy Booking, Xóa tài khoản, Từ chối hồ sơ
 
-  Ví dụ ghép trong một form:
+  Ví dụ ghép nút trong một form:
 
-      <button class="btn btn--ghost" type="button">Hủy</button>
-      <button class="btn btn--primary" type="submit">Lưu thay đổi</button>
-
+      <button class="btn btn--ghost" type="button">
+        Hủy
+      </button>
+      <button class="btn btn--primary" type="submit">
+        Lưu thay đổi
+      </button>
 
   QUY TẮC DÙNG MÀU ĐỎ (btn--danger)
-  ---------------------------------
     - Chỉ dùng cho hành động xóa, hủy, từ chối.
     - Không dùng đỏ để "làm nổi bật" một nút bình thường.
     - Nên có bước xác nhận trước khi thực hiện.
 
+  KÍCH THƯỚC (thêm class vào sau chữ btn)
+      btn--sm     Nhỏ: trong header, bảng, thẻ nhỏ
+      (mặc định)  Hầu hết các nút
+      btn--lg     Lớn: nổi bật ở trang chủ, trang đặt lịch
+      btn--block  Rộng hết chiều ngang: điện thoại, form hẹp
 
-  KÍCH THƯỚC (thêm class vào sau btn)
-  -----------------------------------
-    btn--sm      Nút nhỏ: trong header, bảng, thẻ nhỏ
-    (mặc định)   Hầu hết các nút
-    btn--lg      Nút lớn: nổi bật ở trang chủ, trang đặt lịch
-    btn--block   Nút rộng hết chiều ngang: điện thoại, form hẹp
-
-    Ví dụ:  class="btn btn--primary btn--lg"
-
+      Ví dụ: class="btn btn--primary btn--lg"
 
   TRẠNG THÁI
-  ----------
-    Vô hiệu     : thêm thuộc tính disabled
-                  <button class="btn btn--primary" disabled>
-    Đang xử lý  : thêm class is-loading
-                  <button class="btn btn--primary is-loading">
+      Vô hiệu    : thêm thuộc tính disabled
+                   <button class="btn btn--primary" disabled>
+      Đang xử lý : thêm class is-loading
+                   <button class="btn btn--primary is-loading">
 
-    Khi bấm gửi form, hãy dùng is-loading để tránh người dùng bấm hai lần.
-
-
-------------------------------------------------------------------------------
-4. MÀU CHO NHÃN TRẠNG THÁI VÀ HỘP THÔNG BÁO
-------------------------------------------------------------------------------
-
-  Nhãn trạng thái (Chờ xác nhận, Đã đặt cọc, Hoàn thành...) và hộp thông báo
-  dùng bảng "tông màu" --tone-* trong tokens.css.
-  Mỗi tông có 3 màu:  nền nhạt (-bg), chữ đậm (-fg), chấm nhấn (-dot).
-
-  - Việc gán "trạng thái -> màu" nằm ở file core/status_tones.py
-    Muốn đổi màu một trạng thái thì sửa ở file này,
-    không tự gán màu trong template.
-
-  - Quy ước chung:
-      Vàng, cam                  : đang chờ
-      Xanh dương, tím, xanh ngọc : đang xử lý
-      Xanh lá                    : hoàn tất
-      Đỏ, nâu, xám               : thất bại hoặc đã hủy
-
-  HỘP THÔNG BÁO (templates/includes/alert.html) có 4 mức:
-
-    level="success"   Xanh lá     Thao tác thành công
-    level="danger"    Đỏ          Có lỗi
-    level="warning"   Vàng        Cần lưu ý
-    level="info"      Xanh dương  Thông tin thường
+      Khi bấm gửi form, hãy dùng is-loading để người dùng
+      không bấm hai lần.
 
 
-------------------------------------------------------------------------------
-5. THÊM HOẶC SỬA GIAO DIỆN: LÀM THẾ NÀO?
-------------------------------------------------------------------------------
+----------------------------------------------------------------------
+4. MÀU NHÃN TRẠNG THÁI VÀ HỘP THÔNG BÁO
+----------------------------------------------------------------------
 
-  1) Cần một thành phần đã có (nút, thẻ, ô nhập, thông báo)?
+  Nhãn trạng thái (Chờ xác nhận, Đã đặt cọc, Hoàn thành...)
+  và hộp thông báo dùng bảng "tông màu" --tone-* trong
+  tokens.css. Mỗi tông có 3 màu:
+      -bg   nền nhạt
+      -fg   chữ đậm
+      -dot  chấm nhấn
+
+  Việc gán "trạng thái -> màu" nằm ở file:
+      core/status_tones.py
+  Muốn đổi màu một trạng thái thì sửa ở file này,
+  không tự gán màu trong template.
+
+  Quy ước chung:
+      Vàng, cam                   : đang chờ
+      Xanh dương, tím, xanh ngọc  : đang xử lý
+      Xanh lá                     : hoàn tất
+      Đỏ, nâu, xám                : thất bại hoặc đã hủy
+
+  HỘP THÔNG BÁO (templates/includes/alert.html), 4 mức:
+      level="success"  Xanh lá      Thao tác thành công
+      level="danger"   Đỏ           Có lỗi
+      level="warning"  Vàng         Cần lưu ý
+      level="info"     Xanh dương   Thông tin thường
+
+
+----------------------------------------------------------------------
+5. THẺ (CARD) VÀ ẢNH TRONG THẺ
+----------------------------------------------------------------------
+
+  Mọi thẻ dùng chung MỘT mẫu:
+      templates/includes/card.html
+  Không tự viết lại HTML cho thẻ.
+
+  Cách gọi (PHẢI viết trên MỘT dòng, không được xuống dòng):
+
+      {% include "includes/card.html" with title="..." image="..." %}
+
+  Các tham số (cái nào không cần thì bỏ qua):
+      title   Tiêu đề thẻ
+      meta    Dòng phụ (ví dụ: tên nhiếp ảnh gia)
+      text    Mô tả ngắn
+      image   Đường dẫn ảnh. Không truyền thì hiện khung xám
+      href    Đường dẫn khi bấm vào thẻ.
+              Không truyền thì thẻ không bấm được
+      status  Nhãn trạng thái (ví dụ: "Đã đặt lịch")
+
+  CÁCH THÊM ẢNH VÀO THẺ
+
+  a) Ảnh mẫu (để xem thử trong /ui-kit/)
+      - Bỏ ảnh vào thư mục static/img/
+      - Truyền đường dẫn cố định vào image:
+            image="/static/img/goi-chan-dung.jpg"
+      - Lưu ý: trong phần "with" không viết được thẻ
+        {% static %}, nên dùng đường dẫn /static/img/...
+        như trên.
+
+  b) Ảnh thật do nhiếp ảnh gia tải lên
+      - Ảnh lưu trong thư mục media/ (đã cấu hình sẵn).
+      - Model dùng trường ImageField, truyền .url của nó:
+            image=goi.anh.url
+        (goi.anh là tên trường ảnh trong model,
+         đổi theo tên thật)
+      - Nếu trường ảnh có thể để trống thì phải kiểm tra
+        trước khi lấy .url, nếu không sẽ báo lỗi.
+      - Dùng ImageField cần cài Pillow:
+            pip install Pillow
+
+  QUY ĐỊNH VỀ ẢNH
+      - Ảnh NGANG, tỉ lệ 4:3, khoảng 800 x 600 px.
+        Khung tự cắt cho vừa, ảnh dọc sẽ mất phần trên
+        và phần dưới.
+      - Dung lượng dưới 300 KB cho trang tải nhanh.
+      - Tên file: chữ thường, không dấu, không khoảng
+        trắng, nối bằng gạch ngang.
+            Đúng: goi-chan-dung.jpg
+            Sai : Gói chân dung 1.JPG
+      - Ảnh không hiện? Mở thẳng địa chỉ:
+            http://127.0.0.1:8000/static/img/ten-anh.jpg
+        Thấy ảnh là đường dẫn đúng.
+        Báo 404 là file đặt sai chỗ.
+
+
+----------------------------------------------------------------------
+6. THÊM HOẶC SỬA GIAO DIỆN: LÀM THẾ NÀO?
+----------------------------------------------------------------------
+
+  1) Cần thành phần đã có (nút, thẻ, ô nhập, thông báo)?
      -> DÙNG LẠI theo mẫu ở /ui-kit/
 
   2) Cần màu mới?
@@ -151,22 +249,36 @@ Xem thử mọi thành phần tại:  http://127.0.0.1:8000/ui-kit/
      -> Cập nhật mục 3 trong file này
      -> Thêm một mẫu vào templates/ui_kit.html
 
-  4) Trước khi gửi code, mở /ui-kit/ để chắc chắn mình không làm hỏng
-     giao diện chung.
+  4) Trước khi gửi code, mở /ui-kit/ để chắc chắn mình
+     không làm hỏng giao diện chung.
 
 
-------------------------------------------------------------------------------
-6. BẢN ĐỒ FILE
-------------------------------------------------------------------------------
+----------------------------------------------------------------------
+7. BẢN ĐỒ FILE
+----------------------------------------------------------------------
 
-  static/css/tokens.css       Màu, font, khoảng cách
-                              (nơi DUY NHẤT khai báo màu)
-  static/css/base.css         Bố cục chung, header, footer
-  static/css/components.css   Nút, thẻ, ô nhập, nhãn trạng thái, thông báo
-  static/img/logo.png         Logo
-  templates/includes/         Header, footer, thẻ, thông báo, ô nhập,
-                              phân trang
-  templates/ui_kit.html       Trang xem thử mọi thành phần
-  core/status_tones.py        Gán trạng thái -> màu
+  static/css/tokens.css
+      Màu, font, khoảng cách (nơi DUY NHẤT khai báo màu)
 
-==============================================================================
+  static/css/base.css
+      Bố cục chung, header, footer
+
+  static/css/components.css
+      Nút, thẻ, ô nhập, nhãn trạng thái, thông báo
+
+  static/img/
+      Logo và ảnh mẫu
+
+  templates/includes/
+      Header, footer, thông báo, ô nhập, phân trang
+
+  templates/includes/card.html
+      Mẫu thẻ (nhận tham số image)
+
+  templates/ui_kit.html
+      Trang xem thử mọi thành phần
+
+  core/status_tones.py
+      Gán trạng thái -> màu
+
+======================================================================
