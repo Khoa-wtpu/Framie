@@ -1,0 +1,7 @@
+{% if messages %}
+<div class="container flash">
+  {% for message in messages %}
+    {% include "includes/alert.html" with level=message.tags text=message dismissible=True %}
+  {% endfor %}
+</div>
+{% endif %}

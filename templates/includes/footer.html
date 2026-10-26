@@ -1,0 +1,25 @@
+{% load static %}<footer class="site-footer">
+  <div class="container site-footer__grid">
+    <div>
+      <a class="brand" href="{{ urls.home }}"><img class="brand__logo" src="{% static 'img/logo.png' %}" alt="{{ site_name }}"></a>
+      <p class="site-footer__about">Từ tìm kiếm đến nhận ảnh, mọi trải nghiệm chụp ảnh trong một nền tảng.</p>
+    </div>
+    <div>
+      <h2 class="site-footer__title">Khám phá</h2>
+      <ul class="site-footer__list">
+        <li><a href="{{ urls.home }}">Trang chủ</a></li>
+        <li><a href="#">Tìm nhiếp ảnh gia</a></li>
+        <li><a href="#">Giới thiệu</a></li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="site-footer__title">Hỗ trợ</h2>
+      <ul class="site-footer__list">
+        <li><a href="#">Câu hỏi thường gặp</a></li>
+        <li><a href="#">Điều khoản sử dụng</a></li>
+        <li><a href="#">Chính sách bảo mật</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container site-footer__bottom">© {% now "Y" %} {{ site_name }}. Bảo lưu mọi quyền.</div>
+</footer>

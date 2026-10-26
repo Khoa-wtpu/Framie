@@ -17,10 +17,11 @@ Including another URLconf
 from django.conf import settings                  # đọc cài đặt trong settings.py
 from django.conf.urls.static import static        # hàm nối địa chỉ web với thư mục file
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path             # (1) thêm include
 
 urlpatterns = [
     path('admin/', admin.site.urls),              # /admin dẫn tới trang quản trị
+    path('', include('core.urls')),               # (2) nối core/urls.py, có /ui-kit/
 ]
 
 # Khi chạy thử (DEBUG = True): địa chỉ /media/... dẫn tới thư mục media/ trên máy,
