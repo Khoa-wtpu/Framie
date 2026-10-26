@@ -21,7 +21,9 @@ from django.urls import include, path             # (1) thêm include
 
 urlpatterns = [
     path('admin/', admin.site.urls),              # /admin dẫn tới trang quản trị
-    path('', include('core.urls')),               # (2) nối core/urls.py, có /ui-kit/
+    path('', include('core.urls')),
+    path('', include('accounts.urls')),  # nối accounts/urls.py: /dang-nhap/, /dang-xuat/ (P3)
+    # (2) nối core/urls.py, có /ui-kit/
 ]
 
 # Khi chạy thử (DEBUG = True): địa chỉ /media/... dẫn tới thư mục media/ trên máy,

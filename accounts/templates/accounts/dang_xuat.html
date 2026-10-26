@@ -1,0 +1,17 @@
+{% extends "base.html" %}{# dùng khung chung #}
+{% block title %}Đăng xuất{% endblock %}{# chữ trên tab #}
+{% block content %}{# nội dung riêng #}
+<div class="container" style="max-width: 28rem;">{# hộp hẹp ở giữa #}
+  <div class="card">{# thẻ bao quanh #}
+    <div class="card__body" style="align-items: stretch;">{# nội dung thẻ #}
+      <h1 class="card__title">Đăng xuất?</h1>{# câu hỏi xác nhận #}
+      <p class="card__text">Bạn có chắc muốn đăng xuất khỏi FRAMIE không?</p>{# giải thích #}
+      <form method="post">{# bấm nút mới gửi POST và đăng xuất thật #}
+        {% csrf_token %}{# mã chống giả mạo form #}
+        <a class="btn btn--ghost" href="{{ urls.home }}">Hủy</a>{# quay lại, không đăng xuất #}
+        <button class="btn btn--primary" type="submit">Đăng xuất</button>{# nút chính; không dùng nút đỏ vì đăng xuất không phải xóa/hủy #}
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
