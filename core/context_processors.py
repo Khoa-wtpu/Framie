@@ -10,7 +10,10 @@ def layout(request):
     user = request.user
     role = get_role(user)
     preview = False
-    forced = PREVIEW_KEYS.get(request.GET.get("xem_voi_vai_tro")) if settings.DEBUG else None
+    key = request.GET.get("xem_voi_vai_tro") if settings.DEBUG else None
+    # Xem thử riêng: Nhiếp ảnh gia chưa được duyệt (Chờ duyệt / Đã từ chối)
+    pending_preview = key == "nhiep_anh_gia_cho_duyet"
+    forced = PHOTOGRAPHER if pending_preview else PREVIEW_KEYS.get(key)
     if forced:
         role, preview = forced, True
 
@@ -31,8 +34,9 @@ def layout(request):
 
     # Kế hoạch (P5) và wireframe: Nhiếp ảnh gia "Chờ duyệt" / "Đã từ chối" chỉ được dùng chức năng theo dõi hồ sơ.
     menu = MENUS[role]
-    if (role == PHOTOGRAPHER and user.is_authenticated
-            and user.trang_thai_ho_so != TrangThaiHoSo.DA_DUYET):
+    chua_duyet = pending_preview or (user.is_authenticated
+                                     and user.trang_thai_ho_so != TrangThaiHoSo.DA_DUYET)
+    if role == PHOTOGRAPHER and chua_duyet:
         menu = [m for m in menu if m[1] == "photographer_profile"]
 
     return {

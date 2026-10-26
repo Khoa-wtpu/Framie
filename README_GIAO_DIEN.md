@@ -15,7 +15,8 @@ MỤC LỤC
     4. Màu nhãn trạng thái và hộp thông báo
     5. Thẻ (card) và ảnh trong thẻ
     6. Thêm hoặc sửa giao diện
-    7. Bản đồ file
+    7. Menu theo vai trò, menu điện thoại và xem thử
+    8. Bản đồ file
 
 
 ----------------------------------------------------------------------
@@ -175,6 +176,13 @@ MỤC LỤC
       level="warning"  Vàng         Cần lưu ý
       level="info"     Xanh dương   Thông tin thường
 
+  THÔNG BÁO TỪ VIEW (messages.success / messages.error ...)
+      Django đặt tên mức lỗi là "error", nhưng CSS chỉ có
+      alert--danger. Vì vậy trong config/settings.py đã khai báo:
+          MESSAGE_TAGS = {messages.ERROR: 'danger'}
+      Nhờ đó messages.error(...) hiện đúng hộp ĐỎ.
+      Đừng xóa dòng này, nếu không thông báo lỗi sẽ hiện màu xanh dương.
+
 
 ----------------------------------------------------------------------
 5. THẺ (CARD) VÀ ẢNH TRONG THẺ
@@ -254,14 +262,55 @@ MỤC LỤC
 
 
 ----------------------------------------------------------------------
-7. BẢN ĐỒ FILE
+7. MENU THEO VAI TRÒ, MENU ĐIỆN THOẠI VÀ XEM THỬ
+----------------------------------------------------------------------
+
+  DANH SÁCH MENU
+      Khai báo trong core/navigation.py (biến MENUS).
+      Menu được đưa vào mọi template bởi core/context_processors.py.
+      Muốn thêm hoặc bớt mục menu thì sửa ở navigation.py.
+
+  NHIẾP ẢNH GIA CHƯA ĐƯỢC DUYỆT
+      Nhiếp ảnh gia có trạng thái hồ sơ "Chờ duyệt" hoặc
+      "Đã từ chối" CHỈ thấy mục "Hồ sơ của tôi" (theo kế hoạch P5
+      và wireframe). Chỉ khi hồ sơ "Đã duyệt" mới thấy đủ menu
+      (Portfolio, Gói dịch vụ, Lịch của tôi, Quản lý Booking, Tin nhắn).
+      Logic lọc nằm trong core/context_processors.py,
+      ngay trước dòng "nav_items".
+      Nếu đổi tên URL "photographer_profile" thì phải sửa cả chỗ lọc này.
+
+  MENU TRÊN ĐIỆN THOẠI (dưới 960px)
+      - Menu ẨN mặc định, chỉ hiện khi bấm nút ba gạch.
+      - Bấm nút thì static/js/app.js thêm class is-open vào header,
+        và static/css/base.css hiện menu thành bảng thả xuống
+        ngay dưới header.
+      - Từ 960px trở lên, menu nằm ngang trong header, không có nút ba gạch.
+      - Đừng đặt display: block cho .site-nav ở phần CSS mặc định,
+        vì sẽ làm menu luôn hiện trên điện thoại.
+
+  XEM THỬ MENU KHI DEBUG
+      Mở /ui-kit/ rồi bấm link ở dòng "Xem thử menu theo vai trò".
+      Chỉ chạy khi DEBUG = True, không cần đăng nhập.
+
+      ?xem_voi_vai_tro=khach                    Khách
+      ?xem_voi_vai_tro=khach_hang               Khách hàng
+      ?xem_voi_vai_tro=nhiep_anh_gia            Nhiếp ảnh gia (đã duyệt)
+      ?xem_voi_vai_tro=nhiep_anh_gia_cho_duyet  Nhiếp ảnh gia chưa duyệt
+      ?xem_voi_vai_tro=quan_tri_vien            Quản trị viên
+
+      Muốn thêm kiểu xem thử mới thì sửa PREVIEW_KEYS trong
+      core/navigation.py và thêm link vào templates/ui_kit.html.
+
+
+----------------------------------------------------------------------
+8. BẢN ĐỒ FILE
 ----------------------------------------------------------------------
 
   static/css/tokens.css
       Màu, font, khoảng cách (nơi DUY NHẤT khai báo màu)
 
   static/css/base.css
-      Bố cục chung, header, footer
+      Bố cục chung, header, footer, menu điện thoại
 
   static/css/components.css
       Nút, thẻ, ô nhập, nhãn trạng thái, thông báo
@@ -280,5 +329,14 @@ MỤC LỤC
 
   core/status_tones.py
       Gán trạng thái -> màu
+
+  core/navigation.py
+      Danh sách menu theo vai trò, khóa xem thử
+
+  core/context_processors.py
+      Đưa menu vào template, lọc menu Nhiếp ảnh gia chưa duyệt
+
+  config/settings.py
+      Có MESSAGE_TAGS để thông báo lỗi hiện màu đỏ
 
 ======================================================================
