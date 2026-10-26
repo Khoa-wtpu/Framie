@@ -6,8 +6,8 @@
 .btn--secondary:hover { background: var(--color-surface-alt); }
 .btn--ghost { background: transparent; color: var(--color-black); }
 .btn--ghost:hover { background: var(--color-surface-alt); }
-.btn--soft { background: var(--gradient-white-gray); color: var(--color-black); border-color: var(--color-border); }
-.btn--soft:hover { box-shadow: var(--shadow-sm); border-color: var(--color-black); }
+.btn--soft { background: var(--gradient-white-gray); color: var(--color-black); border-color: transparent; }
+.btn--soft:hover { box-shadow: var(--shadow-sm); border-color: transparent; }
 .btn--danger { background: var(--danger-fg); color: var(--color-white); }
 .btn--danger:hover { filter: brightness(.9); }
 .btn--sm { min-height: 2.25rem; padding: var(--space-2) var(--space-4); }
