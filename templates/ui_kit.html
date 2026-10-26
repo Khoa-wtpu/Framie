@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Bộ giao diện{% endblock %}
+{% block content %}
+<div class="container">
+  <h1>Bộ giao diện FRAMIE</h1>
+  <p class="muted">Xem thử menu theo vai trò (chỉ khi DEBUG):
+    <a href="?xem_voi_vai_tro=khach">Khách</a> ·
+    <a href="?xem_voi_vai_tro=khach_hang">Khách hàng</a> ·
+    <a href="?xem_voi_vai_tro=nhiep_anh_gia">Nhiếp ảnh gia</a> ·
+    <a href="?xem_voi_vai_tro=quan_tri_vien">Quản trị viên</a></p>
+
+  <section class="section"><h2>Màu và font</h2>
+    <div class="row">
+      <div><div class="swatch" style="background:var(--color-white)"></div><small>#FFFFFF</small></div>
+      <div><div class="swatch" style="background:var(--color-black)"></div><small>#1A1A1A</small></div>
+      <div><div class="swatch" style="background:var(--color-gray)"></div><small>#D9D9D9</small></div>
+      <div><div class="swatch" style="background:var(--gradient-white-black)"></div><small>Trắng → Đen</small></div>
+      <div><div class="swatch" style="background:var(--gradient-white-gray)"></div><small>Trắng → Xám</small></div>
+    </div>
+    <h4 style="margin-top:1.5rem">Tông màu trạng thái</h4>
+    <div class="row"><span class="tone-swatch"><i style="background:var(--tone-amber-bg);border:2px solid var(--tone-amber-dot)"></i>amber</span><span class="tone-swatch"><i style="background:var(--tone-orange-bg);border:2px solid var(--tone-orange-dot)"></i>orange</span><span class="tone-swatch"><i style="background:var(--tone-red-bg);border:2px solid var(--tone-red-dot)"></i>red</span><span class="tone-swatch"><i style="background:var(--tone-rose-bg);border:2px solid var(--tone-rose-dot)"></i>rose</span><span class="tone-swatch"><i style="background:var(--tone-pink-bg);border:2px solid var(--tone-pink-dot)"></i>pink</span><span class="tone-swatch"><i style="background:var(--tone-violet-bg);border:2px solid var(--tone-violet-dot)"></i>violet</span><span class="tone-swatch"><i style="background:var(--tone-indigo-bg);border:2px solid var(--tone-indigo-dot)"></i>indigo</span><span class="tone-swatch"><i style="background:var(--tone-blue-bg);border:2px solid var(--tone-blue-dot)"></i>blue</span><span class="tone-swatch"><i style="background:var(--tone-sky-bg);border:2px solid var(--tone-sky-dot)"></i>sky</span><span class="tone-swatch"><i style="background:var(--tone-teal-bg);border:2px solid var(--tone-teal-dot)"></i>teal</span><span class="tone-swatch"><i style="background:var(--tone-green-bg);border:2px solid var(--tone-green-dot)"></i>green</span><span class="tone-swatch"><i style="background:var(--tone-lime-bg);border:2px solid var(--tone-lime-dot)"></i>lime</span><span class="tone-swatch"><i style="background:var(--tone-brown-bg);border:2px solid var(--tone-brown-dot)"></i>brown</span><span class="tone-swatch"><i style="background:var(--tone-gray-bg);border:2px solid var(--tone-gray-dot)"></i>gray</span></div>
+    <p style="margin-top:1rem"><strong>Tiêu đề: Be Vietnam Pro 600.</strong> Văn bản: Be Vietnam Pro 400.</p>
+  </section>
+
+  <section class="section"><h2>Nút</h2>
+    <div class="row">
+      <button class="btn btn--primary">Chính</button>
+      <button class="btn btn--secondary">Phụ</button>
+      <button class="btn btn--soft">Gradient xám</button>
+      <button class="btn btn--ghost">Ghost</button>
+      <button class="btn btn--danger">Hủy Booking</button>
+      <button class="btn btn--primary" disabled>Vô hiệu</button>
+      <button class="btn btn--primary is-loading">Đang lưu</button>
+      <button class="btn btn--primary btn--sm">Nhỏ</button>
+      <button class="btn btn--primary btn--lg">Lớn</button>
+    </div>
+  </section>
+
+  <section class="section"><h2>Thẻ</h2>
+    <div class="grid">
+      {% include "includes/card.html" with title="Gói chân dung" meta="Nhiếp ảnh gia: Minh Anh" text="2 giờ chụp, 30 ảnh chỉnh sửa." href="#" status="Đã đặt lịch" %}
+      {% include "includes/card.html" with title="Gói gia đình" meta="Nhiếp ảnh gia: Hoàng Long" text="3 giờ chụp tại địa điểm bạn chọn." href="#" status="Chờ đặt cọc" %}
+      {% include "includes/card.html" with title="Gói sự kiện" meta="Nhiếp ảnh gia: Thu Hà" text="Phủ trọn buổi tiệc, giao ảnh trong 5 ngày." %}
+    </div>
+  </section>
+
+  <section class="section"><h2>Ô nhập</h2>
+    <form class="panel" style="max-width:32rem" novalidate>
+      {% for field in form %}{% include "includes/form_field.html" with field=field %}{% endfor %}
+      <button class="btn btn--primary" type="button">Gửi</button>
+    </form>
+  </section>
+
+  <section class="section"><h2>Hộp thông báo</h2>
+    <div class="stack">
+      {% include "includes/alert.html" with level="success" title="Thành công" text="Đã lưu thay đổi." dismissible=True %}
+      {% include "includes/alert.html" with level="danger" title="Có lỗi" text="Không thể hủy Booking đã quá hạn." dismissible=True %}
+      {% include "includes/alert.html" with level="warning" title="Lưu ý" text="Booking sẽ tự hủy nếu không đặt cọc trong 1 ngày." %}
+      {% include "includes/alert.html" with level="info" text="Nhiếp ảnh gia đã nhận được yêu cầu của bạn." %}
+    </div>
+  </section>
+
+  <section class="section"><h2>Nhãn trạng thái</h2>
+    {% for title, values in status_groups %}
+    <h4>{{ title }}</h4>
+    <div class="row" style="margin-bottom:1.25rem">{% for v in values %}{% status_badge v %}{% endfor %}</div>
+    {% endfor %}
+  </section>
+
+  <section class="section"><h2>Phân trang</h2>
+    {% include "includes/pagination.html" with page_obj=page_obj %}
+  </section>
+</div>
+{% endblock %}

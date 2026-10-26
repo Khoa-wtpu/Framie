@@ -176,3 +176,16 @@ class BenThucHien:
 
 # Bàn giao chỉ có một trạng thái nên không cần lớp.
 HOAN_TAT_BAN_GIAO = 'Hoàn tất bàn giao'
+
+class KetQuaDuyetHoSo:
+    DA_DUYET = TrangThaiHoSo.DA_DUYET            # 'Đã duyệt'
+    YEU_CAU_CHINH_SUA = 'Yêu cầu chỉnh sửa'
+    DA_TU_CHOI = TrangThaiHoSo.DA_TU_CHOI        # 'Đã từ chối'
+    CHOICES = _choices([DA_DUYET, YEU_CAU_CHINH_SUA, DA_TU_CHOI])
+
+class DinhDangTep:
+    # Định dạng tệp ảnh được phép (minh chứng thanh toán, ảnh bàn giao).
+    JPG = 'JPG'
+    PNG = 'PNG'
+    JPEG = 'JPEG'
+    CHOICES = _choices([JPG, PNG, JPEG])
