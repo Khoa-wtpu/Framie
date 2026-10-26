@@ -32,6 +32,7 @@ MENUS = {
         ("Lịch của tôi", "my_calendar"),
         ("Quản lý Booking", "manage_bookings"),
         ("Booking của tôi", "my_bookings"),
+        ("Tin nhắn", "inbox"),
     ],
     # Menu Quản trị viên: chỉnh lại cho đúng danh sách màn hình admin của nhóm
     ADMIN: [
