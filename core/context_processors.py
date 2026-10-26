@@ -1,7 +1,9 @@
 from django.conf import settings
 
-from .navigation import (ACCOUNT_MENUS, GUEST, MENUS, PREVIEW_KEYS, URL_NAMES,
-                         count_unread, get_role, is_active, resolve)
+from core.constants import TrangThaiHoSo
+
+from .navigation import (ACCOUNT_MENUS, GUEST, MENUS, PHOTOGRAPHER, PREVIEW_KEYS,
+                         URL_NAMES, count_unread, get_role, is_active, resolve)
 
 
 def layout(request):
@@ -27,13 +29,19 @@ def layout(request):
             out.append({"label": label, "url": url, "active": is_active(request.path, url)})
         return out
 
+    # Kế hoạch (P5) và wireframe: Nhiếp ảnh gia "Chờ duyệt" / "Đã từ chối" chỉ được dùng chức năng theo dõi hồ sơ.
+    menu = MENUS[role]
+    if (role == PHOTOGRAPHER and user.is_authenticated
+            and user.trang_thai_ho_so != TrangThaiHoSo.DA_DUYET):
+        menu = [m for m in menu if m[1] == "photographer_profile"]
+
     return {
         "role": role,
         "is_logged_in": logged_in,
         "display_name": name,
         "display_initial": name[:1].upper() if name else "",
         "unread_count": unread,
-        "nav_items": build(MENUS[role]),
+        "nav_items": build(menu),
         "account_items": build(ACCOUNT_MENUS.get(role, [])),
         "urls": {key: resolve(val) for key, val in URL_NAMES.items()},
         "site_name": "FRAMIE",

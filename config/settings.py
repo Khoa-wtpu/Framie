@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 
 from pathlib import Path
 
+from django.contrib.messages import constants as messages
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -52,6 +54,10 @@ INSTALLED_APPS = [
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
+
+# Django đặt tag của messages.error() là 'error', nhưng CSS (components.css) chỉ có .alert--danger.
+# Đổi tag để mọi messages.error(...) của cả nhóm hiện đúng màu đỏ.
+MESSAGE_TAGS = {messages.ERROR: 'danger'}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
