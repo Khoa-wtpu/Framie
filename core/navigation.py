@@ -74,6 +74,6 @@ def get_role(user):
 
 
 def count_unread(user):
-    """Số thông báo chưa đọc. Khi app notifications có model, thay bằng truy vấn thật, ví dụ:
-    ThongBao.objects.filter(nguoi_nhan=user, trang_thai_doc=TrangThaiDoc.CHUA_DOC).count()"""
-    return 0
+    """Số thông báo chưa đọc của người dùng (hiện trên chuông ở header)."""
+    from notifications.services import dem_chua_doc  # import trong hàm để tránh import vòng giữa core và notifications
+    return dem_chua_doc(user)
