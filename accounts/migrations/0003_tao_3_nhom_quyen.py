@@ -11,7 +11,7 @@ def tao_nhom(apps, schema_editor):  # hàm chạy khi migrate: tạo 3 nhóm quy
 class Migration(migrations.Migration):  # khai báo một migration
 
     dependencies = [  # migration này phải chạy SAU migration nào
-        ('accounts', '0002_yeucaudatlaimatkhau'),  # chạy sau 0002 (bảng yêu cầu đặt lại mật khẩu)
+        ('accounts', '0002_alter_user_so_dien_thoai_yeucaudatlaimatkhau'),  # chạy sau 0002 (bảng yêu cầu đặt lại mật khẩu)
     ]  # hết danh sách phụ thuộc
 
     operations = [migrations.RunPython(tao_nhom, migrations.RunPython.noop)]  # chạy tao_nhom khi migrate; noop = không làm gì khi lùi migration
