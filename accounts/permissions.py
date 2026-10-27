@@ -5,7 +5,7 @@ from django.contrib.auth.views import redirect_to_login  # hàm chuyển ngườ
 from django.core.exceptions import PermissionDenied  # ném lỗi này để Django trả HTTP 403
 from django.urls import NoReverseMatch, reverse  # reverse: đổi tên URL thành đường dẫn
 
-from core.constants import VaiTro  # tên 3 vai trò, không tự gõ chữ tiếng Việt (README)
+from core.constants import TrangThaiHoSo, VaiTro  # tên 3 vai trò và trạng thái hồ sơ, không tự gõ chữ tiếng Việt (README)
 
 # Trang đầu tiên của mỗi vai trò sau khi đăng nhập: thử lần lượt từng tên URL, tên nào tồn tại thì dùng.
 TRANG_CHU_THEO_VAI_TRO = {  # từ điển: vai trò -> danh sách tên URL ưu tiên
@@ -24,7 +24,7 @@ def lay_vai_tro(user):  # trả về vai trò chính của một User
     for vai_tro in (VaiTro.QUAN_TRI_VIEN, VaiTro.NHIEP_ANH_GIA, VaiTro.KHACH_HANG):  # duyệt theo thứ tự ưu tiên
         if vai_tro in ten_nhom:  # User thuộc nhóm này
             return vai_tro  # trả vai trò tìm được
-    return None  # tài khoản chưa gán nhóm nào: coi như không có quyền gì
+    return VaiTro.KHACH_HANG  # đã đăng nhập mà chưa có nhóm: coi là Khách hàng, giống hệt core/navigation.py
 
 
 def url_trang_chu(user):  # đường dẫn trang đích sau khi đăng nhập
@@ -61,3 +61,12 @@ class VaiTroRequiredMixin(AccessMixin):  # dùng cho view dạng class: class X(
         if lay_vai_tro(request.user) not in self.vai_tro_cho_phep:  # chưa đăng nhập hoặc sai vai trò
             return self.handle_no_permission()  # chưa đăng nhập -> trang đăng nhập; đã đăng nhập mà sai quyền -> 403
         return super().dispatch(request, *args, **kwargs)  # hợp lệ thì chạy tiếp view
+
+def chi_nhiep_anh_gia_da_duyet(view_func):  # decorator: chỉ Nhiếp ảnh gia ĐÃ DUYỆT mới vào được view
+    @wraps(view_func)  # giữ nguyên tên và mô tả của view gốc
+    @vai_tro_required(VaiTro.NHIEP_ANH_GIA)  # lớp 1: chưa đăng nhập -> trang đăng nhập; sai vai trò -> 403
+    def wrapper(request, *args, **kwargs):  # hàm chạy trước view thật
+        if request.user.trang_thai_ho_so != TrangThaiHoSo.DA_DUYET:  # lớp 2: hồ sơ Chờ duyệt hoặc Đã từ chối
+            raise PermissionDenied  # trả lỗi 403
+        return view_func(request, *args, **kwargs)  # hợp lệ thì chạy view thật
+    return wrapper  # trả hàm đã bọc
