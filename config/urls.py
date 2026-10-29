@@ -18,6 +18,9 @@ from django.conf import settings                  # đọc cài đặt trong set
 from django.conf.urls.static import static        # hàm nối địa chỉ web với thư mục file
 from django.contrib import admin
 from django.urls import include, path             # (1) thêm include
+admin.site.site_header = 'FRAMIE - Quản trị'
+admin.site.site_title = 'FRAMIE'
+admin.site.index_title = 'Quản trị hệ thống'
 
 urlpatterns = [
     path('admin/', admin.site.urls),              # /admin dẫn tới trang quản trị

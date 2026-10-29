@@ -83,6 +83,8 @@ class YeuCauDatLaiMatKhau(models.Model):  # bảng YEUCAUDATLAIMATKHAU: mỗi d�
 
     class Meta:  # khai báo tên bảng và các ràng buộc cho bảng
         db_table = 'YEUCAUDATLAIMATKHAU'  # tên bảng đúng như Data Dictionary (nếu bỏ dòng này Django tự đặt accounts_yeucaudatlaimatkhau)
+        verbose_name = 'yêu cầu đặt lại mật khẩu'
+        verbose_name_plural = 'yêu cầu đặt lại mật khẩu'
         constraints = [  # danh sách ràng buộc CHECK ở mức cơ sở dữ liệu
             models.CheckConstraint(  # ràng buộc 1: mã phải hết hạn SAU lúc gửi
                 condition=models.Q(ThoiDiemHetHan__gt=models.F('ThoiDiemGui')),  # ThoiDiemHetHan > ThoiDiemGui
