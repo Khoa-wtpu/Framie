@@ -46,6 +46,8 @@ class User(AbstractUser):
     # Các cột bắt buộc khi tạo tài khoản quản trị bằng lệnh createsuperuser
     # (ngoài username và mật khẩu), để admin cũng có email và số điện thoại.
     REQUIRED_FIELDS = ['email', 'so_dien_thoai']
+    def get_full_name(self):  # Django mặc định ghép "first_name last_name" (kiểu phương Tây)
+        return f'{self.last_name} {self.first_name}'.strip()  # ghép "họ và tên đệm" + "tên" cho đúng thứ tự tiếng Việt
 
     def clean(self):
         super().clean()

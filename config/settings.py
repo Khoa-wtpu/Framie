@@ -152,3 +152,14 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+# ---- P3: đăng nhập và phiên làm việc (Phanh) ----
+AUTHENTICATION_BACKENDS = [  # danh sách cách xác thực, Django thử lần lượt
+    'accounts.backends.EmailBackend',  # đăng nhập bằng email (dùng ở trang /dang-nhap/)
+    'django.contrib.auth.backends.ModelBackend',  # giữ cách cũ (username) để vào được /admin/ bằng tài khoản createsuperuser
+]  # hết danh sách
+
+LOGIN_URL = 'login'  # người chưa đăng nhập bị chuyển tới URL có name='login'
+LOGIN_REDIRECT_URL = 'trang_tam'  # đích dự phòng (thực tế DangNhapView đã chuyển theo vai trò)
+
+SESSION_COOKIE_AGE = 30 * 60  # phiên sống 30 phút, tính bằng giây
+SESSION_SAVE_EVERY_REQUEST = True  # mỗi lần thao tác lại gia hạn 30 phút => hết hạn sau 30 phút KHÔNG hoạt động
