@@ -189,3 +189,4 @@ db.sqlite3-journal
 # Không đưa file người dùng tải lên, nhưng giữ .gitkeep để Git lưu được thư mục media
 media/*
 !media/.gitkeep
+private_media/

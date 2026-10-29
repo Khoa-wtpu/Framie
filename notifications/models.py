@@ -42,6 +42,8 @@ class ThongBao(models.Model):  # bảng THONGBAO: mỗi dòng là một thông b
 
     class Meta:  # tùy chọn thêm cho bảng
         db_table = 'THONGBAO'  # tên bảng đúng như Data Dictionary (nếu bỏ dòng này Django tự đặt notifications_thongbao)
+        verbose_name = 'thông báo'
+        verbose_name_plural = 'thông báo'
         ordering = ['-NgayTao']  # mặc định xếp thông báo mới nhất lên đầu (dấu - là giảm dần)
         constraints = [  # CHECK ở mức cơ sở dữ liệu, giống Data Dictionary
             models.CheckConstraint(  # TrangThaiDoc chỉ nhận 2 giá trị
