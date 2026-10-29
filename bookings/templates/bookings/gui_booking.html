@@ -1,0 +1,122 @@
+{# UC4.2: trang điền thông tin buổi chụp và gửi yêu cầu Booking. Dùng bởi bookings/gui_booking.py #}
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Gửi yêu cầu Booking{% endblock %}
+
+{% block extra_head %}
+<style>
+  .gui-booking__dem { font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .gui-booking__thanh { width: 100%; height: .5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="container">
+  <h1>Gửi yêu cầu Booking</h1>
+
+  <div class="panel">
+    <p>Nhiếp ảnh gia: <strong>{{ ten_nag }}</strong></p>
+    <p>Khung giờ đang giữ: <strong>{{ lich.Ngay|date:"l, d/m/Y" }}, {{ lich.GioBatDau|time:"H:i" }}–{{ lich.GioKetThuc|time:"H:i" }}</strong></p>
+    <div id="dem-nguoc" role="timer" aria-label="Thời gian giữ chỗ còn lại"
+         data-con-lai="{{ con_lai_giay }}" data-url="{{ url_trang_thai }}">
+      Thời gian giữ chỗ còn lại: <span class="gui-booking__dem" id="dem-nguoc-so">--:--</span>
+      <progress class="gui-booking__thanh" id="dem-nguoc-thanh" max="{{ tong_giay }}" value="{{ con_lai_giay }}"></progress>
+    </div>
+  </div>
+
+  {# --- Hết thời gian giữ chỗ (ngoại lệ 4a, hiện khi bộ đếm về 0) --- #}
+  <div id="khoi-het-han" class="alert alert--warning" role="alert" hidden>
+    <div class="alert__body">
+      <strong class="alert__title">{{ TB_SLOT_HET_HAN_GIU }}</strong>
+      <span class="alert__text"><a href="{{ url_lich }}">Chọn lại khung giờ</a>.</span>
+    </div>
+  </div>
+
+  <form id="form-gui-booking" class="panel" method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      {% for loi in form.non_field_errors %}
+        {% include "includes/alert.html" with level="danger" text=loi %}
+      {% endfor %}
+    {% endif %}
+
+    {% include "includes/form_field.html" with field=form.loai_hinh %}
+    {% include "includes/form_field.html" with field=form.goi %}
+    {% include "includes/form_field.html" with field=form.ngay_gio_chup %}
+    {% include "includes/form_field.html" with field=form.dia_diem %}
+    {% include "includes/form_field.html" with field=form.so_nguoi %}
+    {% include "includes/form_field.html" with field=form.concept %}
+    {% include "includes/form_field.html" with field=form.yeu_cau_rieng %}
+
+    <p style="margin-top:1rem">
+      <button id="nut-gui" class="btn btn--primary" type="submit">Gửi yêu cầu Booking</button>
+      <a class="btn btn--ghost" href="{{ url_lich }}">Chọn khung giờ khác</a>
+    </p>
+  </form>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  // ---- Lọc "Gói dịch vụ" theo "Loại hình chụp" ----
+  var loaiHinh = document.getElementById('{{ form.loai_hinh.id_for_label }}');
+  var goi = document.getElementById('{{ form.goi.id_for_label }}');
+  var tatCaGoi = Array.prototype.slice.call(goi.options).map(function (o) { return o.cloneNode(true); });
+  function locGoi() {
+    var chon = goi.value;
+    goi.innerHTML = '';
+    tatCaGoi.forEach(function (o) {
+      var lh = o.getAttribute('data-loai-hinh');
+      if (!lh || lh === loaiHinh.value) goi.appendChild(o.cloneNode(true));   // giữ ô "-- Chọn --" và gói đúng loại hình
+    });
+    goi.value = chon;                                  // giữ lại lựa chọn cũ nếu vẫn hợp lệ, ngược lại về ô trống
+    if (goi.value !== chon) goi.value = '';
+  }
+  loaiHinh.addEventListener('change', locGoi);
+  locGoi();
+
+  // ---- Đếm ngược 5 phút (lấy số giây còn lại từ server, giống màn hình giữ chỗ UC4.1) ----
+  var goc = document.getElementById('dem-nguoc');
+  var so = document.getElementById('dem-nguoc-so');
+  var thanh = document.getElementById('dem-nguoc-thanh');
+  var url = goc.dataset.url;
+  var hanChot = performance.now() + parseInt(goc.dataset.conLai, 10) * 1000;
+  var dangHoi = false;
+
+  function dinhDang(s) {
+    var p = Math.floor(s / 60), g = s % 60;
+    return (p < 10 ? '0' : '') + p + ':' + (g < 10 ? '0' : '') + g;
+  }
+
+  function hetGio() {
+    clearInterval(nhip);
+    document.getElementById('form-gui-booking').hidden = true;
+    document.getElementById('khoi-het-han').hidden = false;
+  }
+
+  function hoiServer() {
+    if (dangHoi) return;
+    dangHoi = true;
+    fetch(url, {credentials: 'same-origin', headers: {'Accept': 'application/json'}})
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.con_lai_giay > 0) { hanChot = performance.now() + d.con_lai_giay * 1000; }   // còn giờ: đồng bộ lại
+        else { hetGio(); }                                                                 // server đã nhả slot
+      })
+      .catch(function () {})
+      .then(function () { dangHoi = false; });
+  }
+
+  function nhay() {
+    var con = Math.max(0, Math.ceil((hanChot - performance.now()) / 1000));
+    so.textContent = dinhDang(con);
+    thanh.value = con;
+    if (con === 0) hoiServer();
+  }
+
+  nhay();
+  var nhip = setInterval(nhay, 250);
+})();
+</script>
+{% endblock %}
