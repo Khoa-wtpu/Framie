@@ -9,4 +9,5 @@ urlpatterns = [  # danh sách đường dẫn của app accounts
     path('thu-quyen/khach-hang/', views.thu_khach_hang, name='thu_khach_hang'),  # trang thử quyền 1 (xóa sau)
     path('thu-quyen/nhiep-anh-gia/', views.thu_nhiep_anh_gia, name='thu_nhiep_anh_gia'),  # trang thử quyền 2 (xóa sau)
     path('thu-quyen/quan-tri/', views.thu_quan_tri, name='thu_quan_tri'),  # trang thử quyền 3 (xóa sau)
+    path('dang-ky/', views.dang_ky, name='register'), # P4: name='register' khớp core/navigation.py, nút Đăng ký ở header và link Tạo tài khoản
 ]  # hết danh sách
