@@ -1,0 +1,110 @@
+{# UC4.1 bước 6: màn hình giữ chỗ có đếm ngược 5 phút. Dùng bởi bookings/giu_cho.py #}
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Giữ chỗ khung giờ{% endblock %}
+
+{% block extra_head %}
+<style>
+  .giu-cho__so { font-size: 3rem; font-weight: 600; font-variant-numeric: tabular-nums; margin: .25rem 0; }
+  .giu-cho__thanh { width: 100%; height: .75rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="container">
+  <h1>Giữ chỗ khung giờ</h1>
+
+  <div class="panel">
+    <p>Nhiếp ảnh gia: <strong>{{ ten_nag }}</strong></p>
+    <p>Khung giờ: <strong>{{ lich.Ngay|date:"l, d/m/Y" }}, {{ lich.GioBatDau|time:"H:i" }}–{{ lich.GioKetThuc|time:"H:i" }}</strong></p>
+    <p>{% status_badge giu_cho.TrangThai %}</p>
+  </div>
+
+  {# --- Đang giữ: hiện đếm ngược --- #}
+  <div id="khoi-dang-giu" class="panel"{% if not dang_giu %} hidden{% endif %}>
+    <p>Hãy gửi yêu cầu Booking trong thời gian còn lại. Hết giờ, khung giờ sẽ được trả về lịch trống.</p>
+    <div id="dem-nguoc" role="timer" aria-label="Thời gian giữ chỗ còn lại"
+         data-con-lai="{{ con_lai_giay }}" data-url="{{ url_trang_thai }}">
+      <div class="giu-cho__so" id="dem-nguoc-so">--:--</div>
+      <progress class="giu-cho__thanh" id="dem-nguoc-thanh" max="{{ tong_giay }}" value="{{ con_lai_giay }}"></progress>
+    </div>
+    <p style="margin-top:1rem">
+      {% if url_gui_booking %}
+        <a class="btn btn--primary" href="{{ url_gui_booking }}">Tiếp tục gửi yêu cầu Booking</a>
+      {% endif %}
+      <a class="btn btn--ghost" href="{{ url_lich }}">Chọn khung giờ khác</a>
+    </p>
+  </div>
+
+  {# --- Hết hạn (ngoại lệ 5b) --- #}
+  <div id="khoi-het-han" class="alert alert--warning" role="alert"{% if not da_het_han %} hidden{% endif %}>
+    <div class="alert__body">
+      <strong class="alert__title">Hết thời gian giữ chỗ</strong>
+      <span class="alert__text">{{ TB_HET_HAN }} <a href="{{ url_lich }}">Chọn lại khung giờ</a>.</span>
+    </div>
+  </div>
+
+  {# --- Đã gửi Booking kịp hạn --- #}
+  {% if da_hoan_tat %}
+  <div class="alert alert--success" role="status">
+    <div class="alert__body">
+      <strong class="alert__title">Đã gửi yêu cầu Booking</strong>
+      <span class="alert__text">Lượt giữ chỗ này đã hoàn tất.</span>
+    </div>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block extra_js %}
+{% if dang_giu %}
+<script>
+(function () {
+  var goc = document.getElementById('dem-nguoc');
+  var so = document.getElementById('dem-nguoc-so');
+  var thanh = document.getElementById('dem-nguoc-thanh');
+  var url = goc.dataset.url;
+  // Mốc kết thúc tính theo đồng hồ trình duyệt từ số giây CÒN LẠI do server gửi (không phụ thuộc giờ máy khách).
+  var hanChot = performance.now() + parseInt(goc.dataset.conLai, 10) * 1000;
+  var dangHoi = false;
+
+  function dinhDang(s) {
+    var p = Math.floor(s / 60), g = s % 60;
+    return (p < 10 ? '0' : '') + p + ':' + (g < 10 ? '0' : '') + g;
+  }
+
+  function hoiServer() {
+    if (dangHoi) return;
+    dangHoi = true;
+    fetch(url, {credentials: 'same-origin', headers: {'Accept': 'application/json'}})
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.con_lai_giay > 0) {                     // còn giờ: đồng bộ lại với server
+          hanChot = performance.now() + d.con_lai_giay * 1000;
+        } else if (d.het_han) {                       // server đã nhả slot: hiện thông báo hết hạn
+          clearInterval(nhip);
+          clearInterval(nhipDongBo);
+          document.getElementById('khoi-dang-giu').hidden = true;
+          document.getElementById('khoi-het-han').hidden = false;
+        } else {                                      // trạng thái khác (vd đã gửi Booking): tải lại trang
+          window.location.reload();
+        }
+      })
+      .catch(function () {})                          // mất mạng: thử lại ở nhịp sau
+      .then(function () { dangHoi = false; });
+  }
+
+  function nhay() {
+    var con = Math.max(0, Math.ceil((hanChot - performance.now()) / 1000));
+    so.textContent = dinhDang(con);
+    thanh.value = con;
+    if (con === 0) hoiServer();
+  }
+
+  nhay();
+  var nhip = setInterval(nhay, 250);
+  var nhipDongBo = setInterval(function () { if (!document.hidden) hoiServer(); }, 30000);   // đồng bộ định kỳ
+})();
+</script>
+{% endif %}
+{% endblock %}

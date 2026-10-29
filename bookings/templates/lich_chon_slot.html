@@ -1,0 +1,48 @@
+{# UC4.1 bước 1-2: trang lịch của một Nhiếp ảnh gia, liệt kê các slot "Lịch trống". Dùng bởi bookings/giu_cho.py #}
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Chọn lịch chụp với {{ ten_nag }}{% endblock %}
+
+{% block content %}
+<section class="container">
+  <h1>Chọn lịch chụp với {{ ten_nag }}</h1>
+  <p>Các khung giờ còn trống trong {{ so_ngay }} ngày tới. Khi bạn chọn một khung giờ, hệ thống giữ chỗ cho bạn
+     <strong>5 phút</strong> để gửi yêu cầu Booking.</p>
+
+  {% if giu_cho_hien_tai %}
+  <div class="alert alert--info" role="status">
+    <div class="alert__body">
+      <strong class="alert__title">Bạn đang giữ chỗ một khung giờ</strong>
+      <span class="alert__text">
+        {{ giu_cho_hien_tai.MaLich.Ngay|date:"d/m/Y" }}, {{ giu_cho_hien_tai.MaLich.GioBatDau|time:"H:i" }}–{{ giu_cho_hien_tai.MaLich.GioKetThuc|time:"H:i" }}.
+        <a href="{% url 'man_hinh_giu_cho' giu_cho_hien_tai.pk %}">Xem thời gian còn lại</a>.
+        Chọn khung giờ khác bên dưới sẽ thay thế khung giờ này.
+      </span>
+    </div>
+  </div>
+  {% endif %}
+
+  {% for ngay, slots in lich_theo_ngay %}
+  <div class="panel">
+    <h2>{{ ngay|date:"l, d/m/Y" }}</h2>
+    <ul class="slot-list" style="list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:.75rem">
+      {% for slot in slots %}
+      <li>
+        <form method="post" action="{% url 'chon_slot' slot.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="ma_nhiep_anh_gia" value="{{ nag.pk }}">
+          <button class="btn btn--soft" type="submit">
+            {{ slot.GioBatDau|time:"H:i" }}–{{ slot.GioKetThuc|time:"H:i" }}
+          </button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% empty %}
+  <div class="panel">
+    <p>Hiện chưa có khung giờ trống trong {{ so_ngay }} ngày tới. Bạn hãy quay lại sau hoặc chọn nhiếp ảnh gia khác.</p>
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}
