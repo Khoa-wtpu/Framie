@@ -1,22 +1,38 @@
-{# Phần 2 của form hồ sơ: giới thiệu, loại hình/phong cách/khu vực, thông tin nhận thanh toán, ảnh QR. #}
-{# Đặt SAU các ô tài khoản (Họ tên, SĐT, Email, Mật khẩu) của trang đăng ký: #}
+{# Phần 2 của form hồ sơ: 3 khối "Về bạn", "Chuyên môn và khu vực", "Thông tin nhận thanh toán". #}
+{# Đặt SAU khối tài khoản (Họ tên, SĐT, Email, Mật khẩu) của trang đăng ký: #}
 {#   {% include "profiles/includes/_ho_so_chi_tiet.html" %}   (biến form = NhiepAnhGiaForm) #}
 {% load static %}
 <link rel="stylesheet" href="{% static 'profiles/css/ho_so.css' %}">
+<script src="{% static 'profiles/js/ho_so.js' %}" defer></script>
 {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}
 
-{% include "includes/form_field.html" with field=form.GioiThieu %}
+<section class="ho-so__khoi">
+  <header class="ho-so__khoi-dau">
+    <h2>Về bạn</h2>
+    <p>Vài dòng để khách hàng hiểu phong cách và cách làm việc của bạn.</p>
+  </header>
+  {% include "includes/form_field.html" with field=form.GioiThieu %}
+</section>
 
-<div class="ho-so__luoi">
+<section class="ho-so__khoi">
+  <header class="ho-so__khoi-dau">
+    <h2>Chuyên môn và khu vực</h2>
+    <p>Chọn một hoặc nhiều mục cho mỗi nhóm. Khách hàng dùng các mục này để tìm bạn.</p>
+  </header>
   {% include "profiles/includes/_nhom_hop_tich.html" with field=form.loai_hinh %}
   {% include "profiles/includes/_nhom_hop_tich.html" with field=form.phong_cach %}
-</div>
-{% include "profiles/includes/_nhom_hop_tich.html" with field=form.khu_vuc %}
+  {% include "profiles/includes/_nhom_hop_tich.html" with field=form.khu_vuc %}
+</section>
 
-<h2 class="ho-so__tieu-de">Thông tin nhận thanh toán</h2>
-<div class="ho-so__luoi">
-  {% include "includes/form_field.html" with field=form.NganHang %}
-  {% include "includes/form_field.html" with field=form.SoTaiKhoan %}
-</div>
-{% include "includes/form_field.html" with field=form.ChuTaiKhoan %}
-{% include "includes/form_field.html" with field=form.AnhMaQR %}
+<section class="ho-so__khoi">
+  <header class="ho-so__khoi-dau">
+    <h2>Thông tin nhận thanh toán</h2>
+    <p>Khách hàng chuyển khoản trực tiếp cho bạn. FRAMIE không giữ hay chuyển tiền.</p>
+  </header>
+  <div class="ho-so__luoi">
+    {% include "includes/form_field.html" with field=form.NganHang %}
+    {% include "includes/form_field.html" with field=form.SoTaiKhoan %}
+  </div>
+  {% include "includes/form_field.html" with field=form.ChuTaiKhoan %}
+  {% include "profiles/includes/_tai_anh.html" with field=form.AnhMaQR kieu="vuong" %}
+</section>

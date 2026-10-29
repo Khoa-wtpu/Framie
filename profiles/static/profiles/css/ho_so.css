@@ -1,25 +1,61 @@
-/* profiles/static/profiles/css/ho_so.css - giao diện phần hồ sơ nhiếp ảnh gia (K3, Khoa).
-   Chỉ dùng biến màu/khoảng cách trong tokens.css, không tự đặt màu riêng. */
+/* profiles/static/profiles/css/ho_so.css - giao diện form hồ sơ nhiếp ảnh gia (K3, Khoa).
+   Chỉ dùng biến trong tokens.css (màu, khoảng cách, bo góc), không tự đặt màu riêng. */
+
+/* ---------- Khối (thẻ) bao quanh từng nhóm thông tin ---------- */
+.ho-so__khoi {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: var(--space-5); margin-bottom: var(--space-5);
+}
+.ho-so__khoi-dau { margin-bottom: var(--space-4); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-border); }
+.ho-so__khoi-dau h2 { margin: 0; font-size: var(--text-lg); }
+.ho-so__khoi-dau p { margin: var(--space-1) 0 0; font-size: var(--text-sm); color: var(--color-text-muted); }
+.ho-so__khoi > .field:last-child { margin-bottom: 0; }
+
 .ho-so__luoi { display: grid; gap: 0 var(--space-5); grid-template-columns: 1fr 1fr; }
 .ho-so__luoi > * { min-width: 0; }
 @media (max-width: 640px) { .ho-so__luoi { grid-template-columns: 1fr; } }
 
-.ho-so__tieu-de { margin: var(--space-6) 0 var(--space-4); font-size: var(--text-lg); }
-
-/* Nhóm hộp tích: loại hình chụp, phong cách, khu vực */
+/* ---------- Nhóm lựa chọn (loại hình, phong cách, khu vực): bấm để chọn, chọn được nhiều ---------- */
 fieldset.field { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 fieldset.field > legend { padding: 0; margin-bottom: var(--space-1); }
 .ho-so__chon { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .ho-so__muc {
-  display: inline-flex; align-items: center; gap: var(--space-2);
-  padding: var(--space-2) var(--space-3); background: var(--color-white);
+  position: relative; display: inline-flex; align-items: center; gap: var(--space-1);
+  padding: var(--space-2) var(--space-4); background: var(--color-white);
   border: 1px solid var(--color-border); border-radius: var(--radius-pill);
-  font-size: var(--text-sm); cursor: pointer;
+  font-size: var(--text-sm); cursor: pointer; transition: border-color .15s, background .15s, color .15s;
 }
+.ho-so__muc input { position: absolute; opacity: 0; pointer-events: none; }   /* ẩn ô vuông, cả nút là vùng bấm */
 .ho-so__muc:hover { border-color: var(--color-black); }
-.ho-so__muc:has(input:checked) { background: var(--color-black); color: var(--color-white); border-color: var(--color-black); }
+.ho-so__muc:has(input:checked) { background: var(--color-black); border-color: var(--color-black); color: var(--color-white); }
+.ho-so__muc:has(input:checked)::before { content: "\2713"; font-size: var(--text-xs); }   /* dấu ✓ khi được chọn */
 .ho-so__muc:has(input:focus-visible) { outline: 2px solid var(--color-focus); outline-offset: 2px; }
-.ho-so__muc input { accent-color: var(--color-gray); }
 
-/* Ô tải ảnh */
-input[type="file"].input { padding: var(--space-2) var(--space-3); cursor: pointer; }
+/* ---------- Ô tải ảnh (ảnh đại diện, ảnh QR) ---------- */
+.ho-so__tai-len {
+  position: relative; display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4);
+  background: var(--color-surface-alt); border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-md); cursor: pointer; transition: border-color .15s, background .15s;
+}
+.ho-so__tai-len:hover { border-color: var(--color-black); background: var(--color-white); }
+.ho-so__tai-len:focus-within { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.field.has-error .ho-so__tai-len { border-color: var(--danger-fg); }
+.ho-so__tep { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.ho-so__xem-truoc {
+  flex: none; display: grid; place-items: center; width: 5rem; height: 5rem; overflow: hidden;
+  background: var(--gradient-white-gray); border-radius: var(--radius-md);
+}
+.ho-so__xem-truoc:empty::before { content: "+"; font-size: var(--text-2xl); color: var(--color-text-muted); }
+.ho-so__xem-truoc img { width: 100%; height: 100%; object-fit: cover; }
+.ho-so__tai-len--tron .ho-so__xem-truoc { width: 6rem; height: 6rem; border-radius: 50%; }   /* ảnh đại diện hình tròn */
+.ho-so__tai-len-chu { display: grid; gap: var(--space-1); min-width: 0; }
+.ho-so__tai-len-chu small { color: var(--color-text-muted); font-size: var(--text-xs); }
+.ho-so__ten-tep { font-style: normal; font-size: var(--text-sm); overflow-wrap: anywhere; }
+
+/* ---------- Tiêu đề trang (dùng chung cho trang đăng ký, trang hồ sơ) ---------- */
+.ho-so__trang-dau { text-align: center; margin-bottom: var(--space-6); }
+.ho-so__trang-dau h1 { margin: 0 0 var(--space-2); font-size: clamp(1.75rem, 5vw, 2.25rem); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; text-wrap: balance; }
+.ho-so__trang-dau p { margin: 0 auto; max-width: 34rem; font-size: var(--text-sm); color: var(--color-text-muted); }
+
+/* Tiêu đề từng khối cùng giọng với menu của FRAMIE (chữ hoa, giãn chữ) */
+.ho-so__khoi-dau h2 { font-size: var(--text-base); text-transform: uppercase; letter-spacing: .06em; }
