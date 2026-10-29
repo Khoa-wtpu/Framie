@@ -12,16 +12,25 @@
 # Cập nhật hồ sơ (K3): NhiepAnhGiaForm(..., instance=nag, user=nag.MaTaiKhoan).
 # =====================================================================
 from django import forms
+from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import Max, Q
 
 from core.constants import VaiTro
+from notifications.services import gui_thong_bao_nhieu_nguoi
 from profiles.models import (DuyetHoSo, KhuVuc, LoaiHinhChup, NhiepAnhGia,
                              NhiepAnhGia_KhuVuc, NhiepAnhGia_LoaiHinhChup,
                              NhiepAnhGia_PhongCach, PhongCach)
 
 TOI_DA_ANH = 5 * 1024 * 1024   # ảnh tải lên tối đa 5MB (wireframe: JPG/PNG ≤ 5MB)
+
+# Danh sách ngân hàng cho ô "Chọn ngân hàng" (wireframe Module 1). Chỉ là chữ lưu vào cột NganHang,
+# không phải bảng riêng. Muốn thêm ngân hàng thì thêm tên vào đây.
+NGAN_HANG = [
+    'Vietcombank', 'VietinBank', 'BIDV', 'Agribank', 'Techcombank', 'MB Bank', 'ACB',
+    'VPBank', 'Sacombank', 'TPBank', 'VIB', 'HDBank', 'SHB', 'OCB', 'MSB', 'SeABank',
+]
 
 
 def _chon_nhieu(model, nhan):
@@ -35,17 +44,49 @@ def _chon_nhieu(model, nhan):
 class NhiepAnhGiaForm(forms.ModelForm):
     loai_hinh = _chon_nhieu(LoaiHinhChup, 'Loại hình chụp')
     phong_cach = _chon_nhieu(PhongCach, 'Phong cách')
-    khu_vuc = _chon_nhieu(KhuVuc, 'Khu vực')
+    khu_vuc = _chon_nhieu(KhuVuc, 'Khu vực hoạt động')
+    # Ô chọn ngân hàng (thay cho ô gõ chữ) theo wireframe.
+    NganHang = forms.ChoiceField(
+        label='Tên ngân hàng',
+        choices=[('', 'Chọn ngân hàng')] + [(t, t) for t in NGAN_HANG],
+        error_messages={'required': 'Vui lòng chọn ngân hàng.'})
 
     class Meta:
         model = NhiepAnhGia
         fields = ['AnhDaiDien', 'GioiThieu', 'NganHang', 'SoTaiKhoan', 'ChuTaiKhoan', 'AnhMaQR']
-        widgets = {'GioiThieu': forms.Textarea(attrs={'rows': 5})}
+        labels = {
+            'AnhDaiDien': 'Ảnh đại diện', 'GioiThieu': 'Giới thiệu bản thân',
+            'SoTaiKhoan': 'Số tài khoản', 'ChuTaiKhoan': 'Tên chủ tài khoản', 'AnhMaQR': 'Ảnh mã QR',
+        }
+        help_texts = {
+            'AnhDaiDien': 'JPG, PNG · tối đa 5 MB',
+            'AnhMaQR': 'Ảnh mã QR để khách hàng quét khi chuyển khoản · JPG, PNG · tối đa 5 MB',
+        }
+        widgets = {
+            # FileInput (không phải ClearableFileInput): hai ảnh này bắt buộc nên không cần ô "Xóa".
+            'AnhDaiDien': forms.FileInput(attrs={'accept': 'image/png,image/jpeg'}),
+            'AnhMaQR': forms.FileInput(attrs={'accept': 'image/png,image/jpeg'}),
+            'GioiThieu': forms.Textarea(attrs={
+                'rows': 5, 'placeholder': 'Giới thiệu ngắn về bản thân và phong cách chụp'}),
+            'SoTaiKhoan': forms.TextInput(attrs={
+                'inputmode': 'numeric', 'maxlength': 20, 'placeholder': 'Nhập số tài khoản'}),
+            'ChuTaiKhoan': forms.TextInput(attrs={'placeholder': 'Nhập tên chủ tài khoản'}),
+        }
+        error_messages = {
+            'GioiThieu': {'required': 'Vui lòng nhập giới thiệu bản thân.'},
+            'SoTaiKhoan': {'required': 'Vui lòng nhập số tài khoản.'},
+            'ChuTaiKhoan': {'required': 'Vui lòng nhập tên chủ tài khoản.'},
+            'AnhDaiDien': {'required': 'Vui lòng tải ảnh đại diện.'},
+            'AnhMaQR': {'required': 'Vui lòng tải ảnh mã QR.'},
+        }
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         # user: tài khoản sở hữu hồ sơ. Khi sửa hồ sơ có sẵn thì lấy từ chính hồ sơ.
         self.user = user or (self.instance.MaTaiKhoan if self.instance.pk else None)
+        # Hồ sơ cũ có thể ghi ngân hàng ngoài danh sách (ví dụ dữ liệu nhập tay): vẫn cho giữ nguyên.
+        if self.instance.pk and self.instance.NganHang and self.instance.NganHang not in NGAN_HANG:
+            self.fields['NganHang'].choices += [(self.instance.NganHang, self.instance.NganHang)]
         # Sửa hồ sơ: điền sẵn 3 ô chọn nhiều theo dữ liệu hiện có.
         if self.instance.pk and not self.is_bound:
             self.initial['loai_hinh'] = list(self.instance.loai_hinh_chup.values_list('pk', flat=True))
@@ -105,3 +146,18 @@ class NhiepAnhGiaForm(forms.ModelForm):
         lan = (DuyetHoSo.objects.filter(MaNhiepAnhGia=nag)
                .aggregate(m=Max('LanNop'))['m'] or 0) + 1
         DuyetHoSo.objects.create(MaNhiepAnhGia=nag, LanNop=lan)
+        self._bao_quan_tri_vien(nag, lan)
+
+    def _bao_quan_tri_vien(self, nag, lan):
+        # K3: có lượt duyệt mới thì báo cho mọi Quản trị viên (nhóm Quản trị viên hoặc superuser).
+        # gui_thong_bao_nhieu_nguoi không ném lỗi: thông báo hỏng không làm hỏng việc lưu hồ sơ.
+        nguoi_nhan = (get_user_model().objects.filter(is_active=True)
+                      .filter(Q(groups__name=VaiTro.QUAN_TRI_VIEN) | Q(is_superuser=True)).distinct())
+        ten = nag.MaTaiKhoan.get_full_name() or nag.MaTaiKhoan.email
+        if lan == 1:
+            tieu_de = 'Có hồ sơ nhiếp ảnh gia mới chờ duyệt'
+            noi_dung = f'{ten} vừa gửi hồ sơ nhiếp ảnh gia. Vui lòng xem xét và phê duyệt.'
+        else:
+            tieu_de = 'Hồ sơ nhiếp ảnh gia vừa được cập nhật'
+            noi_dung = f'{ten} vừa cập nhật hồ sơ (lần nộp {lan}). Hồ sơ đang chờ bạn duyệt lại.'
+        gui_thong_bao_nhieu_nguoi(nguoi_nhan, tieu_de, noi_dung)

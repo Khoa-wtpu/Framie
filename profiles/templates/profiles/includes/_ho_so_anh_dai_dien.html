@@ -1,0 +1,6 @@
+{# Phần 1 của form hồ sơ: ảnh đại diện (wireframe đặt trên cùng, trước Họ tên/SĐT/Email/Mật khẩu). #}
+{# Dùng trong <form method="post" enctype="multipart/form-data">: #}
+{#   {% include "profiles/includes/_ho_so_anh_dai_dien.html" %}   (biến form = NhiepAnhGiaForm) #}
+{% load static %}
+<link rel="stylesheet" href="{% static 'profiles/css/ho_so.css' %}">
+{% include "includes/form_field.html" with field=form.AnhDaiDien %}

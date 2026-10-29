@@ -1,0 +1,25 @@
+/* profiles/static/profiles/css/ho_so.css - giao diện phần hồ sơ nhiếp ảnh gia (K3, Khoa).
+   Chỉ dùng biến màu/khoảng cách trong tokens.css, không tự đặt màu riêng. */
+.ho-so__luoi { display: grid; gap: 0 var(--space-5); grid-template-columns: 1fr 1fr; }
+.ho-so__luoi > * { min-width: 0; }
+@media (max-width: 640px) { .ho-so__luoi { grid-template-columns: 1fr; } }
+
+.ho-so__tieu-de { margin: var(--space-6) 0 var(--space-4); font-size: var(--text-lg); }
+
+/* Nhóm hộp tích: loại hình chụp, phong cách, khu vực */
+fieldset.field { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
+fieldset.field > legend { padding: 0; margin-bottom: var(--space-1); }
+.ho-so__chon { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.ho-so__muc {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-3); background: var(--color-white);
+  border: 1px solid var(--color-border); border-radius: var(--radius-pill);
+  font-size: var(--text-sm); cursor: pointer;
+}
+.ho-so__muc:hover { border-color: var(--color-black); }
+.ho-so__muc:has(input:checked) { background: var(--color-black); color: var(--color-white); border-color: var(--color-black); }
+.ho-so__muc:has(input:focus-visible) { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.ho-so__muc input { accent-color: var(--color-gray); }
+
+/* Ô tải ảnh */
+input[type="file"].input { padding: var(--space-2) var(--space-3); cursor: pointer; }

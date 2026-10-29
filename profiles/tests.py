@@ -8,13 +8,15 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
+from django.urls import reverse
 from django.utils import timezone
 from PIL import Image
 
 from bookings.models import Booking
 from core.constants import (KetQuaDuyetHoSo, LoaiHauKy, TrangThaiBooking,
                             TrangThaiHoSo, VaiTro)
-from profiles.forms import NhiepAnhGiaForm
+from notifications.models import ThongBao
+from profiles.forms import NGAN_HANG, NhiepAnhGiaForm
 from profiles.models import (DuyetHoSo, GoiDichVu, KhuVuc, LoaiHinhChup,
                              NhiepAnhGia, PhongCach)
 from profiles.services import nhiep_anh_gia_noi_bat
@@ -190,3 +192,103 @@ class NoiBatTestCase(TestCase):
         self.assertEqual(mot['loai_hinh'], 'Cưới')
         self.assertEqual(mot['so_khung_gio_trong'], 1)
         self.assertEqual(mot['anh_portfolio'], nag.AnhDaiDien)   # chưa có project -> dùng ảnh đại diện
+
+
+# =====================================================================
+# K3 - Tạo hồ sơ: thông báo cho Quản trị viên, ô chọn ngân hàng, trang thử
+# =====================================================================
+@override_settings(MEDIA_ROOT=THU_MUC_ANH)
+class TaoHoSoK3TestCase(TestCase):
+    def setUp(self):
+        self.user = tao_user('nag1', VaiTro.NHIEP_ANH_GIA)
+        self.qtv = tao_user('qtv', VaiTro.QUAN_TRI_VIEN, so=3)
+        self.loai = LoaiHinhChup.objects.create(TenLoaiHinh='Cưới')
+        self.cach = PhongCach.objects.create(TenPhongCach='Tự nhiên')
+        self.vuc = KhuVuc.objects.create(TenKhuVuc='TP.HCM')
+
+    def du_lieu(self, **doi):
+        data = {'GioiThieu': 'Xin chào', 'NganHang': NGAN_HANG[0], 'SoTaiKhoan': '0123456789',
+                'ChuTaiKhoan': 'NGUYEN VAN A', 'loai_hinh': [self.loai.pk],
+                'phong_cach': [self.cach.pk], 'khu_vuc': [self.vuc.pk]}
+        data.update(doi)
+        return data
+
+    def tep(self):
+        return {'AnhDaiDien': tao_anh('avt.png'), 'AnhMaQR': tao_anh('qr.png')}
+
+    def test_gui_ho_so_bao_quan_tri_vien(self):
+        form = NhiepAnhGiaForm(self.du_lieu(), self.tep(), user=self.user)
+        self.assertTrue(form.is_valid(), form.errors)
+        form.save()
+        tb = ThongBao.objects.filter(MaNguoiNhan=self.qtv)
+        self.assertEqual(tb.count(), 1)
+        self.assertIn('mới', tb.first().TieuDe)
+        # Nhiếp ảnh gia không tự nhận thông báo của chính mình
+        self.assertFalse(ThongBao.objects.filter(MaNguoiNhan=self.user).exists())
+
+    def test_cap_nhat_ho_so_bao_quan_tri_vien_lan_hai(self):
+        nag = NhiepAnhGiaForm(self.du_lieu(), self.tep(), user=self.user)
+        self.assertTrue(nag.is_valid(), nag.errors)
+        nag = nag.save()
+        luot = DuyetHoSo.objects.get(MaNhiepAnhGia=nag)
+        luot.MaQuanTriVien, luot.KetQua, luot.ThoiDiemDuyet = self.qtv, KetQuaDuyetHoSo.DA_DUYET, timezone.now()
+        luot.save()
+        form = NhiepAnhGiaForm(self.du_lieu(GioiThieu='Giới thiệu mới'), None, instance=nag)
+        self.assertTrue(form.is_valid(), form.errors)
+        form.save()
+        self.assertEqual(ThongBao.objects.filter(MaNguoiNhan=self.qtv).count(), 2)
+        self.assertTrue(ThongBao.objects.filter(MaNguoiNhan=self.qtv, TieuDe__icontains='cập nhật').exists())
+
+    def test_ngan_hang_ngoai_danh_sach_bi_tu_choi(self):
+        form = NhiepAnhGiaForm(self.du_lieu(NganHang='Ngân hàng không có'), self.tep(), user=self.user)
+        self.assertFalse(form.is_valid())
+        self.assertIn('NganHang', form.errors)
+
+    def test_thieu_ngan_hang(self):
+        form = NhiepAnhGiaForm(self.du_lieu(NganHang=''), self.tep(), user=self.user)
+        self.assertFalse(form.is_valid())
+        self.assertIn('Vui lòng chọn ngân hàng.', form.errors['NganHang'])
+
+    def test_ho_so_cu_ngan_hang_ngoai_danh_sach_van_sua_duoc(self):
+        form = NhiepAnhGiaForm(self.du_lieu(), self.tep(), user=self.user)
+        self.assertTrue(form.is_valid(), form.errors)
+        nag = form.save()
+        NhiepAnhGia.objects.filter(pk=nag.pk).update(NganHang='Ngân hàng nhập tay')
+        nag.refresh_from_db()
+        form = NhiepAnhGiaForm(self.du_lieu(NganHang='Ngân hàng nhập tay'), None, instance=nag)
+        self.assertTrue(form.is_valid(), form.errors)
+
+    # ---- trang thử /thu-quyen/tao-ho-so/ (cần config/urls.py có include('profiles.urls')) ----
+    def test_trang_thu_chua_dang_nhap_ve_dang_nhap(self):
+        res = self.client.get(reverse('tao_ho_so_thu'))
+        self.assertEqual(res.status_code, 302)
+        self.assertIn('/dang-nhap/', res['Location'])
+
+    def test_trang_thu_khach_hang_bi_403(self):
+        khach = tao_user('khach1', VaiTro.KHACH_HANG, so=2)
+        self.client.force_login(khach)
+        self.assertEqual(self.client.get(reverse('tao_ho_so_thu')).status_code, 403)
+
+    def test_trang_thu_hien_form_dung_wireframe(self):
+        self.client.force_login(self.user)
+        res = self.client.get(reverse('tao_ho_so_thu'))
+        self.assertEqual(res.status_code, 200)
+        for chu in ('Ảnh đại diện', 'Giới thiệu bản thân', 'Loại hình chụp', 'Phong cách',
+                    'Khu vực hoạt động', 'Thông tin nhận thanh toán', 'Chọn ngân hàng',
+                    'Tên chủ tài khoản', 'Ảnh mã QR', 'Gửi hồ sơ'):
+            self.assertContains(res, chu)
+
+    def test_trang_thu_gui_hop_le(self):
+        self.client.force_login(self.user)
+        res = self.client.post(reverse('tao_ho_so_thu'), {**self.du_lieu(), **self.tep()})
+        self.assertEqual(res.status_code, 302)
+        self.assertTrue(NhiepAnhGia.objects.filter(MaTaiKhoan=self.user).exists())
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.trang_thai_ho_so, TrangThaiHoSo.CHO_DUYET)
+
+    def test_trang_thu_thieu_gioi_thieu_bao_loi(self):
+        self.client.force_login(self.user)
+        res = self.client.post(reverse('tao_ho_so_thu'), {**self.du_lieu(GioiThieu=''), **self.tep()})
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'Vui lòng nhập giới thiệu bản thân.')
+        self.assertFalse(NhiepAnhGia.objects.filter(MaTaiKhoan=self.user).exists())

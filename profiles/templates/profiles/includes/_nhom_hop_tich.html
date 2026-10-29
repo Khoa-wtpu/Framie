@@ -1,0 +1,10 @@
+{# Nhóm hộp tích (chọn nhiều). Dùng: {% include "profiles/includes/_nhom_hop_tich.html" with field=form.loai_hinh %} #}
+<fieldset class="field{% if field.errors %} has-error{% endif %}">
+  <legend class="field__label">{{ field.label }}<span class="field__req" aria-hidden="true"> *</span></legend>
+  <div class="ho-so__chon">
+    {% for choice in field %}
+      <label class="ho-so__muc">{{ choice.tag }}<span>{{ choice.choice_label }}</span></label>
+    {% endfor %}
+  </div>
+  {% for error in field.errors %}<p class="field__error">{{ error }}</p>{% endfor %}
+</fieldset>

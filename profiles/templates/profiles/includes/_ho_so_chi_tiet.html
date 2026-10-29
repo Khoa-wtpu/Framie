@@ -1,0 +1,22 @@
+{# Phần 2 của form hồ sơ: giới thiệu, loại hình/phong cách/khu vực, thông tin nhận thanh toán, ảnh QR. #}
+{# Đặt SAU các ô tài khoản (Họ tên, SĐT, Email, Mật khẩu) của trang đăng ký: #}
+{#   {% include "profiles/includes/_ho_so_chi_tiet.html" %}   (biến form = NhiepAnhGiaForm) #}
+{% load static %}
+<link rel="stylesheet" href="{% static 'profiles/css/ho_so.css' %}">
+{% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}
+
+{% include "includes/form_field.html" with field=form.GioiThieu %}
+
+<div class="ho-so__luoi">
+  {% include "profiles/includes/_nhom_hop_tich.html" with field=form.loai_hinh %}
+  {% include "profiles/includes/_nhom_hop_tich.html" with field=form.phong_cach %}
+</div>
+{% include "profiles/includes/_nhom_hop_tich.html" with field=form.khu_vuc %}
+
+<h2 class="ho-so__tieu-de">Thông tin nhận thanh toán</h2>
+<div class="ho-so__luoi">
+  {% include "includes/form_field.html" with field=form.NganHang %}
+  {% include "includes/form_field.html" with field=form.SoTaiKhoan %}
+</div>
+{% include "includes/form_field.html" with field=form.ChuTaiKhoan %}
+{% include "includes/form_field.html" with field=form.AnhMaQR %}
