@@ -9,14 +9,18 @@
 #
 # Form CHỈ lo phần hồ sơ chuyên môn (bảng NHIEPANHGIA). Họ tên, email, số điện thoại,
 # mật khẩu thuộc bảng User nên do form đăng ký tài khoản của Phanh xử lý.
-# Cập nhật hồ sơ (K3): NhiepAnhGiaForm(..., instance=nag, user=nag.MaTaiKhoan).
+# Cập nhật hồ sơ (K4): dùng CapNhatHoSoForm ở cuối file (thêm Họ tên, SĐT, Email; không có mật khẩu).
 # =====================================================================
+import re
+import unicodedata
+
 from django import forms
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import Max, Q
 
+from accounts.services import tach_ho_ten
 from core.constants import VaiTro
 from notifications.services import gui_thong_bao_nhieu_nguoi
 from profiles.models import (DuyetHoSo, KhuVuc, LoaiHinhChup, NhiepAnhGia,
@@ -161,3 +165,111 @@ class NhiepAnhGiaForm(forms.ModelForm):
             tieu_de = 'Hồ sơ nhiếp ảnh gia vừa được cập nhật'
             noi_dung = f'{ten} vừa cập nhật hồ sơ (lần nộp {lan}). Hồ sơ đang chờ bạn duyệt lại.'
         gui_thong_bao_nhieu_nguoi(nguoi_nhan, tieu_de, noi_dung)
+
+
+# =====================================================================
+# K4 - Cập nhật hồ sơ cá nhân (UC1.2)
+# =====================================================================
+def ho_so_dang_cho_duyet(nag):
+    """True nếu hồ sơ đang có lượt duyệt CHƯA có kết quả (Quản trị viên chưa xử lý).
+
+    Lưu ý: hồ sơ bị "Yêu cầu chỉnh sửa" vẫn hiện trạng thái 'Chờ duyệt' ở User, nhưng lượt đó
+    ĐÃ có kết quả nên Nhiếp ảnh gia được sửa và nộp lại. Vì vậy phải xem lượt duyệt mới nhất,
+    không xem User.trang_thai_ho_so."""
+    moi_nhat = DuyetHoSo.objects.filter(MaNhiepAnhGia=nag).order_by('-LanNop').first()
+    return moi_nhat is not None and moi_nhat.KetQua is None
+
+
+class CapNhatHoSoForm(NhiepAnhGiaForm):
+    """Form sửa hồ sơ có sẵn: dùng chung phần hồ sơ của K3, thêm 3 ô tài khoản theo wireframe."""
+    ho_ten = forms.CharField(
+        label='Họ tên / Tên hiển thị', max_length=100,
+        widget=forms.TextInput(attrs={'autocomplete': 'name'}),
+        error_messages={'required': 'Vui lòng nhập họ và tên.'})
+    so_dien_thoai = forms.CharField(
+        label='Số điện thoại',
+        widget=forms.TextInput(attrs={'type': 'tel', 'inputmode': 'numeric',
+                                      'autocomplete': 'tel', 'maxlength': '10'}),
+        help_text='10 chữ số, bắt đầu bằng 0.',
+        error_messages={'required': 'Vui lòng nhập số điện thoại.'})
+    email = forms.EmailField(
+        label='Email', max_length=100,
+        widget=forms.EmailInput(attrs={'autocomplete': 'email'}),
+        help_text='Email này cũng là tên đăng nhập của bạn.',
+        error_messages={'required': 'Vui lòng nhập email.', 'invalid': 'Email không đúng định dạng.'})
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.user is None or not self.instance.pk:
+            raise ValueError('CapNhatHoSoForm chỉ dùng để sửa hồ sơ đã có (truyền instance=...).')
+        if not self.is_bound:
+            self.initial['ho_ten'] = self.user.get_full_name()
+            self.initial['so_dien_thoai'] = self.user.so_dien_thoai
+            self.initial['email'] = self.user.email
+        # Ghi nhớ tên file ảnh hiện tại (is_valid() sẽ gán ảnh mới vào instance nên phải nhớ trước).
+        self._anh_cu = {ten: getattr(self.instance, ten).name for ten in ('AnhDaiDien', 'AnhMaQR')}
+
+    def clean_ho_ten(self):
+        ho_ten = unicodedata.normalize('NFC', self.cleaned_data['ho_ten'])
+        ho_ten = ' '.join(ho_ten.split())
+        if not re.fullmatch(r'[^\W\d_]+(?: [^\W\d_]+)*', ho_ten):    # cùng luật với form đăng ký (P4)
+            raise forms.ValidationError('Họ và tên chỉ gồm chữ cái và khoảng trắng.')
+        return ho_ten
+
+    def clean_so_dien_thoai(self):
+        so = self.cleaned_data['so_dien_thoai'].strip()
+        if not re.fullmatch(r'0[0-9]{9}', so):
+            raise forms.ValidationError('Số điện thoại gồm 10 chữ số và bắt đầu bằng 0.')
+        if get_user_model().objects.filter(so_dien_thoai=so).exclude(pk=self.user.pk).exists():
+            raise forms.ValidationError('Số điện thoại này đã được đăng ký.')
+        return so
+
+    def clean_email(self):
+        email = self.cleaned_data['email'].strip().lower()
+        trung = (get_user_model().objects.filter(Q(email__iexact=email) | Q(username__iexact=email))
+                 .exclude(pk=self.user.pk))
+        if trung.exists():
+            raise forms.ValidationError('Email này đã được đăng ký.')
+        return email
+
+    def clean(self):
+        data = super().clean()
+        # Đang chờ Quản trị viên duyệt thì chỉ được theo dõi, chưa được sửa (wireframe SC "Chờ duyệt").
+        if ho_so_dang_cho_duyet(self.instance):
+            raise forms.ValidationError(
+                'Hồ sơ đang chờ Quản trị viên duyệt, chưa thể cập nhật. '
+                'Bạn có thể cập nhật sau khi có kết quả.')
+        return data
+
+    def save(self, commit=True):
+        with transaction.atomic():
+            # Lưu tài khoản TRƯỚC: bước nộp hồ sơ bên dưới đồng bộ trạng thái vào cùng User này.
+            user = self.user
+            ten, ho_dem = tach_ho_ten(self.cleaned_data['ho_ten'])
+            email = self.cleaned_data['email']
+            if user.username.lower() == user.email.lower():    # username đang bằng email (P4) thì giữ khớp
+                user.username = email
+            user.first_name, user.last_name = ten, ho_dem
+            user.email = email
+            user.so_dien_thoai = self.cleaned_data['so_dien_thoai']
+            user.save(update_fields=['username', 'first_name', 'last_name', 'email', 'so_dien_thoai'])
+            nag = super().save(commit)       # lưu hồ sơ + 3 danh mục + lượt duyệt mới + báo Quản trị viên
+        self._don_anh_cu(nag)
+        return nag
+
+    def _don_anh_cu(self, nag):
+        # Thay ảnh thì xóa file cũ khỏi ổ đĩa (nếu không còn hồ sơ nào dùng chung file đó).
+        # Chạy sau khi giao dịch xong (on_commit): lưu lỗi thì file cũ vẫn còn nguyên.
+        for ten, ten_cu in self._anh_cu.items():
+            if not ten_cu or getattr(nag, ten).name == ten_cu:
+                continue
+            if NhiepAnhGia.objects.filter(Q(AnhDaiDien=ten_cu) | Q(AnhMaQR=ten_cu)).exists():
+                continue
+            kho = nag._meta.get_field(ten).storage
+
+            def xoa(kho=kho, ten_cu=ten_cu):
+                try:
+                    kho.delete(ten_cu)
+                except OSError:
+                    pass                     # không xóa được file cũ thì bỏ qua, không làm hỏng việc lưu
+            transaction.on_commit(xoa)
