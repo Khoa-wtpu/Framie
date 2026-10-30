@@ -1,0 +1,44 @@
+/* search/static/search/css/tim_kiem.css - K8: trang Tìm kiếm & lọc nhiếp ảnh gia. Chỉ dùng token trong tokens.css. */
+.tim { padding-block: var(--space-6); }
+.tim__dau { text-align: center; margin-bottom: var(--space-5); }
+.tim__dau h1 { margin: 0 0 var(--space-2); font-size: clamp(1.75rem, 5vw, 2.25rem); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; text-wrap: balance; }
+.tim__dau p { margin: 0; color: var(--color-text-muted); }
+.tim__an { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }   /* chỉ dành cho trình đọc màn hình */
+
+/* ---- hàng tìm kiếm + nút Bộ lọc ---- */
+.tim__form { display: grid; gap: var(--space-4); margin-bottom: var(--space-6); }
+.tim__hang { display: flex; gap: var(--space-3); }
+.tim__o-tim { flex: 1; min-width: 0; }
+.tim__loc > summary { list-style: none; cursor: pointer; }
+.tim__loc > summary::-webkit-details-marker { display: none; }
+.tim__loc[open] > summary { background: var(--color-black); color: var(--color-white); }
+.tim__loc-noi-dung { display: grid; gap: var(--space-5); margin-top: var(--space-3); }
+
+/* ---- nhóm lọc: bấm để chọn, chọn được nhiều ---- */
+.tim__nhom { border: 0; padding: 0; margin: 0; min-width: 0; }
+.tim__nhom legend { padding: 0; margin-bottom: var(--space-2); font-size: var(--text-sm); font-weight: 600; }
+.tim__chon { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.tim__muc { position: relative; display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-2) var(--space-4); background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-pill); font-size: var(--text-sm); cursor: pointer; transition: border-color .15s, background .15s, color .15s; }
+.tim__muc input { position: absolute; opacity: 0; pointer-events: none; }
+.tim__muc:hover { border-color: var(--color-black); }
+.tim__muc:has(input:checked) { background: var(--color-black); border-color: var(--color-black); color: var(--color-white); }
+.tim__muc:has(input:checked)::before { content: "\2713"; font-size: var(--text-xs); }
+.tim__muc:has(input:focus-visible) { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.tim__gia-khoang { display: flex; align-items: center; gap: var(--space-3); max-width: 28rem; }
+.tim__nut { display: flex; justify-content: flex-end; gap: var(--space-3); }
+
+/* ---- thanh kết quả ---- */
+.tim__ket-qua-dau { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+.tim__dem { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+.tim__sap-xep { display: inline-flex; align-items: center; gap: var(--space-2); margin-left: auto; font-size: var(--text-sm); }
+.tim__sap-xep .input { width: auto; min-height: 2.25rem; padding-block: var(--space-1); }
+
+/* ---- lưới thẻ nhiếp ảnh gia ---- */
+.tim__luoi { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: var(--space-5); list-style: none; margin: 0 0 var(--space-6); padding: 0; }
+.tim__the { height: 100%; }
+.tim__the .card__media { aspect-ratio: 1 / 1; }
+.tim__the .card__title { font-size: var(--text-base); }
+.tim__gia { margin: 0; font-weight: 600; font-size: var(--text-sm); }
+.tim__trong { display: grid; justify-items: center; gap: var(--space-4); padding: var(--space-8) var(--space-4); text-align: center; background: var(--color-surface-alt); border-radius: var(--radius-lg); color: var(--color-text-muted); }
+.tim__trong p { margin: 0; }
+@media (max-width: 640px) { .tim__hang { flex-direction: column; } .tim__sap-xep { margin-left: 0; } }
