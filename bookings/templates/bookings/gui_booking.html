@@ -1,122 +1,340 @@
-{# UC4.2: trang điền thông tin buổi chụp và gửi yêu cầu Booking. Dùng bởi bookings/gui_booking.py #}
-{% extends "base.html" %}
-{% load ui %}
-{% block title %}Gửi yêu cầu Booking{% endblock %}
+
+{# UC4.2: Trang điền thông tin buổi chụp và gửi yêu cầu Booking.
+   File này được sử dụng bởi bookings/gui_booking.py #}
+
+{% extends "base.html" %} {# Kế thừa giao diện chung từ base.html #}
+{% load ui %} {# Nạp thư viện template tag ui để sử dụng các thành phần giao diện tùy chỉnh #}
+
+{% block title %}Gửi yêu cầu Booking{% endblock %} {# Thiết lập tiêu đề trang trên trình duyệt #}
 
 {% block extra_head %}
 <style>
-  .gui-booking__dem { font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .gui-booking__thanh { width: 100%; height: .5rem; }
+  /* Thiết lập kích thước, độ đậm và kiểu hiển thị chữ số cho bộ đếm thời gian */
+  .gui-booking__dem {
+    font-size: 1.5rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Thanh tiến trình chiếm toàn bộ chiều rộng phần tử cha và có chiều cao 0.5rem */
+  .gui-booking__thanh {
+    width: 100%;
+    height: .5rem;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<section class="container">
-  <h1>Gửi yêu cầu Booking</h1>
+<section class="container"> {# Tạo khu vực chứa toàn bộ nội dung chính của trang #}
 
-  <div class="panel">
+  <h1>Gửi yêu cầu Booking</h1> {# Tiêu đề chính của trang #}
+
+  <div class="panel"> {# Tạo khung hiển thị thông tin lịch chụp đã chọn #}
+
+    {# Hiển thị tên nhiếp ảnh gia được truyền từ View sang Template #}
     <p>Nhiếp ảnh gia: <strong>{{ ten_nag }}</strong></p>
-    <p>Khung giờ đang giữ: <strong>{{ lich.Ngay|date:"l, d/m/Y" }}, {{ lich.GioBatDau|time:"H:i" }}–{{ lich.GioKetThuc|time:"H:i" }}</strong></p>
-    <div id="dem-nguoc" role="timer" aria-label="Thời gian giữ chỗ còn lại"
-         data-con-lai="{{ con_lai_giay }}" data-url="{{ url_trang_thai }}">
-      Thời gian giữ chỗ còn lại: <span class="gui-booking__dem" id="dem-nguoc-so">--:--</span>
-      <progress class="gui-booking__thanh" id="dem-nguoc-thanh" max="{{ tong_giay }}" value="{{ con_lai_giay }}"></progress>
+
+    {# Hiển thị ngày và khung giờ chụp đã được giữ chỗ #}
+    {# date:"l, d/m/Y": hiển thị thứ, ngày/tháng/năm #}
+    {# time:"H:i": hiển thị giờ và phút theo định dạng 24 giờ #}
+    <p>
+      Khung giờ đang giữ:
+      <strong>
+        {{ lich.Ngay|date:"l, d/m/Y" }},
+        {{ lich.GioBatDau|time:"H:i" }}–{{ lich.GioKetThuc|time:"H:i" }}
+      </strong>
+    </p>
+
+    {# Khu vực hiển thị đồng hồ đếm ngược thời gian giữ chỗ #}
+    <div id="dem-nguoc"
+         role="timer"
+         aria-label="Thời gian giữ chỗ còn lại"
+         data-con-lai="{{ con_lai_giay }}"
+         data-url="{{ url_trang_thai }}">
+
+      {# Hiển thị số phút và giây còn lại, giá trị ban đầu là --:-- #}
+      Thời gian giữ chỗ còn lại:
+      <span class="gui-booking__dem" id="dem-nguoc-so">--:--</span>
+
+      {# Tạo thanh tiến trình thể hiện thời gian giữ chỗ còn lại #}
+      {# max: tổng thời gian giữ chỗ; value: số giây còn lại #}
+      <progress class="gui-booking__thanh"
+                id="dem-nguoc-thanh"
+                max="{{ tong_giay }}"
+                value="{{ con_lai_giay }}">
+      </progress>
     </div>
   </div>
 
   {# --- Hết thời gian giữ chỗ (ngoại lệ 4a, hiện khi bộ đếm về 0) --- #}
-  <div id="khoi-het-han" class="alert alert--warning" role="alert" hidden>
+
+  {# Khối thông báo hết hạn, ban đầu được ẩn bằng thuộc tính hidden #}
+  <div id="khoi-het-han"
+       class="alert alert--warning"
+       role="alert"
+       hidden>
+
     <div class="alert__body">
+
+      {# Hiển thị thông báo hết thời gian giữ chỗ được truyền từ View #}
       <strong class="alert__title">{{ TB_SLOT_HET_HAN_GIU }}</strong>
-      <span class="alert__text"><a href="{{ url_lich }}">Chọn lại khung giờ</a>.</span>
+
+      {# Cung cấp đường dẫn để người dùng quay lại chọn khung giờ khác #}
+      <span class="alert__text">
+        <a href="{{ url_lich }}">Chọn lại khung giờ</a>.
+      </span>
+
     </div>
   </div>
 
-  <form id="form-gui-booking" class="panel" method="post" novalidate>
-    {% csrf_token %}
+  {# Form nhập thông tin buổi chụp và gửi yêu cầu Booking #}
+  <form id="form-gui-booking"
+        class="panel"
+        method="post"
+        novalidate>
+
+    {% csrf_token %} {# Tạo mã CSRF để bảo vệ form khỏi các yêu cầu giả mạo #}
+
+    {# Kiểm tra xem form có lỗi chung không gắn với một trường cụ thể hay không #}
     {% if form.non_field_errors %}
+
+      {# Duyệt qua từng lỗi chung và hiển thị thông báo lỗi tương ứng #}
       {% for loi in form.non_field_errors %}
+
+        {# Gọi template alert.html để hiển thị lỗi với mức cảnh báo danger #}
         {% include "includes/alert.html" with level="danger" text=loi %}
+
       {% endfor %}
     {% endif %}
 
+    {# Hiển thị trường lựa chọn loại hình chụp ảnh #}
     {% include "includes/form_field.html" with field=form.loai_hinh %}
+
+    {# Hiển thị trường lựa chọn gói dịch vụ #}
     {% include "includes/form_field.html" with field=form.goi %}
+
+    {# Hiển thị trường lựa chọn ngày và giờ chụp #}
     {% include "includes/form_field.html" with field=form.ngay_gio_chup %}
+
+    {# Hiển thị trường nhập địa điểm chụp #}
     {% include "includes/form_field.html" with field=form.dia_diem %}
+
+    {# Hiển thị trường nhập số lượng người tham gia buổi chụp #}
     {% include "includes/form_field.html" with field=form.so_nguoi %}
+
+    {# Hiển thị trường nhập hoặc lựa chọn concept chụp ảnh #}
     {% include "includes/form_field.html" with field=form.concept %}
+
+    {# Hiển thị trường nhập các yêu cầu riêng của khách hàng #}
     {% include "includes/form_field.html" with field=form.yeu_cau_rieng %}
 
     <p style="margin-top:1rem">
-      <button id="nut-gui" class="btn btn--primary" type="submit">Gửi yêu cầu Booking</button>
-      <a class="btn btn--ghost" href="{{ url_lich }}">Chọn khung giờ khác</a>
+
+      {# Nút gửi dữ liệu form lên máy chủ bằng phương thức POST #}
+      <button id="nut-gui"
+              class="btn btn--primary"
+              type="submit">
+        Gửi yêu cầu Booking
+      </button>
+
+      {# Đường dẫn cho phép khách hàng quay lại trang lịch để chọn khung giờ khác #}
+      <a class="btn btn--ghost" href="{{ url_lich }}">
+        Chọn khung giờ khác
+      </a>
+
     </p>
   </form>
+
 </section>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 (function () {
+
   // ---- Lọc "Gói dịch vụ" theo "Loại hình chụp" ----
+
+  // Lấy phần tử HTML chứa danh sách lựa chọn loại hình chụp.
+  // id_for_label trả về ID của trường tương ứng trong form Django.
   var loaiHinh = document.getElementById('{{ form.loai_hinh.id_for_label }}');
+
+  // Lấy phần tử HTML chứa danh sách các gói dịch vụ.
   var goi = document.getElementById('{{ form.goi.id_for_label }}');
-  var tatCaGoi = Array.prototype.slice.call(goi.options).map(function (o) { return o.cloneNode(true); });
+
+  // Sao chép toàn bộ các option ban đầu của danh sách gói dịch vụ.
+  // Việc sao chép giúp giữ lại danh sách gốc để sử dụng khi lọc nhiều lần.
+  var tatCaGoi = Array.prototype.slice.call(goi.options).map(function (o) {
+    return o.cloneNode(true);
+  });
+
+  // Hàm lọc các gói dịch vụ dựa trên loại hình chụp mà khách hàng đã chọn.
   function locGoi() {
+
+    // Lưu lại giá trị gói dịch vụ mà khách hàng đang chọn.
     var chon = goi.value;
+
+    // Xóa toàn bộ các lựa chọn hiện tại trong danh sách gói dịch vụ.
     goi.innerHTML = '';
+
+    // Duyệt qua toàn bộ danh sách gói dịch vụ ban đầu.
     tatCaGoi.forEach(function (o) {
+
+      // Lấy giá trị thuộc tính data-loai-hinh của từng gói.
       var lh = o.getAttribute('data-loai-hinh');
-      if (!lh || lh === loaiHinh.value) goi.appendChild(o.cloneNode(true));   // giữ ô "-- Chọn --" và gói đúng loại hình
+
+      // Chỉ thêm những option không có thuộc tính data-loai-hinh
+      // (thường là ô "-- Chọn --") hoặc có loại hình trùng với lựa chọn hiện tại.
+      if (!lh || lh === loaiHinh.value) {
+        goi.appendChild(o.cloneNode(true));
+      }
     });
-    goi.value = chon;                                  // giữ lại lựa chọn cũ nếu vẫn hợp lệ, ngược lại về ô trống
+
+    // Khôi phục lựa chọn cũ nếu gói đó vẫn còn trong danh sách sau khi lọc.
+    goi.value = chon;
+
+    // Nếu lựa chọn cũ không còn hợp lệ thì đưa danh sách về trạng thái chưa chọn.
     if (goi.value !== chon) goi.value = '';
   }
+
+  // Gắn sự kiện change: mỗi khi khách hàng thay đổi loại hình chụp,
+  // hàm locGoi() sẽ tự động được gọi để lọc lại danh sách gói dịch vụ.
   loaiHinh.addEventListener('change', locGoi);
+
+  // Gọi lọc ngay khi trang được tải để danh sách gói phù hợp với loại hình hiện tại.
   locGoi();
 
+
   // ---- Đếm ngược 5 phút (lấy số giây còn lại từ server, giống màn hình giữ chỗ UC4.1) ----
+
+  // Lấy phần tử HTML chứa toàn bộ khu vực đếm ngược.
   var goc = document.getElementById('dem-nguoc');
+
+  // Lấy phần tử hiển thị số phút và giây còn lại.
   var so = document.getElementById('dem-nguoc-so');
+
+  // Lấy thanh tiến trình thể hiện thời gian giữ chỗ còn lại.
   var thanh = document.getElementById('dem-nguoc-thanh');
+
+  // Lấy URL kiểm tra trạng thái giữ chỗ do Django truyền sang thông qua data-url.
   var url = goc.dataset.url;
+
+  // Xác định thời điểm hết hạn dựa trên thời gian còn lại do server cung cấp.
+  // performance.now() trả về thời gian tính bằng mili giây kể từ khi trang bắt đầu hoạt động.
+  // Nhân số giây còn lại với 1000 để chuyển đổi sang mili giây.
   var hanChot = performance.now() + parseInt(goc.dataset.conLai, 10) * 1000;
+
+  // Biến kiểm soát việc gọi server, tránh gửi nhiều yêu cầu cùng lúc.
   var dangHoi = false;
 
+
+  // Hàm chuyển đổi số giây thành định dạng phút:giây (MM:SS).
   function dinhDang(s) {
+
+    // Tính số phút bằng cách lấy phần nguyên của phép chia cho 60.
+    // Tính số giây còn lại bằng phép chia lấy dư cho 60.
     var p = Math.floor(s / 60), g = s % 60;
+
+    // Nếu số phút hoặc giây nhỏ hơn 10 thì thêm số 0 phía trước.
+    // Ví dụ: 65 giây được hiển thị thành 01:05.
     return (p < 10 ? '0' : '') + p + ':' + (g < 10 ? '0' : '') + g;
   }
 
+
+  // Hàm xử lý khi thời gian giữ chỗ đã hết.
   function hetGio() {
+
+    // Dừng hoạt động của bộ đếm ngược.
     clearInterval(nhip);
+
+    // Ẩn form nhập thông tin Booking để khách hàng không tiếp tục gửi yêu cầu.
     document.getElementById('form-gui-booking').hidden = true;
+
+    // Hiển thị thông báo khung giờ giữ chỗ đã hết hạn.
     document.getElementById('khoi-het-han').hidden = false;
   }
 
+
+  // Hàm gửi yêu cầu đến server để kiểm tra trạng thái giữ chỗ.
   function hoiServer() {
+
+    // Nếu đang có một yêu cầu kiểm tra chưa hoàn tất thì không gửi thêm yêu cầu mới.
     if (dangHoi) return;
+
+    // Đánh dấu đang thực hiện yêu cầu kiểm tra server.
     dangHoi = true;
-    fetch(url, {credentials: 'same-origin', headers: {'Accept': 'application/json'}})
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        if (d.con_lai_giay > 0) { hanChot = performance.now() + d.con_lai_giay * 1000; }   // còn giờ: đồng bộ lại
-        else { hetGio(); }                                                                 // server đã nhả slot
+
+    // Gửi yêu cầu HTTP GET đến URL kiểm tra trạng thái giữ chỗ.
+    // credentials: 'same-origin' giúp gửi cookie phiên làm việc cùng domain.
+    // Accept: application/json yêu cầu server trả dữ liệu dưới dạng JSON.
+    fetch(url, {
+      credentials: 'same-origin',
+      headers: {'Accept': 'application/json'}
+    })
+
+      // Chuyển phản hồi từ server thành dữ liệu JSON để JavaScript xử lý.
+      .then(function (r) {
+        return r.json();
       })
+
+      // Xử lý dữ liệu JSON mà server trả về.
+      .then(function (d) {
+
+        // Nếu server xác nhận vẫn còn thời gian giữ chỗ.
+        if (d.con_lai_giay > 0) {
+
+          // Cập nhật lại thời điểm hết hạn dựa trên số giây còn lại từ server.
+          // Giúp đồng bộ bộ đếm trên trình duyệt với trạng thái thực tế trên server.
+          hanChot = performance.now() + d.con_lai_giay * 1000;
+
+        } else {
+
+          // Nếu server xác nhận thời gian đã hết và slot đã được nhả,
+          // gọi hàm hetGio() để ẩn form và hiển thị thông báo.
+          hetGio();
+        }
+      })
+
+      // Nếu xảy ra lỗi khi kết nối hoặc nhận dữ liệu thì bỏ qua lỗi tại đây.
       .catch(function () {})
-      .then(function () { dangHoi = false; });
+
+      // Luôn thực hiện sau khi chuỗi Promise kết thúc.
+      // Đặt lại trạng thái để cho phép gửi yêu cầu kiểm tra tiếp theo.
+      .then(function () {
+        dangHoi = false;
+      });
   }
 
+
+  // Hàm cập nhật giao diện bộ đếm ngược.
   function nhay() {
-    var con = Math.max(0, Math.ceil((hanChot - performance.now()) / 1000));
+
+    // Tính số giây còn lại bằng cách lấy thời điểm hết hạn trừ thời điểm hiện tại.
+    // Chia 1000 để chuyển mili giây thành giây.
+    // Math.ceil() làm tròn lên để hiển thị số giây còn lại.
+    // Math.max(0, ...) đảm bảo kết quả không nhỏ hơn 0.
+    var con = Math.max(
+      0,
+      Math.ceil((hanChot - performance.now()) / 1000)
+    );
+
+    // Cập nhật số phút và giây còn lại lên giao diện HTML.
     so.textContent = dinhDang(con);
+
+    // Cập nhật giá trị của thanh tiến trình theo số giây còn lại.
     thanh.value = con;
+
+    // Nếu thời gian còn lại bằng 0 thì gọi server để xác nhận trạng thái giữ chỗ.
     if (con === 0) hoiServer();
   }
 
+
+  // Gọi hàm nhay() ngay lập tức để hiển thị thời gian chính xác khi tải trang.
   nhay();
+
+  // Thiết lập bộ đếm tự động cập nhật giao diện sau mỗi 250 mili giây.
+  // Nhờ đó đồng hồ hiển thị liên tục và không phải tải lại toàn bộ trang.
   var nhip = setInterval(nhay, 250);
+
 })();
 </script>
 {% endblock %}

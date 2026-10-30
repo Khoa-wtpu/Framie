@@ -1,108 +1,167 @@
 {# UC4.1 bước 6: màn hình giữ chỗ có đếm ngược 5 phút. Dùng bởi bookings/giu_cho.py #}
+{# Kế thừa bố cục chung của website từ base.html, không cần viết lại phần khung trang. #}
 {% extends "base.html" %}
+{# Nạp các template tag tùy chỉnh trong ứng dụng, ví dụ status_badge. #}
 {% load ui %}
+
+{# Đặt tiêu đề hiển thị trên tab trình duyệt. #}
 {% block title %}Giữ chỗ khung giờ{% endblock %}
 
+{# Khối chứa CSS riêng của trang này. #}
 {% block extra_head %}
 <style>
+  /* Định dạng số đếm ngược: chữ lớn, đậm vừa và các chữ số có độ rộng ổn định. */
   .giu-cho__so { font-size: 3rem; font-weight: 600; font-variant-numeric: tabular-nums; margin: .25rem 0; }
+  /* Thanh tiến trình chiếm toàn bộ chiều rộng và có chiều cao 0.75rem. */
   .giu-cho__thanh { width: 100%; height: .75rem; }
 </style>
 {% endblock %}
 
+{# Bắt đầu phần nội dung chính của trang. #}
 {% block content %}
 <section class="container">
+  {# Tiêu đề chính của màn hình giữ chỗ. #}
   <h1>Giữ chỗ khung giờ</h1>
 
+  {# Hiển thị thông tin nhiếp ảnh gia, khung giờ khách đã chọn và trạng thái lượt giữ chỗ. #}
   <div class="panel">
+    {# ten_nag được view truyền từ Python sang template. #}
     <p>Nhiếp ảnh gia: <strong>{{ ten_nag }}</strong></p>
+    {# Hiển thị ngày theo thứ/ngày/tháng/năm và giờ bắt đầu - kết thúc theo định dạng 24 giờ. #}
     <p>Khung giờ: <strong>{{ lich.Ngay|date:"l, d/m/Y" }}, {{ lich.GioBatDau|time:"H:i" }}–{{ lich.GioKetThuc|time:"H:i" }}</strong></p>
+    {# Gọi template tag status_badge để hiển thị trạng thái dưới dạng nhãn giao diện. #}
     <p>{% status_badge giu_cho.TrangThai %}</p>
   </div>
 
-  {# --- Đang giữ: hiện đếm ngược --- #}
+  {# --- Đang giữ: chỉ hiện khối này khi biến dang_giu là True. --- #}
+  {# Nếu không còn giữ chỗ, thuộc tính hidden sẽ ẩn toàn bộ khối đếm ngược. #}
   <div id="khoi-dang-giu" class="panel"{% if not dang_giu %} hidden{% endif %}>
+    {# Hướng dẫn khách gửi yêu cầu Booking trước khi hết 5 phút. #}
     <p>Hãy gửi yêu cầu Booking trong thời gian còn lại. Hết giờ, khung giờ sẽ được trả về lịch trống.</p>
+    {# Phần tử chứa bộ đếm; role và aria-label hỗ trợ công nghệ đọc màn hình. #}
+    {# data-con-lai lưu số giây còn lại do server tính; data-url lưu URL API kiểm tra trạng thái. #}
     <div id="dem-nguoc" role="timer" aria-label="Thời gian giữ chỗ còn lại"
          data-con-lai="{{ con_lai_giay }}" data-url="{{ url_trang_thai }}">
+      {# Vị trí JavaScript cập nhật số phút:giây còn lại. #}
       <div class="giu-cho__so" id="dem-nguoc-so">--:--</div>
+      {# Thanh tiến trình có giá trị tối đa là tổng thời gian giữ và giá trị hiện tại là số giây còn lại. #}
       <progress class="giu-cho__thanh" id="dem-nguoc-thanh" max="{{ tong_giay }}" value="{{ con_lai_giay }}"></progress>
     </div>
+    {# Khu vực chứa các nút điều hướng của khách hàng. #}
     <p style="margin-top:1rem">
+      {# Chỉ hiện nút tiếp tục nếu view đã tạo được URL sang chức năng UC4.2. #}
       {% if url_gui_booking %}
+        {# Chuyển khách sang trang gửi yêu cầu Booking, kèm mã lượt giữ chỗ. #}
         <a class="btn btn--primary" href="{{ url_gui_booking }}">Tiếp tục gửi yêu cầu Booking</a>
       {% endif %}
+      {# Cho phép khách quay lại trang lịch để chọn một khung giờ khác. #}
       <a class="btn btn--ghost" href="{{ url_lich }}">Chọn khung giờ khác</a>
     </p>
   </div>
 
-  {# --- Hết hạn (ngoại lệ 5b) --- #}
+  {# --- Hết hạn (ngoại lệ 5b): khối này mặc định chỉ hiện khi da_het_han là True. --- #}
   <div id="khoi-het-han" class="alert alert--warning" role="alert"{% if not da_het_han %} hidden{% endif %}>
     <div class="alert__body">
+      {# Tiêu đề cảnh báo khi thời gian giữ chỗ đã kết thúc. #}
       <strong class="alert__title">Hết thời gian giữ chỗ</strong>
+      {# Hiển thị nội dung lỗi từ view và liên kết quay lại trang chọn lịch. #}
       <span class="alert__text">{{ TB_HET_HAN }} <a href="{{ url_lich }}">Chọn lại khung giờ</a>.</span>
     </div>
   </div>
 
-  {# --- Đã gửi Booking kịp hạn --- #}
+  {# --- Đã gửi Booking kịp hạn: chỉ hiển thị khi lượt giữ chỗ đã được hoàn tất. --- #}
   {% if da_hoan_tat %}
-  <div class="alert alert--success" role="status">
-    <div class="alert__body">
-      <strong class="alert__title">Đã gửi yêu cầu Booking</strong>
-      <span class="alert__text">Lượt giữ chỗ này đã hoàn tất.</span>
+    <div class="alert alert--success" role="status">
+      <div class="alert__body">
+        {# Thông báo xác nhận khách đã gửi yêu cầu Booking thành công. #}
+        <strong class="alert__title">Đã gửi yêu cầu Booking</strong>
+        {# Giải thích rằng lượt giữ chỗ này đã được dùng để hoàn tất việc gửi Booking. #}
+        <span class="alert__text">Lượt giữ chỗ này đã hoàn tất.</span>
+      </div>
     </div>
-  </div>
   {% endif %}
 </section>
 {% endblock %}
 
+{# Khối JavaScript riêng của trang. #}
 {% block extra_js %}
+{# Chỉ tải và chạy JavaScript đếm ngược nếu lượt giữ chỗ hiện vẫn còn hiệu lực. #}
 {% if dang_giu %}
 <script>
 (function () {
+  // Lấy phần tử bao ngoài chứa dữ liệu thời gian và URL API.
   var goc = document.getElementById('dem-nguoc');
+  // Lấy phần tử sẽ hiển thị số phút:giây.
   var so = document.getElementById('dem-nguoc-so');
+  // Lấy thanh tiến trình thể hiện số giây còn lại.
   var thanh = document.getElementById('dem-nguoc-thanh');
+  // Đọc URL API trạng thái từ thuộc tính data-url trong HTML.
   var url = goc.dataset.url;
-  // Mốc kết thúc tính theo đồng hồ trình duyệt từ số giây CÒN LẠI do server gửi (không phụ thuộc giờ máy khách).
+  // Tính mốc kết thúc dựa trên số giây còn lại server gửi, dùng performance.now()
+  // để đo thời gian trôi qua ổn định, không phụ thuộc việc người dùng chỉnh giờ máy tính.
   var hanChot = performance.now() + parseInt(goc.dataset.conLai, 10) * 1000;
+  // Cờ đánh dấu đang có một yêu cầu gọi server; tránh gửi nhiều yêu cầu cùng lúc.
   var dangHoi = false;
 
+  // Chuyển số giây thành chuỗi định dạng MM:SS để hiển thị trên màn hình.
   function dinhDang(s) {
+    // p là số phút; g là số giây còn dư sau khi chia cho 60.
     var p = Math.floor(s / 60), g = s % 60;
+    // Thêm số 0 phía trước nếu phút hoặc giây nhỏ hơn 10.
     return (p < 10 ? '0' : '') + p + ':' + (g < 10 ? '0' : '') + g;
   }
 
+  // Gọi API của server để xác nhận thời gian và trạng thái giữ chỗ thực tế.
   function hoiServer() {
+    // Nếu đang có yêu cầu chưa hoàn tất thì không gửi thêm yêu cầu khác.
     if (dangHoi) return;
+    // Đánh dấu đang gửi yêu cầu.
     dangHoi = true;
+    // Gửi GET request đến URL API; same-origin gửi kèm thông tin đăng nhập cùng website.
     fetch(url, {credentials: 'same-origin', headers: {'Accept': 'application/json'}})
+      // Chuyển phản hồi HTTP thành dữ liệu JSON.
       .then(function (r) { return r.json(); })
+      // Xử lý dữ liệu trạng thái server trả về.
       .then(function (d) {
-        if (d.con_lai_giay > 0) {                     // còn giờ: đồng bộ lại với server
+        if (d.con_lai_giay > 0) {                     // Nếu server xác nhận vẫn còn thời gian thì đồng bộ lại mốc đếm ngược.
+          // Cập nhật mốc kết thúc theo số giây mới nhất do server cung cấp.
           hanChot = performance.now() + d.con_lai_giay * 1000;
-        } else if (d.het_han) {                       // server đã nhả slot: hiện thông báo hết hạn
+        } else if (d.het_han) {                       // Nếu server xác nhận đã hết hạn thì dừng bộ đếm và hiện cảnh báo.
+          // Dừng bộ đếm cập nhật giao diện.
           clearInterval(nhip);
+          // Dừng tác vụ đồng bộ định kỳ với server.
           clearInterval(nhipDongBo);
+          // Ẩn khu vực đang giữ chỗ và đếm ngược.
           document.getElementById('khoi-dang-giu').hidden = true;
+          // Hiện khu vực thông báo hết hạn.
           document.getElementById('khoi-het-han').hidden = false;
-        } else {                                      // trạng thái khác (vd đã gửi Booking): tải lại trang
+        } else {                                      // Nếu trạng thái không còn là đang giữ (ví dụ đã gửi Booking), tải lại để cập nhật giao diện.
           window.location.reload();
         }
       })
-      .catch(function () {})                          // mất mạng: thử lại ở nhịp sau
+      // Nếu gọi API thất bại (ví dụ mất mạng), tạm bỏ qua để lần đồng bộ tiếp theo thử lại.
+      .catch(function () {})
+      // Dù thành công hay thất bại, đặt lại cờ để có thể gọi server ở lần tiếp theo.
       .then(function () { dangHoi = false; });
   }
 
+  // Cập nhật số đếm ngược và thanh tiến trình trên giao diện.
   function nhay() {
+    // Tính số giây còn lại, làm tròn lên và không cho kết quả nhỏ hơn 0.
     var con = Math.max(0, Math.ceil((hanChot - performance.now()) / 1000));
+    // Hiển thị thời gian theo định dạng MM:SS.
     so.textContent = dinhDang(con);
+    // Cập nhật giá trị thanh tiến trình theo số giây còn lại.
     thanh.value = con;
+    // Khi bộ đếm về 0, hỏi server để xác nhận đã hết hạn hay chưa.
     if (con === 0) hoiServer();
   }
 
+  // Chạy cập nhật một lần ngay khi trang được tải, không phải chờ chu kỳ đầu tiên.
   nhay();
+  // Cứ 250 mili giây cập nhật lại bộ đếm để giao diện chuyển giây mượt hơn.
   var nhip = setInterval(nhay, 250);
+  // Cứ 30 giây hỏi server một lần để đồng bộ; chỉ hỏi khi tab trình duyệt đang hiển thị.
   var nhipDongBo = setInterval(function () { if (!document.hidden) hoiServer(); }, 30000);   // đồng bộ định kỳ
 })();
 </script>
