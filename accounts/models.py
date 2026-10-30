@@ -46,6 +46,8 @@ class User(AbstractUser):
     # Các cột bắt buộc khi tạo tài khoản quản trị bằng lệnh createsuperuser
     # (ngoài username và mật khẩu), để admin cũng có email và số điện thoại.
     REQUIRED_FIELDS = ['email', 'so_dien_thoai']
+    def get_full_name(self):  # Django mặc định ghép "first_name last_name" (kiểu phương Tây)
+        return f'{self.last_name} {self.first_name}'.strip()  # ghép "họ và tên đệm" + "tên" cho đúng thứ tự tiếng Việt
 
     def clean(self):
         super().clean()
@@ -81,6 +83,8 @@ class YeuCauDatLaiMatKhau(models.Model):  # bảng YEUCAUDATLAIMATKHAU: mỗi d�
 
     class Meta:  # khai báo tên bảng và các ràng buộc cho bảng
         db_table = 'YEUCAUDATLAIMATKHAU'  # tên bảng đúng như Data Dictionary (nếu bỏ dòng này Django tự đặt accounts_yeucaudatlaimatkhau)
+        verbose_name = 'yêu cầu đặt lại mật khẩu'
+        verbose_name_plural = 'yêu cầu đặt lại mật khẩu'
         constraints = [  # danh sách ràng buộc CHECK ở mức cơ sở dữ liệu
             models.CheckConstraint(  # ràng buộc 1: mã phải hết hạn SAU lúc gửi
                 condition=models.Q(ThoiDiemHetHan__gt=models.F('ThoiDiemGui')),  # ThoiDiemHetHan > ThoiDiemGui

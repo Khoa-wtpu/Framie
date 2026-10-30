@@ -1,0 +1,38 @@
+{% extends "base.html" %}{# K4 - UC1.2 Cập nhật hồ sơ cá nhân (wireframe Module 1, màn "Cập nhật hồ sơ cá nhân") #}
+{% block title %}Cập nhật hồ sơ cá nhân{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 48rem;">
+  <header class="ho-so__trang-dau">
+    <h1>Cập nhật hồ sơ cá nhân</h1>
+    <p>Chỉnh sửa thông tin hồ sơ. Sau khi gửi lại, hồ sơ chuyển về trạng thái "Chờ duyệt" để Quản trị viên xem xét.</p>
+  </header>
+
+  {% if thong_bao_trang_thai %}
+    {% include "includes/alert.html" with level=thong_bao_trang_thai.0 title=thong_bao_trang_thai.1 text=thong_bao_trang_thai.2 %}
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {% include "profiles/includes/_ho_so_anh_dai_dien.html" %}
+
+    <section class="ho-so__khoi">
+      <header class="ho-so__khoi-dau">
+        <h2>Thông tin tài khoản</h2>
+        <p>Thông tin liên hệ của bạn. Mật khẩu đổi ở mục Tài khoản.</p>
+      </header>
+      {% include "includes/form_field.html" with field=form.ho_ten %}
+      <div class="ho-so__luoi">
+        {% include "includes/form_field.html" with field=form.so_dien_thoai %}
+        {% include "includes/form_field.html" with field=form.email %}
+      </div>
+    </section>
+
+    {% include "profiles/includes/_ho_so_chi_tiet.html" %}
+
+    <div class="ho-so__luoi">
+      <a class="btn btn--secondary btn--block" href="{{ huy_url }}">Hủy</a>
+      <button class="btn btn--primary btn--block" type="submit">Gửi lại hồ sơ</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -18,12 +18,21 @@ from django.conf import settings                  # đọc cài đặt trong set
 from django.conf.urls.static import static        # hàm nối địa chỉ web với thư mục file
 from django.contrib import admin
 from django.urls import include, path             # (1) thêm include
+admin.site.site_header = 'FRAMIE - Quản trị'
+admin.site.site_title = 'FRAMIE'
+admin.site.index_title = 'Quản trị hệ thống'
 
 urlpatterns = [
     path('admin/', admin.site.urls),              # /admin dẫn tới trang quản trị
+
     path('', include('core.urls')),               # (2) nối core/urls.py, có /ui-kit/
     path('bookings/', include('bookings.giu_cho')),
     path('bookings/', include('bookings.gui_booking')),
+
+    path('', include('core.urls')),               # nối core/urls.py, có /ui-kit/
+    path('', include('accounts.urls')),           # nối accounts/urls.py: /dang-nhap/, /dang-xuat/ (P3 của Phanh)
+    path('', include('profiles.urls')),           # nối profiles/urls.py: trang thử K3 (xóa khi gộp bản cuối)
+
 ]
 
 # Khi chạy thử (DEBUG = True): địa chỉ /media/... dẫn tới thư mục media/ trên máy,

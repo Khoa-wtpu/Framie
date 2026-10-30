@@ -1,0 +1,130 @@
+/* static/css/admin.css - CSS riêng của khu Quản trị (B7). Chỉ dùng biến màu trong tokens.css, KHÔNG gõ mã màu. */
+.admin-layout { /* khung 2 cột */
+  display: grid; /* dùng lưới */
+  gap: var(--space-5); /* khoảng cách giữa menu và nội dung */
+  grid-template-columns: 1fr; /* điện thoại: 1 cột, menu nằm trên */
+}
+.admin-sidebar { /* cột menu */
+  min-width: 0; /* cho phép co lại, tránh tràn ngang */
+}
+.admin-menu { /* hộp menu */
+  background: var(--color-surface); /* nền trắng */
+  border: 1px solid var(--color-border); /* viền xám */
+  border-radius: var(--radius-lg); /* bo góc */
+  padding: var(--space-3); /* đệm trong */
+}
+.admin-menu__title { /* chữ "Quản trị" */
+  margin: 0 0 var(--space-2); /* chỉ chừa khoảng dưới */
+  padding: 0 var(--space-3); /* thẳng hàng với chữ các mục */
+  font-size: var(--text-xs); /* chữ nhỏ */
+  color: var(--color-text-muted); /* màu chữ phụ */
+  text-transform: uppercase; /* VIẾT HOA */
+  letter-spacing: .08em; /* giãn chữ */
+}
+.admin-menu__list { /* danh sách mục */
+  display: flex; /* điện thoại: xếp ngang */
+  gap: var(--space-1); /* khoảng cách giữa các mục */
+  overflow-x: auto; /* nhiều mục thì cuộn ngang, không vỡ trang */
+}
+.admin-menu__link { /* một mục menu */
+  display: block; /* chiếm cả dòng/ô */
+  padding: var(--space-2) var(--space-3); /* đệm trong */
+  border-radius: var(--radius-pill); /* bo tròn kiểu viên thuốc, giống menu header */
+  text-decoration: none; /* bỏ gạch chân */
+  font-size: var(--text-sm); /* cỡ chữ */
+  color: var(--color-text-muted); /* chữ xám khi chưa chọn */
+  white-space: nowrap; /* không xuống dòng trong một mục */
+  transition: background .15s, color .15s; /* chuyển màu mượt khi rê chuột */
+}
+.admin-menu__link:hover { /* rê chuột */
+  background: var(--color-surface-alt); /* nền xám nhạt */
+  color: var(--color-text); /* chữ đen */
+}
+.admin-menu__link.is-active { /* mục đang mở */
+  background: var(--color-black); /* nền đen */
+  color: var(--color-white); /* chữ trắng */
+}
+.admin-content { /* cột nội dung */
+  min-width: 0; /* tránh bảng/ nội dung rộng làm tràn trang */
+}
+.admin-content__head { /* đầu trang */
+  margin-bottom: var(--space-5); /* cách nội dung bên dưới */
+}
+.admin-content__title { /* tiêu đề trang */
+  margin: 0; /* bỏ khoảng mặc định */
+  font-size: var(--text-2xl); /* cỡ chữ tiêu đề */
+}
+.admin-stats { /* lưới thẻ số liệu */
+  display: grid; /* dùng lưới */
+  gap: var(--space-4); /* khoảng cách giữa các thẻ */
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); /* tự chia cột, mỗi thẻ rộng tối thiểu 13rem */
+  margin-bottom: var(--space-5); /* cách khối bên dưới */
+}
+.admin-stat { /* một thẻ số liệu (đã có class panel) */
+  display: flex; /* xếp dọc */
+  flex-direction: column; /* theo chiều dọc */
+  gap: var(--space-2); /* khoảng cách giữa các dòng */
+  align-items: flex-start; /* canh trái */
+}
+.admin-stat__label { /* tên số liệu */
+  margin: 0; /* bỏ khoảng mặc định */
+  min-height: calc(2 * var(--text-sm) * var(--leading)); /* chừa sẵn chỗ 2 dòng để nhãn dài không làm lệch số */
+  text-wrap: balance; /* THÊM: chia đều chữ giữa các dòng, không để lẻ một chữ ở dòng dưới */
+  font-size: var(--text-sm); /* chữ nhỏ */
+  color: var(--color-text-muted); /* chữ phụ */
+}
+.admin-stat__row { /* hàng đáy thẻ: số + (nếu có) nút */
+  display: flex; /* xếp ngang */
+  align-items: flex-end; /* số và nút cùng chạm đáy */
+  justify-content: space-between; /* số bên trái, nút bên phải */
+  gap: var(--space-3); /* khoảng cách số và nút */
+  width: 100%; /* chiếm hết bề ngang thẻ */
+  margin-top: auto; /* đẩy cả hàng xuống sát đáy thẻ: 4 số luôn thẳng hàng dù nhãn 1 hay 2 dòng */
+}
+.admin-stat__value { /* con số lớn */
+  margin: 0; /* bỏ khoảng mặc định */
+  font-size: var(--text-3xl); /* chữ rất lớn */
+  font-weight: var(--fw-heading); /* chữ đậm */
+  line-height: var(--leading-tight); /* dòng sát nhau */
+}
+.admin-section__title { /* tiêu đề khối */
+  font-size: var(--text-lg); /* cỡ chữ vừa */
+}
+.admin-status-list { /* danh sách trạng thái */
+  display: grid; /* dùng lưới */
+  gap: var(--space-2); /* khoảng cách */
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); /* tự chia cột */
+  margin-bottom: var(--space-4); /* cách nút bên dưới */
+}
+.admin-status-list__item { /* một dòng trạng thái */
+  display: flex; /* nhãn bên trái, số bên phải */
+  justify-content: space-between; /* đẩy hai đầu ra xa nhau */
+  align-items: center; /* canh giữa theo chiều dọc */
+  padding: var(--space-2) var(--space-3); /* đệm trong */
+  border: 1px solid var(--color-border); /* viền xám */
+  border-radius: var(--radius-sm); /* bo góc nhỏ */
+  gap: var(--space-3); /* khoảng cách giữa nhãn và số */
+}
+.admin-status-list__count { /* số lượng Booking */
+  font-size: var(--text-lg); /* chữ to hơn một chút */
+}
+.admin-status-list__item.is-zero { /* THÊM MỚI: trạng thái chưa có Booking nào */
+  opacity: .45; /* làm mờ để mắt dồn vào trạng thái đang có việc */
+}
+@media (min-width: 960px) { /* màn hình từ 960px (giống mốc của menu header) */
+  .admin-layout { /* khung 2 cột */
+    grid-template-columns: 15rem 1fr; /* menu rộng 15rem, nội dung chiếm phần còn lại */
+    align-items: start; /* menu không bị kéo dài bằng nội dung */
+  }
+  .admin-sidebar { /* menu dính khi cuộn trang */
+    position: sticky; /* dính */
+    top: calc(var(--header-h) + var(--space-4)); /* ngay dưới header */
+  }
+  .admin-menu__list { /* menu xếp dọc */
+    flex-direction: column; /* theo chiều dọc */
+    overflow-x: visible; /* không cần cuộn ngang nữa */
+  }
+  .admin-menu__link { /* mục menu */
+    border-radius: var(--radius-sm); /* bo góc vuông hơn khi xếp dọc */
+  }
+}

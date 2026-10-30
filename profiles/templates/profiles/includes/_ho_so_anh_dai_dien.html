@@ -1,0 +1,14 @@
+{# Phần 1 của form hồ sơ: khối "Ảnh đại diện" (wireframe đặt trên cùng, trước Họ tên/SĐT/Email/Mật khẩu). #}
+{# Dùng trong <form method="post" enctype="multipart/form-data">, biến form = NhiepAnhGiaForm: #}
+{#   {% include "profiles/includes/_ho_so_anh_dai_dien.html" %} #}
+{# Trang đăng ký của Phanh đặt khối "Thông tin tài khoản" ngay SAU khối này, bọc trong <section class="ho-so__khoi"> cho đồng bộ. #}
+{% load static %}
+<link rel="stylesheet" href="{% static 'profiles/css/ho_so.css' %}">
+<script src="{% static 'profiles/js/ho_so.js' %}" defer></script>
+<section class="ho-so__khoi">
+  <header class="ho-so__khoi-dau">
+    <h2>Ảnh đại diện <span class="field__req" aria-hidden="true">*</span></h2>
+    <p>Ảnh rõ mặt giúp khách hàng tin tưởng và dễ nhận ra bạn hơn.</p>
+  </header>
+  {% include "profiles/includes/_tai_anh.html" with field=form.AnhDaiDien kieu="tron" an_nhan=1 %}
+</section>

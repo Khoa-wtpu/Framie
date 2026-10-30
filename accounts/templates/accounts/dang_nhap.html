@@ -1,0 +1,20 @@
+{% extends "base.html" %}{# dùng khung chung: header, footer, messages #}
+{% block title %}Đăng nhập{% endblock %}{# chữ trên tab trình duyệt #}
+{% block content %}{# phần nội dung riêng của trang #}
+<div class="container" style="max-width: 28rem;">{# hộp hẹp ở giữa trang, chỉ chỉnh bố cục #}
+  <div class="card">{# thẻ bao quanh form #}
+    <div class="card__body" style="align-items: stretch;">{# nội dung thẻ, kéo giãn hết chiều ngang #}
+      <h1 class="card__title">Đăng nhập</h1>{# tiêu đề trang #}
+      {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}{# lỗi "Email hoặc mật khẩu không chính xác" hiện hộp đỏ #}
+      <form method="post" novalidate>{# gửi form bằng POST, tắt kiểm tra của trình duyệt để hiện lỗi của Django #}
+        {% csrf_token %}{# mã chống giả mạo form, BẮT BUỘC có #}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}{# giữ trang cần quay lại sau khi đăng nhập #}
+        {% include "includes/form_field.html" with field=form.username %}{# ô Email #}
+        {% include "includes/form_field.html" with field=form.password %}{# ô Mật khẩu #}
+        <button class="btn btn--primary btn--block" type="submit">Đăng nhập</button>{# 1 nút chính duy nhất của màn hình #}
+      </form>
+      <p class="card__meta"><a href="#">Quên mật khẩu?</a>{# TODO P6: đổi # thành link quên mật khẩu #} · <a href="{{ urls.register }}">Tạo tài khoản</a>{# urls.register do context processor cung cấp #}</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
