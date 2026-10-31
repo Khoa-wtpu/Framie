@@ -91,3 +91,5 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
 
 .tone-swatch { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; font-size: var(--text-xs); }
 .tone-swatch i { width: 3rem; height: 1.75rem; border-radius: var(--radius-sm); }
+.container--narrow { max-width: 28rem; }  /* hộp hẹp ở giữa trang cho form đăng nhập/đăng ký/đăng xuất */
+.card__body--stretch { align-items: stretch; }  /* kéo giãn nội dung thẻ hết chiều ngang */

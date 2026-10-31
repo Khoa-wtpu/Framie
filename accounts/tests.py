@@ -1,14 +1,18 @@
-from django.contrib.auth.models import Group  # bảng nhóm quyền
-from django.http import HttpResponse  # tạo phản hồi đơn giản cho trang giả
-from django.test import TestCase, override_settings  # TestCase: mỗi test chạy trên DB tạm; override_settings: đổi cấu hình riêng cho test
-from django.urls import include, path  # khai báo đường dẫn
+from profiles.forms import NhiepAnhGiaForm  # form hồ sơ của Khoa, dùng để giả lập kết quả trong test
+from unittest.mock import patch  # patch: thay tạm một hàm bằng hàm giả để giả lập lỗi
+from django.contrib.auth.models import Group  # bảng nhóm quyền (vai trò)
+from django.contrib.messages import get_messages  # đọc các thông báo (messages) mà view đã gửi
+from django.core import mail  # mail.outbox: hộp thư giả, Django tự dùng khi chạy test nên không gửi email thật
+from django.http import HttpResponse  # nội dung trả về của 3 trang giả
+from django.test import TestCase, override_settings  # TestCase: database tạm; override_settings: đổi cấu hình trong test
+from django.urls import include, path  # khai báo bảng đường dẫn riêng cho test
 
 from accounts.models import User  # model User của FRAMIE
-from accounts.permissions import (  # các công cụ kiểm tra quyền cần thử
+from accounts.permissions import (  # công cụ phân quyền nằm ở permissions.py
     chi_khach_hang, chi_nhiep_anh_gia_da_duyet, chi_quan_tri_vien, url_trang_chu,
 )
+from accounts.services import tach_ho_ten  # hàm tách họ tên cần kiểm tra
 from core.constants import TrangThaiHoSo, VaiTro  # tên vai trò và trạng thái hồ sơ
-
 
 # ---- 3 trang GIẢ, chỉ tồn tại khi chạy test, không ảnh hưởng web thật ----
 @chi_khach_hang  # chỉ Khách hàng được vào
@@ -101,3 +105,115 @@ class DangNhapVaPhanQuyenTests(TestCase):  # nhóm test của P3
         self.assertIn('_auth_user_id', self.client.session)  # vẫn đang đăng nhập
         self.client.post('/dang-xuat/')  # bấm nút xác nhận
         self.assertNotIn('_auth_user_id', self.client.session)  # đã đăng xuất
+
+class DangKyTests(TestCase):  # nhóm test của P4 (UC7.1a)
+    DU_LIEU = {  # dữ liệu hợp lệ dùng chung cho mọi test
+        'ho_ten': 'Nguyễn Văn An',  # họ tên hợp lệ
+        'email': 'an@example.com',  # email hợp lệ
+        'so_dien_thoai': '0912345678',  # 10 số, bắt đầu bằng 0
+        'mat_khau': 'Xk9#mQ2vLp',  # đủ 8 ký tự, có hoa, thường, số, ký tự đặc biệt, không phổ biến
+    }  # hết dữ liệu mẫu
+
+    def test_dang_ky_dung_tao_user_va_gui_mot_email(self):  # luồng chính
+        res = self.client.post('/dang-ky/', self.DU_LIEU)  # gửi form đăng ký
+        self.assertEqual(res.status_code, 302)  # thành công thì chuyển sang trang đăng nhập
+        user = User.objects.get(email='an@example.com')  # tài khoản đã được tạo
+        self.assertTrue(user.groups.filter(name=VaiTro.KHACH_HANG).exists())  # thuộc nhóm Khách hàng
+        self.assertTrue(user.check_password('Xk9#mQ2vLp'))  # mật khẩu đăng nhập được
+        self.assertNotEqual(user.password, 'Xk9#mQ2vLp')  # nhưng DB không lưu mật khẩu thô (đã băm)
+        self.assertIsNone(user.trang_thai_ho_so)  # Khách hàng để trống trạng thái hồ sơ
+        self.assertEqual(len(mail.outbox), 1)  # có đúng 1 email
+        self.assertEqual(mail.outbox[0].to, ['an@example.com'])  # gửi đúng người nhận
+        self.assertNotIn('Xk9#mQ2vLp', mail.outbox[0].body)  # nội dung email không chứa mật khẩu
+
+    def test_email_trung_ke_ca_khac_hoa_thuong(self):  # email không được trùng
+        self.client.post('/dang-ky/', self.DU_LIEU)  # đăng ký lần 1
+        khac = {**self.DU_LIEU, 'email': 'AN@Example.com', 'so_dien_thoai': '0900000001'}  # cùng email nhưng viết hoa, khác số
+        res = self.client.post('/dang-ky/', khac)  # đăng ký lần 2
+        self.assertContains(res, 'Email này đã được đăng ký.')  # phải báo trùng
+        self.assertEqual(User.objects.count(), 1)  # không tạo thêm tài khoản
+
+    def test_so_dien_thoai_trung(self):  # số điện thoại không được trùng
+        self.client.post('/dang-ky/', self.DU_LIEU)  # đăng ký lần 1
+        res = self.client.post('/dang-ky/', {**self.DU_LIEU, 'email': 'binh@example.com'})  # khác email, cùng số
+        self.assertContains(res, 'Số điện thoại này đã được đăng ký.')  # phải báo trùng
+        self.assertEqual(User.objects.count(), 1)  # không tạo thêm tài khoản
+
+    def test_so_dien_thoai_sai_dinh_dang(self):  # phải đúng 10 chữ số và bắt đầu bằng 0
+        for so in ['123456789', '091234567', '09123456789', '09123abc78']:  # thiếu số 0 đầu / thiếu số / dư số / có chữ
+            with self.subTest(so=so):  # báo riêng từng giá trị nếu có giá trị lỗi
+                res = self.client.post('/dang-ky/', {**self.DU_LIEU, 'so_dien_thoai': so})  # gửi từng số
+                self.assertContains(res, 'Số điện thoại gồm 10 chữ số và bắt đầu bằng 0.')  # đều bị báo lỗi
+        self.assertEqual(User.objects.count(), 0)  # không có tài khoản nào được tạo
+
+    def test_mat_khau_sai_tung_kieu(self):  # mỗi kiểu thiếu phải bị chặn
+        ca_sai = {  # mật khẩu sai -> câu báo lỗi phải xuất hiện (None = chỉ kiểm tra bị chặn)
+            'xk9#mq2vlp': 'ít nhất một chữ hoa',  # thiếu chữ hoa
+            'XK9#MQ2VLP': 'ít nhất một chữ thường',  # thiếu chữ thường
+            'Xkd#mQrvLp': 'ít nhất một chữ số',  # thiếu số
+            'Xk9mQ2vLpa': 'ít nhất một ký tự đặc biệt',  # thiếu ký tự đặc biệt
+            'Xk9mQ2vLpẩ': 'ít nhất một ký tự đặc biệt',  # chữ có dấu KHÔNG được tính là ký tự đặc biệt
+            'Xk9#mQ2': None,  # ngắn hơn 8 ký tự (câu báo do Django sinh nên không kiểm tra chữ)
+        }  # hết danh sách
+        for mk, cau_bao in ca_sai.items():  # duyệt từng mật khẩu sai
+            with self.subTest(mat_khau=mk):  # báo riêng từng mật khẩu nếu lỗi
+                res = self.client.post('/dang-ky/', {**self.DU_LIEU, 'mat_khau': mk})  # gửi form
+                self.assertEqual(res.status_code, 200)  # ở lại trang đăng ký, không chuyển trang
+                if cau_bao:  # có câu báo cần kiểm tra
+                    self.assertContains(res, cau_bao)  # trang hiện đúng câu báo lỗi
+        self.assertEqual(User.objects.count(), 0)  # không có tài khoản nào được tạo
+
+    def test_email_loi_van_tao_tai_khoan_va_co_canh_bao(self):  # gửi email lỗi không làm hỏng đăng ký
+        with patch('accounts.services.send_mail', side_effect=OSError('SMTP lỗi')):  # giả lập send_mail luôn ném lỗi
+            with self.assertLogs('accounts.services', level='ERROR'):  # hứng log lỗi để Terminal không bị in traceback
+                res = self.client.post('/dang-ky/', self.DU_LIEU)  # gửi form đăng ký
+        self.assertEqual(res.status_code, 302)  # vẫn chuyển sang trang đăng nhập
+        self.assertTrue(User.objects.filter(email='an@example.com').exists())  # tài khoản vẫn được tạo
+        muc = [m.level_tag for m in get_messages(res.wsgi_request)]  # lấy các mức thông báo đã gửi
+        self.assertIn('success', muc)  # có thông báo đăng ký thành công
+        self.assertIn('warning', muc)  # và có cảnh báo chưa gửi được email
+
+    def test_tach_ho_ten(self):  # kiểm tra hàm tách họ tên
+        self.assertEqual(tach_ho_ten('An'), ('An', ''))  # một chữ: là tên, họ để rỗng
+        self.assertEqual(tach_ho_ten('Nguyễn Văn An'), ('An', 'Nguyễn Văn'))  # tên là chữ cuối
+        self.assertEqual(tach_ho_ten('  Nguyễn   Văn  An  '), ('An', 'Nguyễn Văn'))  # khoảng trắng thừa được dọn
+        self.assertEqual(tach_ho_ten(''), ('', ''))  # chuỗi rỗng không gây lỗi
+
+    class DangKyNhiepAnhGiaTests(TestCase):  # nhóm test của P5 (UC7.1b)
+        URL = '/dang-ky/nhiep-anh-gia/'  # đường dẫn trang đăng ký Nhiếp ảnh gia
+
+        DU_LIEU_TAI_KHOAN = {  # phần tài khoản hợp lệ, dùng chung cho các test
+            'ho_ten': 'Nguyễn Văn An',  # họ và tên
+            'email': 'an@example.com',  # email
+            'so_dien_thoai': '0912345678',  # số điện thoại
+            'mat_khau': 'Abcd@1234',  # mật khẩu đủ 4 loại ký tự
+        }  # hết dữ liệu
+
+        def test_tai_khoan_sai_khong_tao_user(self):  # phần tài khoản sai thì không được tạo gì
+            du_lieu = {**self.DU_LIEU_TAI_KHOAN, 'so_dien_thoai': '123'}  # sửa SĐT thành sai định dạng
+            res = self.client.post(self.URL, du_lieu)  # gửi form
+            self.assertEqual(res.status_code, 200)  # ở lại trang để hiện lỗi
+            self.assertFalse(User.objects.filter(email='an@example.com').exists())  # chưa có User nào
+
+        def test_ho_so_loi_thi_hoan_tac_user(self):  # hồ sơ lỗi thì tài khoản vừa tạo phải bị xóa
+            with patch.object(NhiepAnhGiaForm, 'is_valid',
+                              return_value=False):  # giả lập form hồ sơ của Khoa báo không hợp lệ
+                res = self.client.post(self.URL, self.DU_LIEU_TAI_KHOAN)  # gửi form
+            self.assertEqual(res.status_code, 200)  # ở lại trang để hiện lỗi
+            self.assertFalse(
+                User.objects.filter(email='an@example.com').exists())  # User đã được hoàn tác, không sót tài khoản
+
+        def test_dang_ky_dung_tao_user_cho_duyet(self):  # luồng chính
+            with patch.object(NhiepAnhGiaForm, 'is_valid', return_value=True), \
+                    patch.object(NhiepAnhGiaForm,
+                                 'save') as luu:  # giả lập form hồ sơ hợp lệ và chỉ kiểm tra có được gọi save
+                res = self.client.post(self.URL, self.DU_LIEU_TAI_KHOAN)  # gửi form
+            self.assertRedirects(res, '/dang-nhap/')  # thành công thì chuyển sang trang đăng nhập
+            user = User.objects.get(email='an@example.com')  # lấy tài khoản vừa tạo
+            self.assertEqual(user.trang_thai_ho_so, TrangThaiHoSo.CHO_DUYET)  # trạng thái là Chờ duyệt
+            self.assertTrue(user.groups.filter(name=VaiTro.NHIEP_ANH_GIA).exists())  # thuộc nhóm Nhiếp ảnh gia
+            luu.assert_called_once()  # form hồ sơ được lưu đúng 1 lần (Phanh không tự lưu thêm)
+
+        def test_get_full_name_dung_thu_tu_tieng_viet(self):  # câu hỏi C của Khoa
+            user = User(first_name='An', last_name='Nguyễn Văn')  # tên = An, họ và tên đệm = Nguyễn Văn
+            self.assertEqual(user.get_full_name(), 'Nguyễn Văn An')  # phải ra "Họ Tên", không phải "Tên Họ"
