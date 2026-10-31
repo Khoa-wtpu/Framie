@@ -1,0 +1,19 @@
+{% extends "base.html" %}{# K5 - UC1.3: xác nhận xóa project (wireframe: hộp thoại "Xóa project") #}
+{% load static %}
+{% block title %}Xóa project{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'profiles/css/portfolio.css' %}">{% endblock %}
+{% block content %}
+<div class="container pf pf--hep">
+  <div class="card">
+    <div class="card__body pf__xac-nhan">
+      <h1 class="card__title">Xóa project</h1>
+      <p>Bạn có chắc muốn xóa project "{{ project.TenProject }}"? Toàn bộ hình ảnh trong project sẽ bị xóa khỏi Portfolio.</p>
+      <form method="post" class="pf__nut">
+        {% csrf_token %}
+        <a class="btn btn--secondary" href="{% url 'portfolio' %}">Hủy</a>
+        <button class="btn btn--danger" type="submit">Xác nhận xóa</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

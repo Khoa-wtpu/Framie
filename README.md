@@ -29,6 +29,7 @@ Dự án nhóm môn Lập trình Web, xây bằng Django.
    python manage.py migrate
 ```
 7. Tạo tài khoản quản trị để thử (lệnh sẽ hỏi cả email và số điện thoại 10 chữ số bắt đầu bằng 0):
+Mật khẩu phải đủ 8 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt.
 ```
    python manage.py createsuperuser
 ```
