@@ -13,7 +13,7 @@
         {% include "includes/form_field.html" with field=form.password %}{# ô Mật khẩu #}
         <button class="btn btn--primary btn--block" type="submit">Đăng nhập</button>{# 1 nút chính duy nhất của màn hình #}
       </form>
-      <p class="card__meta"><a href="#">Quên mật khẩu?</a>{# TODO P6: đổi # thành link quên mật khẩu #} · <a href="{{ urls.register }}">Tạo tài khoản</a>{# urls.register do context processor cung cấp #}</p>
+      <p class="card__meta"><a href="{% url 'forgot_password' %}">Quên mật khẩu?</a>{# P6: tên URL do accounts/urls.py khai báo #} · <a href="{{ urls.register }}">Tạo tài khoản</a>{# urls.register do context processor cung cấp #}</p>
     </div>
   </div>
 </div>

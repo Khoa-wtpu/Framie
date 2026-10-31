@@ -11,6 +11,19 @@ from .models import User  # model User của FRAMIE (dùng để kiểm tra trù
 from .validators import DoPhucTapMatKhau  # luật 4 loại ký tự của mật khẩu (P4)
 
 
+def kiem_tra_mat_khau(mat_khau, user):  # P4 + P6: chạy MỌI luật mật khẩu, trả danh sách lỗi (rỗng nếu hợp lệ)
+    loi_mat_khau = []  # gom mọi lỗi vào một danh sách
+    try:  # chạy các quy tắc có sẵn của Django (độ dài 8, không quá phổ biến, không giống email/tên, không toàn số)
+        validate_password(mat_khau, user)  # các quy tắc này lấy từ AUTH_PASSWORD_VALIDATORS trong settings.py
+    except ValidationError as loi:  # có quy tắc nào vi phạm
+        loi_mat_khau.extend(loi.error_list)  # lấy từng lỗi bỏ vào danh sách
+    try:  # chạy thêm luật của FRAMIE: chữ hoa, chữ thường, số, ký tự đặc biệt (gọi thẳng, không qua settings.py)
+        DoPhucTapMatKhau().validate(mat_khau, user)  # TODO: khi Khoa thêm DoPhucTapMatKhau vào AUTH_PASSWORD_VALIDATORS thì XÓA khối try này (4 dòng), nếu không mỗi lỗi hiện 2 lần
+    except ValidationError as loi:  # thiếu loại ký tự
+        loi_mat_khau.extend(loi.error_list)  # bỏ lỗi vào cùng danh sách
+    return loi_mat_khau  # trả danh sách lỗi cho form
+
+
 class DangNhapForm(AuthenticationForm):  # kế thừa form mẫu, chỉ đổi chữ và kiểu ô nhập
     error_messages = {  # các câu báo lỗi của form
         'invalid_login': 'Email hoặc mật khẩu không chính xác',  # đúng chữ trong đặc tả, dùng cho cả sai email lẫn sai mật khẩu
@@ -88,15 +101,62 @@ class DangKyForm(forms.Form):  # P4: form đăng ký tài khoản Khách hàng (
                 email=du_lieu.get('email', ''),  # email người dùng nhập
                 first_name=du_lieu.get('ho_ten', ''),  # họ tên người dùng nhập
             )  # hết User tạm
-            loi_mat_khau = []  # gom mọi lỗi mật khẩu vào một danh sách
-            try:  # chạy các quy tắc có sẵn của Django (độ dài 8, không quá phổ biến, không giống email/tên, không toàn số)
-                validate_password(mat_khau, user_tam)  # các quy tắc này lấy từ AUTH_PASSWORD_VALIDATORS trong settings.py
-            except ValidationError as loi:  # có quy tắc nào vi phạm
-                loi_mat_khau.extend(loi.error_list)  # lấy từng lỗi bỏ vào danh sách
-            try:  # chạy thêm luật của FRAMIE: chữ hoa, chữ thường, số, ký tự đặc biệt (gọi thẳng, không qua settings.py)
-                DoPhucTapMatKhau().validate(mat_khau, user_tam)  # nếu thiếu loại ký tự nào sẽ báo lỗi
-            except ValidationError as loi:  # thiếu loại ký tự
-                loi_mat_khau.extend(loi.error_list)  # bỏ lỗi vào cùng danh sách
+            loi_mat_khau = kiem_tra_mat_khau(mat_khau, user_tam)  # chạy mọi luật mật khẩu bằng hàm dùng chung (P4 và P6)
             if loi_mat_khau:  # có ít nhất một lỗi
                 self.add_error('mat_khau', loi_mat_khau)  # gắn tất cả lỗi vào ô mật khẩu
         return du_lieu  # trả dữ liệu cho view
+
+
+class QuenMatKhauForm(forms.Form):  # P6 bước 1: nhập email đã đăng ký
+    user = None  # sẽ giữ User tìm được để view dùng tiếp, không phải tìm lần hai
+
+    email = forms.EmailField(  # ô email
+        label='Email đã đăng ký',  # nhãn hiển thị
+        max_length=100,  # khớp max_length=100 của cột email trong User
+        widget=forms.EmailInput(attrs={'autofocus': True, 'autocomplete': 'email'}),  # con trỏ tự nhảy vào ô; trình duyệt gợi ý email
+        error_messages={'required': 'Vui lòng nhập email.', 'invalid': 'Email không đúng định dạng.'},  # câu báo khi trống hoặc sai dạng
+    )  # hết ô email
+
+    def clean_email(self):  # Django tự gọi sau khi ô email qua kiểm tra cơ bản
+        email = self.cleaned_data['email'].strip().lower()  # chữ thường để so khớp không phân biệt hoa/thường
+        self.user = User.objects.filter(email__iexact=email).first()  # tìm tài khoản; None nếu chưa có
+        if self.user is None:  # email chưa đăng ký
+            raise ValidationError('Email này chưa được đăng ký.')  # báo rõ theo đặc tả P6
+        return email  # trả email đã làm sạch
+
+
+class NhapMaForm(forms.Form):  # P6 bước 2: nhập mã 6 chữ số
+    ma = forms.CharField(  # ô mã xác thực
+        label='Mã xác thực',  # nhãn hiển thị
+        widget=forms.TextInput(attrs={'autofocus': True, 'inputmode': 'numeric', 'autocomplete': 'one-time-code', 'maxlength': '6'}),  # bàn phím số; trình duyệt gợi ý mã vừa nhận; chặn gõ quá 6 ký tự
+        help_text='Mã gồm 6 chữ số được gửi tới email của bạn, có hiệu lực tối đa 10 phút.',  # dòng hướng dẫn dưới ô
+        error_messages={'required': 'Vui lòng nhập mã xác thực.'},  # câu báo khi để trống
+    )  # hết ô mã
+
+    def clean_ma(self):  # Django tự gọi sau khi ô ma qua kiểm tra cơ bản
+        ma = self.cleaned_data['ma'].strip()  # bỏ khoảng trắng hai đầu (hay bị dính khi copy từ email)
+        if not re.fullmatch(r'[0-9]{6}', ma):  # đúng 6 ký tự, mỗi ký tự là 0-9 (không dùng \d vì nhận cả chữ số của chữ viết khác)
+            raise ValidationError('Mã xác thực gồm đúng 6 chữ số.')  # báo sai định dạng, chưa tính là một lần nhập sai
+        return ma  # trả mã hợp lệ
+
+
+class DatLaiMatKhauForm(forms.Form):  # P6 bước 3: nhập mật khẩu mới
+    mat_khau_moi = forms.CharField(  # ô mật khẩu mới
+        label='Mật khẩu mới',  # nhãn hiển thị
+        strip=False,  # không tự cắt khoảng trắng đầu/cuối mật khẩu
+        max_length=128,  # chặn mật khẩu quá dài làm chậm bước băm
+        widget=forms.PasswordInput(attrs={'autofocus': True, 'autocomplete': 'new-password'}),  # ẩn ký tự; trình duyệt đề xuất mật khẩu mới
+        help_text='Từ 8 ký tự, có chữ hoa, chữ thường, chữ số và ký tự đặc biệt.',  # dòng hướng dẫn dưới ô
+        error_messages={'required': 'Vui lòng nhập mật khẩu mới.'},  # câu báo khi để trống
+    )  # hết ô mật khẩu mới
+
+    def __init__(self, *args, user, **kwargs):  # nhận thêm User đang đặt lại mật khẩu
+        super().__init__(*args, **kwargs)  # khởi tạo form như bình thường
+        self.user = user  # giữ User để so mật khẩu mới với thông tin cá nhân của họ
+
+    def clean_mat_khau_moi(self):  # Django tự gọi sau khi ô qua kiểm tra cơ bản
+        mat_khau = self.cleaned_data['mat_khau_moi']  # mật khẩu người dùng vừa nhập
+        loi_mat_khau = kiem_tra_mat_khau(mat_khau, self.user)  # chạy mọi luật mật khẩu bằng hàm dùng chung (P4 và P6)
+        if loi_mat_khau:  # có ít nhất một lỗi
+            raise ValidationError(loi_mat_khau)  # báo tất cả lỗi dưới ô mật khẩu
+        return mat_khau  # trả mật khẩu hợp lệ
