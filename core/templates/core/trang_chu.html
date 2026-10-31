@@ -1,0 +1,283 @@
+{% extends "base.html" %}{# B8: Trang chủ. Không cần đăng nhập. Các khối xen kẽ nền: tối - trắng - xám nhạt - trắng - tối. #}
+{# ▸ ===== CHÚ THÍCH TỔNG QUAN (dành cho sếp) ===== #}
+{# ▸ Đây là file GIAO DIỆN của Trang chủ (HTML + ngôn ngữ mẫu Django). Nó nhận dữ liệu từ views_trang_chu.py rồi "vẽ" ra 5 khối: #}
+{# ▸ (1) Banner + ô tìm kiếm, (2) Nhiếp ảnh gia nổi bật, (3) 5 bước đặt lịch, (4) Loại hình chụp, (5) Lời mời đăng ký. #}
+{# ▸ Cách đọc ký hiệu: {% ... %} = lệnh (nếu/lặp/nạp file); {{ ... }} = chèn giá trị vào chữ; dòng ghi chú kiểu này (mở bằng ngoặc nhọn + dấu thăng) = KHÔNG hiện ra cho khách. #}
+{# ▸ Các dòng ghi chú bắt đầu bằng "▸" là phần được thêm vào; code gốc giữ nguyên. #}
+{# ▸ Dòng 1 ở trên: "extends" nghĩa là trang này KẾ THỪA khung chung base.html (có sẵn menu đầu trang, chân trang). Ở đây chỉ điền phần ruột. #}
+{# ▸ Nạp thư viện "static" để dùng được lệnh {% static %} lấy đường dẫn tới file tĩnh (CSS, ảnh). #}
+{% load static %}
+{# ▸ Điền tiêu đề tab trình duyệt = "Trang chủ" vào chỗ trống "title" của khung base.html. #}
+{% block title %}Trang chủ{% endblock %}
+{# ▸ Gắn lớp CSS "trang-chu" lên thẻ body để CSS biết đang ở Trang chủ và áp dụng kiểu riêng (xem trang_chu.css). #}
+{% block body_class %}trang-chu{% endblock %}
+{# ▸ Chèn file CSS riêng của Trang chủ vào phần <head> (đầu trang). {% static %} đổi tên file thành đường dẫn thật. #}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'core/css/trang_chu.css' %}">{% endblock %}
+{# ▸ Mở phần NỘI DUNG CHÍNH của trang (phần giữa menu và chân trang). Mọi thứ bên dưới đến {% endblock %} cuối file nằm trong phần này. #}
+{% block content %}
+
+{# ---------- 1. Banner + tìm kiếm nhanh (nền tối) ---------- #}
+{# ▸ <section> = một khối nội dung. Các lớp class: tc-khoi (khối chung), tc-khoi--toi (nền tối), tc-banner (kiểu banner). #}
+{# ▸ aria-labelledby: giúp phần mềm đọc màn hình cho người khiếm thị biết khối này có tiêu đề là phần tử "tc-banner-tieu-de". #}
+<section class="tc-khoi tc-khoi--toi tc-banner" aria-labelledby="tc-banner-tieu-de">
+  {# ▸ Thẻ rỗng chỉ để trang trí: vẽ khung ngắm máy ảnh (4 góc) bằng CSS. aria-hidden="true" = phần mềm đọc màn hình bỏ qua. #}
+  <span class="tc-khung" aria-hidden="true"></span>
+  {# ▸ Dòng chữ trang trí giả lập thông số máy ảnh (khẩu độ f/1.8, tốc độ 1/250s, ISO 100). Chỉ hiện trên màn hình lớn. #}
+  <p class="tc-exif" aria-hidden="true">f/1.8 · 1/250s · ISO 100</p>
+  {# ▸ Hộp chứa nội dung banner. "container" là lớp chung để căn giữa và giới hạn bề rộng nội dung. #}
+  <div class="container tc-banner__noi-dung">
+    {# ▸ Nhãn nhỏ phía trên tiêu đề (chữ in hoa, mờ nhẹ). #}
+    <p class="tc-nhan">Nền tảng đặt lịch nhiếp ảnh gia</p>
+    {# ▸ TIÊU ĐỀ CHÍNH của trang (h1). id khớp với aria-labelledby ở thẻ section bên trên. #}
+    <h1 id="tc-banner-tieu-de" class="tc-banner__tieu-de">Từ tìm kiếm đến nhận ảnh, mọi trải nghiệm chụp ảnh trong một nền tảng.</h1>
+    {# ▸ Câu mô tả ngắn dưới tiêu đề. #}
+    <p class="tc-banner__mo-ta">Tìm nhiếp ảnh gia phù hợp, chọn khung giờ còn trống và gửi yêu cầu Booking chỉ trong vài phút.</p>
+
+    {# ▸ Form tìm kiếm nhanh. method="get": từ khóa được gắn lên địa chỉ trang (vd /search/?q=...). #}
+    {# ▸ action = gửi sang trang tìm kiếm ({% url 'search' %} tự đổi tên trang "search" thành địa chỉ thật). role="search" báo cho phần mềm đọc màn hình đây là ô tìm kiếm. #}
+    <form class="tc-tim" method="get" action="{% url 'search' %}" role="search">
+      {# ▸ Nhãn của ô nhập. Lớp "sr-only" = ẩn trên màn hình nhưng người dùng đọc màn hình vẫn nghe được. for="tc-tu-khoa" gắn nhãn với ô nhập bên dưới. #}
+      <label class="sr-only" for="tc-tu-khoa">Từ khóa hoặc ID Nhiếp ảnh gia</label>
+      {# ▸ Ô nhập từ khóa: type="search" (ô tìm kiếm), name="q" (tên tham số gửi đi), maxlength="100" (tối đa 100 ký tự), #}
+      {# ▸ autocomplete="off" (không gợi ý lại từ cũ của trình duyệt), placeholder = chữ mờ hướng dẫn trong ô trống. (Thẻ này viết trên 2 dòng.) #}
+      <input class="input tc-tim__o" id="tc-tu-khoa" type="search" name="q" maxlength="100" autocomplete="off"
+             placeholder="Tìm theo tên, phong cách, khu vực hoặc ID Nhiếp ảnh gia">
+      {# ▸ Nút "Tìm kiếm": type="submit" = bấm vào thì gửi form đi. "btn--soft btn--lg" = kiểu nút sáng, cỡ lớn. #}
+      <button class="btn btn--soft btn--lg" type="submit">Tìm kiếm</button>
+    {# ▸ Đóng form. #}
+    </form>
+
+    {# ▸ Chỉ hiện dòng "Gợi ý nhanh" NẾU hệ thống có ít nhất một loại hình chụp (danh sách rỗng thì ẩn cả dòng). #}
+    {% if loai_hinh_ds %}
+    {# ▸ Đoạn chứa các nút gợi ý nhanh. #}
+    <p class="tc-goi-y">
+      {# ▸ Chữ "Gợi ý nhanh:" đứng trước các nút. #}
+      <span class="tc-goi-y__nhan">Gợi ý nhanh:</span>
+      {# ▸ Vòng lặp: với MỖI loại hình (lh) tạo một nút bấm dạng "viên thuốc" (chip). Bấm vào sẽ sang trang tìm kiếm đã lọc sẵn theo mã loại hình (?loai_hinh=mã). {{ lh.ten }} là tên hiển thị, vd "Cưới". #}
+      {% for lh in loai_hinh_ds %}<a class="tc-chip" href="{% url 'search' %}?loai_hinh={{ lh.ma }}">{{ lh.ten }}</a>{% endfor %}
+    {# ▸ Đóng đoạn gợi ý. #}
+    </p>
+    {# ▸ Kết thúc điều kiện "nếu có loại hình". #}
+    {% endif %}
+  {# ▸ Đóng hộp nội dung banner. #}
+  </div>
+{# ▸ Đóng khối banner. #}
+</section>
+
+{# ---------- 2. Nhiếp ảnh gia nổi bật (nền trắng) ---------- #}
+{# ▸ Khối thứ 2, nền trắng mặc định (không có lớp --toi hay --xam). #}
+<section class="tc-khoi" aria-labelledby="tc-noi-bat-tieu-de">
+  {# ▸ Hộp căn giữa nội dung. #}
+  <div class="container">
+    {# ▸ Phần đầu khối: tiêu đề bên trái, nút "Xem tất cả" bên phải (lớp --hang = xếp thành hàng ngang). #}
+    <header class="tc-dau-khoi tc-dau-khoi--hang">
+      {# ▸ Nhóm tiêu đề + mô tả. #}
+      <div>
+        {# ▸ Tiêu đề khối (h2). #}
+        <h2 id="tc-noi-bat-tieu-de">Nhiếp ảnh gia nổi bật</h2>
+        {# ▸ Mô tả, chữ màu xám nhạt (lớp "muted"). #}
+        <p class="muted">Những nhiếp ảnh gia được khách hàng đánh giá cao nhất trên FRAMIE.</p>
+      {# ▸ Đóng nhóm. #}
+      </div>
+      {# ▸ Nút "Xem tất cả": dẫn sang trang tìm kiếm không lọc. "btn--secondary" = nút phụ (nền trắng viền đen). #}
+      <a class="btn btn--secondary" href="{% url 'search' %}">Xem tất cả</a>
+    {# ▸ Đóng phần đầu khối. #}
+    </header>
+
+    {# ▸ NẾU danh sách nổi bật có dữ liệu thì vẽ các thẻ; ngược lại nhảy xuống {% else %} hiện thông báo trống. #}
+    {% if noi_bat %}
+    {# ▸ Danh sách (ul) dạng lưới; mỗi nhiếp ảnh gia là một ô (li). #}
+    <ul class="tc-luoi tc-luoi--nag">
+      {# ▸ Vòng lặp: mỗi lượt lấy một nhiếp ảnh gia (nag) từ danh sách "noi_bat" do view chuẩn bị. #}
+      {% for nag in noi_bat %}
+      {# ▸ Mở một ô trong lưới. #}
+      <li>
+        {# ▸ Thẻ nhiếp ảnh gia. Lớp "card" = kiểu thẻ chung. NẾU nag.href có giá trị (đã có trang hồ sơ) thì thêm lớp "card--link" để cả thẻ bấm được; nếu chưa có thì không thêm. #}
+        <article class="card{% if nag.href %} card--link{% endif %} tc-nag">
+          {# ▸ Vùng ảnh phía trên thẻ. #}
+          <div class="card__media">
+            {# ▸ Chỉ hiện ảnh NẾU nhiếp ảnh gia có ảnh Portfolio: src = địa chỉ ảnh, alt = mô tả ảnh cho người khiếm thị, loading="lazy" = chỉ tải ảnh khi cuộn tới (nhanh hơn). Không có ảnh thì để trống, không lỗi. #}
+            {% if nag.anh_portfolio %}<img src="{{ nag.anh_portfolio.url }}" alt="Ảnh Portfolio của {{ nag.ten }}" loading="lazy">{% endif %}
+          {# ▸ Đóng vùng ảnh. #}
+          </div>
+          {# ▸ Phần thông tin phía dưới thẻ. #}
+          <div class="card__body tc-nag__than">
+            {# ▸ Hàng gồm ảnh đại diện tròn + tên. #}
+            <div class="tc-nag__ten-hang">
+              {# ▸ Ô ảnh đại diện hình tròn (trang trí nên aria-hidden). #}
+              <span class="tc-nag__avatar" aria-hidden="true">
+                {# ▸ Nếu có ảnh đại diện thì hiện ảnh; nếu không, hiện CHỮ CÁI ĐẦU của tên viết hoa (slice:":1" lấy ký tự đầu, upper viết hoa) — vd "Lê Minh" -> "L". #}
+                {% if nag.anh_dai_dien %}<img src="{{ nag.anh_dai_dien.url }}" alt="" loading="lazy">{% else %}{{ nag.ten|slice:":1"|upper }}{% endif %}
+              {# ▸ Đóng ô ảnh đại diện. #}
+              </span>
+              {# ▸ Tên nhiếp ảnh gia (h3). Nếu có đường dẫn hồ sơ thì tên là liên kết bấm được; nếu chưa thì chỉ là chữ thường. #}
+              <h3 class="card__title">{% if nag.href %}<a class="card__link" href="{{ nag.href }}">{{ nag.ten }}</a>{% else %}{{ nag.ten }}{% endif %}</h3>
+            {# ▸ Đóng hàng tên. #}
+            </div>
+            {# ▸ Dòng điểm đánh giá. #}
+            <p class="tc-nag__diem">
+              {# ▸ Ngôi sao ★ (trang trí), điểm trung bình in đậm (vd 4.8), kế bên là số lượt đánh giá trong ngoặc, chữ mờ. #}
+              <span aria-hidden="true">★</span> <strong>{{ nag.diem }}</strong>
+              {# ▸ Số lượt đánh giá, ví dụ "(23 đánh giá)". #}
+              <span class="muted">({{ nag.so_danh_gia }} đánh giá)</span>
+            {# ▸ Đóng dòng điểm. #}
+            </p>
+            {# ▸ Hiện loại hình chụp (vd "Cưới, Chân dung") chỉ khi có dữ liệu. #}
+            {% if nag.loai_hinh %}<p class="card__meta">{{ nag.loai_hinh }}</p>{% endif %}
+            {# ▸ Hiện khu vực hoạt động (vd "Đà Nẵng") chỉ khi có dữ liệu. #}
+            {% if nag.khu_vuc %}<p class="card__meta">{{ nag.khu_vuc }}</p>{% endif %}
+            {# ▸ Nếu số khung giờ trống KHÁC 0 (có giá trị) thì hiện nhãn XANH kèm số lượng; #}
+            {% if nag.so_khung_gio_trong %}
+              {# ▸ Nhãn xanh (badge--green): báo còn bao nhiêu khung giờ trống trong 7 ngày tới. #}
+              <span class="badge badge--green">{{ nag.so_khung_gio_trong }} khung giờ trống trong 7 ngày tới</span>
+            {# ▸ ...còn nếu bằng 0 thì hiện nhãn xám trung tính báo chưa có giờ trống. #}
+            {% else %}
+              {# ▸ Nhãn mặc định (xám). #}
+              <span class="badge">Chưa có khung giờ trống trong 7 ngày tới</span>
+            {# ▸ Kết thúc điều kiện khung giờ. #}
+            {% endif %}
+          {# ▸ Đóng phần thông tin thẻ. #}
+          </div>
+        {# ▸ Đóng thẻ nhiếp ảnh gia. #}
+        </article>
+      {# ▸ Đóng ô trong lưới. #}
+      </li>
+      {# ▸ Hết một lượt lặp, quay lại lấy nhiếp ảnh gia tiếp theo (tối đa 3 người). #}
+      {% endfor %}
+    {# ▸ Đóng danh sách lưới. #}
+    </ul>
+    {# ▸ NGƯỢC LẠI (danh sách nổi bật rỗng): hiện bảng thông báo bên dưới. #}
+    {% else %}
+    {# ▸ Khung thông báo trống ("panel" = khung viền, "tc-rong" = căn giữa, chữ xám). #}
+    <div class="panel tc-rong">
+      {# ▸ Nội dung thông báo, kèm gợi ý để khách bấm tìm kiếm. #}
+      <p>Chưa có nhiếp ảnh gia nổi bật. Bạn có thể tìm kiếm để xem tất cả nhiếp ảnh gia đang hoạt động.</p>
+    {# ▸ Đóng khung thông báo. #}
+    </div>
+    {# ▸ Kết thúc điều kiện "có dữ liệu / không có dữ liệu". #}
+    {% endif %}
+  {# ▸ Đóng hộp căn giữa. #}
+  </div>
+{# ▸ Đóng khối nhiếp ảnh gia nổi bật. #}
+</section>
+
+{# ---------- 3. Các bước đặt lịch (nền xám nhạt) ---------- #}
+{# ▸ Khối thứ 3 với nền xám nhạt (lớp tc-khoi--xam). #}
+<section class="tc-khoi tc-khoi--xam" aria-labelledby="tc-buoc-tieu-de">
+  {# ▸ Hộp căn giữa. #}
+  <div class="container">
+    {# ▸ Phần đầu khối. #}
+    <header class="tc-dau-khoi">
+      {# ▸ Tiêu đề: số bước lấy tự động bằng "|length" (đếm số phần tử của danh sách) nên thêm/bớt bước thì tiêu đề tự cập nhật ("qua 5 bước"). #}
+      <h2 id="tc-buoc-tieu-de">Đặt lịch trên FRAMIE qua {{ buoc_dat_lich|length }} bước</h2>
+      {# ▸ Mô tả ngắn, chữ xám nhạt. #}
+      <p class="muted">Từ lúc chọn nhiếp ảnh gia đến lúc nhận ảnh, bạn theo dõi mọi thứ ngay trên nền tảng.</p>
+    {# ▸ Đóng phần đầu khối. #}
+    </header>
+    {# ▸ Danh sách CÓ ĐÁNH SỐ (ol) dạng lưới cho các bước. #}
+    <ol class="tc-luoi tc-luoi--buoc">
+      {# ▸ Vòng lặp qua danh sách bước; mỗi phần tử là cặp (tiêu đề, mô tả) được tách sẵn thành 2 biến tieu_de và mo_ta. #}
+      {% for tieu_de, mo_ta in buoc_dat_lich %}
+      {# ▸ Mỗi bước là một thẻ trắng (lớp tc-buoc). #}
+      <li class="tc-buoc">
+        {# ▸ Vòng tròn đen chứa số thứ tự. forloop.counter = số lượt lặp hiện tại, đếm từ 1 (1,2,3,4,5). #}
+        <span class="tc-buoc__so" aria-hidden="true">{{ forloop.counter }}</span>
+        {# ▸ Tiêu đề bước (h3). Có thêm chữ "Bước N:" ẩn trên màn hình (sr-only) chỉ để người dùng đọc màn hình nghe rõ số bước. #}
+        <h3 class="tc-buoc__tieu-de"><span class="sr-only">Bước {{ forloop.counter }}: </span>{{ tieu_de }}</h3>
+        {# ▸ Mô tả chi tiết của bước. #}
+        <p class="tc-buoc__mo-ta">{{ mo_ta }}</p>
+      {# ▸ Đóng thẻ một bước. #}
+      </li>
+      {# ▸ Hết một lượt lặp; lặp tiếp cho bước kế. #}
+      {% endfor %}
+    {# ▸ Đóng danh sách bước. #}
+    </ol>
+  {# ▸ Đóng hộp căn giữa. #}
+  </div>
+{# ▸ Đóng khối các bước. #}
+</section>
+
+{# ---------- 4. Loại hình chụp (nền trắng) ---------- #}
+{# ▸ Chỉ vẽ cả khối thứ 4 NẾU có ít nhất một loại hình chụp; không có thì bỏ qua toàn bộ khối. #}
+{% if loai_hinh_ds %}
+{# ▸ Khối thứ 4, nền trắng. #}
+<section class="tc-khoi" aria-labelledby="tc-loai-tieu-de">
+  {# ▸ Hộp căn giữa. #}
+  <div class="container">
+    {# ▸ Phần đầu khối. #}
+    <header class="tc-dau-khoi">
+      {# ▸ Tiêu đề dạng câu hỏi. #}
+      <h2 id="tc-loai-tieu-de">Bạn muốn chụp loại hình nào?</h2>
+      {# ▸ Mô tả hướng dẫn thao tác. #}
+      <p class="muted">Chọn một loại hình để xem các nhiếp ảnh gia đang nhận chụp.</p>
+    {# ▸ Đóng phần đầu khối. #}
+    </header>
+    {# ▸ Danh sách dạng lưới các ô loại hình. #}
+    <ul class="tc-luoi tc-luoi--loai">
+      {# ▸ Lặp qua từng loại hình. #}
+      {% for lh in loai_hinh_ds %}
+      {# ▸ Một ô trong lưới. #}
+      <li>
+        {# ▸ Cả ô là một liên kết: bấm vào sang trang tìm kiếm đã lọc theo loại hình này. #}
+        <a class="tc-loai" href="{% url 'search' %}?loai_hinh={{ lh.ma }}">
+          {# ▸ Tên loại hình, chữ to đậm. #}
+          <span class="tc-loai__ten">{{ lh.ten }}</span>
+          {# ▸ Dòng phụ: nếu có người nhận chụp (so_nguoi khác 0) thì ghi "N nhiếp ảnh gia"; nếu là 0 thì ghi "Xem nhiếp ảnh gia" (không hiện số 0 cho đỡ xấu). #}
+          <span class="tc-loai__so">{% if lh.so_nguoi %}{{ lh.so_nguoi }} nhiếp ảnh gia{% else %}Xem nhiếp ảnh gia{% endif %}</span>
+          {# ▸ Mũi tên → ở góc dưới ô, trang trí; khi rê chuột vào sẽ dịch sang phải nhờ CSS. #}
+          <span class="tc-loai__mui-ten" aria-hidden="true">→</span>
+        {# ▸ Đóng liên kết. #}
+        </a>
+      {# ▸ Đóng ô lưới. #}
+      </li>
+      {# ▸ Hết lượt lặp. #}
+      {% endfor %}
+    {# ▸ Đóng danh sách lưới. #}
+    </ul>
+  {# ▸ Đóng hộp căn giữa. #}
+  </div>
+{# ▸ Đóng khối loại hình. #}
+</section>
+{# ▸ Kết thúc điều kiện "có loại hình". #}
+{% endif %}
+
+{# ---------- 5. Lời mời đăng ký (nền tối) ---------- #}
+{# ▸ Khối cuối, nền tối, kêu gọi hành động. Nội dung đổi tùy khách đã đăng nhập hay chưa. #}
+<section class="tc-khoi tc-khoi--toi tc-moi" aria-labelledby="tc-moi-tieu-de">
+  {# ▸ Hộp căn giữa, nội dung căn giữa theo CSS. #}
+  <div class="container tc-moi__noi-dung">
+    {# ▸ NẾU khách ĐÃ đăng nhập (biến is_logged_in do hệ thống cung cấp sẵn cho mọi trang) thì hiện nội dung bên dưới. #}
+    {% if is_logged_in %}
+      {# ▸ Tiêu đề dành cho người đã đăng nhập. #}
+      <h2 id="tc-moi-tieu-de">Sẵn sàng cho buổi chụp tiếp theo?</h2>
+      {# ▸ Câu khuyến khích đặt lịch. #}
+      <p>Tìm nhiếp ảnh gia, chọn khung giờ còn trống và gửi yêu cầu Booking ngay hôm nay.</p>
+      {# ▸ Hàng chứa nút (lớp "row" xếp ngang, tc-moi__nut căn giữa). #}
+      <div class="row tc-moi__nut">
+        {# ▸ Nút lớn dẫn sang trang tìm kiếm. #}
+        <a class="btn btn--soft btn--lg" href="{% url 'search' %}">Tìm nhiếp ảnh gia</a>
+      {# ▸ Đóng hàng nút. #}
+      </div>
+    {# ▸ NGƯỢC LẠI (khách chưa đăng nhập) hiện nội dung kêu gọi đăng ký. #}
+    {% else %}
+      {# ▸ Tiêu đề kêu gọi tạo tài khoản. #}
+      <h2 id="tc-moi-tieu-de">Tạo tài khoản để bắt đầu đặt lịch</h2>
+      {# ▸ Giải thích lợi ích của việc đăng ký. #}
+      <p>Đăng ký tài khoản Khách hàng để giữ chỗ khung giờ và gửi yêu cầu Booking cho nhiếp ảnh gia bạn chọn.</p>
+      {# ▸ Hàng chứa 2 nút. #}
+      <div class="row tc-moi__nut">
+        {# ▸ Nút chính "Đăng ký ngay": {{ urls.register }} là địa chỉ trang đăng ký do hệ thống cung cấp sẵn. #}
+        <a class="btn btn--soft btn--lg" href="{{ urls.register }}">Đăng ký ngay</a>
+        {# ▸ Nút phụ cho người đã có tài khoản, dẫn tới trang đăng nhập. #}
+        <a class="btn btn--secondary btn--lg" href="{{ urls.login }}">Tôi đã có tài khoản</a>
+      {# ▸ Đóng hàng nút. #}
+      </div>
+    {# ▸ Kết thúc điều kiện đăng nhập / chưa đăng nhập. #}
+    {% endif %}
+  {# ▸ Đóng hộp căn giữa. #}
+  </div>
+{# ▸ Đóng khối lời mời. #}
+</section>
+
+{# ▸ Kết thúc phần nội dung chính, trả quyền lại cho khung base.html (chân trang...). #}
+{% endblock %}

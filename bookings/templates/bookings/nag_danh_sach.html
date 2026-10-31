@@ -1,0 +1,131 @@
+{# UC4.3: Danh sách yêu cầu Booking của Nhiếp ảnh gia (lọc / sắp xếp theo trạng thái, thời gian). File này được sử dụng bởi bookings/tiep_nhan.py (view danh_sach_yeu_cau) #}
+
+{# Kế thừa khung chung của website (đầu trang, menu, chân trang) từ base.html; file này chỉ viết phần nội dung riêng của trang. #}
+{% extends "base.html" %}
+{% load ui %} {# status_badge: nhãn màu theo trạng thái #}
+
+{# Tiêu đề hiện trên tab của trình duyệt. #}
+{% block title %}Quản lý Booking{% endblock %}
+
+{# Chèn thêm phần định dạng (CSS) riêng của trang này vào phần đầu trang. #}
+{% block extra_head %}
+<style>
+  {# Khung bộ lọc: các ô xếp thành hàng ngang, tự xuống dòng khi màn hình hẹp (điện thoại). #}
+  .nag-ds__loc { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: flex-end; }
+  {# Mỗi ô chọn rộng tối thiểu 14rem và không chừa lề dưới. #}
+  .nag-ds__loc .field { margin-bottom: 0; min-width: 14rem; }
+  {# Bảng danh sách: rộng hết khung, các đường kẻ liền nhau, cỡ chữ nhỏ. #}
+  .nag-ds__bang { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+  {# Mỗi ô của bảng: căn trái, có khoảng đệm, kẻ đường mờ ở đáy mỗi dòng. #}
+  .nag-ds__bang th, .nag-ds__bang td { text-align: left; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); vertical-align: top; }
+  {# Ô tiêu đề cột: chữ đậm, màu nhạt, không tự xuống dòng. #}
+  .nag-ds__bang th { font-weight: var(--fw-heading); color: var(--color-text-muted); white-space: nowrap; }
+  {# Khung bao quanh bảng: nếu bảng quá rộng thì cuộn ngang thay vì làm vỡ trang. #}
+  .nag-ds__cuon { overflow-x: auto; } /* bảng rộng thì cuộn ngang, không vỡ khung */
+</style>
+{% endblock %}
+
+{# Phần nội dung chính của trang. #}
+{% block content %}
+{# Khung nằm giữa trang; các khối bên trong xếp dọc, cách đều nhau. #}
+<section class="container stack">
+
+  {# Tiêu đề lớn của trang. #}
+  <h1>Quản lý Booking</h1>
+
+  {# Chỉ hiện dòng nhắc khi có ít nhất 1 yêu cầu đang chờ xác nhận (số lượng khác 0). #}
+  {% if so_cho_xac_nhan %}
+    <div class="alert alert--info" role="status"><div class="alert__body"><span class="alert__text">Có <strong>{{ so_cho_xac_nhan }}</strong> yêu cầu Booking đang chờ bạn xác nhận.</span></div></div>
+  {% endif %}
+
+  {# Luồng 2a: lọc theo trạng thái, sắp xếp theo thời gian. Gửi bằng GET để giữ được bộ lọc khi chuyển trang. #}
+  {# Biểu mẫu lọc và sắp xếp. method=get: lựa chọn được gửi lên thanh địa chỉ, nên khi chuyển trang vẫn giữ nguyên bộ lọc. #}
+  <form class="panel nag-ds__loc" method="get">
+    <div class="field">
+      <label class="field__label" for="loc-trang-thai">Trạng thái</label>
+      {# Ô chọn 'Trạng thái'. #}
+      <select class="input" id="loc-trang-thai" name="trang_thai">
+        {# Lặp qua từng lựa chọn để tạo các dòng trong ô chọn. #}
+        {% for gia_tri, nhan in lua_chon_trang_thai %}
+          {# Một dòng lựa chọn; dòng trùng bộ lọc hiện tại được đánh dấu 'selected' (đang chọn). #}
+          <option value="{{ gia_tri }}"{% if gia_tri == trang_thai %} selected{% endif %}>{{ nhan }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label class="field__label" for="loc-sap-xep">Sắp xếp theo thời gian</label>
+      {# Ô chọn 'Sắp xếp theo thời gian' (cách hoạt động giống ô trên). #}
+      <select class="input" id="loc-sap-xep" name="sap_xep">
+        {% for gia_tri, nhan in lua_chon_sap_xep %}
+          <option value="{{ gia_tri }}"{% if gia_tri == sap_xep %} selected{% endif %}>{{ nhan }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {# Nút bấm để áp dụng bộ lọc. #}
+    <button class="btn btn--primary" type="submit">Áp dụng</button>
+  </form>
+
+  {# Nếu trang hiện tại có dữ liệu thì hiện bảng; nếu không thì hiện thông báo trống ở nhánh 'else' phía dưới. #}
+  {% if page_obj.object_list %}
+  <div class="panel nag-ds__cuon">
+    {# Bảng danh sách Booking. #}
+    <table class="nag-ds__bang">
+      {# Hàng tiêu đề các cột. #}
+      <thead>
+        <tr>
+          <th scope="col">Mã</th>
+          <th scope="col">Khách hàng</th>
+          <th scope="col">Gói dịch vụ</th>
+          <th scope="col">Ngày giờ chụp</th>
+          <th scope="col">Địa điểm</th>
+          <th scope="col">Gửi lúc</th>
+          <th scope="col">Trạng thái</th>
+          {# Cột cuối không hiện chữ; chữ 'Thao tác' chỉ dành cho trình đọc màn hình của người khiếm thị. #}
+          <th scope="col"><span class="sr-only">Thao tác</span></th>
+        </tr>
+      </thead>
+      {# Phần thân bảng: mỗi Booking một dòng. #}
+      <tbody>
+        {# Lặp qua từng Booking của trang hiện tại (bk là một Booking). #}
+        {% for bk in page_obj %}
+        <tr>
+          {# Mã Booking. #}
+          <td>#{{ bk.pk }}</td>
+          {# Tên khách (nếu không có họ tên thì dùng tên đăng nhập). #}
+          <td>{{ bk.MaKhachHang.get_full_name|default:bk.MaKhachHang.username }}</td>
+          {# Tên gói dịch vụ; bên dưới là loại hình chụp (chữ nhạt). #}
+          <td>{{ bk.MaGoi.TenGoi }}<br><span class="muted">{{ bk.MaGoi.MaLoaiHinh.TenLoaiHinh }}</span></td>
+          {# Ngày giờ chụp, dạng 'giờ:phút ngày/tháng/năm'. #}
+          <td>{{ bk.NgayGioChup|date:"H:i d/m/Y" }}</td>
+          {# Địa điểm chụp. #}
+          <td>{{ bk.DiaDiem }}</td>
+          {# Thời điểm khách gửi yêu cầu. #}
+          <td>{{ bk.NgayTao|date:"H:i d/m/Y" }}</td>
+          {# Trạng thái hiển thị dạng nhãn có màu. #}
+          <td>{% status_badge bk.TrangThai %}</td>
+          {# Nút dẫn tới trang chi tiết của Booking này. #}
+          <td><a class="btn btn--sm btn--soft" href="{% url 'chi_tiet_yeu_cau_booking' ma_booking=bk.pk %}">Xem chi tiết</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {# Thanh chuyển trang (Trước / Sau / số trang). #}
+  {% include "includes/pagination.html" with page_obj=page_obj %}
+
+  {# Trường hợp không có Booking nào để hiển thị. #}
+  {% else %}
+    {# Ngoại lệ 2b: không có Booking "Chờ xác nhận" nào. Lọc trạng thái khác mà rỗng thì báo theo bộ lọc. #}
+    <div class="panel">
+      {# Đang xem mặc định 'Chờ xác nhận' -> hiện câu 'Không có yêu cầu Booking mới'. #}
+      {% if dang_xem_yeu_cau_moi %}
+        <p><strong>{{ TB_KHONG_CO_YEU_CAU }}</strong></p>
+      {# Đang lọc theo trạng thái khác -> hiện câu 'Không có Booking nào khớp bộ lọc'. #}
+      {% else %}
+        <p><strong>Không có Booking nào khớp bộ lọc.</strong></p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+</section>
+{% endblock %}
