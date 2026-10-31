@@ -16,10 +16,11 @@ from django.contrib.messages import constants as messages
 
 import os  # đọc biến môi trường (đặt ở đầu file settings.py cùng các import khác)
 
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+load_dotenv(BASE_DIR / '.env')  # đọc biến từ file .env (nếu có); file này không đưa lên GitHub
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
@@ -173,9 +174,11 @@ if FRAMIE_EMAIL_USER and FRAMIE_EMAIL_PASSWORD:  # đã cấu hình tài khoản
 
     DEFAULT_FROM_EMAIL = f'FRAMIE <{FRAMIE_EMAIL_USER}>'
 else:  # chưa cấu hình -> giữ cách làm thử theo đặc tả P11
-    MAILERS = {  # chỉ cấu hình
+    MAILERS = {
         'default': {'BACKEND': 'django.core.mail.backends.console.EmailBackend'},
-    }  # hết MAILERS
+    }
+    print('CẢNH BÁO: chưa đặt FRAMIE_EMAIL_USER / FRAMIE_EMAIL_PASSWORD '
+          '- email chỉ in ra Terminal, KHÔNG gửi thật.')
 
 # ---- P3: đăng nhập và phiên làm việc (Phanh) ----
 AUTHENTICATION_BACKENDS = [  # danh sách cách xác thực, Django thử lần lượt
