@@ -1,36 +1,10 @@
 # =====================================================================
-# accounts/quan_tri.py  -  B7: dữ liệu cho khung Quản trị (menu + số liệu tổng quan)
+# accounts/quan_tri.py  -  B7: số liệu cho trang tổng quan Quản trị
 # =====================================================================
 from django.contrib.auth import get_user_model  # lấy class User của dự án (accounts.User)
 from django.db.models import Count  # hàm đếm dùng khi gom nhóm theo trạng thái
 
 from core.constants import TrangThaiBooking, TrangThaiHoSo, TrangThaiThanhToan  # tên trạng thái, không tự gõ chữ tiếng Việt (README)
-from core.navigation import resolve  # đổi tên URL thành đường dẫn; tên chưa tồn tại thì trả "#" (không gây lỗi)
-
-TEN_URL_TONG_QUAN = 'admin_dashboard'  # tên URL trang tổng quan (khớp TRANG_CHU_THEO_VAI_TRO trong permissions.py)
-
-# Menu bên trái khung Quản trị: (nhãn hiển thị, tên URL). Muốn thêm/bớt mục chỉ sửa danh sách này.
-MENU_QUAN_TRI = [  # bắt đầu danh sách mục menu
-    ('Tổng quan', TEN_URL_TONG_QUAN),  # trang tổng quan của B7
-    ('Duyệt hồ sơ', 'admin_profile_review'),  # trang của Khoa (module profiles)
-    ('Tài khoản và phân quyền', 'admin_accounts'),  # trang của Phanh (module accounts)
-    ('Booking', 'admin_bookings'),  # trang của Tuyền (module bookings)
-    ('Giao dịch', 'admin_payments'),  # trang của Nguyên (module payments)
-]  # hết danh sách
-
-
-def tao_menu(duong_dan_hien_tai):  # tạo danh sách mục menu kèm cờ "đang mở"
-    ket_qua = []  # danh sách kết quả, mỗi phần tử là một dict
-    for nhan, ten_url in MENU_QUAN_TRI:  # duyệt từng mục đã khai báo
-        url = resolve(ten_url)  # đổi tên URL thành đường dẫn thật (hoặc "#")
-        if url == '#':  # trang của module khác chưa làm xong
-            dang_mo = False  # không thể "đang mở" một link tạm
-        elif ten_url == TEN_URL_TONG_QUAN:  # trang tổng quan
-            dang_mo = duong_dan_hien_tai == url  # chỉ sáng khi đúng trang này (tránh sáng khi ở trang con)
-        else:  # các mục còn lại
-            dang_mo = duong_dan_hien_tai.startswith(url)  # sáng cả khi đang ở trang con, ví dụ /quan-tri/booking/12/
-        ket_qua.append({'label': nhan, 'url': url, 'active': dang_mo})  # thêm mục vào kết quả
-    return ket_qua  # trả danh sách cho template
 
 
 def thong_ke_tong_quan():  # gom các con số hiển thị ở trang tổng quan
@@ -54,3 +28,4 @@ def thong_ke_tong_quan():  # gom các con số hiển thị ở trang tổng qua
         ).count(),  # đếm
         'booking_theo_trang_thai': booking_theo_trang_thai,  # danh sách 13 trạng thái kèm số lượng
     }  # hết dict
+

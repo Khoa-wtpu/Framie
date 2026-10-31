@@ -1,0 +1,87 @@
+{% extends "base.html" %}{# K6 - UC1.4 Quản lý gói dịch vụ: danh sách (wireframe Module 1, màn "Quản lý gói dịch vụ") #}
+{% load static %}
+{% block title %}Quản lý gói dịch vụ{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'profiles/css/goi_dich_vu.css' %}">{% endblock %}
+{% block extra_js %}<script src="{% static 'profiles/js/goi_dich_vu.js' %}" defer></script>{% endblock %}
+{% block content %}
+<div class="container gv">
+  <header class="gv__dau">
+    <div>
+      <h1>Quản lý gói dịch vụ</h1>
+      <p>Hãy quản lý gói dịch vụ của bạn tại đây để Khách hàng dễ dàng chọn và đặt lịch với bạn.</p>
+    </div>
+    <a class="btn btn--primary" href="{% url 'goi_them' %}">Thêm gói dịch vụ</a>
+  </header>
+
+  <form class="gv__loc" method="get" action="{% url 'service_packages' %}" role="search">
+    <div class="gv__tim">
+      <label class="gv__an" for="gv-q">Tìm gói dịch vụ</label>
+      <input id="gv-q" class="input" type="search" name="q" value="{{ q }}" maxlength="100" placeholder="Tìm theo tên gói hoặc loại hình">
+    </div>
+    <div class="gv__trang-thai">
+      <label class="gv__loc-nhan" for="loc-trang-thai">Trạng thái</label>
+      <select id="loc-trang-thai" class="input" name="trang_thai" data-tu-gui>
+        {% for ma, ten in cac_loc %}<option value="{{ ma }}"{% if ma == loc %} selected{% endif %}>{{ ten }}</option>{% endfor %}
+      </select>
+    </div>
+    <button class="btn btn--secondary" type="submit">Tìm</button>
+    {% if dang_loc %}<a class="gv__xoa-loc" href="{% url 'service_packages' %}">Xóa bộ lọc</a>{% endif %}
+    <p class="gv__dem" role="status">Hiển thị {{ cac_goi|length }} gói dịch vụ</p>
+  </form>
+
+  {% if cac_goi %}
+  <div class="gv__bao">
+    <table class="gv__bang">
+      <thead>
+        <tr><th scope="col">Tên gói</th><th scope="col">Loại hình</th><th scope="col">Giá</th><th scope="col">Thời lượng</th><th scope="col">Hình thức hậu kỳ</th><th scope="col">Trạng thái</th><th scope="col">Thao tác</th></tr>
+      </thead>
+      <tbody>
+        {% for goi in cac_goi %}
+        <tr{% if goi.mau != 'green' %} class="gv__mo"{% endif %}>
+          <th scope="row"{% if goi.mau == 'amber' %} class="gv__gach"{% endif %}>{{ goi.TenGoi }}</th>
+          <td class="gv__khong-xuong">{{ goi.MaLoaiHinh.TenLoaiHinh }}</td>
+          <td class="gv__so">{{ goi.gia_hien_thi }}</td>
+          <td class="gv__khong-xuong">{{ goi.ThoiLuongChup }} phút</td>
+          <td>{{ goi.hau_ky_hien_thi }}</td>
+          <td><span class="badge badge--{{ goi.mau }}">{{ goi.TrangThai }}</span></td>
+          <td>
+            <details class="gv-menu">
+              <summary class="btn btn--secondary btn--sm gv-menu__nut" aria-label="Thao tác với gói {{ goi.TenGoi }}">Chọn thao tác</summary>
+              <div class="gv-menu__ds">
+                <a class="gv-menu__muc" href="{% url 'goi_sua' goi.pk %}">Chỉnh sửa</a>
+                {% for nut in goi.cac_nut %}{% include "profiles/includes/_goi_nut.html" %}{% endfor %}
+                {% with nut=goi.nut_xoa %}{% include "profiles/includes/_goi_nut.html" %}{% endwith %}
+              </div>
+            </details>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="gv__trong" role="status">
+    {% if dang_loc %}
+      <p>Không tìm thấy gói dịch vụ nào phù hợp.</p>
+      <a class="btn btn--secondary" href="{% url 'service_packages' %}">Xóa bộ lọc</a>
+    {% else %}
+      <p>Bạn chưa có gói dịch vụ nào. Thêm gói để Khách hàng chọn khi đặt lịch.</p>
+      <a class="btn btn--primary" href="{% url 'goi_them' %}">Thêm gói dịch vụ</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{# Hộp xác nhận dùng chung: JS điền nội dung từ data-* của nút bấm. Không có JS thì nút dẫn tới trang xác nhận riêng. #}
+<dialog class="gv-popup" id="gv-popup" aria-labelledby="gv-popup-tieu-de" aria-describedby="gv-popup-hoi">
+  <form method="post" class="gv-popup__khung" id="gv-popup-form">
+    {% csrf_token %}
+    <h2 id="gv-popup-tieu-de" class="gv-popup__tieu-de"></h2>
+    <p id="gv-popup-hoi" class="gv-popup__hoi"></p>
+    <div class="gv-popup__nut">
+      <button class="btn btn--secondary" type="button" data-dong>Hủy</button>
+      <button class="btn btn--primary" type="submit" id="gv-popup-xac-nhan"></button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}

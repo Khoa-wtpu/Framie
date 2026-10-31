@@ -20,10 +20,8 @@ class DangNhapForm(AuthenticationForm):  # kế thừa form mẫu, chỉ đổi 
     username = forms.EmailField(  # ô email (name vẫn là username để backend nhận được)
         label='Email',  # nhãn hiển thị
         max_length=100,  # độ dài tối đa
-        widget=forms.EmailInput(attrs={'autofocus': True, 'autocomplete': 'email'}),
-        # con trỏ tự nhảy vào ô; trình duyệt gợi ý email đã lưu
-        error_messages={'invalid': 'Email hoặc mật khẩu không chính xác'},
-        # gõ sai dạng email cũng báo đúng câu theo đặc tả
+        widget=forms.EmailInput(attrs={'autofocus': True, 'autocomplete': 'email'}),  # con trỏ tự nhảy vào ô; trình duyệt gợi ý email đã lưu
+        error_messages={'invalid': 'Email hoặc mật khẩu không chính xác'},  # gõ sai dạng email cũng báo đúng câu theo đặc tả
     )  # hết ô email
     password = forms.CharField(  # ô mật khẩu
         label='Mật khẩu',  # nhãn hiển thị
@@ -63,8 +61,8 @@ class DangKyForm(forms.Form):  # P4: form đăng ký tài khoản Khách hàng (
     def clean_ho_ten(self):  # Django tự gọi sau khi ô ho_ten qua kiểm tra cơ bản
         ho_ten = unicodedata.normalize('NFC', self.cleaned_data['ho_ten'])  # đưa về dạng dựng sẵn: gõ trên macOS hay Windows đều như nhau
         ho_ten = ' '.join(ho_ten.split())  # gộp nhiều khoảng trắng liên tiếp thành một, bỏ khoảng trắng hai đầu
-        if not re.fullmatch(r'[^\W\d_]+(?: [^\W\d_]+)*', ho_ten):  # chỉ nhận chữ cái (có dấu) cách nhau bằng một dấu cách
-            raise ValidationError('Họ và tên chỉ gồm chữ cái và khoảng trắng.')  # báo lỗi
+        if not re.fullmatch(r"[^\W\d_]+(?:[ '’-][^\W\d_]+)*", ho_ten):  # chữ cái (có dấu), các cụm cách nhau bằng MỘT dấu cách, gạch nối hoặc dấu nháy
+            raise ValidationError('Họ và tên chỉ gồm chữ cái, khoảng trắng, dấu gạch nối và dấu nháy.')  # báo lỗi
         return ho_ten  # trả họ tên đã làm sạch
 
     def clean_email(self):  # Django tự gọi sau khi ô email qua kiểm tra cơ bản

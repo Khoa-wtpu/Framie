@@ -16,7 +16,10 @@ logger = logging.getLogger(__name__)  # bộ ghi log riêng cho file này
 
 
 def tach_ho_ten(ho_ten):  # tách "Nguyễn Văn An" thành ("An", "Nguyễn Văn") theo Data Dictionary
+    ho_ten = ' '.join(ho_ten.split())  # gộp khoảng trắng thừa, bỏ khoảng trắng hai đầu
     phan = ho_ten.rsplit(maxsplit=1)  # cắt tại khoảng trắng CUỐI CÙNG: phần cuối là tên, phần trước là họ và tên đệm
+    if not phan:  # chuỗi rỗng hoặc toàn khoảng trắng
+        return '', ''  # không có tên, không có họ
     if len(phan) == 1:  # họ tên chỉ có một chữ
         return phan[0], ''  # chữ đó là tên, họ và tên đệm để rỗng
     return phan[1], phan[0]  # (first_name = tên, last_name = họ và tên đệm)

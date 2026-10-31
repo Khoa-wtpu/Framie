@@ -1,9 +1,9 @@
 {% extends "base.html" %}{# dùng khung chung: header, footer, messages #}
 {% block title %}Đăng nhập{% endblock %}{# chữ trên tab trình duyệt #}
 {% block content %}{# phần nội dung riêng của trang #}
-<div class="container" style="max-width: 28rem;">{# hộp hẹp ở giữa trang, chỉ chỉnh bố cục #}
+<div class="container container--narrow">{# hộp hẹp ở giữa trang, chỉ chỉnh bố cục #}
   <div class="card">{# thẻ bao quanh form #}
-    <div class="card__body" style="align-items: stretch;">{# nội dung thẻ, kéo giãn hết chiều ngang #}
+    <div class="card__body card__body--stretch">
       <h1 class="card__title">Đăng nhập</h1>{# tiêu đề trang #}
       {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}{# lỗi "Email hoặc mật khẩu không chính xác" hiện hộp đỏ #}
       <form method="post" novalidate>{# gửi form bằng POST, tắt kiểm tra của trình duyệt để hiện lỗi của Django #}

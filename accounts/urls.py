@@ -12,4 +12,6 @@ urlpatterns = [  # danh sách đường dẫn của app accounts
     path('thu-quyen/quan-tri/', views.thu_quan_tri, name='thu_quan_tri'),  # trang thử quyền 3 (xóa sau)
     path('dang-ky/', views.dang_ky, name='register'), # P4: name='register' khớp core/navigation.py, nút Đăng ký ở header và link Tạo tài khoản
     path('quan-tri/', views_quan_tri.tong_quan, name='admin_dashboard'),  # B7: trang tổng quan Quản trị; name khớp permissions.py và menu
+    path('dang-ky/nhiep-anh-gia/', views.dang_ky_nhiep_anh_gia, name='register_photographer'),
+    # P5: đăng ký Nhiếp ảnh gia
 ]  # hết danh sách

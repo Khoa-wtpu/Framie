@@ -1,11 +1,12 @@
 {% extends "base.html" %}{# dùng khung chung: header, footer, messages #}
 {% block title %}Đăng ký{% endblock %}{# chữ trên tab trình duyệt #}
 {% block content %}{# phần nội dung riêng của trang #}
-<div class="container" style="max-width: 28rem;">{# hộp hẹp ở giữa trang, giống trang đăng nhập #}
+<div class="container container--narrow">{# hộp hẹp ở giữa trang, giống trang đăng nhập #}
   <div class="card">{# thẻ bao quanh form #}
-    <div class="card__body" style="align-items: stretch;">{# nội dung thẻ, kéo giãn hết chiều ngang #}
+    <div class="card__body card__body--stretch">{# nội dung thẻ, kéo giãn hết chiều ngang #}
       <h1 class="card__title">Đăng ký tài khoản Khách hàng</h1>{# tiêu đề trang #}
-      {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}{# lỗi chung của form (ví dụ vừa bị người khác đăng ký trùng) hiện hộp đỏ #}
+      {% include "accounts/includes/_chon_vai_tro.html" with hien_tai="khach_hang" %}{# 2 nút chọn vai trò, nút của trang hiện tại màu xám #}
+      {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}{# lỗi chung của form hiện hộp đỏ #}
       <form method="post" novalidate>{# gửi form bằng POST, tắt kiểm tra của trình duyệt để hiện lỗi tiếng Việt của Django #}
         {% csrf_token %}{# mã chống giả mạo form, BẮT BUỘC có #}
         {% include "includes/form_field.html" with field=form.ho_ten %}{# ô Họ và tên #}

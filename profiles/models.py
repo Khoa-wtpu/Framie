@@ -231,6 +231,9 @@ class GoiDichVu(models.Model):
         help_text='Chỉ nhập khi chọn "Giới hạn số lượng ảnh"; để trống nếu "Hậu kỳ toàn bộ ảnh".')
     TrangThai = models.CharField('trạng thái', max_length=30, choices=TrangThaiGoi.CHOICES,
                                  default=TrangThaiGoi.DANG_AP_DUNG)
+    # Trạng thái trước khi bị Ẩn, để "Hiện lại" đưa gói về đúng trạng thái cũ (K6).
+    TrangThaiTruocKhiAn = models.CharField(max_length=30, null=True, blank=True)
+
 
     class Meta:
         db_table = 'GOIDICHVU'
