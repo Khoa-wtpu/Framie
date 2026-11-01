@@ -1,0 +1,89 @@
+{% extends "base.html" %}{# K5 - UC1.3: thêm / chỉnh sửa project Portfolio (wireframe Module 1, màn "Thêm / Chỉnh sửa project") #}
+{% load static ui %}
+{% block title %}{% if project %}Chỉnh sửa project{% else %}Thêm project mới{% endif %}{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'profiles/css/ho_so.css' %}">
+<link rel="stylesheet" href="{% static 'profiles/css/portfolio.css' %}">
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'profiles/js/ho_so.js' %}" defer></script>
+<script src="{% static 'profiles/js/portfolio.js' %}" defer></script>
+{% endblock %}
+{% block content %}
+<div class="container pf pf--hep">
+  <header class="ho-so__trang-dau">
+    <h1>{% if project %}Chỉnh sửa project{% else %}Thêm project mới{% endif %}</h1>
+    <p>Nhập thông tin project và tải các hình ảnh hiển thị trong Portfolio.</p>
+  </header>
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}
+
+    <section class="ho-so__khoi">
+      <header class="ho-so__khoi-dau"><h2>Thông tin project</h2></header>
+      {% include "includes/form_field.html" with field=form.TenProject %}
+      <div class="ho-so__luoi">
+        {% include "includes/form_field.html" with field=form.MaLoaiHinh %}
+        {% include "includes/form_field.html" with field=form.NgayChup %}
+      </div>
+      {% include "includes/form_field.html" with field=form.Concept %}
+    </section>
+
+    <section class="ho-so__khoi">
+      <header class="ho-so__khoi-dau">
+        <h2>Ảnh bìa <span class="field__req" aria-hidden="true">*</span></h2>
+        <p>Ảnh đại diện của project, hiện trên danh sách Portfolio.</p>
+      </header>
+      {% include "profiles/includes/_tai_anh.html" with field=form.AnhBia kieu="vuong" an_nhan=1 %}
+    </section>
+
+    <section class="ho-so__khoi">
+      <header class="ho-so__khoi-dau">
+        <h2>Hình ảnh trong project <span class="field__req" aria-hidden="true">*</span></h2>
+        <p>{% if project %}Tải thêm hình (hình mới nằm cuối danh sách). Sắp thứ tự ở bảng bên dưới.{% else %}Tải một hoặc nhiều hình. Có thể sắp lại thứ tự sau khi lưu.{% endif %}</p>
+      </header>
+      <div class="field{% if form.anh_moi.errors %} has-error{% endif %}">
+        <label class="pf__tai-nhieu" for="{{ form.anh_moi.id_for_label }}">
+          <strong>Tải ảnh lên</strong>
+          <small>Chọn nhiều hình cùng lúc · JPG, PNG · tối đa 10 MB/hình</small>
+          <em class="pf__so-tep" aria-live="polite"></em>
+          {{ form.anh_moi|add_class:"pf__tep" }}
+        </label>
+        <div class="pf__xem-truoc" aria-hidden="true"></div>
+        {% for error in form.anh_moi.errors %}<p class="field__error">{{ error }}</p>{% endfor %}
+      </div>
+
+      {% if cac_hinh %}
+      <h3 class="pf__tieu-de-nho">Thứ tự và danh sách hình</h3>
+      <p class="pf__huong-dan">Kéo thả hình để đổi vị trí, hoặc gõ số thứ tự vào ô dưới mỗi hình. Hình số 1 hiện đầu tiên. Bấm dấu <strong>×</strong> ở góc ảnh để gỡ hình. Mọi thay đổi chỉ được lưu khi bấm <strong>Lưu</strong>.</p>
+      <ol class="pf__luoi-hinh" data-sap-xep>
+        {% for muc in cac_hinh %}
+        <li class="pf__o" draggable="true">
+          <div class="pf__o-anh">
+            <img src="{{ muc.hinh.DuongDanHinhAnh.url }}" alt="Hình {{ muc.vi_tri }} của project" loading="lazy" draggable="false">
+            <label class="pf__o-xoa" title="Xóa hình này">
+              <input type="checkbox" name="xoa_hinh" value="{{ muc.hinh.pk }}"{% if muc.xoa %} checked{% endif %}>
+              <span aria-hidden="true">×</span>
+              <span class="pf__an">Xóa hình này</span>
+            </label>
+          </div>
+          <label class="pf__o-so">
+            <span class="pf__an">Vị trí của hình này</span>
+            <input class="input" type="number" name="thu_tu_{{ muc.hinh.pk }}" value="{{ muc.vi_tri }}" min="1" max="{{ cac_hinh|length }}" inputmode="numeric">
+          </label>
+        </li>
+        {% endfor %}
+      </ol>
+      <p class="pf__da-go" data-da-go hidden role="status"><span data-da-go-chu></span> <button class="btn btn--ghost btn--sm" type="button" data-hoan-tac>Hoàn tác</button></p>
+      {% endif %}
+    </section>
+
+    <div class="ho-so__luoi">
+      <a class="btn btn--secondary btn--block" href="{% url 'portfolio' %}">Hủy</a>
+      <button class="btn btn--primary btn--block" type="submit">Lưu</button>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

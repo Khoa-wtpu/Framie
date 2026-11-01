@@ -1,0 +1,41 @@
+{% extends "base.html" %}{# K5 - UC1.3 Quản lý Portfolio: danh sách project (wireframe Module 1, màn "Quản lý Portfolio") #}
+{% load static %}
+{% block title %}Quản lý Portfolio{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'profiles/css/portfolio.css' %}">{% endblock %}
+{% block content %}
+<div class="container pf">
+  <header class="pf__dau">
+    <div>
+      <h1>Quản lý Portfolio</h1>
+      <p>Quản lý các project hiển thị trên hồ sơ công khai của bạn.</p>
+    </div>
+    <a class="btn btn--primary" href="{% url 'project_them' %}">Thêm project</a>
+  </header>
+
+  {% if cac_project %}
+    <ul class="pf__luoi">
+      {% for project in cac_project %}
+      <li>
+        <article class="card pf__the">
+          <div class="card__media"><img src="{{ project.AnhBia.url }}" alt="Ảnh bìa project {{ project.TenProject }}" loading="lazy"></div>
+          <div class="card__body">
+            <h2 class="card__title">{{ project.TenProject }}</h2>
+            <p class="card__meta">{{ project.MaLoaiHinh.TenLoaiHinh }}{% if project.NgayChup %} · {{ project.NgayChup|date:"d/m/Y" }}{% endif %}</p>
+            <p class="card__meta">{{ project.so_hinh }} hình</p>
+            <div class="pf__nut">
+              <a class="btn btn--secondary btn--sm" href="{% url 'project_sua' project.pk %}">Chỉnh sửa</a>
+              <a class="btn btn--danger btn--sm" href="{% url 'project_xoa' project.pk %}">Xóa</a>
+            </div>
+          </div>
+        </article>
+      </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="pf__trong" role="status">
+      <p>Bạn chưa có project nào. Thêm project để khách hàng xem được phong cách của bạn trên hồ sơ công khai.</p>
+      <a class="btn btn--primary" href="{% url 'project_them' %}">Thêm project</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
