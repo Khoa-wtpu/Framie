@@ -1,0 +1,76 @@
+{% extends "accounts/quan_tri/khung.html" %}{# dùng khung Quản trị (khung có sẵn menu, admin.css) #}
+{% load static %}{# static: lấy file JS #}
+{% block admin_title_tab %}Tài khoản và vai trò{% endblock %}{# chữ trên tab trình duyệt #}
+{% block admin_tieu_de %}Tài khoản và vai trò{% endblock %}{# tiêu đề trang, khớp mục menu #}
+{% block admin_noi_dung %}{# nội dung trang #}
+<form class="admin-filter" method="get" action="{% url 'admin_accounts' %}">{# form lọc dùng GET để link có thể copy, F5 không hỏi gửi lại #}
+  <input class="input" type="search" name="q" value="{{ tim }}" placeholder="Tìm theo tên, email, số điện thoại" aria-label="Tìm tài khoản">{# ô tìm kiếm, giữ lại chữ đã gõ #}
+  <select class="input" name="vai_tro" aria-label="Lọc theo vai trò">{# ô lọc vai trò #}
+    <option value="">Tất cả vai trò</option>{# không lọc #}
+    {% for vt in cac_vai_tro %}<option value="{{ vt }}"{% if vt == vai_tro_loc %} selected{% endif %}>{{ vt }}</option>{% endfor %}{# 3 vai trò, chọn sẵn cái đang lọc #}
+  </select>
+  <select class="input" name="trang_thai" aria-label="Lọc theo trạng thái">{# ô lọc trạng thái #}
+    <option value="">Mọi trạng thái</option>{# không lọc #}
+    <option value="hoat_dong"{% if trang_thai_loc == "hoat_dong" %} selected{% endif %}>Đang hoạt động</option>{# chỉ tài khoản còn dùng được #}
+    <option value="bi_khoa"{% if trang_thai_loc == "bi_khoa" %} selected{% endif %}>Đã khóa</option>{# chỉ tài khoản bị khóa #}
+  </select>
+  <button class="btn btn--soft" type="submit">Lọc</button>{# nút phụ; trang này không có nút chính vì mỗi thao tác nằm ở từng dòng #}
+</form>
+
+<section class="panel admin-table-wrap" aria-label="Danh sách tài khoản">{# khung bảng, cuộn ngang trên màn hình hẹp #}
+  <table class="admin-table">{# bảng tài khoản #}
+    <thead><tr>{# hàng tiêu đề #}
+      <th scope="col">Họ và tên</th><th scope="col">Email</th><th scope="col">Số điện thoại</th>{# 3 cột thông tin #}
+      <th scope="col">Vai trò</th><th scope="col">Trạng thái</th><th scope="col">Thao tác</th>{# vai trò, trạng thái, nút #}
+    </tr></thead>
+    <tbody>
+    {% for h in hang %}{# mỗi phần tử là một tài khoản kèm quyền thao tác #}
+    <tr>{# một dòng tài khoản #}
+      <td>{{ h.user.get_full_name|default:"(chưa có tên)" }}{% if h.la_toi %} <span class="card__meta">(Bạn)</span>{% endif %}</td>{# họ tên; thêm "(Bạn)" cho tài khoản đang đăng nhập #}
+      <td>{{ h.user.email }}</td>{# email #}
+      <td>{{ h.user.so_dien_thoai }}</td>{# số điện thoại #}
+      <td>{{ h.vai_tro }}{% if h.he_thong %} <span class="card__meta">(hệ thống)</span>{% endif %}</td>{# vai trò hiện tại #}
+      <td>{% if h.user.is_active %}<span class="badge badge--green">Hoạt động</span>{% else %}<span class="badge badge--red">Đã khóa</span>{% endif %}</td>{# nhãn trạng thái dùng class badge có sẵn #}
+      <td class="admin-table__actions">{# ô nút #}
+        {% if h.doi_duoc_vai_tro %}{# chỉ hiện ô đổi vai trò khi được phép #}
+        <form method="post" action="{% url 'admin_account_role' h.user.pk %}" class="admin-inline-form">{# form đổi vai trò, gửi POST #}
+          {% csrf_token %}{# mã chống giả mạo form, BẮT BUỘC có #}
+          <input type="hidden" name="quay_lai" value="{{ quay_lai }}">{# nhớ trang và bộ lọc hiện tại để quay lại #}
+          <select class="input" name="vai_tro" aria-label="Vai trò mới của {{ h.user.email }}">{# ô chọn vai trò mới #}
+            {% for vt in vai_tro_cho_doi %}<option value="{{ vt }}"{% if vt == h.vai_tro %} selected{% endif %}>{{ vt }}</option>{% endfor %}{# chỉ các vai trò được gán #}
+          </select>
+          <button class="btn btn--secondary btn--sm" type="submit" data-xac-nhan-form="Đổi vai trò của {{ h.user.email }}?">Lưu vai trò</button>{# nút lưu; JS hỏi xác nhận #}
+        </form>
+        {% endif %}
+        {% if h.khoa_duoc %}{# chỉ hiện nút khóa/mở khi được phép #}
+        <form method="post" action="{% url 'admin_account_toggle' h.user.pk %}" class="admin-inline-form">{# form khóa/mở, gửi POST #}
+          {% csrf_token %}{# mã chống giả mạo form #}
+          <input type="hidden" name="quay_lai" value="{{ quay_lai }}">{# nhớ trang hiện tại #}
+          {% if h.user.is_active %}{# đang hoạt động thì hiện nút Khóa #}
+          <input type="hidden" name="hanh_dong" value="khoa">{# gửi hanh_dong=khoa #}
+          <button class="btn btn--danger btn--sm" type="submit" data-xac-nhan-form="Khóa tài khoản {{ h.user.email }}? Người này sẽ không đăng nhập được nữa.">Khóa</button>{# nút nguy hiểm, có xác nhận #}
+          {% else %}{# đang bị khóa thì hiện nút Mở #}
+          <input type="hidden" name="hanh_dong" value="mo">{# gửi hanh_dong=mo #}
+          <button class="btn btn--soft btn--sm" type="submit">Mở khóa</button>{# mở lại thì không cần xác nhận #}
+          {% endif %}
+        </form>
+        {% endif %}
+        {% if not h.doi_duoc_vai_tro and not h.khoa_duoc %}<span class="card__meta">Không thao tác được</span>{% endif %}{# chính mình hoặc tài khoản hệ thống #}
+      </td>
+    </tr>
+    {% empty %}{# không có tài khoản nào khớp bộ lọc #}
+    <tr><td colspan="6" class="card__meta">Không có tài khoản nào khớp bộ lọc.</td></tr>{# dòng báo trống #}
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% if trang.has_other_pages %}{# chỉ hiện chuyển trang khi có nhiều hơn 1 trang #}
+<nav class="admin-pager" aria-label="Chuyển trang">{# thanh chuyển trang #}
+  {% if trang.has_previous %}<a class="btn btn--soft btn--sm" href="?{% if query_loc %}{{ query_loc }}&amp;{% endif %}trang={{ trang.previous_page_number }}">Trang trước</a>{% endif %}{# giữ bộ lọc khi chuyển trang #}
+  <span class="card__meta">Trang {{ trang.number }} / {{ trang.paginator.num_pages }}</span>{# đang ở trang mấy #}
+  {% if trang.has_next %}<a class="btn btn--soft btn--sm" href="?{% if query_loc %}{{ query_loc }}&amp;{% endif %}trang={{ trang.next_page_number }}">Trang sau</a>{% endif %}{# giữ bộ lọc khi chuyển trang #}
+</nav>
+{% endif %}
+{% endblock %}{# hết nội dung #}
+{% block extra_js %}<script src="{% static 'accounts/js/quan_tri_tai_khoan.js' %}" defer></script>{% endblock %}{# nạp JS xác nhận (JS phải nằm trong file tĩnh, không viết trong HTML) #}

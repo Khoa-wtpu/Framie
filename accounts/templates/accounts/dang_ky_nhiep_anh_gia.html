@@ -24,6 +24,6 @@
 
     <button class="btn btn--primary btn--block" type="submit">Gửi hồ sơ đăng ký</button>{# 1 nút chính duy nhất của màn hình #}
   </form>
-    <p class="card__meta" style="margin-top:.75rem;">Đã có tài khoản? <a href="{{ urls.login }}">Đăng nhập</a></p>
+    <p class="card__meta auth-switch-note">Đã có tài khoản? <a href="{% url 'login' %}">Đăng nhập</a></p>
 </div>
 {% endblock %}

@@ -8,19 +8,14 @@ from django.core.exceptions import ValidationError  # lỗi nhập liệu
 from django.db.models import Q  # Q: ghép điều kiện "hoặc" khi tìm trong DB
 
 from .models import User  # model User của FRAMIE (dùng để kiểm tra trùng)
-from .validators import DoPhucTapMatKhau  # luật 4 loại ký tự của mật khẩu (P4)
 
 
-def kiem_tra_mat_khau(mat_khau, user):  # P4 + P6: chạy MỌI luật mật khẩu, trả danh sách lỗi (rỗng nếu hợp lệ)
+def kiem_tra_mat_khau(mat_khau, user):  # P4 + P6: chạy MỌI luật mật khẩu khai báo trong AUTH_PASSWORD_VALIDATORS, trả danh sách lỗi (rỗng nếu hợp lệ)
     loi_mat_khau = []  # gom mọi lỗi vào một danh sách
-    try:  # chạy các quy tắc có sẵn của Django (độ dài 8, không quá phổ biến, không giống email/tên, không toàn số)
-        validate_password(mat_khau, user)  # các quy tắc này lấy từ AUTH_PASSWORD_VALIDATORS trong settings.py
-    except ValidationError as loi:  # có quy tắc nào vi phạm
+    try:  # chạy các luật trong settings.py: độ dài 8, không quá phổ biến, không giống email/tên, không toàn số, và DoPhucTapMatKhau (chữ hoa, chữ thường, số, ký tự đặc biệt)
+        validate_password(mat_khau, user)  # DoPhucTapMatKhau đã nằm trong settings.py nên KHÔNG gọi riêng ở đây nữa, nếu không mỗi lỗi hiện 2 lần
+    except ValidationError as loi:  # có luật nào vi phạm
         loi_mat_khau.extend(loi.error_list)  # lấy từng lỗi bỏ vào danh sách
-    try:  # chạy thêm luật của FRAMIE: chữ hoa, chữ thường, số, ký tự đặc biệt (gọi thẳng, không qua settings.py)
-        DoPhucTapMatKhau().validate(mat_khau, user)  # TODO: khi Khoa thêm DoPhucTapMatKhau vào AUTH_PASSWORD_VALIDATORS thì XÓA khối try này (4 dòng), nếu không mỗi lỗi hiện 2 lần
-    except ValidationError as loi:  # thiếu loại ký tự
-        loi_mat_khau.extend(loi.error_list)  # bỏ lỗi vào cùng danh sách
     return loi_mat_khau  # trả danh sách lỗi cho form
 
 

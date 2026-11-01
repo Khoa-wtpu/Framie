@@ -18,4 +18,11 @@ urlpatterns = [  # danh sách đường dẫn của app accounts
     path('quen-mat-khau/', views_mat_khau.quen_mat_khau, name='forgot_password'),  # P6 bước 1: nhập email
     path('quen-mat-khau/xac-thuc/', views_mat_khau.nhap_ma_xac_thuc, name='verify_reset_code'),  # P6 bước 2: nhập mã 6 chữ số
     path('quen-mat-khau/dat-lai/', views_mat_khau.dat_lai_mat_khau_moi, name='reset_password'),  # P6 bước 3: nhập mật khẩu mới
+    path('quan-tri/tai-khoan/', views_quan_tri.danh_sach_tai_khoan, name='admin_accounts'),
+    # P7: danh sách tài khoản; name khớp permissions.py và menu header
+    path('quan-tri/tai-khoan/<int:pk>/doi-vai-tro/', views_quan_tri.doi_vai_tro, name='admin_account_role'),
+    # P7: đổi vai trò (chỉ POST)
+    path('quan-tri/tai-khoan/<int:pk>/khoa-mo/', views_quan_tri.khoa_mo_tai_khoan, name='admin_account_toggle'),
+    # P7: khóa/mở (chỉ POST)
 ]  # hết danh sách
+

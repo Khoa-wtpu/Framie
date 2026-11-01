@@ -96,6 +96,16 @@ class QuenMatKhauTests(TestCase):  # nhóm test của P6
         self.assertEqual(lan_1.TrangThai, TT.HET_HAN)  # lượt 1 hết hạn
         self.assertEqual(lan_2.TrangThai, TT.CHO_XAC_THUC)  # lượt 2 còn dùng được
 
+    def test_link_quay_lai_dang_nhap(self):  # feedback P6-3: link phải trỏ đúng trang đăng nhập, không được rỗng
+        res = self.client.get(URL_1)  # mở trang bước 1
+        self.assertContains(res, 'href="/dang-nhap/"')  # có link tới trang đăng nhập
+
+    def test_form_khong_con_js_viet_trong_html(self):  # feedback P6-2: JS phải nằm trong file tĩnh, không viết trong thuộc tính HTML
+        res = self.client.get(URL_1)  # mở trang bước 1
+        self.assertNotContains(res, 'onsubmit')  # không còn onsubmit viết thẳng trong thẻ form
+        self.assertContains(res, 'data-chong-bam-doi')  # form được đánh dấu để file JS xử lý
+        self.assertContains(res, 'accounts/js/dat_lai_mat_khau.js')  # và trang nạp đúng file JS tĩnh
+
     def test_da_dang_nhap_bi_chuyen_di(self):  # người đã đăng nhập không cần quên mật khẩu
         self.client.force_login(self.user)  # đăng nhập thẳng
         self.assertEqual(self.client.get(URL_1).status_code, 302)  # bị chuyển đi
@@ -198,6 +208,11 @@ class QuenMatKhauTests(TestCase):  # nhóm test của P6
         self.assertEqual(yeu_cau.TrangThai, TT.DA_XAC_THUC)  # lượt vẫn chờ đặt mật khẩu
         self.user.refresh_from_db()  # đọc lại User
         self.assertTrue(self.user.check_password(MAT_KHAU_CU))  # mật khẩu cũ chưa đổi
+
+    def test_loi_mat_khau_chi_hien_mot_lan(self):  # feedback P6-1: mỗi câu lỗi mật khẩu chỉ được hiện đúng 1 lần
+        self.den_buoc_3()  # đi qua bước 1 và 2
+        res = self.client.post(URL_3, {'mat_khau_moi': 'moi#matkhau2'})  # mật khẩu thiếu chữ hoa
+        self.assertContains(res, 'Mật khẩu phải có ít nhất một chữ hoa.', count=1)  # câu báo xuất hiện đúng 1 lần
 
     def test_mat_khau_giong_email_bi_tu_choi(self):  # luật giống thông tin cá nhân của Django cũng áp dụng
         self.den_buoc_3()  # đi qua bước 1 và 2
