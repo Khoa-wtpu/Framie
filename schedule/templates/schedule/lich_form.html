@@ -1,0 +1,25 @@
+{% extends "base.html" %}{# K10 - UC3.1: thêm / sửa khung giờ (wireframe Module 3, màn SC3.2) #}
+{% load static %}
+{% block title %}{{ tieu_de }}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'schedule/css/lich.css' %}">{% endblock %}
+{% block content %}
+<div class="container lich lich--hep">
+  <p><a href="{{ url_quay_lai }}">◂ Quay lại Quản lý lịch</a></p>
+  <h1>{{ tieu_de }}</h1>
+  <p class="lich__mo-ta">Chọn ngày và khoảng giờ bạn nhận chụp.</p>
+  <form class="panel" method="post" novalidate>
+    {% csrf_token %}
+    {% if form.errors %}{% include "includes/alert.html" with level="danger" text="Thông tin lịch không hợp lệ. Vui lòng kiểm tra và chỉnh sửa." %}{% endif %}{# UC3.1 ngoại lệ 4a #}
+    {% for loi in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=loi %}{% endfor %}
+    {% include "includes/form_field.html" with field=form.Ngay %}
+    <div class="lich-form__gio">
+      {% include "includes/form_field.html" with field=form.GioBatDau %}
+      {% include "includes/form_field.html" with field=form.GioKetThuc %}
+    </div>
+    <div class="lich-form__nut">
+      <a class="btn btn--secondary" href="{{ url_quay_lai }}">Hủy</a>
+      <button class="btn btn--primary" type="submit">Lưu</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

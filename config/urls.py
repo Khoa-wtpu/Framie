@@ -28,6 +28,7 @@ urlpatterns = [
     path('', include('accounts.urls')),           # nối accounts/urls.py: /dang-nhap/, /dang-xuat/ (P3 của Phanh)
     path('', include('profiles.urls')),           # nối profiles/urls.py: trang thử K3 (xóa khi gộp bản cuối)
     path('', include('search.urls')),
+    path('', include('schedule.urls')),
 ]
 
 # Khi chạy thử (DEBUG = True): địa chỉ /media/... dẫn tới thư mục media/ trên máy,
