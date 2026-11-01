@@ -1,0 +1,114 @@
+{% extends "base.html" %}{# N4 - UC5.3: Nhiếp ảnh gia tải ảnh lên Booking #}
+{% load ui %}
+{% block title %}Tải ảnh lên hệ thống{% endblock %}
+{% block content %}
+<div class="container stack">
+  <header>
+    <h1>Tải ảnh lên hệ thống</h1>
+    <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaKhachHang.get_full_name }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>
+  </header>
+
+  {% if not giai_doan %}
+    {% include "includes/alert.html" with level="info" text="Booking này chưa đến lúc tải ảnh. Chỉ tải được sau khi buổi chụp hoàn tất (Đã chụp) hoặc khi đang hậu kỳ." %}
+  {% else %}
+    <section class="panel stack">
+      <h2>{{ giai_doan.tieu_de }}</h2>
+      {% if dang_o_buoc_goc %}
+        <p>Chọn các ảnh đã chụp. Hệ thống tự động chèn watermark trước khi lưu.
+          Tải xong, Booking chuyển sang
+          {% if gioi_han %}<strong>Chờ Khách hàng lựa chọn ảnh</strong> (Khách có 2 ngày để chọn){% else %}<strong>Chờ hậu kỳ</strong> (gói hậu kỳ toàn bộ ảnh){% endif %}.
+          Tên ảnh (không tính đuôi) không được trùng nhau.</p>
+      {% else %}
+        <p>Chọn các ảnh đã hậu kỳ. <strong>Tên tệp (không tính đuôi) phải trùng tên ảnh gốc</strong> để hệ thống thay đúng ảnh.
+          Khi đủ ảnh, Booking chuyển sang <strong>Chờ Khách hàng kiểm tra</strong>.</p>
+        {% if cho_hau_ky %}
+          <p>Còn <strong>{{ cho_hau_ky|length }}</strong> ảnh cần tải:</p>
+          <p class="muted">{% for a in cho_hau_ky %}{{ a.TenAnh }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+        {% endif %}
+      {% endif %}
+    </section>
+
+    <form method="post" enctype="multipart/form-data" id="form-tai-anh" class="panel stack" novalidate>
+      {% csrf_token %}
+      <div id="khung-loi">
+        {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}
+      </div>
+      {% include "includes/form_field.html" with field=form.anh %}
+      <div>
+        <progress id="thanh-tien-trinh" max="100" value="0" hidden style="width:100%"></progress>
+        <p id="chu-tien-trinh" class="muted" aria-live="polite"></p>
+      </div>
+      <button class="btn btn--primary" type="submit" id="nut-tai">Tải ảnh lên</button>
+    </form>
+  {% endif %}
+
+  {% if anhs %}
+    <section class="panel stack">
+      <h2>Ảnh trong Booking ({{ anhs|length }})</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:12px">
+        {% for a in anhs %}
+          <figure style="margin:0;width:140px">
+            <img src="{% url 'xem_anh' a.pk %}" alt="{{ a.TenAnh }}" loading="lazy" style="width:140px;height:95px;object-fit:cover">
+            <figcaption class="muted" style="font-size:.8rem;word-break:break-all">{{ a.TenAnh }}<br>{{ a.LoaiAnh }} · v{{ a.PhienBanAnh }}</figcaption>
+          </figure>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {                                                /* thanh tiến trình: gửi form bằng XMLHttpRequest để biết đã tải được bao nhiêu % */
+  var form = document.getElementById('form-tai-anh');
+  if (!form) { return; }
+  var thanh = document.getElementById('thanh-tien-trinh');
+  var chu = document.getElementById('chu-tien-trinh');
+  var khungLoi = document.getElementById('khung-loi');
+  var nut = document.getElementById('nut-tai');
+
+  function hienLoi(ds) {                                       /* textContent để tên tệp lạ không chạy được mã độc */
+    khungLoi.innerHTML = '';
+    ds.forEach(function (t) {
+      var p = document.createElement('p');
+      p.style.color = '#b00020';
+      p.textContent = t;
+      khungLoi.appendChild(p);
+    });
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var oTep = form.querySelector('input[type=file]');
+    if (oTep && oTep.files.length > {{ so_anh_toi_da|default:100 }}) {
+      hienLoi(['Mỗi lần chỉ được tải tối đa {{ so_anh_toi_da|default:100 }} ảnh (bạn chọn ' + oTep.files.length + ' ảnh).']);
+      return;
+    }
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', window.location.href);
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.upload.onprogress = function (ev) {
+      if (!ev.lengthComputable) { return; }
+      var p = Math.round(ev.loaded * 100 / ev.total);
+      thanh.value = p;
+      chu.textContent = p < 100 ? 'Đang tải lên... ' + p + '%' : 'Đã tải xong, đang chèn watermark và lưu ảnh...';
+    };
+    xhr.onload = function () {
+      var kq = null;
+      try { kq = JSON.parse(xhr.responseText); } catch (err) { kq = null; }
+      if (kq && kq.ok) { window.location.href = kq.url; return; }
+      hienLoi(kq && kq.loi ? kq.loi : ['Không thể tải ảnh lên, vui lòng thử lại.']);
+      thanh.hidden = true; chu.textContent = ''; nut.disabled = false;
+    };
+    xhr.onerror = function () {
+      hienLoi(['Mất kết nối khi tải ảnh, vui lòng thử lại.']);
+      thanh.hidden = true; chu.textContent = ''; nut.disabled = false;
+    };
+    khungLoi.innerHTML = '';
+    thanh.hidden = false; thanh.value = 0; nut.disabled = true;
+    xhr.send(new FormData(form));
+  });
+})();
+</script>
+{% endblock %}
