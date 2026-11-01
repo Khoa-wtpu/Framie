@@ -7,11 +7,14 @@ from .constants import (KetQuaTaiAnh, LoaiAnh, LuuTruAnh, TrangThaiBooking as B,
                         TrangThaiSlot as SL, TrangThaiThanhToan as TT, XuLyTienCoc, HOAN_TAT_BAN_GIAO)
 
 TONE_BY_STATUS = {
-    # Booking: đi từ ấm (đang chờ) sang lạnh (đang làm) rồi xanh lá (xong); thất bại dùng đỏ/nâu/xám
-    B.CHO_XAC_NHAN: "amber", B.CHO_DAT_COC: "orange", B.CHOT_BOOKING: "blue",
-    B.DA_CHUP: "indigo", B.CHO_KH_CHON_ANH: "violet", B.CHO_HAU_KY: "sky",
-    B.DANG_HAU_KY: "teal", B.CHO_KH_KIEM_TRA: "pink", B.CHO_XAC_NHAN_THANH_TOAN: "lime",
-    B.HOAN_THANH: "green", B.DA_TU_CHOI: "red", B.HET_THOI_HAN_DAT_COC: "brown", B.DA_HUY: "gray",
+    # Booking: 13 trạng thái gom về 5 màu theo "ai đang phải làm / việc đang ở đâu"
+    #   amber  = chờ Nhiếp ảnh gia xử lý     violet = chờ Khách hàng làm
+    #   blue   = đang diễn ra                 green  = hoàn tất     red = kết thúc không thành công
+    B.CHO_XAC_NHAN: "amber", B.CHO_HAU_KY: "amber", B.CHO_XAC_NHAN_THANH_TOAN: "amber",
+    B.CHO_DAT_COC: "violet", B.CHO_KH_CHON_ANH: "violet", B.CHO_KH_KIEM_TRA: "violet",
+    B.CHOT_BOOKING: "blue", B.DA_CHUP: "blue", B.DANG_HAU_KY: "blue",
+    B.HOAN_THANH: "green",
+    B.DA_TU_CHOI: "red", B.HET_THOI_HAN_DAT_COC: "red", B.DA_HUY: "red",
     # Hồ sơ Nhiếp ảnh gia
     HS.CHO_DUYET: "amber", HS.DA_DUYET: "green", HS.DA_TU_CHOI: "red",
     # Slot và lượt giữ chỗ

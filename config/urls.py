@@ -24,6 +24,10 @@ admin.site.index_title = 'Quản trị hệ thống'
 
 urlpatterns = [
     path('admin/', admin.site.urls),              # /admin dẫn tới trang quản trị
+
+    path('bookings/', include('bookings.giu_cho')),
+    path('bookings/', include('bookings.gui_booking')),
+
     path('', include('core.urls')),               # nối core/urls.py, có /ui-kit/
     path('', include('accounts.urls')),           # nối accounts/urls.py: /dang-nhap/, /dang-xuat/ (P3 của Phanh)
     path('', include('profiles.urls')),           # nối profiles/urls.py: trang thử K3 (xóa khi gộp bản cuối)

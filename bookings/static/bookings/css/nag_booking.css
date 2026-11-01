@@ -1,0 +1,24 @@
+/* bookings/static/bookings/css/nag_booking.css - Quản lý Booking của Nhiếp ảnh gia (UC4.3 - UC4.5).
+   Chỉ dùng token trong static/css/tokens.css. Nạp bằng {% static 'bookings/css/nag_booking.css' %} trong block extra_head. */
+
+ {# Khung bộ lọc: các ô xếp thành hàng ngang, tự xuống dòng khi màn hình hẹp (điện thoại). #}
+ .nag-ds__loc { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: flex-end; }
+ {# Mỗi ô chọn rộng tối thiểu 14rem và không chừa lề dưới. #}
+ .nag-ds__loc .field { margin-bottom: 0; min-width: 14rem; }
+ {# Bảng danh sách: rộng hết khung, các đường kẻ liền nhau, cỡ chữ nhỏ. #}
+ .nag-ds__bang { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+ {# Mỗi ô của bảng: căn trái, có khoảng đệm, kẻ đường mờ ở đáy mỗi dòng. #}
+ .nag-ds__bang th, .nag-ds__bang td { text-align: left; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); vertical-align: top; }
+ {# Ô tiêu đề cột: chữ đậm, màu nhạt, không tự xuống dòng. #}
+ .nag-ds__bang th { font-weight: var(--fw-heading); color: var(--color-text-muted); white-space: nowrap; }
+ {# Khung bao quanh bảng: nếu bảng quá rộng thì cuộn ngang thay vì làm vỡ trang. #}
+ .nag-ds__cuon { overflow-x: auto; } /* bảng rộng thì cuộn ngang, không vỡ khung */
+
+ {# Khối thông tin chia 2 cột: cột trái là tên mục (nhãn), cột phải là giá trị. #}
+ .nag-ct__luoi { display: grid; grid-template-columns: max-content 1fr; gap: var(--space-2) var(--space-5); margin: 0; }
+ {# Tên mục: chữ màu nhạt, cỡ nhỏ. #}
+ .nag-ct__luoi dt { color: var(--color-text-muted); font-size: var(--text-sm); }
+ {# Giá trị: chữ dài (concept, yêu cầu riêng) sẽ tự xuống dòng, không làm vỡ khung. #}
+ .nag-ct__luoi dd { margin: 0; overflow-wrap: anywhere; } /* concept / yêu cầu riêng dài không làm vỡ khung */
+ {# Hàng nút bấm: xếp ngang, tự xuống dòng khi màn hình hẹp. #}
+ .nag-ct__nut { display: flex; flex-wrap: wrap; gap: var(--space-3); }

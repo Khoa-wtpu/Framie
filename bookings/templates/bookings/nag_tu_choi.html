@@ -1,0 +1,51 @@
+{# UC4.5 bước 3-4: nhập lý do từ chối. File này được sử dụng bởi bookings/tiep_nhan.py (view tu_choi) #}
+
+{# Kế thừa khung chung của website từ base.html. #}
+{% extends "base.html" %}
+
+{# Tiêu đề hiện trên tab trình duyệt, kèm mã Booking. #}
+{% block title %}Từ chối Booking #{{ booking.pk }}{% endblock %}
+
+{# Phần nội dung chính của trang. #}
+{% block content %}
+{# Khung nằm giữa trang; các khối bên trong xếp dọc, cách đều nhau. #}
+<section class="container stack">
+
+  {# Đường link quay lại trang chi tiết Booking (khi đổi ý, không từ chối nữa). #}
+  <p><a href="{% url 'chi_tiet_yeu_cau_booking' ma_booking=booking.pk %}">← Quay lại chi tiết Booking</a></p>
+
+  {# Tiêu đề trang. #}
+  <h1>Từ chối Booking #{{ booking.pk }}</h1>
+
+  {# Khung nhắc lại Booking đang từ chối (khách, gói, giờ chụp) để Nhiếp ảnh gia không từ chối nhầm Booking. #}
+  <div class="panel">
+    <p>Khách hàng: <strong>{{ ten_khach }}</strong><br>
+       Gói: <strong>{{ booking.MaGoi.TenGoi }}</strong>, {{ booking.NgayGioChup|date:"H:i d/m/Y" }}</p>
+  </div>
+
+  {# novalidate: để máy chủ hiện đúng câu "Vui lòng nhập lý do từ chối" (ngoại lệ 4a) thay vì cửa sổ của trình duyệt #}
+  {# Biểu mẫu nhập lý do; gửi bằng POST khi bấm 'Xác nhận từ chối'. #}
+  <form class="panel" method="post" novalidate>
+    {# Mã bảo mật CSRF chống gửi lệnh giả mạo. #}
+    {% csrf_token %}
+    {# Nếu có lỗi chung của biểu mẫu (ví dụ Booking vừa bị xử lý ở nơi khác) thì hiện thành dòng cảnh báo đỏ. #}
+    {% if form.non_field_errors %}
+      {# Lặp qua từng lỗi chung. #}
+      {% for loi in form.non_field_errors %}
+        {# Hiển thị một lỗi dưới dạng hộp cảnh báo màu đỏ. #}
+        {% include "includes/alert.html" with level="danger" text=loi %}
+      {% endfor %}
+    {% endif %}
+    {# Hiển thị ô nhập 'Lý do từ chối'; nếu nhập thiếu hoặc quá dài, câu lỗi (ví dụ 'Vui lòng nhập lý do từ chối') hiện ngay dưới ô. #}
+    {% include "includes/form_field.html" with field=form.ly_do %}
+    {# Hàng chứa hai nút. #}
+    <div class="row">
+      {# Nút gửi biểu mẫu: thực hiện từ chối (UC4.5 bước 4). #}
+      <button class="btn btn--danger" type="submit">Xác nhận từ chối</button>
+      {# Nút 'Hủy': quay lại trang chi tiết, không từ chối gì cả. #}
+      <a class="btn btn--ghost" href="{% url 'chi_tiet_yeu_cau_booking' ma_booking=booking.pk %}">Hủy</a>
+    </div>
+  </form>
+
+</section>
+{% endblock %}

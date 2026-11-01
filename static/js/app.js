@@ -31,4 +31,24 @@
     if (close) close.closest('.alert').remove();
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDropdowns(); });
+  // Chống bấm đúp nút gửi form: lần gửi đầu thêm is-loading cho nút, các lần bấm sau bị chặn.
+  document.addEventListener('submit', function (e) {
+    var form = e.target;
+    if (form.dataset.submitting === 'true') {   // đã gửi rồi -> chặn gửi lần nữa
+      e.preventDefault();
+      return;
+    }
+    form.dataset.submitting = 'true';
+    var btn = e.submitter || form.querySelector('button[type="submit"]');
+    if (btn) btn.classList.add('is-loading');
+  });
+
+  // Quay lại bằng nút Back của trình duyệt thì trả form về trạng thái bình thường.
+  window.addEventListener('pageshow', function (e) {
+    if (!e.persisted) return;
+    document.querySelectorAll('form[data-submitting]').forEach(function (f) {
+      delete f.dataset.submitting;
+      f.querySelectorAll('.is-loading').forEach(function (b) { b.classList.remove('is-loading'); });
+    });
+  });
 })();

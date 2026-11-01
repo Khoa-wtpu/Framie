@@ -1,6 +1,7 @@
 from django.urls import path  # hàm khai báo một đường dẫn
 
 from . import views  # các view vừa viết
+from . import views_mat_khau  # P6: 3 bước quên mật khẩu
 from . import views_quan_tri  # B7: view trang tổng quan khu Quản trị
 
 urlpatterns = [  # danh sách đường dẫn của app accounts
@@ -14,4 +15,7 @@ urlpatterns = [  # danh sách đường dẫn của app accounts
     path('quan-tri/', views_quan_tri.tong_quan, name='admin_dashboard'),  # B7: trang tổng quan Quản trị; name khớp permissions.py và menu
     path('dang-ky/nhiep-anh-gia/', views.dang_ky_nhiep_anh_gia, name='register_photographer'),
     # P5: đăng ký Nhiếp ảnh gia
+    path('quen-mat-khau/', views_mat_khau.quen_mat_khau, name='forgot_password'),  # P6 bước 1: nhập email
+    path('quen-mat-khau/xac-thuc/', views_mat_khau.nhap_ma_xac_thuc, name='verify_reset_code'),  # P6 bước 2: nhập mã 6 chữ số
+    path('quen-mat-khau/dat-lai/', views_mat_khau.dat_lai_mat_khau_moi, name='reset_password'),  # P6 bước 3: nhập mật khẩu mới
 ]  # hết danh sách
