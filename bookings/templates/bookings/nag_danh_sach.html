@@ -2,27 +2,14 @@
 
 {# Kế thừa khung chung của website (đầu trang, menu, chân trang) từ base.html; file này chỉ viết phần nội dung riêng của trang. #}
 {% extends "base.html" %}
-{% load ui %} {# status_badge: nhãn màu theo trạng thái #}
+{% load ui static %} {# status_badge: nhãn màu theo trạng thái #}
 
 {# Tiêu đề hiện trên tab của trình duyệt. #}
 {% block title %}Quản lý Booking{% endblock %}
 
 {# Chèn thêm phần định dạng (CSS) riêng của trang này vào phần đầu trang. #}
 {% block extra_head %}
-<style>
-  {# Khung bộ lọc: các ô xếp thành hàng ngang, tự xuống dòng khi màn hình hẹp (điện thoại). #}
-  .nag-ds__loc { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: flex-end; }
-  {# Mỗi ô chọn rộng tối thiểu 14rem và không chừa lề dưới. #}
-  .nag-ds__loc .field { margin-bottom: 0; min-width: 14rem; }
-  {# Bảng danh sách: rộng hết khung, các đường kẻ liền nhau, cỡ chữ nhỏ. #}
-  .nag-ds__bang { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
-  {# Mỗi ô của bảng: căn trái, có khoảng đệm, kẻ đường mờ ở đáy mỗi dòng. #}
-  .nag-ds__bang th, .nag-ds__bang td { text-align: left; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); vertical-align: top; }
-  {# Ô tiêu đề cột: chữ đậm, màu nhạt, không tự xuống dòng. #}
-  .nag-ds__bang th { font-weight: var(--fw-heading); color: var(--color-text-muted); white-space: nowrap; }
-  {# Khung bao quanh bảng: nếu bảng quá rộng thì cuộn ngang thay vì làm vỡ trang. #}
-  .nag-ds__cuon { overflow-x: auto; } /* bảng rộng thì cuộn ngang, không vỡ khung */
-</style>
+<link rel="stylesheet" href="{% static 'bookings/css/nag_booking.css' %}">
 {% endblock %}
 
 {# Phần nội dung chính của trang. #}

@@ -32,7 +32,6 @@ from datetime import datetime
 from django import forms
 from django.contrib import messages
 from django.core.exceptions import ValidationError
-from django.core.mail import send_mail
 from django.db import DatabaseError, IntegrityError, transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import NoReverseMatch, path, reverse
@@ -48,6 +47,7 @@ from bookings.giu_cho import (   # dùng lại phần của UC4.1 để hai UC n
     khach_hang_required,
     so_giay_con_lai,
 )
+from bookings.services import gui_email_sau_commit   # gửi Email sau commit + ghi TrangThaiGuiEmail (dùng chung)
 from bookings.models import (
     THOI_GIAN_GIU_CHO,
     TRANG_THAI_HET_HIEU_LUC,
@@ -60,10 +60,8 @@ from core.constants import (
     TrangThaiBooking,
     TrangThaiGiuCho,
     TrangThaiGoi,
-    TrangThaiGuiEmail,
     TrangThaiSlot,
 )
-from notifications.models import ThongBao
 from notifications.services import gui_thong_bao
 from profiles.models import GoiDichVu, LoaiHinhChup
 from schedule.models import LichKhaDung
@@ -210,24 +208,6 @@ def _tien(so):
     return f'{int(so):,}'.replace(',', '.')
 
 
-def _gui_email_nhiep_anh_gia(thong_bao, nguoi_nhan, tieu_de, noi_dung):
-    """Bước 7: tự động gửi Email cho Nhiếp ảnh gia. Chạy SAU KHI Booking đã lưu xong (transaction.on_commit);
-    lỗi gửi mail chỉ được ghi log + đánh dấu 'Gửi thất bại', không làm hỏng Booking đã tạo."""
-    try:
-        if not nguoi_nhan.email:
-            raise ValueError('Nhiếp ảnh gia chưa có email')
-        send_mail(tieu_de, noi_dung, None, [nguoi_nhan.email], fail_silently=False)   # None = DEFAULT_FROM_EMAIL
-        ket_qua = TrangThaiGuiEmail.THANH_CONG
-    except Exception:  # noqa: BLE001  # SMTP/DNS/... lỗi gì cũng không được làm sập request
-        logger.exception('gui_yeu_cau_booking: gửi email thất bại (%s)', tieu_de)
-        ket_qua = TrangThaiGuiEmail.THAT_BAI
-    if thong_bao is not None:   # ghi kết quả gửi email vào thông báo web tương ứng
-        try:
-            ThongBao.objects.filter(pk=thong_bao.pk).update(TrangThaiGuiEmail=ket_qua)
-        except DatabaseError:
-            logger.exception('gui_yeu_cau_booking: không ghi được TrangThaiGuiEmail')
-
-
 def _gui_thong_bao_booking_moi(booking, lich, goi, khach_hang):
     """Bước 6-7 + hậu điều kiện: thông báo web cho Nhiếp ảnh gia, Email cho Nhiếp ảnh gia,
     thông báo web xác nhận đã gửi cho Khách hàng. gui_thong_bao (của Phanh) tự nuốt lỗi nên không phá Booking."""
@@ -240,7 +220,7 @@ def _gui_thong_bao_booking_moi(booking, lich, goi, khach_hang):
     noi_dung_nag = (f'{_ten_hien_thi(khach_hang)} vừa gửi yêu cầu Booking #{booking.pk}: {chi_tiet}. '
                     f'Vui lòng xem và xác nhận yêu cầu.')
     tb_nag = gui_thong_bao(nag_user, tieu_de_nag, noi_dung_nag, booking=booking)             # bước 6 (web)
-    transaction.on_commit(lambda: _gui_email_nhiep_anh_gia(tb_nag, nag_user, tieu_de_nag, noi_dung_nag))   # bước 7 (Email)
+    gui_email_sau_commit(tb_nag, nag_user, tieu_de_nag, noi_dung_nag)                       # bước 7 (Email, gửi sau commit)
 
     gui_thong_bao(khach_hang, TB_DA_GUI,                                                      # hậu điều kiện: báo Khách hàng
                   f'Yêu cầu Booking #{booking.pk} với {_ten_hien_thi(nag_user)} ({chi_tiet}) đã được gửi. '

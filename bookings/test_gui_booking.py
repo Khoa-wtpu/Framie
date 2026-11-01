@@ -20,6 +20,8 @@ from django.utils import timezone
 from bookings import giu_cho as uc41
 # Nạp thư viện hoặc thành phần cần dùng trong kiểm thử.
 from bookings import gui_booking as uc
+# services: nơi chứa hàm gửi Email dùng chung (send_mail nằm ở đây nên mock phải trỏ tới module này).
+from bookings import services
 # Nạp thư viện hoặc thành phần cần dùng trong kiểm thử.
 from bookings.models import Booking, GiuCho, LichSuTrangThaiBooking
 # Nạp thư viện hoặc thành phần cần dùng trong kiểm thử.
@@ -230,7 +232,7 @@ class UC42(TestCase):
         # Tạo một hoặc nhiều lượt giữ chỗ để sử dụng trong kịch bản kiểm thử.
         g = self.giu(self.a, self.s1)
         # Thay thế tạm thời hàm gửi email hoặc xử lý hết hạn để mô phỏng tình huống kiểm thử.
-        with mock.patch.object(uc, 'send_mail', side_effect=OSError('smtp down')):
+        with mock.patch.object(services, 'send_mail', side_effect=OSError('smtp down')):
             # Thực hiện bước xử lý hoặc thiết lập dữ liệu cho trường hợp kiểm thử.
             self.gui(self.a, g)
         # So sánh giá trị thực tế với giá trị mong đợi để xác nhận kết quả kiểm thử.

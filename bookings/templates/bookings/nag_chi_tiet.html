@@ -3,23 +3,14 @@
 {# Kế thừa khung chung của website từ base.html; file này chỉ viết phần nội dung riêng. #}
 {% extends "base.html" %}
 {# Nạp bộ thẻ giao diện 'ui' để dùng thẻ status_badge (nhãn trạng thái có màu). #}
-{% load ui %}
+{% load ui static %}
 
 {# Tiêu đề hiện trên tab trình duyệt, kèm mã Booking. #}
 {% block title %}Booking #{{ booking.pk }}{% endblock %}
 
 {# Chèn thêm phần định dạng (CSS) riêng của trang này. #}
 {% block extra_head %}
-<style>
-  {# Khối thông tin chia 2 cột: cột trái là tên mục (nhãn), cột phải là giá trị. #}
-  .nag-ct__luoi { display: grid; grid-template-columns: max-content 1fr; gap: var(--space-2) var(--space-5); margin: 0; }
-  {# Tên mục: chữ màu nhạt, cỡ nhỏ. #}
-  .nag-ct__luoi dt { color: var(--color-text-muted); font-size: var(--text-sm); }
-  {# Giá trị: chữ dài (concept, yêu cầu riêng) sẽ tự xuống dòng, không làm vỡ khung. #}
-  .nag-ct__luoi dd { margin: 0; overflow-wrap: anywhere; } /* concept / yêu cầu riêng dài không làm vỡ khung */
-  {# Hàng nút bấm: xếp ngang, tự xuống dòng khi màn hình hẹp. #}
-  .nag-ct__nut { display: flex; flex-wrap: wrap; gap: var(--space-3); }
-</style>
+<link rel="stylesheet" href="{% static 'bookings/css/nag_booking.css' %}">
 {% endblock %}
 
 {# Phần nội dung chính của trang. #}

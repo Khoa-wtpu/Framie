@@ -41,16 +41,11 @@
 # ---------------------------------------------------------------------
 # Thư viện ghi nhật ký (log): dùng để ghi lại lỗi kỹ thuật cho lập trình viên tra cứu, người dùng không nhìn thấy.
 import logging
-# Decimal: kiểu số thập phân chính xác, dùng cho TIỀN (số thường như 0.1+0.2 bị sai số nhỏ).
-# ROUND_HALF_UP: cách làm tròn thông thường (từ 0,5 trở lên thì làm tròn lên).
-from decimal import ROUND_HALF_UP, Decimal
 
 # forms: công cụ của Django để tạo biểu mẫu nhập liệu và kiểm tra dữ liệu người dùng nhập.
 from django import forms
 # ValidationError: loại lỗi mà hàm đổi trạng thái của nhóm ném ra khi thao tác không hợp lệ.
 from django.core.exceptions import ValidationError
-# send_mail: hàm gửi Email.
-from django.core.mail import send_mail
 # Paginator: chia danh sách dài thành từng trang (ở đây 10 dòng mỗi trang).
 from django.core.paginator import Paginator
 # DatabaseError: lỗi từ cơ sở dữ liệu.
@@ -61,10 +56,9 @@ from django.contrib import messages
 # Http404: báo 'không tìm thấy trang' (mã lỗi 404).
 from django.http import Http404
 # render: dựng trang HTML từ file giao diện (template). redirect: chuyển người dùng sang trang khác.
-# (get_object_or_404 hiện chưa được dùng tới; để lại cũng không ảnh hưởng gì.)
-from django.shortcuts import get_object_or_404, redirect, render
-# path: khai báo một đường dẫn (URL). (reverse hiện chưa được dùng tới.)
-from django.urls import path, reverse
+from django.shortcuts import redirect, render
+# path: khai báo một đường dẫn (URL).
+from django.urls import path
 # timezone: lấy giờ hiện tại và đổi giờ theo múi giờ Việt Nam.
 from django.utils import timezone
 # Các 'nhãn' giới hạn cách truy cập một trang: chỉ cho GET (chỉ xem), chỉ cho POST (gửi lệnh), hoặc cả hai.
@@ -77,13 +71,14 @@ from bookings.models import Booking
 # Các hàm dùng chung của nhóm:
 # chuyen_trang_thai_booking = hàm DUY NHẤT được phép đổi trạng thái Booking;
 # DO_DAI_LY_DO_TOI_DA = độ dài lý do tối đa (255 ký tự).
-from bookings.services import DO_DAI_LY_DO_TOI_DA, chuyen_trang_thai_booking
+# gui_email_sau_commit = hàm DÙNG CHUNG gửi Email sau khi lưu xong và ghi kết quả gửi vào thông báo web.
+from bookings.services import DO_DAI_LY_DO_TOI_DA, chuyen_trang_thai_booking, gui_email_sau_commit
 # Các hằng số tên trạng thái dùng chung toàn dự án (tránh gõ tay chữ 'Chờ xác nhận' ở nhiều nơi dễ sai chính tả).
-from core.constants import BenThucHien, TrangThaiBooking, TrangThaiGuiEmail
-# ThongBao: bảng thông báo trên web.
-from notifications.models import ThongBao
+from core.constants import BenThucHien, LoaiThanhToan, TrangThaiBooking
 # gui_thong_bao: hàm của nhóm để tạo một thông báo trên web cho người nhận.
 from notifications.services import gui_thong_bao
+# tinh_so_tien: quy tắc tính tiền cọc 40% DUY NHẤT của dự án (Thanh toán dùng cùng hàm này để thu tiền thật).
+from payments.models import tinh_so_tien
 
 # Tạo 'sổ ghi lỗi' riêng cho file này; mỗi dòng log mang tên file nên dễ tìm.
 logger = logging.getLogger(__name__)
@@ -104,9 +99,6 @@ TB_DA_CHAP_NHAN = 'Đã chấp nhận Booking. Khách hàng có 1 ngày để đ
 TB_DA_TU_CHOI = 'Đã từ chối Booking và trả khung giờ về lịch trống.'
 # Câu chung khi gặp lỗi kỹ thuật (người dùng không cần biết chi tiết lỗi).
 TB_LOI_HE_THONG = 'Không thể thực hiện yêu cầu, vui lòng thử lại sau.'
-
-# Tỷ lệ đặt cọc: 0.4 = 40% (đúng quy định BR4.4-1). Viết trong dấu nháy để Decimal tính chính xác.
-TY_LE_COC = Decimal('0.4')   # BR4.4-1: đặt cọc 40% giá trị buổi chụp
 
 # Bộ lọc trạng thái của danh sách. Mặc định xem yêu cầu mới (bước 2 của Basic Flow).
 # Giá trị đặc biệt của bộ lọc, nghĩa là 'xem tất cả trạng thái'.
@@ -255,40 +247,6 @@ def dem_cho_xac_nhan(nag_user):
     return _booking_cua_nag(nag_user).filter(TrangThai=TrangThaiBooking.CHO_XAC_NHAN).count()
 
 
-# Gửi Email cho Khách và ghi lại kết quả.
-# Thiết kế để KHÔNG BAO GIỜ làm hỏng việc chấp nhận/từ chối: nếu gửi mail lỗi thì chỉ ghi nhận 'Gửi thất bại', Booking vẫn được lưu bình thường.
-def _gui_email_khach(thong_bao, khach, tieu_de, noi_dung):
-    """Gửi Email cho Khách. Chạy SAU KHI Booking đã lưu xong (transaction.on_commit); lỗi gửi mail chỉ ghi log
-    và đánh dấu 'Gửi thất bại' trên thông báo web, không làm hỏng việc chấp nhận / từ chối đã lưu."""
-    # Thử gửi mail; nếu có lỗi thì nhảy xuống khối 'except' bên dưới.
-    try:
-        # Khách chưa có địa chỉ Email thì không gửi được.
-        if not khach.email:
-            # Chủ động tạo một lỗi để rơi xuống khối 'except' phía dưới và ghi nhận là gửi thất bại.
-            raise ValueError('Khách hàng chưa có email')
-        # Gửi mail với: tiêu đề, nội dung, người gửi (None = dùng địa chỉ gửi mặc định của hệ thống), danh sách người nhận.
-        # fail_silently=False: nếu lỗi thì báo lỗi thay vì lặng lẽ bỏ qua.
-        send_mail(tieu_de, noi_dung, None, [khach.email], fail_silently=False)   # None = DEFAULT_FROM_EMAIL
-        # Gửi được -> ghi nhận 'Gửi thành công'.
-        ket_qua = TrangThaiGuiEmail.THANH_CONG
-    # Bắt MỌI loại lỗi (mạng, máy chủ mail...) để lỗi mail không làm sập trang.
-    except Exception:  # noqa: BLE001  # SMTP/DNS/... lỗi gì cũng không được làm sập request
-        # Ghi lỗi chi tiết vào log để lập trình viên tra cứu.
-        logger.exception('tiep_nhan: gửi email thất bại (%s)', tieu_de)
-        # Ghi nhận 'Gửi thất bại'.
-        ket_qua = TrangThaiGuiEmail.THAT_BAI
-    # Nếu có thông báo trên web đi kèm thì cập nhật kết quả gửi mail vào đó.
-    if thong_bao is not None:
-        # Lưu kết quả vào thông báo; bọc try để nếu lưu lỗi thì cũng không làm sập trang.
-        try:
-            # Tìm đúng thông báo theo mã và cập nhật cột 'TrangThaiGuiEmail' (thành công / thất bại).
-            ThongBao.objects.filter(pk=thong_bao.pk).update(TrangThaiGuiEmail=ket_qua)
-        # Lỗi cơ sở dữ liệu khi lưu kết quả thì chỉ ghi log.
-        except DatabaseError:
-            # Ghi lỗi vào log.
-            logger.exception('tiep_nhan: không ghi được TrangThaiGuiEmail')
-
-
 # Tạo câu mô tả ngắn một Booking để đưa vào nội dung thông báo cho Khách.
 def _mo_ta_booking(booking):
     # Đổi giờ chụp (hệ thống lưu theo giờ quốc tế UTC) sang giờ Việt Nam để hiển thị đúng.
@@ -307,9 +265,9 @@ def _thong_bao_khach(booking, tieu_de, noi_dung):
     khach = booking.MaKhachHang
     # Tạo thông báo trên web cho Khách, gắn với Booking này; biến tb giữ thông báo vừa tạo.
     tb = gui_thong_bao(khach, tieu_de, noi_dung, booking=booking)
-    # Hẹn: CHỈ khi toàn bộ việc lưu đã thành công (commit) thì mới gửi Email.
-    # Nếu việc lưu bị hủy giữa chừng thì Khách sẽ không nhận được mail sai sự thật. 'lambda' là hàm nhỏ viết gọn, được chạy vào đúng lúc đó.
-    transaction.on_commit(lambda: _gui_email_khach(tb, khach, tieu_de, noi_dung))
+    # Hẹn gửi Email bằng hàm dùng chung (bookings/services.py): CHỈ khi toàn bộ việc lưu đã thành công (commit) thì mới gửi,
+    # nên nếu việc lưu bị hủy giữa chừng thì Khách không nhận mail sai sự thật. Gửi lỗi chỉ đánh dấu 'Gửi thất bại'.
+    gui_email_sau_commit(tb, khach, tieu_de, noi_dung)
 
 
 # Phần DÙNG CHUNG của Chấp nhận và Từ chối: kiểm tra điều kiện rồi đổi trạng thái.
@@ -358,8 +316,8 @@ def chap_nhan_booking(nag_user, ma_booking):
         with transaction.atomic():
             # Đổi sang 'Chờ đặt cọc'; cờ True nghĩa là có kiểm tra 'đã quá giờ chụp'.
             booking = _doi_trang_thai(nag_user, ma_booking, TrangThaiBooking.CHO_DAT_COC, can_chua_qua_gio_chup=True)
-            # Tiền cọc = tổng giá trị x 40%, làm tròn đến đồng.
-            coc = (booking.TongGiaTri * TY_LE_COC).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+            # Tiền cọc lấy từ tinh_so_tien (payments/models.py) để khớp đúng số tiền hệ thống sẽ thu.
+            coc = tinh_so_tien(booking.TongGiaTri, LoaiThanhToan.TIEN_COC)
             # Hạn đặt cọc (đã được đặt = lúc chấp nhận + 1 ngày), đổi sang giờ Việt Nam để ghi vào thông báo.
             han = timezone.localtime(booking.HanDatCoc)
             # Gửi thông báo + Email cho Khách. Nội dung gồm: tên Nhiếp ảnh gia, mã Booking, mô tả buổi chụp, số tiền cọc và hạn cọc.
@@ -476,8 +434,8 @@ def chi_tiet_yeu_cau(request, ma_booking):
         'co_the_xu_ly': booking.TrangThai == TrangThaiBooking.CHO_XAC_NHAN,   # chỉ lúc này mới hiện nút xử lý
         # Tổng giá trị Booking đã định dạng (ví dụ 1.500.000).
         'tong_gia': _tien(booking.TongGiaTri),
-        # Số tiền cọc 40% đã làm tròn và định dạng, để báo trước cho Nhiếp ảnh gia.
-        'tien_coc': _tien((booking.TongGiaTri * TY_LE_COC).quantize(Decimal('1'), rounding=ROUND_HALF_UP)),
+        # Số tiền cọc 40% (tính bằng tinh_so_tien) đã định dạng, để báo trước cho Nhiếp ảnh gia.
+        'tien_coc': _tien(tinh_so_tien(booking.TongGiaTri, LoaiThanhToan.TIEN_COC)),
     })
 
 
