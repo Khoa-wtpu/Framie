@@ -1,0 +1,59 @@
+{% extends "base.html" %}{# N3 - UC5.2: Nhiếp ảnh gia xem minh chứng và xác nhận thanh toán tiền cọc #}
+{% load ui %}
+{% block title %}Xác nhận thanh toán tiền cọc{% endblock %}
+{% block content %}
+<div class="container stack">
+  <header>
+    <h1>Xác nhận thanh toán tiền cọc</h1>
+    <p class="muted">Booking #{{ booking.pk }} · {% status_badge booking.TrangThai %}</p>
+  </header>
+
+  <section class="panel stack">
+    <h2>Thông tin Booking</h2>
+    <p>Khách hàng: <strong>{{ booking.MaKhachHang.get_full_name }}</strong></p>
+    <p>Gói dịch vụ: <strong>{{ booking.MaGoi.TenGoi }}</strong></p>
+    <p>Ngày giờ chụp: <strong>{{ booking.NgayGioChup|date:"d/m/Y H:i" }}</strong></p>
+    <p>Địa điểm: {{ booking.DiaDiem }}</p>
+    {% if thanh_toan %}
+      <p>Số tiền cọc cần nhận (để đối chiếu): <strong>{{ thanh_toan.SoTien|floatformat:"0g" }} đ</strong></p>
+      <p>Trạng thái khoản cọc: {% status_badge thanh_toan.TrangThai %}</p>
+    {% endif %}
+  </section>
+
+  <section class="panel stack">
+    <h2>Minh chứng của Khách hàng</h2>
+    {% for mc in minh_chungs %}
+      <div>
+        <p class="muted">{{ mc.NgayTaiLen|date:"d/m/Y H:i" }} · {{ mc.TenTep }}</p>
+        <a href="{% url 'xem_minh_chung' mc.pk %}" target="_blank" rel="noopener">
+          <img src="{% url 'xem_minh_chung' mc.pk %}" alt="Minh chứng chuyển khoản" style="max-width:100%;max-height:420px;">
+        </a>
+      </div>
+    {% empty %}
+      <p class="muted">Khách hàng chưa tải minh chứng.</p>
+    {% endfor %}
+  </section>
+
+  {% if thanh_toan and thanh_toan.LyDoTuChoi %}
+    {% include "includes/alert.html" with level="warning" title="Đã yêu cầu Khách hàng bổ sung" text=thanh_toan.LyDoTuChoi %}
+  {% endif %}
+
+  {% if khong_xu_ly_duoc %}
+    {% include "includes/alert.html" with level="info" text=khong_xu_ly_duoc %}
+  {% else %}
+    <form method="post" class="panel stack">
+      {% csrf_token %}
+      <h2>Đã nhận đủ tiền cọc?</h2>
+      <p class="muted">Xác nhận sẽ chốt Booking và giữ lịch chụp cho Khách hàng.</p>
+      <button class="btn btn--primary" type="submit" name="hanh_dong" value="xac_nhan">Xác nhận thanh toán</button>
+    </form>
+
+    <form method="post" class="panel stack" novalidate>
+      {% csrf_token %}
+      <h2>Minh chứng không hợp lệ hoặc không khớp?</h2>
+      {% include "includes/form_field.html" with field=form.ly_do %}
+      <button class="btn btn--secondary" type="submit" name="hanh_dong" value="bo_sung">Yêu cầu bổ sung minh chứng</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

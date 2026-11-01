@@ -1,4 +1,4 @@
-# Chạy: python manage.py test payments
+# Chạy: python manage.py test payments      (N2: UC5.1, N3: UC5.2)
 import io
 import tempfile
 from datetime import date, time, timedelta
@@ -10,7 +10,9 @@ from django.utils import timezone
 from PIL import Image
 
 from bookings.models import Booking
-from core.constants import LoaiHauKy, LoaiThanhToan, TrangThaiBooking as TT, TrangThaiThanhToan
+from bookings.models import LichSuTrangThaiBooking
+from core.constants import (BenThucHien, LoaiHauKy, LoaiThanhToan, TrangThaiBooking as TT,
+                            TrangThaiSlot, TrangThaiThanhToan)
 from notifications.models import ThongBao
 from payments import services
 from payments.forms import MinhChungForm
@@ -27,8 +29,7 @@ def tep_anh(ten='bien-lai.png', dinh_dang='PNG'):              # tạo tệp ả
     return SimpleUploadedFile(ten, bo_nho.getvalue())
 
 
-@override_settings(MINH_CHUNG_ROOT=tempfile.mkdtemp())         # tệp test ghi vào thư mục tạm, không đụng private_media
-class TaiLenMinhChungTests(TestCase):
+class _DuLieuNen(TestCase):                                     # dữ liệu nền dùng chung cho test N2 và N3 (không có test riêng)
     @classmethod
     def setUpTestData(cls):
         cls.kh = User.objects.create_user('kh', 'kh@x.vn', 'p', so_dien_thoai='0900000001')
@@ -49,8 +50,13 @@ class TaiLenMinhChungTests(TestCase):
                                     Concept='c', TongGiaTri=self.goi.Gia)
         Booking.objects.filter(pk=bk.pk).update(TrangThai=TT.CHO_DAT_COC,
                                                 HanDatCoc=han or timezone.now() + timedelta(days=1))
+        LichKhaDung.objects.filter(pk=lich.pk).update(TrangThai=TrangThaiSlot.DANG_GIU)  # slot đang được giữ như thực tế
         bk.refresh_from_db()
         return bk
+
+
+@override_settings(MINH_CHUNG_ROOT=tempfile.mkdtemp())         # tệp test ghi vào thư mục tạm, không đụng private_media
+class TaiLenMinhChungTests(_DuLieuNen):                        # N2 / UC5.1
 
     def test_tai_lan_dau_tao_khoan_coc_minh_chung_va_thong_bao(self):
         bk = self.tao_booking()
@@ -71,8 +77,10 @@ class TaiLenMinhChungTests(TestCase):
         self.assertIsNone(tt.LyDoTuChoi)                       # lý do cũ được xóa
 
     def test_qua_han_bi_chan(self):
-        bk = self.tao_booking(han=timezone.now() + timedelta(seconds=1))
-        Booking.objects.filter(pk=bk.pk).update(HanDatCoc=timezone.now() - timedelta(minutes=1))
+        bk = self.tao_booking()
+        Booking.objects.filter(pk=bk.pk).update(  # Booking tạo cách đây 2 ngày, hạn cọc đã qua 1 giờ
+            NgayTao=timezone.now() - timedelta(days=2),  # DB có CHECK: HanDatCoc phải SAU NgayTao
+            HanDatCoc=timezone.now() - timedelta(hours=1))
         with self.assertRaises(services.LoiTaiMinhChung):
             services.tai_len_minh_chung(bk.pk, self.kh, tep_anh())
         self.assertFalse(MinhChungThanhToan.objects.exists())
@@ -89,3 +97,56 @@ class TaiLenMinhChungTests(TestCase):
         self.assertFalse(MinhChungForm({}, {'tep': tep_anh('a.png', 'GIF')}).is_valid())   # đổi đuôi gif thành png
         lon = SimpleUploadedFile('a.png', b'x' * (services.DUNG_LUONG_TOI_DA + 1))
         self.assertFalse(MinhChungForm({}, {'tep': lon}).is_valid())                        # quá 5 MB
+
+
+@override_settings(MINH_CHUNG_ROOT=tempfile.mkdtemp())
+class XacNhanCocTests(_DuLieuNen):                             # N3 / UC5.2
+    def booking_da_co_minh_chung(self):                        # Booking Chờ đặt cọc, khách đã tải 1 minh chứng
+        bk = self.tao_booking()
+        services.tai_len_minh_chung(bk.pk, self.kh, tep_anh())
+        return bk
+
+    def test_xac_nhan_doi_ca_thanh_toan_booking_slot_lich_su_va_bao_khach(self):
+        bk = self.booking_da_co_minh_chung()
+        services.xac_nhan_thanh_toan_coc(bk.pk, self.nag_user)
+        tt = ThanhToan.objects.get(MaBooking=bk)
+        self.assertEqual(tt.TrangThai, TrangThaiThanhToan.DA_DAT_COC)
+        self.assertIsNotNone(tt.NgayXacNhan)
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, TT.CHOT_BOOKING)
+        self.assertEqual(bk.MaLich.TrangThai, TrangThaiSlot.DA_DAT)                       # slot -> Đã đặt lịch
+        ls = LichSuTrangThaiBooking.objects.get(MaBooking=bk)
+        self.assertEqual((ls.TrangThaiCu, ls.TrangThaiMoi, ls.BenThucHien),
+                         (TT.CHO_DAT_COC, TT.CHOT_BOOKING, BenThucHien.NHIEP_ANH_GIA))
+        self.assertTrue(ThongBao.objects.filter(MaNguoiNhan=self.kh, MaBooking=bk).exists())
+
+    def test_nhiep_anh_gia_khac_khong_xac_nhan_duoc(self):
+        bk = self.booking_da_co_minh_chung()
+        with self.assertRaises(services.LoiXacNhanCoc):
+            services.xac_nhan_thanh_toan_coc(bk.pk, self.kh2)
+
+    def test_chua_co_minh_chung_thi_khong_xac_nhan_duoc(self):
+        bk = self.tao_booking()
+        with self.assertRaises(services.LoiXacNhanCoc):
+            services.xac_nhan_thanh_toan_coc(bk.pk, self.nag_user)
+
+    def test_yeu_cau_bo_sung_giu_nguyen_trang_thai_roi_khach_nop_lai_thi_xac_nhan_duoc(self):
+        bk = self.booking_da_co_minh_chung()
+        services.yeu_cau_bo_sung_minh_chung(bk.pk, self.nag_user, 'Ảnh bị mờ, sai số tiền')
+        tt = ThanhToan.objects.get(MaBooking=bk)
+        self.assertEqual(tt.LyDoTuChoi, 'Ảnh bị mờ, sai số tiền')
+        self.assertEqual(tt.TrangThai, TrangThaiThanhToan.CHO_XAC_NHAN_COC)               # trạng thái giữ nguyên
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, TT.CHO_DAT_COC)
+        self.assertTrue(ThongBao.objects.filter(MaNguoiNhan=self.kh, MaBooking=bk).exists())
+        with self.assertRaises(services.LoiXacNhanCoc):                                   # đang chờ khách nộp lại
+            services.xac_nhan_thanh_toan_coc(bk.pk, self.nag_user)
+        services.tai_len_minh_chung(bk.pk, self.kh, tep_anh('lan-2.png'))                 # khách nộp lại (UC5.1)
+        services.xac_nhan_thanh_toan_coc(bk.pk, self.nag_user)                            # giờ xác nhận được
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, TT.CHOT_BOOKING)
+
+    def test_yeu_cau_bo_sung_phai_co_ly_do(self):
+        bk = self.booking_da_co_minh_chung()
+        with self.assertRaises(services.LoiXacNhanCoc):
+            services.yeu_cau_bo_sung_minh_chung(bk.pk, self.nag_user, '   ')

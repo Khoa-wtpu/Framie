@@ -1,4 +1,4 @@
-# payments/forms.py - N2 / UC5.1
+# payments/forms.py - N2 / UC5.1 và N3 / UC5.2
 from django import forms                                      # thư viện form của Django
 
 from payments.services import DUNG_LUONG_TOI_DA, DUOI_CHO_PHEP  # dùng chung giới hạn đã khai báo ở services
@@ -22,3 +22,11 @@ class MinhChungForm(forms.Form):                              # form tải minh 
         if tep.size > DUNG_LUONG_TOI_DA:                      # quá dung lượng
             raise forms.ValidationError('Dung lượng tệp vượt quá 5 MB.')
         return tep
+
+
+
+class YeuCauBoSungForm(forms.Form):                           # N3: ô nhập lý do yêu cầu khách gửi lại minh chứng (nhánh 4a)
+    ly_do = forms.CharField(
+        label='Lý do yêu cầu bổ sung', max_length=255,        # đúng độ dài cột LyDoTuChoi
+        widget=forms.Textarea(attrs={'rows': 3}),
+        error_messages={'required': 'Vui lòng nhập lý do yêu cầu bổ sung.'})

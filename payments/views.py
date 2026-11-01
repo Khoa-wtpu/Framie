@@ -1,4 +1,4 @@
-# payments/views.py - N2 / UC5.1
+# payments/views.py - N2 / UC5.1 và N3 / UC5.2
 import mimetypes                                              # đoán loại tệp (image/png...) khi trả ảnh về trình duyệt
 
 from django.contrib import messages
@@ -9,8 +9,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from accounts.permissions import chi_khach_hang               # chỉ vai trò Khách hàng (đã có sẵn của Phanh)
 from bookings.models import Booking
+from profiles.decorators import nhiep_anh_gia_da_duyet      # (N3) chỉ Nhiếp ảnh gia hồ sơ Đã duyệt (decorator chung của leader)
+from core.constants import LoaiThanhToan                     # (N3) loại khoản thanh toán
 from payments import services
-from payments.forms import MinhChungForm
+from payments.forms import MinhChungForm, YeuCauBoSungForm
 from payments.models import ThanhToan
 
 
@@ -55,3 +57,36 @@ def xem_minh_chung(request, ma_minh_chung):                   # trả ảnh minh
     except OSError:
         raise Http404
     return FileResponse(tep, content_type=mimetypes.guess_type(mc.DuongDanTep)[0] or 'application/octet-stream')
+
+
+@nhiep_anh_gia_da_duyet                                       # N3: chỉ NAG hồ sơ Đã duyệt; decorator truyền thêm tham số nag
+def xac_nhan_thanh_toan_coc(request, nag, ma_booking):        # trang UC5.2
+    booking = get_object_or_404(                              # chỉ xem được Booking của chính mình
+        Booking.objects.select_related('MaKhachHang', 'MaGoi'), pk=ma_booking, MaNhiepAnhGia=nag)
+    form = YeuCauBoSungForm()
+
+    if request.method == 'POST':                              # NAG bấm một trong hai nút
+        hanh_dong = request.POST.get('hanh_dong')
+        try:
+            if hanh_dong == 'xac_nhan':                       # bước 4
+                services.xac_nhan_thanh_toan_coc(booking.pk, request.user)    # bước 5
+                messages.success(request, 'Đã xác nhận tiền cọc. Booking được chốt.')
+                return redirect('xac_nhan_thanh_toan_coc', ma_booking=booking.pk)
+            elif hanh_dong == 'bo_sung':                      # nhánh 4a
+                form = YeuCauBoSungForm(request.POST)
+                if form.is_valid():
+                    services.yeu_cau_bo_sung_minh_chung(booking.pk, request.user, form.cleaned_data['ly_do'])
+                    messages.success(request, 'Đã gửi yêu cầu bổ sung minh chứng cho Khách hàng.')
+                    return redirect('xac_nhan_thanh_toan_coc', ma_booking=booking.pk)
+            else:
+                messages.error(request, 'Thao tác không hợp lệ.')
+        except services.LoiXacNhanCoc as loi:                 # lỗi nghiệp vụ hoặc lỗi hệ thống (5a)
+            messages.error(request, str(loi))
+
+    booking.refresh_from_db()                                 # đọc lại trạng thái mới nhất
+    thanh_toan = ThanhToan.objects.filter(MaBooking=booking, LoaiThanhToan=LoaiThanhToan.TIEN_COC).first()
+    khong_xu_ly_duoc = services.ly_do_khong_xu_ly_duoc(booking, thanh_toan)
+    return render(request, 'payments/xac_nhan_thanh_toan_coc.html', {
+        'booking': booking, 'thanh_toan': thanh_toan,
+        'minh_chungs': thanh_toan.minh_chungs.order_by('-NgayTaiLen') if thanh_toan else [],
+        'khong_xu_ly_duoc': khong_xu_ly_duoc, 'form': form})
