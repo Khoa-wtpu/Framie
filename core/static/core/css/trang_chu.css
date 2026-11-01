@@ -1,0 +1,249 @@
+/* core/static/core/css/trang_chu.css - B8: Trang chủ. Chỉ dùng token trong tokens.css, không gõ mã màu. */
+/* ▸ ===== CHÚ THÍCH TỔNG QUAN (dành cho sếp) ===== */
+/* ▸ CSS là file QUY ĐỊNH VẺ NGOÀI: màu sắc, cỡ chữ, khoảng cách, bố cục, hiệu ứng của Trang chủ. */
+/* ▸ Cấu trúc một quy tắc: "tên-thành-phần { thuộc-tính: giá-trị; ... }". Ví dụ ".tc-khoi { padding-block: 5rem; }" nghĩa là: mọi phần tử có class "tc-khoi" được đệm trên-dưới 5rem. */
+/* ▸ Ký hiệu var(--ten) = lấy giá trị từ "token" (bảng màu/cỡ chuẩn trong tokens.css). Nhờ vậy đổi màu thương hiệu chỉ cần sửa 1 chỗ, mọi trang tự đổi theo. */
+/* ▸ Tiền tố "tc-" = Trang Chủ (tránh trùng tên với CSS của trang khác). Đuôi "__" = bộ phận con của một khối; đuôi "--" = biến thể (vd --toi là bản nền tối). */
+/* ▸ Chú thích được viết NGAY TRÊN mỗi quy tắc, liệt kê ý nghĩa từng thuộc tính theo đúng thứ tự trong quy tắc. Code gốc giữ nguyên. */
+
+/* Trang chủ dùng khối tràn hết chiều ngang, nên bỏ khoảng đệm mặc định của <main> */
+/* ▸ Chọn thẻ <main> (class site-main) CHỈ KHI trang đang có class "trang-chu" trên body. */
+/* ▸ padding-block: 0 = bỏ khoảng đệm trên và dưới, để các khối màu sát nhau và tràn hết chiều ngang, không bị hở viền. */
+.trang-chu .site-main { padding-block: 0; }
+
+/* ---------- Khối chung, xen kẽ nền: tối / trắng / xám nhạt ---------- */
+/* ▸ .tc-khoi = mỗi khối (section) của trang. padding-block: đệm trên-dưới bằng cỡ --space-8 (khoảng cách lớn) cho khối thoáng; */
+/* ▸ background: nền mặc định là màu nền chuẩn của website (màu trắng). */
+.tc-khoi { padding-block: var(--space-8); background: var(--color-bg); }
+/* ▸ .tc-khoi--xam = khối nền xám nhạt: background lấy màu "bề mặt phụ"; border-block: kẻ đường viền mảnh 1px phía trên và phía dưới, màu viền chuẩn, để tách khỏi khối trắng. */
+.tc-khoi--xam { background: var(--color-surface-alt); border-block: 1px solid var(--color-border); }
+/* ▸ .tc-khoi--toi = khối nền tối: background là dải chuyển màu chéo 135 độ từ đen sang đen hơi nhạt (tạo chiều sâu); color: chữ trong khối màu trắng. */
+.tc-khoi--toi { background: linear-gradient(135deg, var(--color-black) 0%, var(--color-black-hover) 100%); color: var(--color-white); }
+/* ▸ Trong khối tối, tiêu đề h1 và h2 cũng ép thành màu trắng (nếu không sẽ thừa hưởng màu tiêu đề đen mặc định, chìm vào nền). */
+.tc-khoi--toi h1, .tc-khoi--toi h2 { color: var(--color-white); }
+/* Nút phụ (nền trắng, viền đen) không đọc được trên nền tối, đổi thành viền trắng */
+/* ▸ Nút phụ trong khối tối: background: transparent = nền trong suốt; color: chữ trắng; border-color: viền trắng — để nhìn rõ trên nền đen. */
+.tc-khoi--toi .btn--secondary { background: transparent; color: var(--color-white); border-color: var(--color-white); }
+/* ▸ Khi rê chuột (:hover) lên nút phụ trong khối tối: nền thành trắng pha 14% (color-mix trộn 14% màu trắng với trong suốt) = sáng mờ nhẹ, báo hiệu "đang trỏ vào nút". */
+.tc-khoi--toi .btn--secondary:hover { background: color-mix(in srgb, var(--color-white) 14%, transparent); }
+
+/* ▸ .tc-nhan = nhãn nhỏ phía trên tiêu đề banner. margin: cách dưới 1 khoảng --space-3, các cạnh khác 0; font-size: cỡ chữ cực nhỏ (--text-xs); */
+/* ▸ text-transform: uppercase = IN HOA toàn bộ; letter-spacing: .12em = giãn khoảng cách giữa các chữ cái cho thanh thoát; opacity: .75 = độ đậm 75% (hơi mờ). */
+.tc-nhan { margin: 0 0 var(--space-3); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .12em; opacity: .75; }
+/* ▸ .tc-dau-khoi = phần đầu mỗi khối (tiêu đề + mô tả). margin-bottom: cách phần nội dung bên dưới; max-width: 40rem = giới hạn bề rộng để dòng chữ không quá dài khó đọc. */
+.tc-dau-khoi { margin-bottom: var(--space-6); max-width: 40rem; }
+/* ▸ Tiêu đề h2 trong phần đầu khối: margin-bottom nhỏ để dính liền với dòng mô tả bên dưới. */
+.tc-dau-khoi h2 { margin-bottom: var(--space-2); }
+/* ▸ Đoạn văn trong phần đầu khối: margin: 0 = bỏ khoảng cách mặc định của đoạn văn. */
+.tc-dau-khoi p { margin: 0; }
+/* ▸ Biến thể "--hang" (khối Nhiếp ảnh gia nổi bật): max-width: none = bỏ giới hạn bề rộng; display: flex = xếp các phần tử con thành hàng ngang; */
+/* ▸ flex-wrap: wrap = hết chỗ thì tự xuống dòng (điện thoại); align-items: flex-end = căn mép dưới; justify-content: space-between = tiêu đề dạt trái, nút "Xem tất cả" dạt phải; gap = khoảng cách giữa chúng. */
+.tc-dau-khoi--hang { max-width: none; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-4); }
+
+/* ▸ .tc-luoi = lưới chung. display: grid = bố cục dạng lưới (hàng/cột); gap: khoảng cách giữa các ô. Số cột cụ thể được quy định riêng ở từng khối bên dưới. */
+.tc-luoi { display: grid; gap: var(--space-5); }
+
+/* ---------- 1. Banner: phông rèm studio + đèn rọi + ống kính (chỉ bằng CSS, theo moodboard cốt quét) ---------- */
+/* ▸ .tc-banner = khối banner đầu trang. Mọi hiệu ứng bên dưới được VẼ BẰNG CSS, không dùng file ảnh (tải nhanh, sắc nét mọi màn hình). */
+/* ▸ position: relative = làm "mốc" để các hình trang trí con (khung ngắm, ống kính) định vị tuyệt đối bên trong nó; */
+/* ▸ overflow: hidden = phần hình trang trí tràn ra ngoài banner thì bị cắt bỏ; isolation: isolate = tách lớp hiển thị riêng, tránh hiệu ứng ảnh hưởng khối khác; */
+/* ▸ padding-block: đệm trên-dưới. background: chồng 5 lớp nền (lớp liệt kê trước nằm TRÊN cùng), giải thích từng lớp ở dưới: */
+.tc-banner {
+  position: relative; overflow: hidden; isolation: isolate; padding-block: var(--space-8);
+  /* ▸ (Dòng "background:" mở danh sách 5 lớp nền ngăn cách bằng dấu phẩy.) */
+  background:
+    /* ▸ Lớp 1 - Đèn rọi: vầng sáng hình elip (rộng 55%, cao 75%) đặt ở góc phải trên (80% ngang, 0% dọc), màu trắng 38% mờ dần về trong suốt ở 70%. */
+    radial-gradient(ellipse 55% 75% at 80% 0%, color-mix(in srgb, var(--color-white) 38%, transparent) 0%, transparent 70%),   /* đèn rọi từ trên xuống */
+    /* ▸ Lớp 2 - Tối dần về đáy: elip đen lớn đặt ở đáy banner (50% ngang, 125% dọc), đen đặc đến 30% rồi trong suốt dần ở 75%. */
+    radial-gradient(ellipse 120% 80% at 50% 125%, var(--color-black) 30%, transparent 75%),                                   /* tối dần về đáy */
+    /* ▸ Lớp 3 - Nếp rèm lớn: dải sọc DỌC lặp lại (góc 90 độ), mỗi chu kỳ rộng 6.4rem: trong suốt -> sáng nhẹ (trắng 9%) -> trong suốt -> tối (đen 45%) -> trong suốt; mô phỏng nếp gấp của phông rèm. */
+    repeating-linear-gradient(90deg, transparent 0, color-mix(in srgb, var(--color-white) 9%, transparent) 1.6rem, transparent 3.2rem,
+                              color-mix(in srgb, var(--color-black) 45%, transparent) 4.8rem, transparent 6.4rem),            /* nếp rèm lớn */
+    /* ▸ Lớp 4 - Nếp rèm nhỏ: tương tự lớp 3 nhưng chu kỳ 4.5rem, sáng/tối nhẹ hơn; chu kỳ khác nhau làm các nếp lệch nhịp, trông tự nhiên như vải thật. */
+    repeating-linear-gradient(90deg, transparent 0, color-mix(in srgb, var(--color-white) 5%, transparent) 1.1rem, transparent 2.2rem,
+                              color-mix(in srgb, var(--color-black) 30%, transparent) 3.3rem, transparent 4.5rem),            /* nếp rèm nhỏ, lệch nhịp cho tự nhiên */
+    /* ▸ Lớp 5 - Nền đáy: dải chuyển màu dọc (180 độ) từ đen nhạt ở trên xuống đen đậm ở dưới. */
+    linear-gradient(180deg, var(--color-black-hover) 0%, var(--color-black) 100%);
+/* ▸ Đóng quy tắc .tc-banner. */
+}
+/* Ống kính: ::before là vòng lá khẩu xoay chậm, ::after là mặt kính có điểm phản chiếu (ẩn khi màn hình hẹp) */
+/* ▸ ::before và ::after = "phần tử ảo" CSS tự tạo ra trước/sau nội dung banner, không cần viết thêm HTML. Dùng để vẽ ống kính máy ảnh. */
+/* ▸ content: "" = bắt buộc có để phần tử ảo xuất hiện (nội dung rỗng); position: absolute = đặt tự do trong banner; border-radius: 50% = bo thành hình tròn; */
+/* ▸ pointer-events: none = chuột "xuyên qua", không chặn bấm vào chữ/nút phía dưới; display: none = MẶC ĐỊNH ẨN (điện thoại, màn hình nhỏ); z-index: 0 = nằm lớp dưới nội dung. */
+.tc-banner::before, .tc-banner::after { content: ""; position: absolute; border-radius: 50%; pointer-events: none; display: none; z-index: 0; }
+/* ▸ ::before = vòng lá khẩu (các lá chắn sáng của ống kính). Quy tắc nhiều dòng; chú thích từng thuộc tính: */
+.tc-banner::before {
+  /* ▸ width/height: hình tròn đường kính 36rem; right: -9rem = đẩy lệch ra ngoài mép phải 9rem (nên chỉ thấy một phần); top: 50% + translate: 0 -50% = căn giữa theo chiều dọc banner. */
+  width: 36rem; height: 36rem; right: -9rem; top: 50%; translate: 0 -50%;
+  /* ▸ border: viền 2px màu trắng 24% mờ — vành ngoài của ống kính. */
+  border: 2px solid color-mix(in srgb, var(--color-white) 24%, transparent);
+  /* ▸ background: dải hình nan quạt (conic) lặp lại: 10 độ sáng nhẹ (trắng 10%) rồi 10 độ trong suốt, tạo các "cánh" lá khẩu như nan hoa. */
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--color-white) 10%, transparent) 0 10deg, transparent 10deg 20deg);
+  /* ▸ mask (kèm bản -webkit- cho trình duyệt Safari/Chrome cũ): "khoét" lỗ tròn ở giữa — trong suốt đến 50% bán kính, từ 51% trở ra mới hiện. Kết quả: chỉ còn vành nan quạt bên ngoài, giữa rỗng. */
+  -webkit-mask: radial-gradient(circle, transparent 50%, var(--color-black) 51%); mask: radial-gradient(circle, transparent 50%, var(--color-black) 51%);
+  /* ▸ animation: chạy hiệu ứng "tc-xoay" (khai báo bên dưới) kéo dài 120 giây, tốc độ đều (linear), lặp vô hạn (infinite) = vòng lá khẩu xoay rất chậm. */
+  animation: tc-xoay 120s linear infinite;
+/* ▸ Đóng quy tắc ::before. */
+}
+/* ▸ ::after = mặt kính ống kính nhỏ hơn, nằm chồng lên giữa vòng lá khẩu. */
+.tc-banner::after {
+  /* ▸ Kích thước 21rem, lệch phải -2.5rem, căn giữa dọc (cùng cách làm như ::before). */
+  width: 21rem; height: 21rem; right: -2.5rem; top: 50%; translate: 0 -50%;
+  /* ▸ Viền 2px trắng 30% mờ — vành kính. */
+  border: 2px solid color-mix(in srgb, var(--color-white) 30%, transparent);
+  /* ▸ background: 3 lớp nền, giải thích từng lớp ngay bên dưới. */
+  background:
+    /* ▸ Lớp 1 - Điểm phản chiếu sáng nhỏ: chấm trắng 60% đặt ở vị trí 30% ngang, 28% dọc (góc trên trái), co lại thành trong suốt ở 9%. */
+    radial-gradient(circle at 30% 28%, color-mix(in srgb, var(--color-white) 60%, transparent) 0, transparent 9%),
+    /* ▸ Lớp 2 - Ánh sáng mờ rộng quanh điểm phản chiếu: vầng trắng 14% lan rộng đến 40%, giúp mặt kính có cảm giác bóng. */
+    radial-gradient(circle at 36% 34%, color-mix(in srgb, var(--color-white) 14%, transparent) 0, transparent 40%),
+    /* ▸ Lớp 3 - Các vòng đồng tâm của thấu kính: đen (đến 38%) - vành xám mảnh (39-41%) - đen (42-62%) - vành xám mảnh hơn (63-64%) - đen (từ 65%). */
+    radial-gradient(circle, var(--color-black) 0 38%, color-mix(in srgb, var(--color-white) 14%, var(--color-black)) 39% 41%,
+                    var(--color-black) 42% 62%, color-mix(in srgb, var(--color-white) 10%, var(--color-black)) 63% 64%, var(--color-black) 65%);
+  /* ▸ box-shadow: 2 vầng bóng phát sáng quanh mặt kính: vòng trắng 5% dày 1.5rem (viền mờ ngoài cùng) và quầng sáng tỏa 6rem trắng 12%, tạo hiệu ứng ống kính phát sáng. */
+  box-shadow: 0 0 0 1.5rem color-mix(in srgb, var(--color-white) 5%, transparent), 0 0 6rem color-mix(in srgb, var(--color-white) 12%, transparent);
+/* ▸ Đóng quy tắc ::after. */
+}
+/* ▸ @keyframes = khai báo hiệu ứng động có tên "tc-xoay": chỉ cần nêu trạng thái cuối "to" = xoay 360 độ (một vòng đầy đủ); trạng thái đầu là vị trí ban đầu. */
+@keyframes tc-xoay { to { rotate: 360deg; } }
+
+/* Khung ngắm máy ảnh: bốn góc + thông số chụp */
+/* ▸ .tc-khung = khung ngắm (viewfinder) vẽ 4 góc chữ L như khi nhìn qua máy ảnh. */
+/* ▸ --c: khai báo một biến cục bộ tên "c" = trắng 55% mờ, để dùng lại nhiều lần bên dưới; position: absolute + inset: phủ kín banner, thụt vào 4 cạnh mỗi bên một khoảng --space-4; */
+/* ▸ z-index: 1 = nằm trên nền; pointer-events: none = không chặn thao tác chuột. */
+/* ▸ background: 8 đoạn thẳng màu "c", mỗi góc gồm 1 đoạn NGANG (dài 1.75rem, dày 2px) và 1 đoạn DỌC (dày 2px, dài 1.75rem). Cú pháp "top left / 1.75rem 2px no-repeat" = đặt ở góc trên trái, kích thước 1.75rem x 2px, không lặp. */
+/* ▸ Lần lượt: trên-trái, trên-phải, dưới-trái, dưới-phải (mỗi góc 2 đoạn) = 4 góc ngắm. */
+.tc-khung { --c: color-mix(in srgb, var(--color-white) 55%, transparent); position: absolute; inset: var(--space-4); z-index: 1; pointer-events: none;
+  background:
+    linear-gradient(var(--c), var(--c)) top left / 1.75rem 2px no-repeat,     linear-gradient(var(--c), var(--c)) top left / 2px 1.75rem no-repeat,
+    linear-gradient(var(--c), var(--c)) top right / 1.75rem 2px no-repeat,    linear-gradient(var(--c), var(--c)) top right / 2px 1.75rem no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom left / 1.75rem 2px no-repeat,  linear-gradient(var(--c), var(--c)) bottom left / 2px 1.75rem no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom right / 1.75rem 2px no-repeat, linear-gradient(var(--c), var(--c)) bottom right / 2px 1.75rem no-repeat; }
+/* ▸ .tc-exif = dòng chữ thông số máy ảnh (f/1.8 · 1/250s · ISO 100). display: none = mặc định ẩn (màn hình nhỏ); position: absolute + right/bottom = đặt ở góc dưới phải banner; */
+/* ▸ z-index: 1 = trên nền; margin: 0 = bỏ khoảng cách mặc định; font-size: chữ rất nhỏ; letter-spacing: .14em = giãn chữ; text-transform: uppercase = in hoa; color: trắng 65% (hơi mờ). */
+.tc-exif { display: none; position: absolute; right: var(--space-6); bottom: var(--space-5); z-index: 1; margin: 0; font-size: var(--text-xs); letter-spacing: .14em; text-transform: uppercase; color: color-mix(in srgb, var(--color-white) 65%, transparent); }
+
+/* ▸ Hộp nội dung banner (chữ + ô tìm kiếm): position: relative + z-index: 2 = nằm TRÊN CÙNG, phía trên các hình trang trí, để chữ luôn đọc được và bấm được. */
+.tc-banner__noi-dung { position: relative; z-index: 2; }
+/* Tiêu đề chuyển sắc trắng sang xám, đúng gradient trắng-xám trong cốt quét */
+/* ▸ .tc-banner__tieu-de = tiêu đề h1 của banner: max-width: 20ch = rộng tối đa 20 ký tự để xuống dòng gọn; margin-bottom: cách phần dưới; */
+/* ▸ font-size: clamp(2rem, 6vw, 3.5rem) = cỡ chữ TỰ CO GIÃN theo chiều rộng màn hình, nhưng không nhỏ hơn 2rem và không lớn hơn 3.5rem; line-height: 1.12 = dòng sát nhau cho tiêu đề; */
+/* ▸ text-wrap: balance = cân đối độ dài các dòng, tránh dòng cuối chỉ có 1 chữ lẻ loi; color: trắng (dự phòng khi trình duyệt không hỗ trợ hiệu ứng chữ gradient); */
+/* ▸ background: dải màu trắng -> xám (token --gradient-white-gray) làm nền; -webkit-background-clip: text / background-clip: text = "cắt" nền theo hình dáng chữ, tức nền gradient chỉ hiện ở những nét chữ; */
+/* ▸ -webkit-text-fill-color: transparent = làm màu chữ trong suốt để nhìn thấy nền gradient bên dưới => chữ có màu chuyển từ trắng sang xám. */
+.tc-banner__tieu-de { max-width: 20ch; margin-bottom: var(--space-4); font-size: clamp(2rem, 6vw, 3.5rem); line-height: 1.12; text-wrap: balance;
+  color: var(--color-white); background: var(--gradient-white-gray); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+/* ▸ .tc-banner__mo-ta = câu mô tả dưới tiêu đề: max-width: 36rem = giới hạn độ rộng dòng; margin-bottom: cách ô tìm kiếm; font-size: cỡ chữ lớn (--text-lg); opacity: .85 = hơi mờ cho nhẹ nhàng hơn tiêu đề. */
+.tc-banner__mo-ta { max-width: 36rem; margin-bottom: var(--space-6); font-size: var(--text-lg); opacity: .85; }
+
+/* ▸ .tc-tim = form tìm kiếm: display: flex + flex-direction: column = các phần tử xếp THEO CỘT (ô nhập ở trên, nút ở dưới — kiểu điện thoại); gap: khoảng cách giữa chúng; max-width: 42rem = giới hạn bề rộng form. */
+.tc-tim { display: flex; flex-direction: column; gap: var(--space-3); max-width: 42rem; }
+/* ▸ .tc-tim__o = ô nhập từ khóa: min-height: 3.25rem = ô cao thoải mái dễ bấm; border-radius: var(--radius-pill) = bo tròn hoàn toàn 2 đầu như viên thuốc; */
+/* ▸ padding-inline: đệm trái-phải để chữ không sát mép; box-shadow: đổ bóng cỡ vừa cho ô nổi lên khỏi nền. */
+.tc-tim__o { min-height: 3.25rem; border-radius: var(--radius-pill); padding-inline: var(--space-5); box-shadow: var(--shadow-md); }
+/* ▸ .tc-goi-y = dòng "Gợi ý nhanh": display: flex = xếp ngang; flex-wrap: wrap = hết chỗ tự xuống dòng; align-items: center = căn giữa theo chiều dọc; gap = khoảng cách giữa các nút; margin: cách phía trên (--space-5), các cạnh khác 0. */
+.tc-goi-y { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-5) 0 0; }
+/* ▸ .tc-goi-y__nhan = chữ "Gợi ý nhanh:": font-size nhỏ (--text-sm); opacity: .75 = hơi mờ; margin-right: chút khoảng cách bên phải trước các nút. */
+.tc-goi-y__nhan { font-size: var(--text-sm); opacity: .75; margin-right: var(--space-1); }
+/* ▸ .tc-chip = nút gợi ý hình viên thuốc: padding: đệm trên-dưới nhỏ, trái-phải rộng hơn; border: viền 1px trắng 45% mờ; border-radius: bo tròn viên thuốc; color: chữ trắng; */
+/* ▸ text-decoration: none = bỏ gạch chân của liên kết; font-size: chữ nhỏ; backdrop-filter: blur(4px) = làm mờ phần nền phía sau nút 4px (hiệu ứng kính mờ); */
+/* ▸ transition: khi đổi trạng thái (rê chuột) thì nền, chữ, viền chuyển màu mượt trong 0.15 giây thay vì nhảy đột ngột. */
+.tc-chip { padding: var(--space-1) var(--space-4); border: 1px solid color-mix(in srgb, var(--color-white) 45%, transparent); border-radius: var(--radius-pill); color: var(--color-white); text-decoration: none; font-size: var(--text-sm); backdrop-filter: blur(4px); transition: background .15s, color .15s, border-color .15s; }
+/* ▸ Khi rê chuột lên nút gợi ý: nền thành trắng đặc, chữ thành đen, viền trắng => nút "sáng lên" đảo màu để báo hiệu đang chọn. */
+.tc-chip:hover { background: var(--color-white); color: var(--color-black); border-color: var(--color-white); }
+
+/* ▸ @media (min-width: 640px) = quy tắc CHỈ ÁP DỤNG khi màn hình rộng từ 640px trở lên (máy tính bảng, laptop). */
+@media (min-width: 640px) {
+  /* ▸ Form tìm kiếm chuyển sang xếp HÀNG NGANG (row): ô nhập bên trái, nút "Tìm kiếm" bên phải. */
+  .tc-tim { flex-direction: row; }
+  /* ▸ Ô nhập giãn chiếm hết chỗ còn lại (flex: 1); min-width: 0 = cho phép co nhỏ hơn nội dung để không làm tràn form. */
+  .tc-tim__o { flex: 1; min-width: 0; }
+/* ▸ Đóng nhóm @media 640px. */
+}
+/* ▸ @media (min-width: 960px) = chỉ áp dụng khi màn hình rộng từ 960px trở lên (laptop, màn hình máy tính). */
+@media (min-width: 960px) {
+  /* ▸ Banner được đệm trên-dưới lớn hơn (nhân 1.6 lần) cho thoáng trên màn hình lớn. */
+  .tc-banner { padding-block: calc(var(--space-8) * 1.6); }
+  /* ▸ BẬT hiện hai hình ống kính (display: block) — trên màn hình nhỏ chúng bị ẩn để đỡ rối. */
+  .tc-banner::before, .tc-banner::after { display: block; }
+  /* ▸ Hiện dòng thông số máy ảnh (f/1.8...) ở góc dưới phải. */
+  .tc-exif { display: block; }
+/* ▸ Đóng nhóm @media 960px. */
+}
+
+/* ---------- 2. Nhiếp ảnh gia nổi bật ---------- */
+/* ▸ Lưới thẻ nhiếp ảnh gia: grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)) = TỰ ĐỘNG chia cột, mỗi cột rộng tối thiểu 17rem và giãn đều phần dư; màn hình rộng nhiều cột, điện thoại 1 cột. */
+.tc-luoi--nag { grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); }
+/* ▸ Thẻ nhiếp ảnh gia cao 100% ô lưới, để các thẻ cùng hàng đều bằng chiều cao nhau. */
+.tc-nag { height: 100%; }
+/* ▸ Phần thân thẻ: gap = khoảng cách đều giữa các dòng thông tin bên trong. */
+.tc-nag__than { gap: var(--space-2); }
+/* ▸ Hàng "ảnh đại diện + tên": display: flex = xếp ngang; align-items: center = căn giữa dọc; gap = khoảng cách giữa ảnh và tên. */
+.tc-nag__ten-hang { display: flex; align-items: center; gap: var(--space-3); }
+/* ▸ Ảnh đại diện tròn: flex: none = không bị co lại; width/height 2.5rem = ô vuông 40px; border-radius: 50% = thành hình tròn; overflow: hidden = ảnh tràn ra ngoài vòng tròn bị cắt; */
+/* ▸ display: grid + place-items: center = căn chữ cái đầu vào đúng chính giữa (dùng khi không có ảnh); background: nền đen; color: chữ trắng; font-weight: độ đậm của tiêu đề. */
+.tc-nag__avatar { flex: none; width: 2.5rem; height: 2.5rem; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--color-black); color: var(--color-white); font-weight: var(--fw-heading); }
+/* ▸ Ảnh trong ô đại diện: phủ kín ô (100% ngang dọc); object-fit: cover = phóng/cắt ảnh cho đầy khung mà không bị méo tỉ lệ. */
+.tc-nag__avatar img { width: 100%; height: 100%; object-fit: cover; }
+/* ▸ Dòng điểm đánh giá: margin: 0 = bỏ khoảng cách mặc định; font-size: chữ nhỏ. */
+.tc-nag__diem { margin: 0; font-size: var(--text-sm); }
+/* ▸ Khung thông báo "chưa có nhiếp ảnh gia": text-align: center = căn giữa chữ; color: màu chữ xám nhạt (muted). */
+.tc-rong { text-align: center; color: var(--color-text-muted); }
+/* ▸ Đoạn chữ trong khung thông báo: margin: 0 = bỏ khoảng cách mặc định. */
+.tc-rong p { margin: 0; }
+
+/* ---------- 3. Các bước đặt lịch ---------- */
+/* ▸ Lưới các bước: mặc định (điện thoại) = 1 cột, các bước xếp chồng dọc. */
+.tc-luoi--buoc { grid-template-columns: 1fr; }
+/* ▸ Thẻ mỗi bước: background: nền "bề mặt" (trắng) nổi trên nền xám; border: viền mảnh 1px; border-radius: bo góc lớn; padding: đệm bên trong cho thoáng. */
+.tc-buoc { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-5); }
+/* ▸ Vòng tròn số thứ tự: display: grid + place-items: center = số nằm chính giữa; width/height 2.5rem = hình vuông; margin-bottom: cách tiêu đề bên dưới; border-radius: 50% = hình tròn; */
+/* ▸ background: nền đen; color: số màu trắng; font-weight: đậm như tiêu đề. */
+.tc-buoc__so { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; margin-bottom: var(--space-4); border-radius: 50%; background: var(--color-black); color: var(--color-white); font-weight: var(--fw-heading); }
+/* ▸ Tiêu đề bước: margin-bottom: cách mô tả; font-size: cỡ chữ lớn (--text-lg). */
+.tc-buoc__tieu-de { margin-bottom: var(--space-2); font-size: var(--text-lg); }
+/* ▸ Mô tả bước: margin: 0; font-size: chữ nhỏ; color: xám nhạt để làm nổi tiêu đề. */
+.tc-buoc__mo-ta { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }
+/* ▸ Responsive (tự đổi theo kích thước màn hình): từ 640px trở lên chia 2 cột (repeat(2, 1fr) = 2 cột bằng nhau); */
+@media (min-width: 640px) { .tc-luoi--buoc { grid-template-columns: repeat(2, 1fr); } }
+/* ▸ từ 1100px trở lên chia 5 cột bằng nhau => 5 bước nằm gọn trên một hàng ngang. */
+@media (min-width: 1100px) { .tc-luoi--buoc { grid-template-columns: repeat(5, 1fr); } }
+
+/* ---------- 4. Loại hình chụp ---------- */
+/* ▸ Lưới ô loại hình: tự động chia cột, mỗi cột rộng tối thiểu 12rem và giãn đều (cùng nguyên lý với lưới nhiếp ảnh gia). */
+.tc-luoi--loai { grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); }
+/* ▸ .tc-loai = mỗi ô loại hình (là một liên kết): position: relative; display: flex + flex-direction: column = xếp các dòng theo cột dọc; gap: khoảng cách nhỏ giữa các dòng; */
+/* ▸ min-height: 8rem = ô cao tối thiểu; padding: đệm trong; border: viền mảnh; border-radius: bo góc lớn; background: nền trắng; text-decoration: none = bỏ gạch chân liên kết; */
+/* ▸ transition: nền, chữ, viền và vị trí chuyển động mượt trong 0.2 giây khi rê chuột. */
+.tc-loai { position: relative; display: flex; flex-direction: column; gap: var(--space-1); min-height: 8rem; padding: var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); text-decoration: none; transition: background .2s, color .2s, border-color .2s, transform .2s; }
+/* ▸ Tên loại hình: chữ lớn (--text-lg) và đậm (--fw-heading). */
+.tc-loai__ten { font-size: var(--text-lg); font-weight: var(--fw-heading); }
+/* ▸ Dòng "N nhiếp ảnh gia": chữ nhỏ, màu xám nhạt; transition: color .2s = đổi màu mượt khi rê chuột. */
+.tc-loai__so { font-size: var(--text-sm); color: var(--color-text-muted); transition: color .2s; }
+/* ▸ Mũi tên →: margin-top: auto = tự đẩy xuống đáy ô; font-size: cỡ lớn (--text-xl); line-height: 1 = bỏ khoảng trống thừa quanh mũi tên; transition: transform .2s = dịch chuyển mượt. */
+.tc-loai__mui-ten { margin-top: auto; font-size: var(--text-xl); line-height: 1; transition: transform .2s; }
+/* ▸ Khi rê chuột HOẶC dùng phím Tab chọn vào ô (:hover, :focus-visible): nền và viền thành đen, chữ thành trắng (đảo màu), và transform: translateY(-3px) = ô nhấc lên 3px như đang nổi. */
+.tc-loai:hover, .tc-loai:focus-visible { background: var(--color-black); border-color: var(--color-black); color: var(--color-white); transform: translateY(-3px); }
+/* ▸ Cũng khi rê chuột/chọn: dòng "N nhiếp ảnh gia" đổi sang màu xám sáng (--color-gray) để vẫn đọc được trên nền đen. */
+.tc-loai:hover .tc-loai__so, .tc-loai:focus-visible .tc-loai__so { color: var(--color-gray); }
+/* ▸ Khi rê chuột: mũi tên trượt sang phải 4px (translateX(4px)) như gợi ý "bấm để đi tiếp". */
+.tc-loai:hover .tc-loai__mui-ten { transform: translateX(4px); }
+
+/* ---------- 5. Lời mời đăng ký ---------- */
+/* ▸ Hộp nội dung lời mời: max-width: 44rem = giới hạn độ rộng cho dễ đọc; text-align: center = căn giữa chữ. */
+.tc-moi__noi-dung { max-width: 44rem; text-align: center; }
+/* ▸ Đoạn văn trong lời mời: opacity: .85 = hơi mờ; margin-bottom: cách hàng nút bên dưới. */
+.tc-moi__noi-dung p { opacity: .85; margin-bottom: var(--space-5); }
+/* ▸ Hàng chứa nút: justify-content: center = các nút dồn vào giữa hàng. */
+.tc-moi__nut { justify-content: center; }
+
+/* ▸ @media (prefers-reduced-motion: reduce) = áp dụng cho người dùng đã bật "giảm chuyển động" trong hệ điều hành (người nhạy cảm với hiệu ứng, say tàu xe...). Tắt hiệu ứng để thân thiện hơn: */
+@media (prefers-reduced-motion: reduce) {
+  /* ▸ Bỏ hiệu ứng chuyển màu mượt của ô loại hình, mũi tên và nút gợi ý (transition: none = đổi tức thì). */
+  .tc-loai, .tc-loai__mui-ten, .tc-chip { transition: none; }
+  /* ▸ Dừng hẳn việc xoay vòng lá khẩu ống kính (animation: none). */
+  .tc-banner::before { animation: none; }
+  /* ▸ Không nhấc ô loại hình lên khi rê chuột (transform: none). */
+  .tc-loai:hover { transform: none; }
+/* ▸ Đóng nhóm @media giảm chuyển động. */
+}

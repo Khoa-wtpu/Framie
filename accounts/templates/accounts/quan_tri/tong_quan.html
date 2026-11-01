@@ -1,0 +1,47 @@
+{% extends "accounts/quan_tri/khung.html" %}{# dùng khung Quản trị #}
+{% load ui %}{# ui: thẻ status_badge (nhãn trạng thái có màu) của core #}
+{% block admin_title_tab %}Tổng quan quản trị{% endblock %}{# chữ trên tab trình duyệt #}
+{% block admin_tieu_de %}Tổng quan{% endblock %}{# tiêu đề trang #}
+{% block admin_noi_dung %}{# nội dung trang tổng quan #}
+<div class="admin-stats">{# lưới các thẻ số liệu #}
+  <article class="panel admin-stat">{# thẻ 1: hồ sơ chờ duyệt #}
+    <p class="admin-stat__label">Hồ sơ chờ duyệt</p>{# tên số liệu #}
+    <div class="admin-stat__row">{# hàng đáy thẻ: số bên trái, nút bên phải #}
+      <p class="admin-stat__value">{{ thong_ke.ho_so_cho_duyet }}</p>{# con số #}
+      {% if url_duyet_ho_so != "#" %}<a class="btn btn--primary btn--sm" href="{{ url_duyet_ho_so }}">Duyệt hồ sơ</a>{% endif %}{# nút chính duy nhất của trang; ẩn nếu trang Duyệt hồ sơ chưa có #}
+    </div>{# hết hàng đáy thẻ #}
+  </article>{# hết thẻ 1 #}
+  <article class="panel admin-stat">{# thẻ 2: tổng tài khoản #}
+    <p class="admin-stat__label">Tổng tài khoản</p>{# tên số liệu #}
+    <div class="admin-stat__row">{# hàng đáy thẻ #}
+      <p class="admin-stat__value">{{ thong_ke.tong_tai_khoan }}</p>{# con số #}
+    </div>{# hết hàng đáy thẻ #}
+  </article>{# hết thẻ 2 #}
+  <article class="panel admin-stat">{# thẻ 3: tổng Booking #}
+    <p class="admin-stat__label">Tổng Booking</p>{# tên số liệu #}
+    <div class="admin-stat__row">{# hàng đáy thẻ #}
+      <p class="admin-stat__value">{{ thong_ke.tong_booking }}</p>{# con số #}
+    </div>{# hết hàng đáy thẻ #}
+  </article>{# hết thẻ 3 #}
+  <article class="panel admin-stat">{# thẻ 4: thanh toán chờ xác nhận #}
+    <p class="admin-stat__label">Thanh toán chờ xác nhận</p>{# tên số liệu #}
+    <div class="admin-stat__row">{# hàng đáy thẻ #}
+      <p class="admin-stat__value">{{ thong_ke.thanh_toan_cho_xac_nhan }}</p>{# con số #}
+    </div>{# hết hàng đáy thẻ #}
+  </article>{# hết thẻ 4 #}
+</div>{# hết lưới thẻ #}
+
+<section class="panel admin-section" aria-labelledby="tieu-de-booking">{# khối Booking theo trạng thái #}
+  <h2 class="admin-section__title" id="tieu-de-booking">Booking theo trạng thái</h2>{# tiêu đề khối #}
+  <ul class="admin-status-list">{# danh sách 13 trạng thái #}
+    {% for muc in thong_ke.booking_theo_trang_thai %}{# lặp từng trạng thái #}
+    <li class="admin-status-list__item{% if muc.so_luong == 0 %} is-zero{% endif %}">{# một dòng; số 0 thì thêm class is-zero để làm mờ #}
+      {% status_badge muc.ten %}{# nhãn trạng thái, màu lấy từ core/status_tones.py #}
+      <strong class="admin-status-list__count">{{ muc.so_luong }}</strong>{# số Booking ở trạng thái này #}
+    </li>{# hết dòng #}
+    {% endfor %}{# hết vòng lặp #}
+  </ul>{# hết danh sách #}
+  {% if url_booking != "#" %}<a class="btn btn--secondary btn--sm" href="{{ url_booking }}">Xem tất cả Booking</a>{% endif %}{# nút phụ; ẩn nếu trang Booking chưa có #}
+</section>{# hết khối Booking #}
+{% endblock %}{# hết nội dung #}
+

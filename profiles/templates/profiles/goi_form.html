@@ -1,0 +1,56 @@
+{% extends "base.html" %}{# K6 - UC1.4: thêm / chỉnh sửa gói dịch vụ (wireframe Module 1, màn "Thêm / Chỉnh sửa gói dịch vụ") #}
+{% load static %}
+{% block title %}{% if goi %}Chỉnh sửa gói dịch vụ{% else %}Thêm gói dịch vụ{% endif %}{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'profiles/css/ho_so.css' %}">
+<link rel="stylesheet" href="{% static 'profiles/css/goi_dich_vu.css' %}">
+{% endblock %}
+{% block extra_js %}<script src="{% static 'profiles/js/goi_dich_vu.js' %}" defer></script>{% endblock %}
+{% block content %}
+<div class="container gv gv--hep">
+  <header class="ho-so__trang-dau">
+    <h1>{% if goi %}Chỉnh sửa gói dịch vụ{% else %}Thêm gói dịch vụ{% endif %}</h1>
+    <p>Nhập thông tin gói dịch vụ hiển thị cho Khách hàng khi đặt lịch.</p>
+  </header>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}
+
+    <section class="ho-so__khoi">
+      <header class="ho-so__khoi-dau"><h2>Thông tin gói</h2></header>
+      {% include "includes/form_field.html" with field=form.TenGoi %}
+      {% include "includes/form_field.html" with field=form.MaLoaiHinh %}
+      {% include "includes/form_field.html" with field=form.MoTa %}
+      <div class="ho-so__luoi">
+        {% include "includes/form_field.html" with field=form.Gia %}
+        {% include "includes/form_field.html" with field=form.ThoiLuongChup %}
+      </div>
+    </section>
+
+    <section class="ho-so__khoi">
+      <header class="ho-so__khoi-dau"><h2>Hậu kỳ và trạng thái</h2></header>
+      <fieldset class="field{% if form.LoaiHauKy.errors %} has-error{% endif %}">
+        <legend class="field__label">{{ form.LoaiHauKy.label }}<span class="field__req" aria-hidden="true"> *</span></legend>
+        <div class="gv__chon">{% for r in form.LoaiHauKy %}<label class="gv__muc">{{ r.tag }}<span>{{ r.choice_label }}</span></label>{% endfor %}</div>
+        {% for error in form.LoaiHauKy.errors %}<p class="field__error">{{ error }}</p>{% endfor %}
+      </fieldset>
+
+      <div data-so-anh data-gioi-han="{{ loai_gioi_han }}"{% if form.LoaiHauKy.value != loai_gioi_han %} hidden{% endif %}>
+        {% include "includes/form_field.html" with field=form.SoAnhHauKyToiDa %}
+      </div>
+
+      <fieldset class="field{% if form.TrangThai.errors %} has-error{% endif %}">
+        <legend class="field__label">{{ form.TrangThai.label }}<span class="field__req" aria-hidden="true"> *</span></legend>
+        <div class="gv__chon">{% for r in form.TrangThai %}<label class="gv__muc">{{ r.tag }}<span>{{ r.choice_label }}</span></label>{% endfor %}</div>
+        {% for error in form.TrangThai.errors %}<p class="field__error">{{ error }}</p>{% endfor %}
+      </fieldset>
+    </section>
+
+    <div class="ho-so__luoi">
+      <a class="btn btn--secondary btn--block" href="{% url 'service_packages' %}">Hủy</a>
+      <button class="btn btn--primary btn--block" type="submit">Lưu</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

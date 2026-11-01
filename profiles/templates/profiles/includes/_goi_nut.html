@@ -1,0 +1,3 @@
+{# Mục trong menu thao tác của một gói; cần biến goi và nut. data-* để JS mở popup xác nhận. #}
+<a class="gv-menu__muc{% if nut.ma == 'xoa' %} gv-menu__muc--nguy-hiem{% endif %}" href="{% url 'goi_hanh_dong' goi.pk nut.ma %}"
+   data-xac-nhan data-tieu-de="{{ nut.tieu_de }}" data-cau-hoi="{{ nut.cau_hoi }}" data-nut="{{ nut.nut }}" data-kieu="{{ nut.kieu }}">{{ nut.ten }}</a>

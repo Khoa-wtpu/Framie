@@ -1,0 +1,18 @@
+{% extends "base.html" %}{# dùng khung chung của cả web (header, footer, thông báo) #}
+{% load static %}{# static: lấy file CSS #}
+{# ===== KHUNG QUẢN TRỊ: module khác chỉ cần {% extends "accounts/quan_tri/khung.html" %} ===== #}
+{# Ghi đè 2 khối: admin_tieu_de (tiêu đề trang) và admin_noi_dung (nội dung trang). #}
+{% block title %}{% block admin_title_tab %}Quản trị{% endblock %}{% endblock %}{# chữ trên tab trình duyệt, con có thể ghi đè khối admin_title_tab #}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/admin.css' %}">{% endblock %}{# nạp CSS riêng của khu Quản trị, đặt trong <head> của base.html #}
+{% block body_class %}is-admin{% endblock %}{# thêm class cho <body> để CSS nhận biết khu Quản trị #}
+{% block content %}{# khối nội dung của base.html #}
+<div class="container admin-page">{# khung một cột: điều hướng đã có ở thanh menu trên cùng (header) nên không cần menu bên trái #}
+  <section class="admin-content">{# vùng nội dung #}
+    <header class="admin-content__head">{# đầu trang #}
+      <h1 class="admin-content__title">{% block admin_tieu_de %}Quản trị{% endblock %}</h1>{# tiêu đề trang, con ghi đè; nên dùng đúng tên mục trên header #}
+    </header>{# hết đầu trang #}
+    {% block admin_noi_dung %}{% endblock %}{# nội dung riêng của từng trang quản trị, con ghi đè #}
+  </section>{# hết vùng nội dung #}
+</div>{# hết khung #}
+{% endblock %}{# hết khối content #}
+

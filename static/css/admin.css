@@ -1,0 +1,88 @@
+/* static/css/admin.css - CSS riêng của khu Quản trị (B7). Chỉ dùng biến màu trong tokens.css, KHÔNG gõ mã màu. */
+.admin-content { /* vùng nội dung, rộng hết khung */
+  min-width: 0; /* tránh bảng/ nội dung rộng làm tràn trang */
+}
+.admin-content__head { /* đầu trang */
+  margin-bottom: var(--space-5); /* cách nội dung bên dưới */
+}
+.admin-content__title { /* tiêu đề trang */
+  margin: 0; /* bỏ khoảng mặc định */
+  font-size: var(--text-2xl); /* cỡ chữ tiêu đề */
+}
+.admin-stats { /* lưới thẻ số liệu */
+  display: grid; /* dùng lưới */
+  gap: var(--space-4); /* khoảng cách giữa các thẻ */
+  grid-template-columns: repeat(4, 1fr); /* SỬA: 4 thẻ chia đều hết bề ngang, không còn dồn trái */
+  margin-bottom: var(--space-5); /* cách khối bên dưới */
+}
+@media (max-width: 900px) { /* THÊM: màn hình vừa, 2 thẻ một hàng */
+  .admin-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 480px) { /* THÊM: điện thoại, 1 thẻ một hàng */
+  .admin-stats {
+    grid-template-columns: 1fr;
+  }
+}
+.admin-stat { /* một thẻ số liệu (đã có class panel) */
+  display: flex; /* xếp dọc */
+  flex-direction: column; /* theo chiều dọc */
+  gap: var(--space-2); /* khoảng cách giữa các dòng */
+  align-items: flex-start; /* canh trái */
+}
+.admin-stat__label { /* tên số liệu */
+  margin: 0; /* bỏ khoảng mặc định */
+  min-height: calc(2 * var(--text-sm) * var(--leading)); /* chừa sẵn chỗ 2 dòng để nhãn dài không làm lệch số */
+  text-wrap: balance; /* chia đều chữ giữa các dòng, không để lẻ một chữ ở dòng dưới */
+  font-size: var(--text-sm); /* chữ nhỏ */
+  color: var(--color-text-muted); /* chữ phụ */
+}
+.admin-stat__row { /* hàng đáy thẻ: số + (nếu có) nút */
+  display: flex; /* xếp ngang */
+  align-items: flex-end; /* số và nút cùng chạm đáy */
+  justify-content: space-between; /* số bên trái, nút bên phải */
+  gap: var(--space-3); /* khoảng cách số và nút */
+  width: 100%; /* chiếm hết bề ngang thẻ */
+  margin-top: auto; /* đẩy cả hàng xuống sát đáy thẻ: 4 số luôn thẳng hàng dù nhãn 1 hay 2 dòng */
+}
+.admin-stat__value { /* con số lớn */
+  margin: 0; /* bỏ khoảng mặc định */
+  font-size: var(--text-3xl); /* chữ rất lớn */
+  font-weight: var(--fw-heading); /* chữ đậm */
+  line-height: var(--leading-tight); /* dòng sát nhau */
+}
+.admin-section__title { /* tiêu đề khối */
+  font-size: var(--text-lg); /* cỡ chữ vừa */
+}
+.admin-status-list { /* danh sách trạng thái */
+  display: grid; /* dùng lưới */
+  gap: var(--space-2); /* khoảng cách */
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); /* tự chia cột */
+  margin-bottom: var(--space-4); /* cách nút bên dưới */
+}
+.admin-status-list__item { /* một dòng trạng thái */
+  display: flex; /* nhãn bên trái, số bên phải */
+  justify-content: space-between; /* đẩy hai đầu ra xa nhau */
+  align-items: center; /* canh giữa theo chiều dọc */
+  padding: var(--space-2) var(--space-3); /* đệm trong */
+  border: 1px solid var(--color-border); /* viền xám */
+  border-radius: var(--radius-sm); /* bo góc nhỏ */
+  gap: var(--space-3); /* khoảng cách giữa nhãn và số */
+  min-width: 0; /* THÊM: cho phép ô co lại đúng cách trong lưới */
+}
+.admin-status-list__count { /* số lượng Booking */
+  font-size: var(--text-lg); /* chữ to hơn một chút */
+  flex-shrink: 0; /* THÊM: số không bị ép nhỏ lại */
+}
+.admin-status-list__item.is-zero { /* trạng thái chưa có Booking nào */
+  opacity: .45; /* làm mờ để mắt dồn vào trạng thái đang có việc */
+}
+.admin-status-list .badge { /* SỬA: nhãn trạng thái trong tổng quan: nền trắng, chữ xám vừa, không viền */
+  --bg: transparent; /* bỏ nền xám, để trắng theo nền ô */
+  --fg: var(--color-text-muted); /* chữ xám vừa, dịu hơn xám đậm */
+  border-color: transparent; /* bỏ viền nhãn, ô ngoài đã có viền rồi */
+  padding-left: 0; /* chấm tròn thẳng hàng mép trái ô */
+  padding-right: 0; /* THÊM: bỏ đệm phải của nhãn để nhường chỗ cho số */
+  font-size: var(--text-sm); /* THÊM: chỉ tăng cỡ chữ nhãn trạng thái */
+}                                      /* chấm tròn vẫn giữ màu --dot của từng trạng thái */

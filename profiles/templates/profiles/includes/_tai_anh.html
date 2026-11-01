@@ -1,0 +1,16 @@
+{# Ô tải ảnh có xem trước. Dùng: {% include "profiles/includes/_tai_anh.html" with field=form.AnhMaQR kieu="vuong" %} #}
+{# kieu="tron": ảnh đại diện hình tròn; kieu="vuong": ảnh vuông. an_nhan=1: không hiện nhãn (khối đã có tiêu đề). #}
+{% load ui %}
+<div class="field{% if field.errors %} has-error{% endif %}">
+  {% if not an_nhan %}<span class="field__label">{{ field.label }}{% if field.field.required %}<span class="field__req" aria-hidden="true"> *</span>{% endif %}</span>{% endif %}
+  <label class="ho-so__tai-len ho-so__tai-len--{{ kieu|default:'vuong' }}" for="{{ field.id_for_label }}">
+    <span class="ho-so__xem-truoc">{% if field.value and field.value.url %}<img src="{{ field.value.url }}" alt="">{% endif %}</span>
+    <span class="ho-so__tai-len-chu">
+      <strong>Tải ảnh lên</strong>
+      <small>{{ field.help_text }}</small>
+      <em class="ho-so__ten-tep"></em>
+    </span>
+    {{ field|add_class:"ho-so__tep" }}
+  </label>
+  {% for error in field.errors %}<p class="field__error">{{ error }}</p>{% endfor %}
+</div>
