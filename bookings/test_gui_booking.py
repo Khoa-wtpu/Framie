@@ -354,6 +354,67 @@ class UC42(TestCase):
         # So sánh giá trị thực tế với giá trị mong đợi để xác nhận kết quả kiểm thử.
         self.assertEqual(Booking.objects.count(), 0)
 
+    # (b) Luồng 1a: mỗi ô sai đều không tạo Booking và lượt giữ chỗ KHÔNG bị đóng (khách sửa rồi gửi lại được).
+    def test_moi_o_sai_khong_tao_booking_va_khong_dong_giu_cho(self):
+        g = self.giu(self.a, self.s1)
+        truong_hop = {
+            'thiếu địa điểm': ({'dia_diem': ''}, 'dia_diem'),
+            'số người bằng 0': ({'so_nguoi': 0}, 'so_nguoi'),
+            'giờ chụp ngoài khung giờ của slot': ({'ngay_gio_chup': f'{self.ngay:%Y-%m-%d}T12:00'}, 'ngay_gio_chup'),
+            'gói không thuộc loại hình đã chọn': ({'loai_hinh': self.cuoi.pk}, 'goi'),
+        }
+        for ten, (ghi_de, o_loi) in truong_hop.items():
+            with self.subTest(ten):
+                r = self.gui(self.a, g, **ghi_de)
+                self.assertIn(o_loi, r.context['form'].errors)
+                self.assertEqual(Booking.objects.count(), 0)
+                self.assertEqual(GiuCho.objects.get().TrangThai, GC.DANG_GIU)   # lượt giữ chỗ vẫn mở
+                self.assertEqual(self.slot(self.s1), SL.DANG_GIU)               # slot vẫn đang giữ
+                self.assertEqual(ThongBao.objects.count(), 0)                   # chưa báo cho ai
+                self.assertEqual(len(mail.outbox), 0)
+
+    # (d) Gói 'Đã ẩn' bị chặn giống gói 'Ngừng áp dụng'.
+    def test_goi_da_an_bi_chan(self):
+        goi_an = GoiDichVu.objects.create(MaNhiepAnhGia=self.nag, MaLoaiHinh=self.chan_dung, TenGoi='Gói ẩn',
+                                          Gia=1200000, ThoiLuongChup=60, LoaiHauKy=LoaiHauKy.TOAN_BO,
+                                          TrangThai=TrangThaiGoi.DA_AN)
+        g = self.giu(self.a, self.s1)
+        r = self.gui(self.a, g, goi=goi_an.pk)
+        self.assertIn('goi', r.context['form'].errors)
+        self.assertEqual(Booking.objects.count(), 0)
+        self.assertEqual(GiuCho.objects.get().TrangThai, GC.DANG_GIU)
+
+    # (d) Khách mở form khi gói còn 'Đang áp dụng'; trước khi bấm gửi, gói bị đổi sang 'Ngừng áp dụng' / 'Đã ẩn'.
+    def test_goi_doi_trang_thai_sau_khi_mo_form_bi_chan(self):
+        g = self.giu(self.a, self.s1)
+        for trang_thai in (TrangThaiGoi.NGUNG_AP_DUNG, TrangThaiGoi.DA_AN):
+            with self.subTest(trang_thai):
+                goi = GoiDichVu.objects.create(MaNhiepAnhGia=self.nag, MaLoaiHinh=self.chan_dung,
+                                               TenGoi=f'Gói đổi sang {trang_thai}', Gia=1300000,
+                                               ThoiLuongChup=60, LoaiHauKy=LoaiHauKy.TOAN_BO)
+                self.client.force_login(self.a)
+                r = self.client.get(self.url(g))                                  # mở form: gói còn hiện trong danh sách
+                self.assertIn(goi.pk, [o.pk for o in r.context['form'].fields['goi'].queryset])
+                GoiDichVu.objects.filter(pk=goi.pk).update(TrangThai=trang_thai)  # trong lúc Khách đang điền form
+                r = self.gui(self.a, g, goi=goi.pk)
+                self.assertIn('goi', r.context['form'].errors)
+                self.assertEqual(Booking.objects.count(), 0)
+                self.assertEqual(GiuCho.objects.get().TrangThai, GC.DANG_GIU)
+
+    # (d) Hẹp hơn: gói đổi trạng thái SAU khi form hợp lệ, ngay lúc service chạy -> lỗi về ô "gói", không đóng lượt giữ chỗ.
+    def test_service_goi_doi_trang_thai_ve_dung_o_nhap_va_khong_dong_giu_cho(self):
+        g = self.giu(self.a, self.s1)
+        gio_chup = timezone.make_aware(datetime.combine(self.ngay, datetime.strptime('09:30', '%H:%M').time()))
+        for trang_thai in (TrangThaiGoi.NGUNG_AP_DUNG, TrangThaiGoi.DA_AN):
+            with self.subTest(trang_thai):
+                GoiDichVu.objects.filter(pk=self.goi.pk).update(TrangThai=trang_thai)
+                with self.assertRaises(uc.GuiBookingLoi) as ctx:
+                    uc.gui_yeu_cau_booking(self.a, g.pk, self.goi.pk, gio_chup, 'x', 1, 'y')
+                self.assertIn('MaGoi', ctx.exception.loi_truong)
+                self.assertFalse(ctx.exception.het_han)
+                self.assertEqual(Booking.objects.count(), 0)
+                self.assertEqual(GiuCho.objects.get().TrangThai, GC.DANG_GIU)
+
     # Khai báo một trường hợp kiểm thử cho UC4.2.
     def test_goi_khong_khop_loai_hinh(self):
         # Tạo một hoặc nhiều lượt giữ chỗ để sử dụng trong kịch bản kiểm thử.
@@ -553,7 +614,8 @@ class UC42(TestCase):
         # Tạo một hoặc nhiều lượt giữ chỗ để sử dụng trong kịch bản kiểm thử.
         g = self.giu(self.a, self.s1)
         # So sánh giá trị thực tế với giá trị mong đợi để xác nhận kết quả kiểm thử.
-        self.assertEqual(self.client.get(self.url(g)).status_code, 302)             # sang trang đăng nhập
+        self.assertRedirects(self.client.get(self.url(g)), f"{reverse('login')}?next={self.url(g)}",
+                             fetch_redirect_response=False)                         # sang trang đăng nhập, kèm ?next=
         # Đăng nhập trực tiếp tài khoản kiểm thử vào Django test client.
         self.client.force_login(self.nag.MaTaiKhoan)
         # So sánh giá trị thực tế với giá trị mong đợi để xác nhận kết quả kiểm thử.

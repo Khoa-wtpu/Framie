@@ -456,6 +456,25 @@ class UC41(TestCase):
         # Đảm bảo slot không bị thay đổi trạng thái khi giao dịch gặp lỗi.
         self.assertEqual(self.trang_thai(self.s1), SL.TRONG)
 
+    # Tài khoản chưa thuộc nhóm nào bị chặn (403): khach_hang_required theo cùng quy tắc với GiuCho.clean() (phải thuộc
+    # nhóm Khách hàng). accounts.permissions.chi_khach_hang thì cho qua -> đây là lý do giữ bản riêng (xem ghi chú ở giu_cho.py).
+    def test_tai_khoan_chua_co_nhom_bi_chan(self):
+        khong_nhom = tao_user('khong_nhom')
+        self.client.force_login(khong_nhom)
+        self.assertEqual(self.client.get(reverse('lich_chon_slot', args=[self.nag.pk])).status_code, 403)
+        self.assertEqual(self.client.post(reverse('chon_slot', args=[self.s1.pk])).status_code, 403)
+        self.assertEqual(self.trang_thai(self.s1), SL.TRONG)
+
+    # Câu "giữ chỗ cho bạn N phút" lấy từ THOI_GIAN_GIU_CHO, không viết cứng.
+    def test_trang_lich_hien_so_phut_theo_hang_so(self):
+        self.client.force_login(self.a)
+        url = reverse('lich_chon_slot', args=[self.nag.pk])
+        self.assertContains(self.client.get(url), '<strong>5 phút</strong>')
+        with mock.patch.object(uc, 'THOI_GIAN_GIU_CHO', timedelta(minutes=7)):
+            r = self.client.get(url)
+        self.assertContains(r, '<strong>7 phút</strong>')
+        self.assertNotContains(r, '<strong>5 phút</strong>')
+
     # Kiểm tra khách hàng không thể xem màn hình hoặc API của lượt giữ thuộc khách hàng khác.
     def test_khong_xem_duoc_luot_cua_nguoi_khac(self):
         # Khách hàng A giữ khung giờ thứ nhất trước.

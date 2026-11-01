@@ -25,7 +25,6 @@ admin.site.index_title = 'Quản trị hệ thống'
 urlpatterns = [
     path('admin/', admin.site.urls),              # /admin dẫn tới trang quản trị
 
-    path('', include('core.urls')),               # (2) nối core/urls.py, có /ui-kit/
     path('bookings/', include('bookings.giu_cho')),
     path('bookings/', include('bookings.gui_booking')),
 
