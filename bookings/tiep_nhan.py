@@ -226,6 +226,13 @@ def da_qua_gio_chup(booking):
     return booking.NgayGioChup <= timezone.now()
 
 
+def da_het_khung_gio_chup(booking):
+    """T8: khung giờ chụp (slot) của Booking đã KẾT THÚC chưa? (Ngày của slot + GioKetThuc <= bây giờ).
+    Dùng cho nút 'Đã chụp': chỉ bấm được sau khi hết khung giờ, ví dụ slot 09:00-11:00 thì từ 11:00."""
+    het = timezone.make_aware(timezone.datetime.combine(booking.MaLich.Ngay, booking.MaLich.GioKetThuc))
+    return het <= timezone.now()
+
+
 # Trả về danh sách Booking để hiển thị ở trang 'Quản lý Booking' (UC4.3).
 def lay_danh_sach_booking(nag_user, trang_thai=LOC_MAC_DINH, sap_xep=SAP_XEP_MAC_DINH):
     """UC4.3 bước 2 và luồng 2a: danh sách Booking của Nhiếp ảnh gia, lọc theo trạng thái, sắp xếp theo thời gian."""
@@ -434,6 +441,7 @@ def chi_tiet_yeu_cau(request, ma_booking):
         'co_the_xu_ly': booking.TrangThai == TrangThaiBooking.CHO_XAC_NHAN,   # chỉ lúc này mới hiện nút xử lý
         # T8: Booking đang 'Chốt Booking' -> hiện khối 'Đã chụp'; nút chỉ bấm được khi buổi chụp đã diễn ra.
         'dang_chot_booking': booking.TrangThai == TrangThaiBooking.CHOT_BOOKING,
+        'da_het_gio_chup': da_het_khung_gio_chup(booking),
         # Tổng giá trị Booking đã định dạng (ví dụ 1.500.000).
         'tong_gia': _tien(booking.TongGiaTri),
         # Số tiền cọc 40% (tính bằng tinh_so_tien) đã định dạng, để báo trước cho Nhiếp ảnh gia.

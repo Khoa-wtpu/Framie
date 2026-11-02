@@ -23,9 +23,6 @@ from itertools import count
 # re: tìm đường link 'sang trang 2' trong HTML. unescape: đổi '&amp;' trong link HTML về '&' để giả lập bấm link.
 import re
 from html import unescape
-# urljoin: ghép link với địa chỉ trang đang mở đúng như trình duyệt (link chỉ có '?page=2...' thì giữ đường dẫn trang hiện tại;
-# link đã là đường dẫn đầy đủ thì dùng luôn đường dẫn đó).
-from urllib.parse import urljoin
 # mock: công cụ 'giả lập'; ở đây dùng để giả vờ máy chủ gửi mail bị hỏng.
 from unittest import mock
 
@@ -200,7 +197,7 @@ class UC43TiepNhan(TiepNhanBase):
         self.assertEqual(list(trang1.context['page_obj']), coc[:10])
         link = re.search(r'href="([^"]*page=2[^"]*)"', trang1.content.decode())
         self.assertIsNotNone(link, 'Trang 1 phải có link sang trang 2')
-        trang2 = self.client.get(urljoin(self.url, unescape(link.group(1))))   # link thường chỉ có phần '?...': trình duyệt ghép vào trang hiện tại
+        trang2 = self.client.get(self.url + unescape(link.group(1)))   # link chỉ có phần '?...', trình duyệt tự ghép vào trang hiện tại
         self.assertEqual(list(trang2.context['page_obj']), coc[10:])      # nếu link làm rơi bộ lọc, trang 2 sẽ sai
         self.assertEqual(trang2.context['trang_thai'], BK.CHO_DAT_COC)
         self.assertEqual(trang2.context['sap_xep'], 'chup_gan')

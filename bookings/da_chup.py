@@ -3,7 +3,7 @@
 #   Nhiếp ảnh gia bấm "Đã chụp" (TO-BE mục 8.1)
 #
 # Yêu cầu (task T8):
-#   Khi Booking đang "Chốt Booking" và buổi chụp đã diễn ra, Nhiếp ảnh gia bấm "Đã chụp".
+#   Khi Booking đang "Chốt Booking" và buổi chụp đã diễn ra (= đã HẾT khung giờ của slot), Nhiếp ảnh gia bấm "Đã chụp".
 #     - Gói "Giới hạn số lượng ảnh": Booking dừng ở "Đã chụp", chờ Nhiếp ảnh gia tải ảnh (Nguyên làm tiếp:
 #       tải ảnh xong thì Nguyên đổi sang "Chờ Khách hàng lựa chọn ảnh").
 #     - Gói "Hậu kỳ toàn bộ ảnh": Booking đi thẳng sang "Chờ hậu kỳ", không qua bước Khách chọn ảnh.
@@ -28,20 +28,19 @@ from django.db import DatabaseError, transaction
 from django.http import Http404
 from django.shortcuts import redirect
 from django.urls import path
-from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from accounts.permissions import chi_nhiep_anh_gia_da_duyet   # chỉ Nhiếp ảnh gia ĐÃ DUYỆT
 from bookings.services import chuyen_trang_thai_booking
 # XuLyBookingLoi + lay_booking_cua_nag: dùng lại của UC4.3 (Booking của người khác -> "không tìm thấy", BR4.3-1).
-from bookings.tiep_nhan import TB_LOI_HE_THONG, XuLyBookingLoi, lay_booking_cua_nag
+from bookings.tiep_nhan import TB_LOI_HE_THONG, XuLyBookingLoi, da_het_khung_gio_chup, lay_booking_cua_nag
 from core.constants import BenThucHien, LoaiHauKy, TrangThaiBooking
 
 logger = logging.getLogger(__name__)
 
 # Câu thông báo.
 TB_SAI_TRANG_THAI = 'Chỉ Booking đang ở trạng thái "Chốt Booking" mới bấm được "Đã chụp".'
-TB_CHUA_DEN_GIO_CHUP = 'Buổi chụp chưa diễn ra nên chưa thể bấm "Đã chụp".'
+TB_CHUA_DEN_GIO_CHUP = 'Chỉ bấm "Đã chụp" được sau khi hết khung giờ chụp.'
 TB_DA_CHUP_GIOI_HAN = 'Đã ghi nhận buổi chụp. Vui lòng tải ảnh lên để Khách hàng lựa chọn ảnh.'
 TB_DA_CHUP_TOAN_BO = 'Đã ghi nhận buổi chụp. Booking chuyển sang "Chờ hậu kỳ".'
 
@@ -53,9 +52,9 @@ LY_DO_BO_QUA_CHON_ANH = 'Gói Hậu kỳ toàn bộ ảnh: bỏ qua bước Khá
 # PHẦN 3: HÀM NGHIỆP VỤ (SERVICE)
 # ---------------------------------------------------------------------
 def da_den_gio_chup(booking):
-    """Buổi chụp đã diễn ra chưa? Tính từ NgayGioChup (giờ bắt đầu buổi chụp). Muốn đổi sang 'hết khung giờ của slot'
-    thì chỉ sửa đúng hàm này (view và template đều gọi qua đây)."""
-    return booking.NgayGioChup <= timezone.now()
+    """Buổi chụp đã diễn ra chưa? Leader chọn 'Cách B': chỉ tính SAU KHI HẾT KHUNG GIỜ của slot (ví dụ slot 09:00-11:00
+    thì từ 11:00 mới bấm được). Quy tắc nằm ở tiep_nhan.da_het_khung_gio_chup (nút trên template dùng cùng hàm đó)."""
+    return da_het_khung_gio_chup(booking)
 
 
 def co_the_bam_da_chup(booking):

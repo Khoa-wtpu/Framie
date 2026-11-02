@@ -5,6 +5,9 @@
 from datetime import timedelta
 from django.utils.html import escape
 
+from contextlib import contextmanager
+from unittest.mock import patch
+
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -27,11 +30,22 @@ class DaChupTest(nen.TiepNhanBase):
                                      Gia=1000000, ThoiLuongChup=60, LoaiHauKy=LoaiHauKy.GIOI_HAN)
 
     def booking_chot(self, goi=None, da_qua_gio=True, **kw):
-        """Booking 'Chốt Booking'; mặc định buổi chụp đã diễn ra (1 giờ trước, Booking tạo từ 2 ngày trước)."""
+        """Booking 'Chốt Booking' có slot 09:00-11:00.
+        da_qua_gio=True : slot của hôm qua (đã kết thúc từ lâu). False : slot 2 ngày nữa (chưa tới)."""
         bay_gio = timezone.now()
-        gio_chup = bay_gio - timedelta(hours=1) if da_qua_gio else bay_gio + timedelta(days=2)
-        return self.tao_booking(goi=goi, trang_thai=BK.CHOT_BOOKING, NgayGioChup=gio_chup,
-                                NgayTao=bay_gio - timedelta(days=2), **kw)
+        ngay = timezone.localdate() + timedelta(days=-1 if da_qua_gio else 2)
+        return self.tao_booking(goi=goi, trang_thai=BK.CHOT_BOOKING, gio='09:00', ngay=ngay,
+                                NgayTao=bay_gio - timedelta(days=3), **kw)
+
+    @contextmanager
+    def vao_luc(self, bk, gio, phut=0):
+        """Giả lập 'bây giờ' là hh:mm của NGÀY slot của Booking (để thử trước / trong / sau khung giờ).
+        Phiên đăng nhập chỉ sống 30 phút nên phải đăng nhập lại NGAY trong lúc giả lập giờ."""
+        gia_lap = timezone.make_aware(timezone.datetime.combine(
+            bk.MaLich.Ngay, timezone.datetime.min.time().replace(hour=gio, minute=phut)))
+        with patch('django.utils.timezone.now', return_value=gia_lap):
+            self.client.force_login(self.nag.MaTaiKhoan)
+            yield
 
     def bam(self, bk, **kw):
         return self.client.post(reverse('da_chup_booking', kwargs={'ma_booking': bk.pk}), **kw)
@@ -60,10 +74,26 @@ class DaChupTest(nen.TiepNhanBase):
         bk.refresh_from_db()
         self.assertEqual(bk.TrangThai, BK.CHOT_BOOKING)
 
+    def test_dang_trong_khung_gio_chup_chua_bam_duoc(self):                   # Cách B: slot 09:00-11:00
+        bk = self.booking_chot(da_qua_gio=False)
+        for gio, phut in ((8, 0), (9, 0), (10, 59)):                          # trước giờ, đúng giờ bắt đầu, sát giờ kết thúc
+            with self.vao_luc(bk, gio, phut):
+                res = self.bam(bk, follow=True)
+            self.assertContains(res, escape(uc.TB_CHUA_DEN_GIO_CHUP))
+            bk.refresh_from_db()
+            self.assertEqual(bk.TrangThai, BK.CHOT_BOOKING, f'{gio}:{phut:02d} chưa được bấm')
+
+    def test_dung_gio_ket_thuc_slot_bam_duoc(self):
+        bk = self.booking_chot(da_qua_gio=False, goi=self.goi_gioi_han)
+        with self.vao_luc(bk, 11, 0):
+            self.bam(bk)
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, BK.DA_CHUP)
+
     def test_chi_bam_duoc_khi_dang_chot_booking(self):
         for tt in (BK.CHO_XAC_NHAN, BK.CHO_DAT_COC, BK.DA_CHUP, BK.HOAN_THANH, BK.DA_HUY):
-            bk = self.tao_booking(trang_thai=tt, gio=f'{BK.ALL.index(tt):02d}:00',
-                                  NgayGioChup=timezone.now() - timedelta(hours=1), NgayTao=timezone.now() - timedelta(days=2))
+            bk = self.tao_booking(trang_thai=tt, gio=f'{BK.ALL.index(tt):02d}:00', ngay=timezone.localdate() - timedelta(days=1),
+                                  NgayTao=timezone.now() - timedelta(days=3))
             self.bam(bk)
             bk.refresh_from_db()
             self.assertEqual(bk.TrangThai, tt)
@@ -91,12 +121,13 @@ class DaChupTest(nen.TiepNhanBase):
         self.assertEqual(res.status_code, 405)
 
     def test_trang_chi_tiet_hien_nut_da_chup_dung_luc(self):
-        sau = self.booking_chot()
-        truoc = self.booking_chot(da_qua_gio=False, gio='15:00')
-        url_nut = lambda b: reverse('da_chup_booking', kwargs={'ma_booking': b.pk})
-        self.assertContains(self.client.get(reverse('chi_tiet_yeu_cau_booking', kwargs={'ma_booking': sau.pk})), url_nut(sau))
-        self.assertNotContains(self.client.get(reverse('chi_tiet_yeu_cau_booking', kwargs={'ma_booking': truoc.pk})), url_nut(truoc))
-
+        bk = self.booking_chot(da_qua_gio=False)
+        url_nut = reverse('da_chup_booking', kwargs={'ma_booking': bk.pk})
+        url_ct = reverse('chi_tiet_yeu_cau_booking', kwargs={'ma_booking': bk.pk})
+        with self.vao_luc(bk, 10, 0):                                         # đang trong khung giờ: ẩn nút
+            self.assertNotContains(self.client.get(url_ct), url_nut)
+        with self.vao_luc(bk, 11, 0):                                         # hết khung giờ: hiện nút
+            self.assertContains(self.client.get(url_ct), url_nut)
 
 def _co_cot_so_luong():
     """Gói giới hạn có thể bắt buộc cột số lượng ảnh (tùy models của Khoa); kiểm tra để test không phụ thuộc phiên bản."""
