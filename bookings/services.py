@@ -24,16 +24,21 @@
 # ---------------------------------------------------------------------
 # PHẦN 1: IMPORT (khai báo các thư viện / thành phần cần dùng)
 # ---------------------------------------------------------------------
+import logging  # ghi log lỗi kỹ thuật cho lập trình viên (người dùng không thấy)
 from datetime import timedelta  # timedelta = "khoảng thời gian" (vd 1 ngày, 2 ngày) để cộng vào mốc giờ khi tính hạn chót
 
 from django.core.exceptions import ValidationError  # loại lỗi chuẩn của Django, dùng để báo "dữ liệu/thao tác không hợp lệ"
-from django.db import transaction  # transaction = gói nhiều thao tác DB làm một: hoặc thành công hết, hoặc hủy hết
+from django.core.mail import send_mail  # hàm gửi Email của Django
+from django.db import DatabaseError, transaction  # transaction = gói nhiều thao tác DB làm một: hoặc thành công hết, hoặc hủy hết
 from django.utils import timezone  # lấy giờ hiện tại có múi giờ (timezone.now()), đúng chuẩn của Django
 
 from bookings.models import Booking, LichSuTrangThaiBooking  # 2 bảng: Booking (đơn đặt lịch) và Lịch sử đổi trạng thái
-from core.constants import BenThucHien, LoaiHauKy, TrangThaiSlot  # các hằng số: bên thực hiện, loại hậu kỳ của gói, trạng thái slot
+from core.constants import BenThucHien, LoaiHauKy, TrangThaiGuiEmail, TrangThaiSlot  # các hằng số: bên thực hiện, loại hậu kỳ của gói, trạng thái slot
 from core.constants import TrangThaiBooking as TT  # đặt tên ngắn TT cho TrangThaiBooking để viết bảng bên dưới cho gọn
+from notifications.models import ThongBao  # bảng thông báo web (để ghi kết quả gửi Email)
 from schedule.services import doi_trang_thai_khung_gio  # hàm của Khoa: đổi trạng thái khung giờ (slot) trong lịch
+
+logger = logging.getLogger(__name__)  # sổ ghi lỗi riêng của file này
 
 # Đặt tên ngắn cho 3 bên thực hiện để các dòng bên dưới ngắn gọn, dễ đọc
 KH = BenThucHien.KHACH_HANG  # KH = Khách hàng
@@ -196,3 +201,31 @@ def chuyen_trang_thai_booking(booking, trang_thai_moi, ben_thuc_hien, ly_do=None
         for ten_cot, gia_tri in cac_cot.items():  # duyệt từng cột vừa cập nhật ở bước 7
             setattr(bk, ten_cot, gia_tri)  # gán giá trị mới vào đối tượng bk (vì .update() chỉ sửa DB, không sửa đối tượng trong bộ nhớ)
         return bk  # trả về Booking đã có dữ liệu mới
+
+
+# ---------------------------------------------------------------------
+# PHẦN 4: GỬI EMAIL SAU COMMIT (dùng chung: UC4.2, UC4.4, UC4.5 và các task Thanh toán, Hoàn thành về sau)
+# ---------------------------------------------------------------------
+def gui_email_sau_commit(thong_bao, nguoi_nhan, tieu_de, noi_dung):
+    """Hẹn gửi Email cho nguoi_nhan SAU KHI transaction hiện tại commit (transaction.on_commit), rồi ghi kết quả
+    (Gửi thành công / Gửi thất bại) vào thong_bao (thông báo web đi kèm, có thể None).
+    Lỗi gửi mail (không có email, SMTP lỗi...) chỉ ghi log + đánh dấu 'Gửi thất bại', KHÔNG làm hỏng việc đã lưu.
+    Cách dùng: tb = gui_thong_bao(user, tieu_de, noi_dung, booking=bk); gui_email_sau_commit(tb, user, tieu_de, noi_dung)"""
+    transaction.on_commit(lambda: _gui_email_va_ghi_ket_qua(thong_bao, nguoi_nhan, tieu_de, noi_dung))
+
+
+def _gui_email_va_ghi_ket_qua(thong_bao, nguoi_nhan, tieu_de, noi_dung):
+    """Phần chạy thật sau commit của gui_email_sau_commit: gửi mail rồi ghi TrangThaiGuiEmail. Không bao giờ ném lỗi."""
+    try:  # thử gửi mail; lỗi gì cũng nhảy xuống except
+        if not nguoi_nhan.email:  # chưa có địa chỉ Email thì không gửi được
+            raise ValueError('Người nhận chưa có email')
+        send_mail(tieu_de, noi_dung, None, [nguoi_nhan.email], fail_silently=False)  # None = DEFAULT_FROM_EMAIL
+        ket_qua = TrangThaiGuiEmail.THANH_CONG  # gửi được
+    except Exception:  # noqa: BLE001  # SMTP/DNS/... lỗi gì cũng không được làm sập request
+        logger.exception('gui_email_sau_commit: gửi email thất bại (%s)', tieu_de)
+        ket_qua = TrangThaiGuiEmail.THAT_BAI  # gửi lỗi
+    if thong_bao is not None:  # có thông báo web đi kèm thì ghi kết quả vào đó
+        try:
+            ThongBao.objects.filter(pk=thong_bao.pk).update(TrangThaiGuiEmail=ket_qua)
+        except DatabaseError:  # lưu kết quả lỗi thì chỉ ghi log
+            logger.exception('gui_email_sau_commit: không ghi được TrangThaiGuiEmail')

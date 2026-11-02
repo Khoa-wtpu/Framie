@@ -1,0 +1,111 @@
+{% extends "base.html" %}{# K10 - UC3.1 Quản lý lịch khả dụng (wireframe Module 3, màn SC3.1) #}
+{% load static ui %}
+{% block title %}Quản lý lịch khả dụng{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'schedule/css/lich.css' %}">{% endblock %}
+{% block extra_js %}<script src="{% static 'schedule/js/lich.js' %}" defer></script>{% endblock %}
+{% block content %}
+<div class="container lich">
+  <header class="lich__dau">
+    <div>
+      <h1>Quản lý lịch khả dụng</h1>
+      <p>Thiết lập các khung giờ bạn nhận chụp. Khách hàng chỉ đặt được các slot Lịch trống.</p>
+    </div>
+    <a class="btn btn--primary" href="{{ url_them }}">Thêm khung giờ</a>
+  </header>
+
+  <div class="lich__thanh">
+    <nav class="lich__che-do" aria-label="Chế độ xem lịch">
+      <a class="lich__tab{% if che_do == 'tuan' %} is-active{% endif %}" href="{{ url_tuan }}"{% if che_do == 'tuan' %} aria-current="page"{% endif %}>Tuần</a>
+      <a class="lich__tab{% if che_do == 'thang' %} is-active{% endif %}" href="{{ url_thang }}"{% if che_do == 'thang' %} aria-current="page"{% endif %}>Tháng</a>
+    </nav>
+    <div class="lich__dieu-huong">
+      <a class="btn btn--secondary btn--sm" href="{{ truoc }}">◀ {{ nhan_truoc }}</a>
+      <strong class="lich__nhan" role="status">{{ nhan_khoang }}</strong>
+      <a class="btn btn--secondary btn--sm" href="{{ sau }}">{{ nhan_sau }} ▶</a>
+      <a class="lich__hom-nay" href="{{ url_hom_nay }}">Hôm nay</a>
+    </div>
+  </div>
+
+  <ul class="lich__chu-thich" aria-label="Chú thích trạng thái">
+    {% for tt in chu_thich %}<li>{% status_badge tt %}</li>{% endfor %}
+  </ul>
+
+  {% if che_do == 'tuan' %}
+  <div class="lich__tuan">
+    {% for ngay in cac_ngay %}
+    <section class="lich-ngay{% if ngay.la_hom_nay %} is-hom-nay{% endif %}{% if ngay.la_qua_khu %} is-qua{% endif %}" aria-labelledby="lich-ngay-{{ ngay.ngay|date:'Ymd' }}">
+      <h2 class="lich-ngay__ten" id="lich-ngay-{{ ngay.ngay|date:'Ymd' }}">{{ ngay.nhan }}{% if ngay.la_hom_nay %} <span class="lich-ngay__nhan-hom-nay">Hôm nay</span>{% endif %}</h2>
+      <ul class="lich-ngay__ds">
+        {% for s in ngay.cac_slot %}
+        <li class="lich-slot lich-slot--{{ s.mau }}{% if s.da_qua %} is-qua{% endif %}{% if s.co_the_sua %} lich-slot--thao-tac{% endif %}"{% if s.co_the_sua %} tabindex="0" data-thao-tac role="group" aria-label="Khung giờ {{ s.lich.GioBatDau|time:'H:i' }} – {{ s.lich.GioKetThuc|time:'H:i' }}. Bấm để chỉnh sửa hoặc xóa"{% endif %}>
+          <span class="lich-slot__gio">{{ s.lich.GioBatDau|time:"H:i" }} – {{ s.lich.GioKetThuc|time:"H:i" }}</span>
+          {% status_badge s.lich.TrangThai %}
+          {% if s.da_qua %}<span class="lich-slot__ghi">Đã qua</span>{% endif %}
+          {% if s.ma_booking %}
+            {% if s.url_booking %}<a class="lich-slot__booking" href="{{ s.url_booking }}">Booking #{{ s.ma_booking }}</a>
+            {% else %}<span class="lich-slot__ghi">Booking #{{ s.ma_booking }}</span>{% endif %}
+          {% endif %}
+          {% if s.co_the_sua %}
+          {# Thao tác chỉ hiện khi rê chuột / bấm / Tab vào ô (lich.css + lich.js), để lưới tuần gọn. #}
+          <div class="lich-slot__nut">
+            <a class="btn btn--secondary btn--sm" href="{% url 'lich_sua' s.lich.pk %}">Chỉnh sửa</a>
+            {% if s.co_the_xoa %}
+            <a class="btn btn--secondary btn--sm lich-slot__xoa" href="{% url 'lich_xoa' s.lich.pk %}" data-xac-nhan data-tieu-de="Xóa khung giờ?" data-cau-hoi="Bạn có chắc muốn xóa khung giờ {{ ngay.nhan }} · {{ s.lich.GioBatDau|time:'H:i' }} – {{ s.lich.GioKetThuc|time:'H:i' }}? Khung giờ sẽ không còn hiển thị cho Khách hàng." data-nut="Xác nhận xóa">Xóa</a>
+            {% endif %}
+          </div>
+          {% endif %}
+        {% empty %}
+        <li class="lich-ngay__trong">Chưa có khung giờ</li>
+        {% endfor %}
+      </ul>
+      {% if not ngay.la_qua_khu %}<a class="lich-ngay__them" href="{% url 'lich_them' %}?ngay={{ ngay.ngay|date:'Y-m-d' }}">+ Thêm khung giờ</a>{% endif %}
+    </section>
+    {% endfor %}
+  </div>
+  {% if tong_slot == 0 %}
+  <p class="lich__trong" role="status">Tuần này bạn chưa có khung giờ nào. Thêm khung giờ để Khách hàng có thể đặt lịch với bạn.</p>
+  {% endif %}
+
+  {% else %}
+  <div class="lich__bao-thang">
+    <table class="lich-thang">
+      <thead>
+        <tr>{% for ten in ten_thu %}<th scope="col">{{ ten }}</th>{% endfor %}</tr>
+      </thead>
+      <tbody>
+        {% for tuan in cac_tuan %}
+        <tr>
+          {% for o in tuan %}
+          <td class="lich-o{% if not o.trong_thang %} is-ngoai{% endif %}{% if o.la_hom_nay %} is-hom-nay{% endif %}">
+            <a class="lich-o__link" href="{{ o.url }}" aria-label="Xem tuần chứa ngày {{ o.ngay|date:'d/m/Y' }}">
+              <span class="lich-o__so">{{ o.ngay.day }}</span>
+              {% if o.dem_trong %}<span class="lich-o__chip lich-o__chip--sky">{{ o.dem_trong }} trống</span>{% endif %}
+              {% if o.dem_giu %}<span class="lich-o__chip lich-o__chip--amber">{{ o.dem_giu }} giữ chỗ</span>{% endif %}
+              {% if o.dem_dat %}<span class="lich-o__chip lich-o__chip--blue">{{ o.dem_dat }} đã đặt</span>{% endif %}
+            </a>
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if tong_slot == 0 %}
+  <p class="lich__trong" role="status">Tháng này bạn chưa có khung giờ nào. Thêm khung giờ để Khách hàng có thể đặt lịch với bạn.</p>
+  {% endif %}
+  {% endif %}
+</div>
+
+{# Hộp xác nhận xóa: JS điền nội dung từ data-* của nút bấm. Không có JS thì nút "Xóa" dẫn tới trang xác nhận riêng. #}
+<dialog class="lich-popup" id="lich-popup" aria-labelledby="lich-popup-tieu-de" aria-describedby="lich-popup-hoi">
+  <form method="post" class="lich-popup__khung" id="lich-popup-form">
+    {% csrf_token %}
+    <h2 id="lich-popup-tieu-de" class="lich-popup__tieu-de"></h2>
+    <p id="lich-popup-hoi" class="lich-popup__hoi"></p>
+    <div class="lich-popup__nut">
+      <button class="btn btn--secondary" type="button" data-dong>Hủy</button>
+      <button class="btn btn--danger" type="submit" id="lich-popup-xac-nhan"></button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}

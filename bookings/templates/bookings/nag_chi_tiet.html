@@ -1,0 +1,90 @@
+{# UC4.3 (chi tiết) + UC4.4 (nút Chấp nhận) + UC4.5 (nút Từ chối). File này được sử dụng bởi bookings/tiep_nhan.py (view chi_tiet_yeu_cau) #}
+
+{# Kế thừa khung chung của website từ base.html; file này chỉ viết phần nội dung riêng. #}
+{% extends "base.html" %}
+{# Nạp bộ thẻ giao diện 'ui' để dùng thẻ status_badge (nhãn trạng thái có màu). #}
+{% load ui static %}
+
+{# Tiêu đề hiện trên tab trình duyệt, kèm mã Booking. #}
+{% block title %}Booking #{{ booking.pk }}{% endblock %}
+
+{# Chèn thêm phần định dạng (CSS) riêng của trang này. #}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'bookings/css/nag_booking.css' %}">
+{% endblock %}
+
+{# Phần nội dung chính của trang. #}
+{% block content %}
+{# Khung nằm giữa trang; các khối bên trong xếp dọc, cách đều nhau. #}
+<section class="container stack">
+
+  {# Đường link quay lại danh sách Quản lý Booking. #}
+  <p><a href="{% url 'manage_bookings' %}">← Quay lại Quản lý Booking</a></p>
+
+  {# Tiêu đề: mã Booking kèm nhãn trạng thái có màu. #}
+  <h1>Booking #{{ booking.pk }} {% status_badge booking.TrangThai %}</h1>
+
+  {# Khung thông tin chi tiết của Booking (UC4.3 bước 4). #}
+  <div class="panel">
+    {# Danh sách 'tên mục - giá trị'. dt = tên mục, dd = giá trị. #}
+    <dl class="nag-ct__luoi">
+      {# Tên khách đã đặt. #}
+      <dt>Khách hàng</dt><dd>{{ ten_khach }}</dd>
+      {# Loại hình chụp (lấy từ gói dịch vụ). #}
+      <dt>Loại hình chụp</dt><dd>{{ booking.MaGoi.MaLoaiHinh.TenLoaiHinh }}</dd>
+      {# Tên gói dịch vụ khách chọn. #}
+      <dt>Gói dịch vụ</dt><dd>{{ booking.MaGoi.TenGoi }}</dd>
+      {# Ngày giờ buổi chụp (thứ, ngày/tháng/năm, giờ:phút). #}
+      <dt>Ngày giờ chụp</dt><dd>{{ booking.NgayGioChup|date:"l, d/m/Y H:i" }}</dd>
+      {# Khung giờ (slot) trong lịch của Nhiếp ảnh gia mà Booking này đang giữ. #}
+      <dt>Khung giờ đã đặt</dt><dd>{{ booking.MaLich.Ngay|date:"d/m/Y" }}, {{ booking.MaLich.GioBatDau|time:"H:i" }}–{{ booking.MaLich.GioKetThuc|time:"H:i" }}</dd>
+      {# Địa điểm chụp. #}
+      <dt>Địa điểm</dt><dd>{{ booking.DiaDiem }}</dd>
+      {# Số người tham gia buổi chụp. #}
+      <dt>Số người</dt><dd>{{ booking.SoNguoi }}</dd>
+      {# Concept / phong cách khách mong muốn. 'linebreaksbr' giữ nguyên chỗ xuống dòng khách đã gõ. #}
+      <dt>Concept</dt><dd>{{ booking.Concept|linebreaksbr }}</dd>
+      {# Yêu cầu riêng của khách; nếu khách không ghi thì hiện chữ 'Không có'. #}
+      <dt>Yêu cầu riêng</dt><dd>{% if booking.YeuCauRieng %}{{ booking.YeuCauRieng|linebreaksbr }}{% else %}<span class="muted">Không có</span>{% endif %}</dd>
+      {# Tổng giá trị Booking (lấy theo giá gói), đã định dạng 1.500.000. #}
+      <dt>Tổng giá trị</dt><dd>{{ tong_gia }} VNĐ</dd>
+      {# Thời điểm khách gửi yêu cầu. #}
+      <dt>Gửi lúc</dt><dd>{{ booking.NgayTao|date:"H:i d/m/Y" }}</dd>
+      {# Chỉ hiện khi Booking đã được chấp nhận (đã có hạn đặt cọc). #}
+      {% if booking.HanDatCoc %}<dt>Hạn đặt cọc</dt><dd>{{ booking.HanDatCoc|date:"H:i d/m/Y" }}</dd>{% endif %}
+      {# Chỉ hiện khi Booking đã bị từ chối (đã có lý do từ chối). #}
+      {% if booking.LyDoTuChoi %}<dt>Lý do từ chối</dt><dd>{{ booking.LyDoTuChoi }}</dd>{% endif %}
+    </dl>
+  </div>
+
+  {# Khối nút xử lý chỉ hiện khi Booking đang 'Chờ xác nhận'; đã xử lý xong thì ẩn hết để khỏi bấm nhầm. #}
+  {% if co_the_xu_ly %}
+  <div class="panel stack">
+    {# Nếu giờ chụp đã qua: hiện cảnh báo, không cho chấp nhận (chỉ còn từ chối). #}
+    {% if da_qua_gio_chup %}
+      {% include "includes/alert.html" with level="warning" text="Đã quá giờ chụp của Booking này nên không thể chấp nhận. Bạn có thể từ chối để trả khung giờ về lịch trống." %}
+    {# Nếu giờ chụp chưa qua: hiện dòng giải thích hậu quả của việc chấp nhận hoặc từ chối. #}
+    {% else %}
+    <p class="muted">Nếu chấp nhận, Khách hàng có 1 ngày để đặt cọc 40% giá trị buổi chụp ({{ tien_coc }} VNĐ).
+       Nếu từ chối, bạn phải nhập lý do và khung giờ được trả về lịch trống ngay.</p>
+    {% endif %}
+    {# Hàng chứa hai nút: Chấp nhận và Từ chối. #}
+    <div class="nag-ct__nut">
+      {# Nút Chấp nhận chỉ hiện khi giờ chụp CHƯA qua. #}
+      {% if not da_qua_gio_chup %}
+      {# Gửi lệnh chấp nhận bằng POST (không phải đường link thường) để không ai chấp nhận nhầm chỉ bằng cách mở một địa chỉ. #}
+      <form method="post" action="{% url 'chap_nhan_booking' ma_booking=booking.pk %}">
+        {# Mã bảo mật CSRF do Django cấp, chống việc trang web lạ gửi lệnh giả mạo nhân danh người dùng. #}
+        {% csrf_token %}
+        {# Nút 'Chấp nhận Booking' (UC4.4). #}
+        <button class="btn btn--primary" type="submit">Chấp nhận Booking</button>
+      </form>
+      {% endif %}
+      {# Nút 'Từ chối Booking' (UC4.5): là đường link mở trang nhập lý do; vẫn dùng được cả khi đã quá giờ chụp. #}
+      <a class="btn btn--danger" href="{% url 'tu_choi_booking' ma_booking=booking.pk %}">Từ chối Booking</a>
+    </div>
+  </div>
+  {% endif %}
+
+</section>
+{% endblock %}

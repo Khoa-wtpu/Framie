@@ -6,7 +6,7 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.test import TestCase
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 
 from bookings.models import Booking
@@ -129,6 +129,18 @@ class TimKiemTestCase(TestCase):
         self.assertContains(res, 'Chưa có đánh giá')          # B và F
         self.assertContains(res, 'Chưa có gói dịch vụ')       # F chỉ có gói ngừng áp dụng
         self.assertContains(res, 'Lê Minh Khôi')
+
+    def test_ten_nhiep_anh_gia_bam_duoc(self):
+        # Thẻ dẫn tới trang hồ sơ công khai (K9) nếu đã có, chưa có thì dẫn tới trang chọn lịch (UC4.1).
+        dich = ''
+        for ten in ('photographer_detail', 'lich_chon_slot'):
+            try:
+                dich = reverse(ten, args=[self.a.pk])
+                break
+            except NoReverseMatch:
+                continue
+        self.assertTrue(dich, 'Cần có photographer_detail hoặc lich_chon_slot (include bookings.giu_cho trong config/urls.py)')
+        self.assertContains(self.client.get(self.url), f'href="{dich}"')
 
     # ---- UC2.1: từ khóa và ID ----
     def test_tim_theo_id_nhieu_dang(self):
