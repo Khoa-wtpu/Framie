@@ -1,0 +1,16 @@
+/* bookings/static/bookings/css/theo_doi.css - Theo dõi trạng thái Booking (UC4.7).
+   Quy ước nhóm: CSS nằm trong static/ và CHỈ dùng token của static/css/tokens.css (không gõ màu / kích thước cứng).
+   Màu nhãn trạng thái do status_badge lo (core/status_tones.py), file này KHÔNG tô màu trạng thái. */
+
+/* Dòng thời gian: đường kẻ dọc bên trái (độ dày 1px như các bảng trong nag_booking.css), mỗi mốc là một chấm. */
+.td-timeline { list-style: none; margin: 0; padding: 0 0 0 var(--space-5); border-left: 1px solid var(--color-border); display: grid; gap: var(--space-4); }
+.td-timeline__muc { position: relative; }
+/* Chấm tròn cỡ --space-3, căn giữa lên đường kẻ: lùi trái đúng bằng lề trong + nửa chấm. */
+.td-timeline__muc::before { content: ""; position: absolute; top: var(--space-2); left: calc(-1 * (var(--space-5) + var(--space-3) / 2)); width: var(--space-3); height: var(--space-3); border-radius: var(--radius-pill); background: var(--color-black); }
+.td-timeline__dong { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.td-timeline__meta { font-size: var(--text-sm); }
+.td-timeline__ly-do { font-size: var(--text-sm); overflow-wrap: anywhere; }
+
+/* Danh sách khoản thanh toán: tên khoản bên trái, nhãn trạng thái bên phải, tự xuống dòng khi màn hình hẹp. */
+.td-thanhtoan { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.td-thanhtoan li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-2); }

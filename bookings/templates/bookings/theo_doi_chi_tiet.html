@@ -1,0 +1,92 @@
+{# UC4.7 bước 3-4: chi tiết Booking + dòng thời gian lịch sử đổi trạng thái. File này được sử dụng bởi bookings/theo_doi.py (view _trang_chi_tiet) #}
+
+{% extends "base.html" %}
+{% load ui static %}
+
+{% block title %}Booking #{{ booking.pk }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'bookings/css/nag_booking.css' %}">
+<link rel="stylesheet" href="{% static 'bookings/css/theo_doi.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="container stack">
+
+  <p><a href="{{ url_danh_sach }}">← Quay lại danh sách Booking</a></p>
+
+  {# Nhãn trạng thái có màu thống nhất (status_badge). #}
+  <h1>Booking #{{ booking.pk }} {% status_badge booking.TrangThai %}</h1>
+
+  {# Chỉ Quản trị viên thấy: trạng thái Booking lệch dữ liệu thanh toán (BR4.7-2). #}
+  {% for cau in canh_bao %}
+    {% include "includes/alert.html" with level="warning" title="Trạng thái không khớp dữ liệu thanh toán" text=cau %}
+  {% endfor %}
+
+  {# Nhiếp ảnh gia còn việc phải làm với Booking này (chấp nhận / từ chối / bấm Đã chụp). #}
+  {% if url_xu_ly %}
+    <p><a class="btn btn--primary" href="{{ url_xu_ly }}">Xử lý Booking này</a></p>
+  {% endif %}
+
+  <div class="panel">
+    <dl class="nag-ct__luoi">
+      {% if not la_khach %}<dt>Khách hàng</dt><dd>{{ ten_khach }}</dd>{% endif %}
+      {% if not la_nag %}<dt>Nhiếp ảnh gia</dt><dd>{{ ten_nag }}</dd>{% endif %}
+      <dt>Loại hình chụp</dt><dd>{{ booking.MaGoi.MaLoaiHinh.TenLoaiHinh }}</dd>
+      <dt>Gói dịch vụ</dt><dd>{{ booking.MaGoi.TenGoi }}</dd>
+      <dt>Ngày giờ chụp</dt><dd>{{ booking.NgayGioChup|date:"l, d/m/Y H:i" }}</dd>
+      <dt>Địa điểm</dt><dd>{{ booking.DiaDiem }}</dd>
+      <dt>Số người</dt><dd>{{ booking.SoNguoi }}</dd>
+      <dt>Concept</dt><dd>{{ booking.Concept|linebreaksbr }}</dd>
+      <dt>Yêu cầu riêng</dt><dd>{% if booking.YeuCauRieng %}{{ booking.YeuCauRieng|linebreaksbr }}{% else %}<span class="muted">Không có</span>{% endif %}</dd>
+      <dt>Tổng giá trị</dt><dd>{{ tong_gia }} VNĐ</dd>
+      <dt>Gửi lúc</dt><dd>{{ booking.NgayTao|date:"H:i d/m/Y" }}</dd>
+      {# Các hạn chót chỉ hiện khi Booking đã có (hệ thống gán khi vào trạng thái tương ứng). #}
+      {% if booking.HanDatCoc %}<dt>Hạn đặt cọc</dt><dd>{{ booking.HanDatCoc|date:"H:i d/m/Y" }}</dd>{% endif %}
+      {% if booking.HanChonAnh %}<dt>Hạn chọn ảnh</dt><dd>{{ booking.HanChonAnh|date:"H:i d/m/Y" }}</dd>{% endif %}
+      {% if booking.HanHauKy %}<dt>Hạn hậu kỳ</dt><dd>{{ booking.HanHauKy|date:"H:i d/m/Y" }}</dd>{% endif %}
+      {% if booking.HanThanhToanConLai %}<dt>Hạn thanh toán phần còn lại</dt><dd>{{ booking.HanThanhToanConLai|date:"H:i d/m/Y" }}</dd>{% endif %}
+      {% if booking.LyDoTuChoi %}<dt>Lý do từ chối</dt><dd>{{ booking.LyDoTuChoi }}</dd>{% endif %}
+    </dl>
+  </div>
+
+  {# Thanh toán: hiện cạnh trạng thái để người xem thấy hai thứ đi cùng nhau (BR4.7-2). #}
+  <div class="panel stack">
+    <h2>Thanh toán</h2>
+    {% if thanh_toan %}
+      <ul class="td-thanhtoan">
+        {% for khoan in thanh_toan %}
+        <li>
+          <span><strong>{{ khoan.LoaiThanhToan }}</strong> · {{ khoan.SoTien|floatformat:"0g" }} VNĐ</span>
+          {% status_badge khoan.TrangThai %}
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">Chưa có khoản thanh toán nào. Cọc 40%: {{ tien_coc }} VNĐ · Phần còn lại 60%: {{ tien_con_lai }} VNĐ.</p>
+    {% endif %}
+  </div>
+
+  {# Dòng thời gian lịch sử đổi trạng thái (UC4.7 bước 4). Dữ liệu từ bảng LichSuTrangThaiBooking, cũ -> mới. #}
+  <div class="panel stack">
+    <h2>Lịch sử trạng thái</h2>
+    {% if lich_su %}
+    <ol class="td-timeline">
+      {% for muc in lich_su %}
+      <li class="td-timeline__muc">
+        <div class="td-timeline__dong">
+          {% if muc.TrangThaiCu %}{% status_badge muc.TrangThaiCu %} <span aria-hidden="true">→</span> <span class="sr-only">chuyển sang</span>{% else %}<span class="muted">Tạo Booking:</span>{% endif %}
+          {% status_badge muc.TrangThaiMoi %}
+        </div>
+        <div class="muted td-timeline__meta">{{ muc.ThoiDiemThayDoi|date:"H:i d/m/Y" }} · {{ muc.BenThucHien }}</div>
+        {% if muc.LyDo %}<div class="td-timeline__ly-do">Lý do: {{ muc.LyDo }}</div>{% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+      <p class="muted">Chưa có lịch sử thay đổi trạng thái.</p>
+    {% endif %}
+  </div>
+
+</section>
+{% endblock %}
