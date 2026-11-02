@@ -1,89 +1,89 @@
 {# UC4.7 bước 3-4: chi tiết Booking + dòng thời gian lịch sử đổi trạng thái. File này được sử dụng bởi bookings/theo_doi.py (view _trang_chi_tiet) #}
 
-{% extends "base.html" %}
-{% load ui static %}
+{% extends "base.html" %}{# dùng khung trang chung của dự án #}
+{% load ui static %}{# nạp thẻ ui (status_badge) và static (gọi CSS) #}
 
-{% block title %}Booking #{{ booking.pk }}{% endblock %}
+{% block title %}Booking #{{ booking.pk }}{% endblock %}{# chữ trên tab trình duyệt, ví dụ "Booking #7" #}
 
-{% block extra_head %}
-<link rel="stylesheet" href="{% static 'bookings/css/nag_booking.css' %}">
-<link rel="stylesheet" href="{% static 'bookings/css/theo_doi.css' %}">
+{% block extra_head %}{# chèn thêm vào <head> #}
+<link rel="stylesheet" href="{% static 'bookings/css/nag_booking.css' %}">{# CSS dùng chung (khung thông tin nag-ct__luoi...) #}
+<link rel="stylesheet" href="{% static 'bookings/css/theo_doi.css' %}">{# CSS riêng của T7 #}
 {% endblock %}
 
-{% block content %}
-<section class="container stack">
+{% block content %}{# nội dung chính #}
+<section class="container stack">{# khung nội dung, các khối xếp dọc cách đều #}
 
-  <p><a href="{{ url_danh_sach }}">← Quay lại danh sách Booking</a></p>
+  <p><a href="{{ url_danh_sach }}">← Quay lại danh sách Booking</a></p>{# link quay lại danh sách (tùy vai trò) #}
 
   {# Nhãn trạng thái có màu thống nhất (status_badge). #}
-  <h1>Booking #{{ booking.pk }} {% status_badge booking.TrangThai %}</h1>
+  <h1>Booking #{{ booking.pk }} {% status_badge booking.TrangThai %}</h1>{# tiêu đề: mã Booking + nhãn trạng thái hiện tại #}
 
   {# Chỉ Quản trị viên thấy: trạng thái Booking lệch dữ liệu thanh toán (BR4.7-2). #}
-  {% for cau in canh_bao %}
-    {% include "includes/alert.html" with level="warning" title="Trạng thái không khớp dữ liệu thanh toán" text=cau %}
+  {% for cau in canh_bao %}{# mỗi chỗ lệch là một cảnh báo (Khách / Nhiếp ảnh gia nhận danh sách rỗng nên không thấy) #}
+    {% include "includes/alert.html" with level="warning" title="Trạng thái không khớp dữ liệu thanh toán" text=cau %}{# khung cảnh báo vàng #}
   {% endfor %}
 
   {# Nhiếp ảnh gia còn việc phải làm với Booking này (chấp nhận / từ chối / bấm Đã chụp). #}
-  {% if url_xu_ly %}
-    <p><a class="btn btn--primary" href="{{ url_xu_ly }}">Xử lý Booking này</a></p>
+  {% if url_xu_ly %}{# chỉ có giá trị khi người xem là Nhiếp ảnh gia và Booking còn việc cần xử lý #}
+    <p><a class="btn btn--primary" href="{{ url_xu_ly }}">Xử lý Booking này</a></p>{# nút dẫn tới màn xử lý của Nhiếp ảnh gia (T5/T8) #}
   {% endif %}
 
-  <div class="panel">
-    <dl class="nag-ct__luoi">
-      {% if not la_khach %}<dt>Khách hàng</dt><dd>{{ ten_khach }}</dd>{% endif %}
-      {% if not la_nag %}<dt>Nhiếp ảnh gia</dt><dd>{{ ten_nag }}</dd>{% endif %}
-      <dt>Loại hình chụp</dt><dd>{{ booking.MaGoi.MaLoaiHinh.TenLoaiHinh }}</dd>
-      <dt>Gói dịch vụ</dt><dd>{{ booking.MaGoi.TenGoi }}</dd>
-      <dt>Ngày giờ chụp</dt><dd>{{ booking.NgayGioChup|date:"l, d/m/Y H:i" }}</dd>
-      <dt>Địa điểm</dt><dd>{{ booking.DiaDiem }}</dd>
-      <dt>Số người</dt><dd>{{ booking.SoNguoi }}</dd>
-      <dt>Concept</dt><dd>{{ booking.Concept|linebreaksbr }}</dd>
-      <dt>Yêu cầu riêng</dt><dd>{% if booking.YeuCauRieng %}{{ booking.YeuCauRieng|linebreaksbr }}{% else %}<span class="muted">Không có</span>{% endif %}</dd>
-      <dt>Tổng giá trị</dt><dd>{{ tong_gia }} VNĐ</dd>
-      <dt>Gửi lúc</dt><dd>{{ booking.NgayTao|date:"H:i d/m/Y" }}</dd>
+  <div class="panel">{# khung thông tin Booking #}
+    <dl class="nag-ct__luoi">{# danh sách "tên - giá trị" dạng lưới #}
+      {% if not la_khach %}<dt>Khách hàng</dt><dd>{{ ten_khach }}</dd>{% endif %}{# Khách không cần xem dòng này #}
+      {% if not la_nag %}<dt>Nhiếp ảnh gia</dt><dd>{{ ten_nag }}</dd>{% endif %}{# Nhiếp ảnh gia không cần xem dòng này #}
+      <dt>Loại hình chụp</dt><dd>{{ booking.MaGoi.MaLoaiHinh.TenLoaiHinh }}</dd>{# loại hình: chân dung, cưới... #}
+      <dt>Gói dịch vụ</dt><dd>{{ booking.MaGoi.TenGoi }}</dd>{# tên gói đã đặt #}
+      <dt>Ngày giờ chụp</dt><dd>{{ booking.NgayGioChup|date:"l, d/m/Y H:i" }}</dd>{# giờ chụp kèm thứ trong tuần #}
+      <dt>Địa điểm</dt><dd>{{ booking.DiaDiem }}</dd>{# địa điểm chụp #}
+      <dt>Số người</dt><dd>{{ booking.SoNguoi }}</dd>{# số người tham gia chụp #}
+      <dt>Concept</dt><dd>{{ booking.Concept|linebreaksbr }}</dd>{# concept; linebreaksbr giữ các lần xuống dòng khách đã gõ #}
+      <dt>Yêu cầu riêng</dt><dd>{% if booking.YeuCauRieng %}{{ booking.YeuCauRieng|linebreaksbr }}{% else %}<span class="muted">Không có</span>{% endif %}</dd>{# yêu cầu riêng, trống thì ghi "Không có" #}
+      <dt>Tổng giá trị</dt><dd>{{ tong_gia }} VNĐ</dd>{# tổng tiền, ví dụ 1.500.000 VNĐ #}
+      <dt>Gửi lúc</dt><dd>{{ booking.NgayTao|date:"H:i d/m/Y" }}</dd>{# thời điểm Khách gửi Booking #}
       {# Các hạn chót chỉ hiện khi Booking đã có (hệ thống gán khi vào trạng thái tương ứng). #}
-      {% if booking.HanDatCoc %}<dt>Hạn đặt cọc</dt><dd>{{ booking.HanDatCoc|date:"H:i d/m/Y" }}</dd>{% endif %}
-      {% if booking.HanChonAnh %}<dt>Hạn chọn ảnh</dt><dd>{{ booking.HanChonAnh|date:"H:i d/m/Y" }}</dd>{% endif %}
-      {% if booking.HanHauKy %}<dt>Hạn hậu kỳ</dt><dd>{{ booking.HanHauKy|date:"H:i d/m/Y" }}</dd>{% endif %}
-      {% if booking.HanThanhToanConLai %}<dt>Hạn thanh toán phần còn lại</dt><dd>{{ booking.HanThanhToanConLai|date:"H:i d/m/Y" }}</dd>{% endif %}
-      {% if booking.LyDoTuChoi %}<dt>Lý do từ chối</dt><dd>{{ booking.LyDoTuChoi }}</dd>{% endif %}
+      {% if booking.HanDatCoc %}<dt>Hạn đặt cọc</dt><dd>{{ booking.HanDatCoc|date:"H:i d/m/Y" }}</dd>{% endif %}{# hạn đặt cọc (nếu đã có) #}
+      {% if booking.HanChonAnh %}<dt>Hạn chọn ảnh</dt><dd>{{ booking.HanChonAnh|date:"H:i d/m/Y" }}</dd>{% endif %}{# hạn Khách chọn ảnh #}
+      {% if booking.HanHauKy %}<dt>Hạn hậu kỳ</dt><dd>{{ booking.HanHauKy|date:"H:i d/m/Y" }}</dd>{% endif %}{# hạn hoàn tất hậu kỳ #}
+      {% if booking.HanThanhToanConLai %}<dt>Hạn thanh toán phần còn lại</dt><dd>{{ booking.HanThanhToanConLai|date:"H:i d/m/Y" }}</dd>{% endif %}{# hạn trả 60% còn lại #}
+      {% if booking.LyDoTuChoi %}<dt>Lý do từ chối</dt><dd>{{ booking.LyDoTuChoi }}</dd>{% endif %}{# lý do Nhiếp ảnh gia từ chối (nếu có) #}
     </dl>
   </div>
 
   {# Thanh toán: hiện cạnh trạng thái để người xem thấy hai thứ đi cùng nhau (BR4.7-2). #}
-  <div class="panel stack">
+  <div class="panel stack">{# khung thanh toán #}
     <h2>Thanh toán</h2>
-    {% if thanh_toan %}
-      <ul class="td-thanhtoan">
-        {% for khoan in thanh_toan %}
+    {% if thanh_toan %}{# đã có khoản thanh toán nào #}
+      <ul class="td-thanhtoan">{# danh sách khoản thanh toán (CSS ở theo_doi.css) #}
+        {% for khoan in thanh_toan %}{# lặp qua từng khoản: cọc rồi tới phần còn lại #}
         <li>
-          <span><strong>{{ khoan.LoaiThanhToan }}</strong> · {{ khoan.SoTien|floatformat:"0g" }} VNĐ</span>
-          {% status_badge khoan.TrangThai %}
+          <span><strong>{{ khoan.LoaiThanhToan }}</strong> · {{ khoan.SoTien|floatformat:"0g" }} VNĐ</span>{# loại khoản + số tiền (bỏ số lẻ, có dấu ngăn nghìn) #}
+          {% status_badge khoan.TrangThai %}{# nhãn trạng thái của khoản thanh toán #}
         </li>
         {% endfor %}
       </ul>
-    {% else %}
-      <p class="muted">Chưa có khoản thanh toán nào. Cọc 40%: {{ tien_coc }} VNĐ · Phần còn lại 60%: {{ tien_con_lai }} VNĐ.</p>
+    {% else %}{# chưa có khoản nào #}
+      <p class="muted">Chưa có khoản thanh toán nào. Cọc 40%: {{ tien_coc }} VNĐ · Phần còn lại 60%: {{ tien_con_lai }} VNĐ.</p>{# báo trước số tiền sẽ phải trả #}
     {% endif %}
   </div>
 
   {# Dòng thời gian lịch sử đổi trạng thái (UC4.7 bước 4). Dữ liệu từ bảng LichSuTrangThaiBooking, cũ -> mới. #}
-  <div class="panel stack">
+  <div class="panel stack">{# khung lịch sử #}
     <h2>Lịch sử trạng thái</h2>
-    {% if lich_su %}
-    <ol class="td-timeline">
-      {% for muc in lich_su %}
-      <li class="td-timeline__muc">
-        <div class="td-timeline__dong">
-          {% if muc.TrangThaiCu %}{% status_badge muc.TrangThaiCu %} <span aria-hidden="true">→</span> <span class="sr-only">chuyển sang</span>{% else %}<span class="muted">Tạo Booking:</span>{% endif %}
-          {% status_badge muc.TrangThaiMoi %}
+    {% if lich_su %}{# có ít nhất 1 dòng lịch sử #}
+    <ol class="td-timeline">{# danh sách có thứ tự = dòng thời gian (CSS ở theo_doi.css) #}
+      {% for muc in lich_su %}{# lặp qua từng lần đổi trạng thái, cũ -> mới #}
+      <li class="td-timeline__muc">{# một mốc trên dòng thời gian #}
+        <div class="td-timeline__dong">{# dòng chính của mốc: trạng thái cũ → mới #}
+          {% if muc.TrangThaiCu %}{% status_badge muc.TrangThaiCu %} <span aria-hidden="true">→</span> <span class="sr-only">chuyển sang</span>{% else %}<span class="muted">Tạo Booking:</span>{% endif %}{# có trạng thái cũ: hiện "cũ → "; không có (mốc đầu tiên): hiện "Tạo Booking:" #}
+          {% status_badge muc.TrangThaiMoi %}{# nhãn trạng thái mới #}
         </div>
-        <div class="muted td-timeline__meta">{{ muc.ThoiDiemThayDoi|date:"H:i d/m/Y" }} · {{ muc.BenThucHien }}</div>
-        {% if muc.LyDo %}<div class="td-timeline__ly-do">Lý do: {{ muc.LyDo }}</div>{% endif %}
+        <div class="muted td-timeline__meta">{{ muc.ThoiDiemThayDoi|date:"H:i d/m/Y" }} · {{ muc.BenThucHien }}</div>{# thời điểm đổi + ai đổi (Khách hàng / Nhiếp ảnh gia / Hệ thống) #}
+        {% if muc.LyDo %}<div class="td-timeline__ly-do">Lý do: {{ muc.LyDo }}</div>{% endif %}{# lý do đổi, nếu có #}
       </li>
       {% endfor %}
     </ol>
-    {% else %}
+    {% else %}{# chưa có dòng lịch sử nào #}
       <p class="muted">Chưa có lịch sử thay đổi trạng thái.</p>
     {% endif %}
   </div>

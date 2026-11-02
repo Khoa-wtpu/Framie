@@ -1,84 +1,84 @@
 {# UC4.7: danh sách Booking (Khách hàng / Nhiếp ảnh gia: "Booking của tôi"; Quản trị viên: tất cả Booking). File này được sử dụng bởi bookings/theo_doi.py (view _trang_danh_sach) #}
 
-{% extends "base.html" %}
+{% extends "base.html" %}{# dùng khung trang chung (đầu trang, menu, chân trang) của dự án #}
 {# status_badge: nhãn + màu trạng thái THỐNG NHẤT toàn hệ thống (core/status_tones.py). Không tự tô màu ở đây. #}
-{% load ui static %}
+{% load ui static %}{# nạp bộ thẻ ui (có status_badge) và static (để gọi file CSS) #}
 
-{% block title %}{{ tieu_de }}{% endblock %}
+{% block title %}{{ tieu_de }}{% endblock %}{# chữ hiện trên tab trình duyệt #}
 
-{% block extra_head %}
-<link rel="stylesheet" href="{% static 'bookings/css/nag_booking.css' %}">
-<link rel="stylesheet" href="{% static 'bookings/css/theo_doi.css' %}">
+{% block extra_head %}{# chèn thêm vào phần <head> của trang #}
+<link rel="stylesheet" href="{% static 'bookings/css/nag_booking.css' %}">{# CSS dùng chung của bảng danh sách Booking (đã có từ T5) #}
+<link rel="stylesheet" href="{% static 'bookings/css/theo_doi.css' %}">{# CSS riêng cho T7: dòng thời gian, danh sách thanh toán #}
 {% endblock %}
 
-{% block content %}
-<section class="container stack">
+{% block content %}{# phần nội dung chính của trang #}
+<section class="container stack">{# khung nội dung, các khối bên trong xếp dọc cách đều #}
 
-  <h1>{{ tieu_de }}</h1>
+  <h1>{{ tieu_de }}</h1>{# tiêu đề: "Booking của tôi" hoặc "Tất cả Booking" #}
 
   {# Luồng 2a: lọc theo trạng thái (Quản trị viên có thêm ô tìm kiếm). Gửi bằng GET để giữ bộ lọc khi chuyển trang. #}
-  <form class="panel nag-ds__loc" method="get">
-    <div class="field">
-      <label class="field__label" for="loc-trang-thai">Trạng thái</label>
-      <select class="input" id="loc-trang-thai" name="trang_thai">
-        {% for gia_tri, nhan in lua_chon_trang_thai %}
-          <option value="{{ gia_tri }}"{% if gia_tri == trang_thai %} selected{% endif %}>{{ nhan }}</option>
+  <form class="panel nag-ds__loc" method="get">{# form lọc; method=get => điều kiện lọc hiện trên thanh địa chỉ #}
+    <div class="field">{# một ô nhập #}
+      <label class="field__label" for="loc-trang-thai">Trạng thái</label>{# nhãn chữ của ô chọn #}
+      <select class="input" id="loc-trang-thai" name="trang_thai">{# ô chọn trạng thái; name=trang_thai => ?trang_thai=... #}
+        {% for gia_tri, nhan in lua_chon_trang_thai %}{# lặp qua từng lựa chọn (Tất cả + 13 trạng thái) #}
+          <option value="{{ gia_tri }}"{% if gia_tri == trang_thai %} selected{% endif %}>{{ nhan }}</option>{# một lựa chọn; đang lọc cái nào thì đánh dấu selected #}
         {% endfor %}
       </select>
     </div>
-    {% if co_tim_kiem %}
+    {% if co_tim_kiem %}{# chỉ Quản trị viên có ô tìm kiếm #}
     <div class="field">
-      <label class="field__label" for="loc-tu-khoa">Tìm kiếm</label>
-      <input class="input" id="loc-tu-khoa" name="q" type="search" value="{{ tu_khoa }}" placeholder="Mã Booking, tên hoặc email">
+      <label class="field__label" for="loc-tu-khoa">Tìm kiếm</label>{# nhãn chữ của ô tìm kiếm #}
+      <input class="input" id="loc-tu-khoa" name="q" type="search" value="{{ tu_khoa }}" placeholder="Mã Booking, tên hoặc email">{# ô gõ từ khóa; giữ lại chữ đã gõ; gợi ý mờ bên trong #}
     </div>
     {% endif %}
-    <button class="btn btn--primary" type="submit">Áp dụng</button>
+    <button class="btn btn--primary" type="submit">Áp dụng</button>{# nút gửi bộ lọc #}
   </form>
 
-  {% if page_obj.object_list %}
-  <div class="panel nag-ds__cuon">
-    <table class="nag-ds__bang">
-      <thead>
+  {% if page_obj.object_list %}{# nếu trang hiện tại có ít nhất 1 Booking #}
+  <div class="panel nag-ds__cuon">{# khung bảng, cuộn ngang được khi màn hình hẹp #}
+    <table class="nag-ds__bang">{# bảng danh sách #}
+      <thead>{# hàng tiêu đề cột #}
         <tr>
-          <th scope="col">Mã</th>
+          <th scope="col">Mã</th>{# cột mã Booking #}
           {# Khách hàng xem tên Nhiếp ảnh gia; Nhiếp ảnh gia xem tên Khách hàng; Quản trị viên xem cả hai. #}
-          {% if not la_khach %}<th scope="col">Khách hàng</th>{% endif %}
-          {% if not la_nag %}<th scope="col">Nhiếp ảnh gia</th>{% endif %}
-          <th scope="col">Gói dịch vụ</th>
-          <th scope="col">Ngày giờ chụp</th>
-          <th scope="col">Địa điểm</th>
-          <th scope="col">Trạng thái</th>
-          <th scope="col"><span class="sr-only">Thao tác</span></th>
+          {% if not la_khach %}<th scope="col">Khách hàng</th>{% endif %}{# Khách không cần cột "Khách hàng" (chính là mình) #}
+          {% if not la_nag %}<th scope="col">Nhiếp ảnh gia</th>{% endif %}{# Nhiếp ảnh gia không cần cột "Nhiếp ảnh gia" #}
+          <th scope="col">Gói dịch vụ</th>{# cột gói + loại hình #}
+          <th scope="col">Ngày giờ chụp</th>{# cột giờ chụp #}
+          <th scope="col">Địa điểm</th>{# cột địa điểm #}
+          <th scope="col">Trạng thái</th>{# cột nhãn trạng thái #}
+          <th scope="col"><span class="sr-only">Thao tác</span></th>{# cột nút; chữ chỉ dành cho trình đọc màn hình #}
         </tr>
       </thead>
-      <tbody>
-        {% for bk in page_obj %}
-        <tr>
-          <td>#{{ bk.pk }}</td>
-          {% if not la_khach %}<td>{{ bk.MaKhachHang.get_full_name|default:bk.MaKhachHang.username }}</td>{% endif %}
-          {% if not la_nag %}<td>{{ bk.MaNhiepAnhGia.MaTaiKhoan.get_full_name|default:bk.MaNhiepAnhGia.MaTaiKhoan.username }}</td>{% endif %}
-          <td>{{ bk.MaGoi.TenGoi }}<br><span class="muted">{{ bk.MaGoi.MaLoaiHinh.TenLoaiHinh }}</span></td>
-          <td>{{ bk.NgayGioChup|date:"H:i d/m/Y" }}</td>
-          <td>{{ bk.DiaDiem }}</td>
-          <td>{% status_badge bk.TrangThai %}</td>
+      <tbody>{# phần thân bảng #}
+        {% for bk in page_obj %}{# lặp qua từng Booking của trang này #}
+        <tr>{# một hàng = một Booking #}
+          <td>#{{ bk.pk }}</td>{# mã Booking, ví dụ #7 #}
+          {% if not la_khach %}<td>{{ bk.MaKhachHang.get_full_name|default:bk.MaKhachHang.username }}</td>{% endif %}{# tên Khách; thiếu họ tên thì lấy tên đăng nhập #}
+          {% if not la_nag %}<td>{{ bk.MaNhiepAnhGia.MaTaiKhoan.get_full_name|default:bk.MaNhiepAnhGia.MaTaiKhoan.username }}</td>{% endif %}{# tên Nhiếp ảnh gia #}
+          <td>{{ bk.MaGoi.TenGoi }}<br><span class="muted">{{ bk.MaGoi.MaLoaiHinh.TenLoaiHinh }}</span></td>{# tên gói, xuống dòng là loại hình chụp (chữ mờ) #}
+          <td>{{ bk.NgayGioChup|date:"H:i d/m/Y" }}</td>{# giờ chụp, định dạng 09:00 25/12/2026 #}
+          <td>{{ bk.DiaDiem }}</td>{# địa điểm chụp #}
+          <td>{% status_badge bk.TrangThai %}</td>{# nhãn trạng thái có màu thống nhất toàn hệ thống #}
           <td>
             {# ten_url_chi_tiet = 'chi_tiet_booking' (Khách / Nhiếp ảnh gia) hoặc 'admin_booking_detail' (Quản trị viên). #}
-            <a class="btn btn--sm btn--soft" href="{% if la_quan_tri %}{% url 'admin_booking_detail' ma_booking=bk.pk %}{% else %}{% url 'chi_tiet_booking' ma_booking=bk.pk %}{% endif %}">Xem chi tiết</a>
+            <a class="btn btn--sm btn--soft" href="{% if la_quan_tri %}{% url 'admin_booking_detail' ma_booking=bk.pk %}{% else %}{% url 'chi_tiet_booking' ma_booking=bk.pk %}{% endif %}">Xem chi tiết</a>{# nút dẫn tới trang chi tiết; Quản trị dùng địa chỉ riêng #}
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
-  {% include "includes/pagination.html" with page_obj=page_obj %}
+  {% include "includes/pagination.html" with page_obj=page_obj %}{# thanh chuyển trang (trước / sau / số trang) #}
 
-  {% else %}
+  {% else %}{# trang không có Booking nào #}
     <div class="panel">
       {# Ngoại lệ 1a: chưa có Booking nào -> "Chưa có Booking nào". Có Booking nhưng lọc ra rỗng -> báo theo bộ lọc. #}
-      {% if co_booking %}
-        <p><strong>{{ TB_KHONG_KHOP_BO_LOC }}</strong></p>
-      {% else %}
-        <p><strong>{{ TB_CHUA_CO_BOOKING }}</strong></p>
+      {% if co_booking %}{# người dùng CÓ Booking, chỉ là bộ lọc không khớp #}
+        <p><strong>{{ TB_KHONG_KHOP_BO_LOC }}</strong></p>{# in câu "Không có Booking nào khớp bộ lọc." #}
+      {% else %}{# người dùng chưa có Booking nào cả #}
+        <p><strong>{{ TB_CHUA_CO_BOOKING }}</strong></p>{# in câu "Chưa có Booking nào" #}
       {% endif %}
     </div>
   {% endif %}
