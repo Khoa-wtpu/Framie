@@ -9,8 +9,14 @@
   <p class="lich__mo-ta">Chọn ngày và khoảng giờ bạn nhận chụp.</p>
   <form class="panel" method="post" novalidate>
     {% csrf_token %}
-    {% if form.errors %}{% include "includes/alert.html" with level="danger" text="Thông tin lịch không hợp lệ. Vui lòng kiểm tra và chỉnh sửa." %}{% endif %}{# UC3.1 ngoại lệ 4a #}
-    {% for loi in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=loi %}{% endfor %}
+    {% if form.errors %}{# UC3.1 ngoại lệ 4a: MỘT hộp báo lỗi duy nhất; lý do chung (vd. chồng giờ) nằm trong cùng hộp, lỗi từng ô hiện ngay dưới ô #}
+    <div class="alert alert--danger lich-form__bao" role="alert">
+      <div class="alert__body">
+        <strong class="alert__title">Thông tin lịch không hợp lệ. Vui lòng kiểm tra và chỉnh sửa.</strong>
+        {% for loi in form.non_field_errors %}<span class="alert__text">{{ loi }}</span>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
     {% include "includes/form_field.html" with field=form.Ngay %}
     <div class="lich-form__gio">
       {% include "includes/form_field.html" with field=form.GioBatDau %}

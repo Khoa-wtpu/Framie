@@ -1,7 +1,8 @@
 # schedule/tests_lich.py - K10: Quản lý lịch khả dụng (UC3.1). Chạy: python manage.py test schedule
+import importlib.util
 from datetime import datetime, time, timedelta
 from decimal import Decimal
-from unittest import mock
+from unittest import mock, skipUnless
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -21,6 +22,8 @@ from schedule.models import LichKhaDung
 from schedule.quan_ly import LichLoi, url_lich
 
 User = get_user_model()
+CO_GIU_CHO = importlib.util.find_spec('bookings.giu_cho') is not None      # file của Tuyền (T3-T4)
+CHO_T34 = 'Chờ merge bookings/giu_cho.py (T3-T4 của Tuyền)'
 GIO_8 = '08:00:00'
 GIO_9 = '09:00:00'
 GIO_10 = '10:00:00'
@@ -80,7 +83,9 @@ class LichTestCase(TestCase):
         return Booking.objects.create(
             MaKhachHang=self.khach, MaNhiepAnhGia=lich.MaNhiepAnhGia, MaGoi=goi, MaLich=lich,
             NgayGioChup=timezone.now() + timedelta(days=3), DiaDiem='Hồ Gươm', SoNguoi=2,
-            Concept='Vintage', TrangThai=trang_thai)
+            Concept='Vintage', TrangThai=trang_thai,
+            # Ràng buộc ck_booking_lydotuchoi: "Đã từ chối" bắt buộc có lý do, trạng thái khác thì lý do phải để trống.
+            LyDoTuChoi='Trùng lịch cá nhân' if trang_thai == BK.DA_TU_CHOI else None)
 
     def du_lieu(self, ngay=None, bat_dau=GIO_8, ket_thuc=GIO_10, **them):
         data = {'Ngay': (ngay or self.ngay).isoformat(), 'GioBatDau': bat_dau, 'GioKetThuc': ket_thuc}
@@ -252,6 +257,7 @@ class LichTestCase(TestCase):
         res = self.client.get(self.url_ds(ngay=self.ngay.isoformat()))
         self.assertIsNone(self.mo_ta_slot(res, lich)['ma_booking'])
 
+    @skipUnless(CO_GIU_CHO, CHO_T34)
     def test_nha_giu_cho_het_han_truoc_khi_hien(self):                   # BR4.1-1: phải nhả trước khi hiển thị
         lich = self.tao_slot(trang_thai=SL.DANG_GIU)
         giu = self.tao_giu_cho(lich, trang_thai=GC.DANG_GIU)
@@ -311,7 +317,9 @@ class LichTestCase(TestCase):
             with self.subTest(bat_dau=bat_dau, ket_thuc=ket_thuc):
                 res = self.client.post(reverse('lich_them'), self.du_lieu(bat_dau=bat_dau, ket_thuc=ket_thuc))
                 self.assertEqual(res.status_code, 200)
-                self.assertContains(res, 'bị chồng lên một khung giờ đã có')
+                self.assertContains(res, 'bị chồng lên một khung giờ đã có', count=1)
+                self.assertContains(res, 'Thông tin lịch không hợp lệ', count=1)   # chỉ MỘT hộp báo lỗi, lý do nằm trong cùng hộp
+                self.assertContains(res, 'alert--danger', count=1)
                 self.assertEqual(LichKhaDung.objects.count(), 1)
 
     def test_lich_nguoi_khac_khong_gay_chong(self):
@@ -473,6 +481,7 @@ class LichTestCase(TestCase):
         self.assertEqual(res.status_code, 302)
         self.assertEqual(self.tin_nhan(res), [quan_ly.TB_DA_QUA])
 
+    @skipUnless(CO_GIU_CHO, CHO_T34)
     def test_slot_giu_cho_het_han_duoc_nha_roi_moi_cho_sua(self):
         lich = self.tao_slot(trang_thai=SL.DANG_GIU)
         self.tao_giu_cho(lich, trang_thai=GC.DANG_GIU)                   # quá 5 phút chưa ai nhả
@@ -544,7 +553,7 @@ class LichTestCase(TestCase):
         self.assertFalse(s['co_the_xoa'])
         self.assertContains(res, reverse('lich_sua', args=[lich.pk]))
         self.assertNotContains(res, reverse('lich_xoa', args=[lich.pk]))
-        self.assertContains(res, 'không xóa được')
+        self.assertNotContains(res, 'không xóa được')                      # không giải thích dài dòng trong ô lịch
 
     def test_get_xoa_slot_co_lich_su_bao_loi_ngay(self):
         lich = self.tao_slot()

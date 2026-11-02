@@ -37,7 +37,7 @@
       <h2 class="lich-ngay__ten" id="lich-ngay-{{ ngay.ngay|date:'Ymd' }}">{{ ngay.nhan }}{% if ngay.la_hom_nay %} <span class="lich-ngay__nhan-hom-nay">Hôm nay</span>{% endif %}</h2>
       <ul class="lich-ngay__ds">
         {% for s in ngay.cac_slot %}
-        <li class="lich-slot lich-slot--{{ s.mau }}{% if s.da_qua %} is-qua{% endif %}">
+        <li class="lich-slot lich-slot--{{ s.mau }}{% if s.da_qua %} is-qua{% endif %}{% if s.co_the_sua %} lich-slot--thao-tac{% endif %}"{% if s.co_the_sua %} tabindex="0" data-thao-tac role="group" aria-label="Khung giờ {{ s.lich.GioBatDau|time:'H:i' }} – {{ s.lich.GioKetThuc|time:'H:i' }}. Bấm để chỉnh sửa hoặc xóa"{% endif %}>
           <span class="lich-slot__gio">{{ s.lich.GioBatDau|time:"H:i" }} – {{ s.lich.GioKetThuc|time:"H:i" }}</span>
           {% status_badge s.lich.TrangThai %}
           {% if s.da_qua %}<span class="lich-slot__ghi">Đã qua</span>{% endif %}
@@ -46,15 +46,14 @@
             {% else %}<span class="lich-slot__ghi">Booking #{{ s.ma_booking }}</span>{% endif %}
           {% endif %}
           {% if s.co_the_sua %}
+          {# Thao tác chỉ hiện khi rê chuột / bấm / Tab vào ô (lich.css + lich.js), để lưới tuần gọn. #}
           <div class="lich-slot__nut">
             <a class="btn btn--secondary btn--sm" href="{% url 'lich_sua' s.lich.pk %}">Chỉnh sửa</a>
             {% if s.co_the_xoa %}
             <a class="btn btn--secondary btn--sm lich-slot__xoa" href="{% url 'lich_xoa' s.lich.pk %}" data-xac-nhan data-tieu-de="Xóa khung giờ?" data-cau-hoi="Bạn có chắc muốn xóa khung giờ {{ ngay.nhan }} · {{ s.lich.GioBatDau|time:'H:i' }} – {{ s.lich.GioKetThuc|time:'H:i' }}? Khung giờ sẽ không còn hiển thị cho Khách hàng." data-nut="Xác nhận xóa">Xóa</a>
             {% endif %}
           </div>
-          {% if not s.co_the_xoa %}<span class="lich-slot__ghi">Đã có lượt giữ chỗ hoặc Booking trước đó nên không xóa được.</span>{% endif %}
           {% endif %}
-        </li>
         {% empty %}
         <li class="lich-ngay__trong">Chưa có khung giờ</li>
         {% endfor %}

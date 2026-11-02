@@ -54,6 +54,19 @@ def bay_gio():
     return timezone.localtime()
 
 
+def nha_giu_cho_het_han():
+    """Nhả các lượt giữ chỗ đã quá 5 phút (UC4.1, BR4.1-1) để trạng thái khung giờ đúng ở thời điểm xem / sửa / xóa.
+    Hàm này nằm trong bookings/giu_cho.py (task T3-T4 của Tuyền). Nếu file đó chưa có trong repo thì bỏ qua, K10 vẫn chạy;
+    khi Tuyền merge xong, hàm tự được dùng, không cần sửa gì."""
+    try:
+        from bookings.giu_cho import giai_phong_giu_cho_het_han
+    except ModuleNotFoundError as loi:
+        if loi.name != 'bookings.giu_cho':      # chỉ bỏ qua đúng trường hợp "chưa có file", lỗi khác vẫn báo ra
+            raise
+        return 0
+    return giai_phong_giu_cho_het_han()
+
+
 def da_bat_dau(lich, bg=None):
     """Khung giờ đã bắt đầu (hoặc đã qua) chưa. Đúng bằng giờ bắt đầu cũng tính là đã bắt đầu."""
     bg = bg or bay_gio()

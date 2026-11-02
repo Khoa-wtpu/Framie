@@ -27,12 +27,14 @@ urlpatterns = [
 
     path('bookings/', include('bookings.giu_cho')),
     path('bookings/', include('bookings.gui_booking')),
-
+    path('bookings/', include('bookings.tiep_nhan')),
     path('', include('core.urls')),               # nối core/urls.py, có /ui-kit/
     path('', include('accounts.urls')),           # nối accounts/urls.py: /dang-nhap/, /dang-xuat/ (P3 của Phanh)
     path('', include('profiles.urls')),           # nối profiles/urls.py: trang thử K3 (xóa khi gộp bản cuối)
     path('', include('search.urls')),
     path('', include('schedule.urls')),
+    path('', include('profiles.urls_cong_khai')),
+
 ]
 
 # Khi chạy thử (DEBUG = True): địa chỉ /media/... dẫn tới thư mục media/ trên máy,

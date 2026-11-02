@@ -5,7 +5,6 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_http_methods
 
-from bookings.giu_cho import giai_phong_giu_cho_het_han     # UC4.1 / BR4.1-1: nhả các lượt giữ chỗ quá 5 phút
 from core.constants import TrangThaiSlot
 from profiles.decorators import nhiep_anh_gia_da_duyet      # đúng vai trò + hồ sơ "Đã duyệt"; truyền thêm tham số nag
 from schedule import quan_ly
@@ -17,7 +16,7 @@ from schedule.quan_ly import CHE_DO_THANG, CHE_DO_TUAN, LichLoi, url_lich
 @require_GET
 def quan_ly_lich(request, nag):
     """UC3.1 bước 1-2: hiển thị lịch của Nhiếp ảnh gia theo tuần hoặc theo tháng."""
-    giai_phong_giu_cho_het_han()     # trạng thái hiển thị phải đúng thời điểm xem: lượt giữ quá hạn phải về "Lịch trống"
+    quan_ly.nha_giu_cho_het_han()     # trạng thái hiển thị phải đúng thời điểm xem: lượt giữ quá hạn phải về "Lịch trống"
     che_do = request.GET.get('che_do')
     if che_do not in (CHE_DO_TUAN, CHE_DO_THANG):
         che_do = CHE_DO_TUAN
@@ -68,7 +67,7 @@ def lich_them(request, nag):
 @require_http_methods(['GET', 'POST'])
 def lich_sua(request, nag, pk):
     """UC3.1 bước 3-7 (sửa khung giờ). Chỉ sửa được khung giờ 'Lịch trống' chưa bắt đầu."""
-    giai_phong_giu_cho_het_han()        # khung giờ đang "giữ chỗ" quá hạn phải được trả về "Lịch trống" trước khi kiểm tra
+    quan_ly.nha_giu_cho_het_han()        # khung giờ đang "giữ chỗ" quá hạn phải được trả về "Lịch trống" trước khi kiểm tra
     try:
         lich = quan_ly.lay_khung_gio_cua_nag(nag, pk)
         quan_ly.kiem_tra_duoc_sua(lich)
@@ -101,7 +100,7 @@ def lich_sua(request, nag, pk):
 @require_http_methods(['GET', 'POST'])
 def lich_xoa(request, nag, pk):
     """Xóa khung giờ. POST = xóa thật (popup xác nhận ở trang lịch gửi vào đây). GET = trang xác nhận dự phòng khi tắt JS."""
-    giai_phong_giu_cho_het_han()
+    quan_ly.nha_giu_cho_het_han()
     try:
         lich = quan_ly.lay_khung_gio_cua_nag(nag, pk)
     except LichLoi as loi:

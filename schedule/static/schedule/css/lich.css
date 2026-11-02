@@ -38,6 +38,11 @@
 .lich-slot__ghi { font-size: var(--text-xs); color: var(--color-text-muted); }
 .lich-slot__booking { font-size: var(--text-xs); font-weight: 600; text-decoration: underline; }
 .lich-slot__nut { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-1); }
+/* Ô sửa được: thao tác nằm trong lớp phủ, chỉ hiện khi rê chuột / Tab vào / bấm (.is-mo do lich.js thêm khi chạm màn hình cảm ứng) */
+.lich-slot--thao-tac { position: relative; min-height: 4.5rem; cursor: pointer; align-content: center; }
+.lich-slot--thao-tac .lich-slot__nut { position: absolute; inset: 0; z-index: 1; align-content: center; padding: var(--space-1); background: var(--color-white); border-radius: inherit; opacity: 0; visibility: hidden; transition: opacity .12s ease; }
+.lich-slot--thao-tac:hover .lich-slot__nut, .lich-slot--thao-tac:focus-within .lich-slot__nut, .lich-slot--thao-tac.is-mo .lich-slot__nut { opacity: 1; visibility: visible; }
+.lich-slot--thao-tac:focus-visible { outline: 2px solid var(--color-black); outline-offset: 2px; }
 .lich-slot__xoa { color: var(--danger-fg); }
 
 /* ---- lưới tháng ---- */
@@ -58,6 +63,8 @@
 
 /* ---- form thêm / sửa ---- */
 .lich-form__gio { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-4); }
+.lich-form__bao { margin-bottom: var(--space-4); }
+.lich-form__bao .alert__body { display: grid; gap: var(--space-1); }
 .lich-form__nut { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-3); margin-top: var(--space-4); }
 
 /* ---- popup xác nhận xóa (căn giữa) ---- */
