@@ -36,9 +36,10 @@
   </nav>
 
   {# ---------- Giới thiệu ---------- #}
-  <section class="hscc__muc hscc__gioi-thieu-muc" id="gioi-thieu" aria-labelledby="tieu-de-gioi-thieu">
+  <section class="hscc__muc" id="gioi-thieu" aria-labelledby="tieu-de-gioi-thieu">
+    <h2 id="tieu-de-gioi-thieu">Giới thiệu</h2>
+    <div class="hscc__gioi-thieu-muc">
     <div>
-      <h2 id="tieu-de-gioi-thieu">Giới thiệu</h2>
       <div class="hscc__van-ban">{{ nag.GioiThieu|linebreaks }}</div>
     </div>
     <dl class="hscc__thong-so">
@@ -55,6 +56,7 @@
         <dd>{% for m in nag.khu_vuc.all %}<span class="hscc__chip hscc__chip--vuc">{{ m.TenKhuVuc }}</span>{% empty %}<span class="hscc__ghi">Chưa cập nhật</span>{% endfor %}</dd>
       </div>
     </dl>
+    </div>
   </section>
 
   {# ---------- Gói dịch vụ ---------- #}
@@ -160,6 +162,7 @@
   </section>
 
   {# ---------- Đánh giá ---------- #}
+  <hr class="hscc__ke-ngan">
   <section class="hscc__muc" id="danh-gia" aria-labelledby="tieu-de-danh-gia">
     <h2 id="tieu-de-danh-gia">Đánh giá</h2>
     {% if cac_danh_gia %}
