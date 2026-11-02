@@ -193,8 +193,8 @@
 .tc-rong p { margin: 0; }
 
 /* ---------- 3. Các bước đặt lịch ---------- */
-/* ▸ Lưới các bước: mặc định (điện thoại) = 1 cột, các bước xếp chồng dọc. */
-.tc-luoi--buoc { grid-template-columns: 1fr; }
+/* ▸ Lưới các bước: mặc định (điện thoại) = 1 cột. list-style: none = bỏ số "1. 2. 3." tự động của thẻ <ol> (base.css chỉ bỏ cho <ul>); margin: 0 và padding: 0 = bỏ phần thụt lề mặc định để các thẻ thẳng hàng với tiêu đề; số thứ tự đã nằm trong hình tròn đen. */
+.tc-luoi--buoc { list-style: none; margin: 0; padding: 0; grid-template-columns: 1fr; }
 /* ▸ Thẻ mỗi bước: background: nền "bề mặt" (trắng) nổi trên nền xám; border: viền mảnh 1px; border-radius: bo góc lớn; padding: đệm bên trong cho thoáng. */
 .tc-buoc { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-5); }
 /* ▸ Vòng tròn số thứ tự: display: grid + place-items: center = số nằm chính giữa; width/height 2.5rem = hình vuông; margin-bottom: cách tiêu đề bên dưới; border-radius: 50% = hình tròn; */
