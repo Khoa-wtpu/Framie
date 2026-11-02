@@ -4,6 +4,7 @@ import io                                                    # BytesIO: "tệp" 
 from PIL import Image, ImageDraw, ImageFont, ImageOps        # Image: mở/lưu ảnh; ImageDraw: vẽ chữ; ImageFont: phông chữ; ImageOps: xoay ảnh theo EXIF
 
 CHU_WATERMARK = 'FRAMIE'                                     # chữ đóng dấu lên ảnh (muốn đổi chữ thì sửa ở đây)
+GIOI_HAN_GIAY = 5                                            # N5: mỗi ảnh phải xử lý xong trong tối đa 5 giây (services.py đo và ghi cảnh báo nếu vượt)
 
 
 def _phong_chu(co_chu):                                      # lấy phông chữ có kích cỡ mong muốn
@@ -44,7 +45,7 @@ def chen_watermark(tep, dinh_dang):                          # hàm chính: nh�
     ket_qua = Image.alpha_composite(nen, lop)                # chồng lớp watermark lên ảnh
     dem = io.BytesIO()
     if dinh_dang == 'PNG':
-        ket_qua.save(dem, 'PNG', optimize=True)              # PNG giữ nguyên định dạng
+        ket_qua.save(dem, 'PNG', compress_level=3)           # PNG giữ nguyên định dạng (nén vừa phải để kịp 5 giây, không dùng optimize vì rất chậm)
     else:
-        ket_qua.convert('RGB').save(dem, 'JPEG', quality=88, optimize=True)   # JPEG không có kênh trong suốt nên đổi về RGB
+        ket_qua.convert('RGB').save(dem, 'JPEG', quality=88)   # JPEG không có kênh trong suốt nên đổi về RGB
     return dem.getvalue()

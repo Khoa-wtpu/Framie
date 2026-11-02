@@ -48,7 +48,7 @@
       <div style="display:flex;flex-wrap:wrap;gap:12px">
         {% for a in anhs %}
           <figure style="margin:0;width:140px">
-            <img src="{% url 'xem_anh' a.pk %}" alt="{{ a.TenAnh }}" loading="lazy" style="width:140px;height:95px;object-fit:cover">
+            <img src="{% url 'xem_anh' a.pk %}" alt="{{ a.TenAnh }}" loading="lazy" draggable="false" oncontextmenu="return false" style="width:140px;height:95px;object-fit:cover;user-select:none;-webkit-user-drag:none">
             <figcaption class="muted" style="font-size:.8rem;word-break:break-all">{{ a.TenAnh }}<br>{{ a.LoaiAnh }} · v{{ a.PhienBanAnh }}</figcaption>
           </figure>
         {% endfor %}

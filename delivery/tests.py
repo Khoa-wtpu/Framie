@@ -1,13 +1,20 @@
-# Chạy: python manage.py test delivery      (N4: UC5.3 tải ảnh lên hệ thống)
+# Chạy: python manage.py test delivery      (N4: UC5.3 tải ảnh lên hệ thống; N5: watermark và bảo vệ ảnh)
 import io
 import itertools
+import os
 import tempfile
+import time as dong_ho
 from datetime import date, time, timedelta
+from pathlib import Path
+from unittest import mock
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.http import HttpResponse
 from django.test import TestCase, override_settings
+from django.urls import include, path, reverse
 from django.utils import timezone
 from django.utils.datastructures import MultiValueDict
 from PIL import Image
@@ -17,12 +24,14 @@ from core.constants import BenThucHien, LoaiAnh, LoaiHauKy, TrangThaiBooking as 
 from delivery import services
 from delivery.forms import TaiAnhForm
 from delivery.models import Anh, YeuCauChinhSua, YeuCauChinhSua_Anh
-from delivery.watermark import chen_watermark
+from delivery.watermark import GIOI_HAN_GIAY, chen_watermark
 from notifications.models import ThongBao
 from profiles.models import GoiDichVu, LoaiHinhChup, NhiepAnhGia
 from schedule.models import LichKhaDung
 
 User = get_user_model()
+urlpatterns = [path('', include('delivery.urls')),            # bảng đường dẫn riêng cho test (không phụ thuộc config/urls.py)
+               path('dang-nhap/', lambda request: HttpResponse('dang nhap'), name='login')]   # LOGIN_URL = 'login' cần có tên này để chuyển hướng
 NGAY_KE_TIEP = itertools.count(1)                            # mỗi Booking một ngày khác nhau để khung giờ không trùng
 
 
@@ -32,8 +41,8 @@ def tep_anh(ten='a.jpg', dinh_dang='JPEG', kich_thuoc=(80, 60)):   # tạo tệp
     return SimpleUploadedFile(ten, bo_nho.getvalue())
 
 
-@override_settings(PRIVATE_MEDIA_ROOT=tempfile.mkdtemp())      # tệp test ghi vào thư mục tạm, không đụng private_media
-class TaiAnhTests(TestCase):                                   # nghiệp vụ UC5.3
+@override_settings(PRIVATE_MEDIA_ROOT=tempfile.mkdtemp(), ROOT_URLCONF='delivery.tests')   # tệp test ghi vào thư mục tạm, không đụng private_media
+class _NenAnh(TestCase):                                       # dữ liệu nền + hàm tạo Booking/ảnh dùng chung (không có test riêng)
     @classmethod
     def setUpTestData(cls):
         cls.kh = User.objects.create_user('kh', 'kh@x.vn', 'p', so_dien_thoai='0900000001')
@@ -70,6 +79,8 @@ class TaiAnhTests(TestCase):                                   # nghiệp vụ U
                                   KichThuocAnh=100, LoaiAnh=loai, DuocChonHauKy=chon,
                                   NgayTaiLen=ngay or timezone.now() - timedelta(days=5))
 
+
+class TaiAnhTests(_NenAnh):                                    # N4 / UC5.3: nghiệp vụ tải ảnh
     # ---------------- Giai đoạn 1: ảnh chưa hậu kỳ ----------------
     def test_tai_anh_goc_goi_gioi_han(self):
         bk = self.tao_booking(self.goi_gh, TT.DA_CHUP)
@@ -215,3 +226,99 @@ class WatermarkTests(TestCase):                                # bước 6: chè
     def test_png(self):
         kq = Image.open(io.BytesIO(chen_watermark(tep_anh('a.png', 'PNG', (100, 300)), 'PNG')))
         self.assertEqual((kq.size, kq.format), ((100, 300), 'PNG'))
+
+
+class BaoVeAnhTests(_NenAnh):                                  # N5: watermark và bảo vệ ảnh
+    def anh_da_tai(self):                                      # Booking đã có 1 ảnh tải qua hệ thống (có watermark)
+        bk = self.tao_booking(self.goi_gh, TT.DA_CHUP)
+        tep = tep_anh('s1.jpg')
+        self.ban_goc = tep.read()
+        tep.seek(0)
+        services.tai_anh_len(bk.pk, self.nag_user, [tep])
+        return bk, Anh.objects.get(MaBooking=bk)
+
+    def noi_dung(self, phan_hoi):                              # đọc toàn bộ nội dung FileResponse
+        return b''.join(phan_hoi.streaming_content)
+
+    def test_khach_va_nhiep_anh_gia_cua_booking_xem_duoc_ban_co_watermark(self):
+        bk, anh = self.anh_da_tai()
+        for nguoi in (self.kh, self.nag_user):
+            self.client.force_login(nguoi)
+            phan_hoi = self.client.get(reverse('xem_anh', args=[anh.pk]))
+            self.assertEqual(phan_hoi.status_code, 200)
+            self.assertNotEqual(self.noi_dung(phan_hoi), self.ban_goc)              # luôn là bản có watermark, không bao giờ là bản gốc
+            self.assertEqual(phan_hoi['Content-Disposition'], 'inline')             # chỉ xem, không tự tải
+            self.assertIn('no-store', phan_hoi['Cache-Control'])
+            self.assertEqual(phan_hoi['X-Content-Type-Options'], 'nosniff')
+
+    def test_nguoi_ngoai_quan_tri_va_khach_vang_lai_khong_xem_duoc(self):
+        bk, anh = self.anh_da_tai()
+        quan_tri = User.objects.create_superuser('root', 'root@x.vn', 'p', so_dien_thoai='0900000008')
+        for nguoi in (self.nag_khac, quan_tri):                # đúng khách và nhiếp ảnh gia của Booking mới được xem
+            self.client.force_login(nguoi)
+            self.assertEqual(self.client.get(reverse('xem_anh', args=[anh.pk])).status_code, 403)
+        self.client.logout()
+        self.assertEqual(self.client.get(reverse('xem_anh', args=[anh.pk])).status_code, 302)   # chưa đăng nhập: chuyển về trang đăng nhập
+
+    def test_thu_muc_anh_khong_nam_trong_media_cong_khai(self):
+        bk, anh = self.anh_da_tai()
+        kho = services.kho_anh()
+        self.assertFalse(Path(kho.location).resolve().is_relative_to(Path(settings.MEDIA_ROOT).resolve()))
+        self.assertTrue(kho.exists(services.duong_dan_goc(anh.DuongDanAnh)))        # bản gốc có, nhưng chỉ nằm trong thư mục riêng
+
+    def test_anh_da_xoa_khong_xem_duoc(self):
+        bk, anh = self.anh_da_tai()
+        Anh.objects.filter(pk=anh.pk).update(TrangThaiLuuTru='Đã xóa')
+        self.client.force_login(self.kh)
+        self.assertEqual(self.client.get(reverse('xem_anh', args=[anh.pk])).status_code, 404)
+
+    def test_anh_hoan_chinh_khong_watermark(self):
+        bk = self.tao_booking(self.goi_tb, TT.DA_CHUP)                              # gói hậu kỳ toàn bộ
+        tep_goc = tep_anh('h1.jpg', 'JPEG', (80, 60))
+        services.tai_anh_len(bk.pk, self.nag_user, [tep_goc])
+        Booking.objects.filter(pk=bk.pk).update(TrangThai=TT.DANG_HAU_KY, HanHauKy=timezone.now() + timedelta(days=3))
+        tep_hau_ky = tep_anh('h1.jpg', 'JPEG', (90, 70))                            # bản đã chỉnh sửa
+        ban_hau_ky = tep_hau_ky.read()
+        tep_hau_ky.seek(0)
+        services.tai_anh_len(bk.pk, self.nag_user, [tep_hau_ky])
+        anh = Anh.objects.get(MaBooking=bk)
+        self.assertEqual((anh.LoaiAnh, anh.CoWatermark), (LoaiAnh.DA_HAU_KY, 1))    # trước khi thanh toán đủ: còn watermark
+        kho, ban_co_wm = services.kho_anh(), anh.DuongDanAnh
+
+        with self.captureOnCommitCallbacks(execute=True):
+            so_anh = services.chuyen_thanh_anh_hoan_chinh(bk)
+
+        anh.refresh_from_db()
+        self.assertEqual(so_anh, 1)
+        self.assertEqual((anh.LoaiAnh, anh.CoWatermark, anh.PhienBanAnh), (LoaiAnh.HOAN_CHINH, 0, 1))
+        self.assertEqual(kho.open(anh.DuongDanAnh).read(), ban_hau_ky)              # đúng bản đã hậu kỳ, KHÔNG có watermark
+        self.assertFalse(kho.exists(ban_co_wm))                                     # bản có watermark đã bị xóa
+        self.client.force_login(self.kh)                                            # trang xem ảnh không phục vụ ảnh Hoàn chỉnh (do chức năng tải ảnh của Khách xử lý)
+        self.assertEqual(self.client.get(reverse('xem_anh', args=[anh.pk])).status_code, 403)
+
+    def test_chi_chuyen_anh_da_hau_ky(self):
+        bk = self.tao_booking(self.goi_gh, TT.CHO_KH_KIEM_TRA)
+        chua = self.tao_anh(bk, 'c1.jpg', loai=LoaiAnh.CHUA_HAU_KY)
+        self.assertEqual(services.chuyen_thanh_anh_hoan_chinh(bk), 0)               # không có ảnh Đã hậu kỳ thì không đổi gì
+        chua.refresh_from_db()
+        self.assertEqual((chua.LoaiAnh, chua.CoWatermark), (LoaiAnh.CHUA_HAU_KY, 1))
+
+    def test_thieu_ban_goc_thi_bao_loi_va_khong_doi_gi(self):
+        bk = self.tao_booking(self.goi_gh, TT.CHO_KH_KIEM_TRA)
+        anh = self.tao_anh(bk, 'm1.jpg', loai=LoaiAnh.DA_HAU_KY, chon=1)             # ảnh mẫu: không có tệp 'goc'
+        with self.assertRaises(services.LoiTaiAnh):
+            services.chuyen_thanh_anh_hoan_chinh(bk)
+        anh.refresh_from_db()
+        self.assertEqual((anh.LoaiAnh, anh.CoWatermark), (LoaiAnh.DA_HAU_KY, 1))
+
+    def test_chen_watermark_duoi_5_giay_cho_anh_nang(self):
+        anh_nang = io.BytesIO()
+        Image.frombytes('RGB', (4000, 3000), os.urandom(4000 * 3000 * 3)).save(anh_nang, 'JPEG', quality=92)   # ảnh nhiễu: khó nén nhất
+        bat_dau = dong_ho.monotonic()
+        chen_watermark(anh_nang, 'JPEG')
+        self.assertLess(dong_ho.monotonic() - bat_dau, GIOI_HAN_GIAY)
+
+    def test_form_chan_anh_qua_lon_theo_megapixel(self):
+        with mock.patch('delivery.forms.SO_PIXEL_TOI_DA', 100):                     # hạ giới hạn xuống 100 điểm ảnh để thử nhanh
+            form = TaiAnhForm({}, MultiValueDict({'anh': [tep_anh('a.jpg', 'JPEG', (80, 60))]}))
+            self.assertFalse(form.is_valid())

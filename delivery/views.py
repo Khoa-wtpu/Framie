@@ -63,4 +63,8 @@ def xem_anh(request, ma_anh):                                  # bước 7: hi�
         tep = kho.open(anh.DuongDanAnh, 'rb')
     except OSError:
         raise Http404
-    return FileResponse(tep, content_type=mimetypes.guess_type(anh.DuongDanAnh)[0] or 'application/octet-stream')
+    phan_hoi = FileResponse(tep, content_type=mimetypes.guess_type(anh.DuongDanAnh)[0] or 'application/octet-stream')
+    phan_hoi['Content-Disposition'] = 'inline'                 # N5: chỉ cho XEM trên trang, trình duyệt không tự tải xuống
+    phan_hoi['Cache-Control'] = 'private, no-store, max-age=0'  # không cho lưu bản sao vào bộ nhớ đệm / proxy
+    phan_hoi['X-Content-Type-Options'] = 'nosniff'             # trình duyệt không đoán lại loại tệp
+    return phan_hoi

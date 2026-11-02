@@ -5,5 +5,5 @@ from . import views
 
 urlpatterns = [
     path('booking/<int:ma_booking>/tai-anh/', views.tai_anh_len, name='tai_anh_len'),   # trang Nhiếp ảnh gia tải ảnh
-    path('anh/<int:ma_anh>/xem/', views.xem_anh, name='xem_anh'),                        # xem ảnh đã chèn watermark (có kiểm tra quyền)
+    path('anh/<int:ma_anh>/xem/', views.xem_anh, name='xem_anh'),
 ]

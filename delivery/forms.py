@@ -2,7 +2,7 @@
 from django import forms                                       # thư viện form của Django
 from PIL import Image                                          # Pillow: mở ảnh để kiểm tra có đúng là ảnh thật không
 
-from delivery.services import DUNG_LUONG_TOI_DA, DUOI_CHO_PHEP, SO_ANH_TOI_DA  # giới hạn khai báo ở services (sửa 1 chỗ)
+from delivery.services import DUNG_LUONG_TOI_DA, DUOI_CHO_PHEP, SO_ANH_TOI_DA, SO_PIXEL_TOI_DA  # giới hạn khai báo ở services (sửa 1 chỗ)
 
 
 class MultipleFileInput(forms.ClearableFileInput):             # ô chọn NHIỀU tệp (cách Django hướng dẫn)
@@ -44,6 +44,7 @@ class TaiAnhForm(forms.Form):                                  # form tải ản
             else:
                 try:                                           # mở thử để chắc đây là ảnh thật (không phải tệp đổi đuôi)
                     with Image.open(tep) as anh:
+                        so_pixel = anh.size[0] * anh.size[1]
                         anh.verify()
                         dinh_dang_that = anh.format
                 except Exception:                              # tệp hỏng hoặc không phải ảnh
@@ -51,6 +52,8 @@ class TaiAnhForm(forms.Form):                                  # form tải ản
                 else:
                     if dinh_dang_that not in ('JPEG', 'PNG'):  # ví dụ ảnh GIF đổi thành .png
                         loi.append(f'{tep.name}: định dạng thật của tệp không phải JPG hoặc PNG.')
+                    elif so_pixel > SO_PIXEL_TOI_DA:           # N5: ảnh quá lớn thì không kịp chèn watermark trong 5 giây
+                        loi.append(f'{tep.name}: độ phân giải quá lớn (tối đa {SO_PIXEL_TOI_DA // 1_000_000} megapixel).')
                 tep.seek(0)                                    # đưa con trỏ về đầu tệp để bước xử lý đọc lại được
         if loi:
             if len(loi) > 10:                                  # chỉ liệt kê 10 lỗi đầu cho gọn

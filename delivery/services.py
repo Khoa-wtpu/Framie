@@ -1,5 +1,7 @@
 # delivery/services.py - N4 / UC5.3: Nhiếp ảnh gia tải ảnh lên Booking (Nguyên)
+import logging                                                 # ghi cảnh báo khi xử lý ảnh quá chậm
 from pathlib import Path                                       # tách đuôi và tên tệp
+import time                                                    # đo thời gian chèn watermark
 import uuid                                                    # tên tệp ngẫu nhiên, không trùng
 
 from django.conf import settings
@@ -10,19 +12,21 @@ from django.db import DatabaseError, transaction
 from django.utils import timezone
 from PIL import Image                                          # chỉ để bắt lỗi DecompressionBombError
 
-from accounts.permissions import lay_vai_tro                   # vai trò User (của Phanh)
 from bookings.models import Booking                            # model Booking (của Tuyền)
 from bookings.services import chuyen_trang_thai_booking        # HÀM T2: nơi DUY NHẤT được đổi trạng thái Booking
 from core.constants import (BenThucHien, LoaiAnh, LoaiHauKy, LuuTruAnh,
-                            TrangThaiBooking, VaiTro)
+                            TrangThaiBooking)
 from core.constants import DinhDangTep                         # JPG / JPEG / PNG
 from delivery.models import Anh, YeuCauChinhSua
-from delivery.watermark import chen_watermark                  # chèn watermark (bước 6)
+from delivery.watermark import GIOI_HAN_GIAY, chen_watermark   # chèn watermark (bước 6) và mốc 5 giây của N5
 from notifications.services import gui_thong_bao               # hàm thông báo dùng chung (của Phanh)
 
 DUOI_CHO_PHEP = ('jpg', 'jpeg', 'png')                         # chỉ nhận 3 đuôi này
 DUNG_LUONG_TOI_DA = 20 * 1024 * 1024                           # tối đa 20 MB mỗi ảnh (byte); đặc tả chưa ghi số, đổi ở đây
 SO_ANH_TOI_DA = 100                                            # tối đa 100 ảnh mỗi lần tải; đặc tả chưa ghi số, đổi ở đây
+SO_PIXEL_TOI_DA = 60_000_000                                   # N5: ảnh tối đa 60 megapixel (khoảng 9000x6700) để chèn watermark kịp 5 giây
+
+logger = logging.getLogger(__name__)
 
 
 class LoiTaiAnh(Exception):                                    # lỗi nghiệp vụ: view bắt lại để hiện cho Nhiếp ảnh gia
@@ -76,7 +80,11 @@ def _luu_hai_ban(kho, booking, tep, da_luu):                   # lưu bản gố
     dinh_dang = DinhDangTep.PNG if duoi == 'png' else (DinhDangTep.JPEG if duoi == 'jpeg' else DinhDangTep.JPG)
     ten_luu = f'{uuid.uuid4().hex}.{duoi}'                     # tên ngẫu nhiên, không lộ tên gốc
     tep.seek(0)
+    bat_dau = time.monotonic()
     ban_wm = chen_watermark(tep, 'PNG' if duoi == 'png' else 'JPEG')   # bước 6: chèn watermark
+    mat = time.monotonic() - bat_dau                           # N5: mỗi ảnh tối đa 5 giây
+    if mat > GIOI_HAN_GIAY:
+        logger.warning('Chèn watermark ảnh %s mất %.1f giây (vượt %s giây)', tep.name, mat, GIOI_HAN_GIAY)
     duong_dan = kho.save(f'booking_{booking.pk}/{ten_luu}', ContentFile(ban_wm))   # lưu bản đã watermark (khách xem bản này)
     da_luu.append(duong_dan)
     tep.seek(0)
@@ -179,16 +187,39 @@ def tai_anh_len(ma_booking, nag_user, ds_tep):                 # bước 5-8 c�
     return {'so_anh': len(ds_tep), 'trang_thai_moi': trang_thai_moi, 'con_thieu': con_thieu}
 
 
-def mo_anh(user, ma_anh):                                      # dùng cho trang xem ảnh (có kiểm tra quyền)
+def mo_anh(user, ma_anh):                                      # dùng cho trang xem ảnh (có kiểm tra quyền); chỉ bao giờ trả về BẢN CÓ WATERMARK
     try:
         anh = Anh.objects.select_related('MaBooking__MaNhiepAnhGia').get(pk=ma_anh)
     except Anh.DoesNotExist:
         return None, None
     bk = anh.MaBooking
-    duoc_xem = (user.pk == bk.MaKhachHang_id or user.pk == bk.MaNhiepAnhGia.MaTaiKhoan_id
-                or lay_vai_tro(user) == VaiTro.QUAN_TRI_VIEN)
+    duoc_xem = user.pk in (bk.MaKhachHang_id, bk.MaNhiepAnhGia.MaTaiKhoan_id)   # N5: chỉ ĐÚNG Khách hàng và Nhiếp ảnh gia của Booking
     if not duoc_xem or anh.LoaiAnh == LoaiAnh.HOAN_CHINH:      # ảnh Hoàn chỉnh (không watermark) do chức năng tải ảnh của Khách xử lý, không phục vụ ở đây
         return False, None
     if anh.TrangThaiLuuTru != LuuTruAnh.CON_LUU:
         return None, None
     return anh, kho_anh()
+
+
+def chuyen_thanh_anh_hoan_chinh(booking):                      # N5: ảnh Hoàn chỉnh KHÔNG có watermark
+    """Gọi khi Nhiếp ảnh gia xác nhận đủ 60% (UC5.7), trong cùng giao dịch với bước đó.
+    Ảnh 'Đã hậu kỳ' -> 'Hoàn chỉnh': đổi sang BẢN GỐC (không watermark), xóa bản có watermark.
+    Trả về số ảnh đã chuyển."""
+    kho = kho_anh()
+    xoa_sau = []
+    try:
+        with transaction.atomic():
+            ds = list(Anh.objects.select_for_update().filter(
+                MaBooking=booking, TrangThaiLuuTru=LuuTruAnh.CON_LUU, LoaiAnh=LoaiAnh.DA_HAU_KY))
+            for anh in ds:
+                goc = duong_dan_goc(anh.DuongDanAnh)            # bản không watermark do UC5.3 đã lưu sẵn
+                if not kho.exists(goc):
+                    raise LoiTaiAnh(f'Không tìm thấy bản gốc của ảnh {anh.TenAnh}.')
+                xoa_sau.append(anh.DuongDanAnh)                 # bản có watermark sẽ bị xóa sau khi lưu thành công
+                anh.DuongDanAnh, anh.KichThuocAnh = goc, kho.size(goc)
+                anh.LoaiAnh, anh.CoWatermark = LoaiAnh.HOAN_CHINH, 0   # CHECK của bảng: Hoàn chỉnh <=> không watermark
+                anh.save()
+            transaction.on_commit(lambda: _xoa_tep(kho, xoa_sau))
+    except (OSError, DatabaseError):
+        raise LoiTaiAnh('Không thể chuyển ảnh sang bản hoàn chỉnh, vui lòng thực hiện lại.')
+    return len(ds)
