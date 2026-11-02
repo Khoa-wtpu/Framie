@@ -20,14 +20,15 @@
     {# Hiển thị tên nhiếp ảnh gia được truyền từ View sang Template #}
     <p>Nhiếp ảnh gia: <strong>{{ ten_nag }}</strong></p>
 
-    {# Hiển thị ngày và khung giờ chụp đã được giữ chỗ #}
+    {# Hiển thị ngày, khung giờ đã được giữ chỗ và độ dài khung giờ (để khách biết gói nào còn vừa) #}
     {# date:"l, d/m/Y": hiển thị thứ, ngày/tháng/năm #}
     {# time:"H:i": hiển thị giờ và phút theo định dạng 24 giờ #}
+    {# thoi_luong_slot: độ dài khung giờ do view tính, ví dụ "2 giờ" #}
     <p>
       Khung giờ đang giữ:
       <strong>
         {{ lich.Ngay|date:"l, d/m/Y" }},
-        {{ lich.GioBatDau|time:"H:i" }}–{{ lich.GioKetThuc|time:"H:i" }}
+        {{ lich.GioBatDau|time:"H:i" }}–{{ lich.GioKetThuc|time:"H:i" }}, {{ thoi_luong_slot }}
       </strong>
     </p>
 
@@ -95,11 +96,22 @@
       {% endfor %}
     {% endif %}
 
-    {# Hiển thị trường lựa chọn loại hình chụp ảnh #}
-    {% include "includes/form_field.html" with field=form.loai_hinh %}
+    {# Không có ô "Loại hình chụp" riêng: loại hình là của gói nên các gói được nhóm theo loại hình ngay trong ô bên dưới #}
 
-    {# Hiển thị trường lựa chọn gói dịch vụ #}
+    {# Hiển thị trường lựa chọn gói dịch vụ (nhóm theo loại hình, mỗi gói ghi giá, thời lượng, hậu kỳ) #}
     {% include "includes/form_field.html" with field=form.goi %}
+
+    {# Khung chi tiết của gói đang chọn; gui_booking.js điền nội dung (textContent) và bỏ thuộc tính hidden khi khách chọn gói #}
+    <div id="goi-chi-tiet" class="goi-chi-tiet" aria-live="polite" hidden>
+      <p class="goi-chi-tiet__ten"><strong data-truong="ten"></strong> <span data-truong="loai-hinh"></span></p>
+      <p class="goi-chi-tiet__mo-ta" data-truong="mo-ta"></p>
+      <ul class="goi-chi-tiet__ds">
+        <li>Thời lượng: <strong data-truong="thoi-luong"></strong></li>
+        <li>Hậu kỳ: <strong data-truong="hau-ky"></strong></li>
+        <li>Giá: <strong data-truong="gia"></strong> VNĐ</li>
+        <li>Bắt đầu muộn nhất lúc: <strong data-truong="gio-muon-nhat"></strong></li>
+      </ul>
+    </div>
 
     {# Hiển thị trường lựa chọn ngày và giờ chụp #}
     {% include "includes/form_field.html" with field=form.ngay_gio_chup %}
@@ -138,7 +150,7 @@
 
 {# Hai script dùng chung / riêng của UC4.2 (đều trong bookings/static/bookings/js/): #}
 {# dem_nguoc.js  - đồng hồ đếm ngược, đọc data-con-lai / data-url / data-an / data-hien của #dem-nguoc #}
-{# gui_booking.js - lọc ô "Gói dịch vụ" theo "Loại hình chụp" #}
+{# gui_booking.js - khung chi tiết của gói đang chọn + khóa các gói dài hơn khung giờ đang giữ #}
 {% block extra_js %}
 <script src="{% static 'bookings/js/dem_nguoc.js' %}" defer></script>
 <script src="{% static 'bookings/js/gui_booking.js' %}" defer></script>
