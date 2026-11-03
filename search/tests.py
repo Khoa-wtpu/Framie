@@ -116,6 +116,20 @@ class TimKiemTestCase(TestCase):
         self.khong_hien(res, self.cho_duyet, self.tu_choi, self.bi_khoa)
         self.assertContains(res, 'Tìm kiếm Nhiếp ảnh gia')
 
+    def test_nut_bo_loc_nam_trong_o_tim_kiem_ben_phai(self):
+        # v2: một ô viên thuốc duy nhất [kính lúp | ô nhập | nút Bộ lọc | nút Tìm kiếm]; bảng bộ lọc là khối riêng bên dưới
+        html = self.client.get(self.url).content.decode()
+        pill = html[html.index('class="tim__pill"'):html.index('id="bang-bo-loc"')]
+        self.assertIn('name="q"', pill)
+        self.assertLess(pill.index('name="q"'), pill.index('id="nut-bo-loc"'))      # nút Bộ lọc nằm sau ô nhập (bên phải)
+        self.assertLess(pill.index('id="nut-bo-loc"'), pill.index('tim__gui'))
+        self.assertIn('aria-controls="bang-bo-loc"', pill)
+
+    def test_nut_bo_loc_hien_so_nhom_dang_bat(self):
+        res = self.client.get(self.url, {'loai_hinh': self.cuoi.pk})
+        self.assertContains(res, 'class="tim__so-loc">1<')
+        self.assertNotContains(self.client.get(self.url), 'tim__so-loc')
+
     def test_ho_so_ve_cho_duyet_thi_bien_mat_khoi_ket_qua(self):
         self.a.MaTaiKhoan.trang_thai_ho_so = TrangThaiHoSo.CHO_DUYET
         self.a.MaTaiKhoan.save()
