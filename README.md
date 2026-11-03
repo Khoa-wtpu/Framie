@@ -37,6 +37,28 @@ Mật khẩu phải đủ 8 ký tự, có chữ hoa, chữ thường, số và k
 ```
    python manage.py runserver
 ```
+## Gửi email thật bằng Gmail (không bắt buộc)
+
+Mặc định, khi chưa cấu hình, email (đăng ký thành công, mã quên mật khẩu) **in ra Terminal** thay vì gửi thật. Web vẫn chạy bình thường. Muốn gửi email thật thì làm như sau.
+
+1. **Tạo mật khẩu ứng dụng Gmail** (không dùng mật khẩu đăng nhập Gmail):
+   - Vào tài khoản Google, bật **Xác minh 2 bước** (bắt buộc, không bật thì không tạo được mật khẩu ứng dụng).
+   - Vào https://myaccount.google.com/apppasswords, đặt tên ứng dụng (ví dụ `FRAMIE`), bấm Tạo.
+   - Google hiện mật khẩu 16 ký tự. Copy rồi **viết liền, bỏ khoảng trắng**.
+2. **Tạo file `.env`** ở thư mục gốc project (cùng cấp `manage.py`), tên đúng là `.env`:
+```
+FRAMIE_EMAIL_USER=gmail-cua-ban@gmail.com
+FRAMIE_EMAIL_PASSWORD=matkhauungdung16kytu
+```
+   - Không dùng dấu nháy, không có dấu cách quanh dấu `=`.
+   - **Không đưa `.env` lên GitHub.** Trước khi commit, kiểm tra GitHub Desktop không liệt kê file `.env` (`.env` phải có trong `.gitignore`).
+   - Gmail dùng chung của nhóm: xin leader gửi riêng, đừng đăng lên nhóm chat công khai.
+3. Chạy lại `python manage.py runserver`. Thư viện `python-dotenv` (đã có trong `requirements.txt`) sẽ đọc file `.env` khi khởi động.
+4. Gmail vẫn lỗi trên mạng của bạn thì chạy `thu_smtp.py` từ thư mục gốc để xem lý do (và đừng commit file này).
+
+## Lưu ý khi tạo tài khoản quản trị
+
+Lệnh `python manage.py createsuperuser` giờ áp dụng luật mật khẩu của FRAMIE: **từ 8 ký tự, đủ 4 loại: chữ hoa, chữ thường, số và ký tự đặc biệt** (chữ có dấu như `ẩ` không tính là ký tự đặc biệt). Ví dụ hợp lệ: `Xk9#mQ2vLp`. Mật khẩu quá đơn giản sẽ bị từ chối ngay trong lệnh.
 
 ## Cấu trúc project
 

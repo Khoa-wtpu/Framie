@@ -93,3 +93,11 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
 .tone-swatch i { width: 3rem; height: 1.75rem; border-radius: var(--radius-sm); }
 .container--narrow { max-width: 28rem; }  /* hộp hẹp ở giữa trang cho form đăng nhập/đăng ký/đăng xuất */
 .card__body--stretch { align-items: stretch; }  /* kéo giãn nội dung thẻ hết chiều ngang */
+
+/* ---- Chọn vai trò ở 2 trang đăng ký (accounts/includes/_chon_vai_tro.html) ---- */
+.role-switch { margin: var(--space-2) 0 var(--space-4); } /* khoảng cách trên và dưới khối chọn vai trò */
+.role-switch__label { margin: 0 0 var(--space-2); } /* dòng chữ sát nút bên dưới */
+.role-switch__list { display: flex; flex-wrap: wrap; gap: var(--space-2); } /* 2 nút cạnh nhau, xuống hàng nếu màn hình hẹp */
+.role-switch .btn[aria-current="page"] { background: var(--color-gray-soft); border-color: var(--color-gray); } /* nút của trang đang mở: nền xám nhạt, viền xám (chỉ dùng token có sẵn) */
+.auth-switch-note { margin-top: var(--space-3); } /* dòng "Đã có tài khoản? Đăng nhập" dưới form đăng ký */
+

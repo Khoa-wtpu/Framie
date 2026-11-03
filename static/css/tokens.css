@@ -27,6 +27,8 @@
   --font-sans: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --fw-regular: 400;
   --fw-heading: 600;
+  --fw-light: 300; /* nét nhẹ cho số trên thẻ số liệu (Hướng 7) */
+  --fw-thin: 200; /* nét rất mảnh cho số lớn trong thẻ nhóm (Hướng 7) */
 
   --text-xs: .75rem;
   --text-sm: .875rem;
@@ -35,6 +37,7 @@
   --text-xl: 1.5rem;
   --text-2xl: 2rem;
   --text-3xl: 2.75rem;
+  --text-display: 4rem; /* cỡ số lớn trong thẻ nhóm trạng thái (64px) */
   --leading: 1.6;
   --leading-tight: 1.2;
 
@@ -44,6 +47,7 @@
   --radius-sm: .5rem; --radius-md: .875rem; --radius-lg: 1.25rem; --radius-pill: 999px;
   --shadow-sm: 0 1px 2px rgba(26, 26, 26, .06);
   --shadow-md: 0 8px 24px rgba(26, 26, 26, .10);
+  --shadow-card: 0 14px 28px -22px rgba(26, 26, 26, .45); /* bóng mảnh chỉ lộ ở đáy thẻ, cùng gam đen 26,26,26 với các bóng khác */
   --container: 1200px;
   --header-h: 4.5rem;
 
