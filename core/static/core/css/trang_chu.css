@@ -136,11 +136,15 @@
 /* ▸ .tc-banner__mo-ta = câu mô tả dưới tiêu đề: max-width: 36rem = giới hạn độ rộng dòng; margin-bottom: cách ô tìm kiếm; font-size: cỡ chữ lớn (--text-lg); opacity: .85 = hơi mờ cho nhẹ nhàng hơn tiêu đề. */
 .tc-banner__mo-ta { max-width: 36rem; margin-bottom: var(--space-6); font-size: var(--text-lg); opacity: .85; }
 
-/* ▸ .tc-tim = form tìm kiếm: display: flex + flex-direction: column = các phần tử xếp THEO CỘT (ô nhập ở trên, nút ở dưới — kiểu điện thoại); gap: khoảng cách giữa chúng; max-width: 42rem = giới hạn bề rộng form. */
-.tc-tim { display: flex; flex-direction: column; gap: var(--space-3); max-width: 42rem; }
-/* ▸ .tc-tim__o = ô nhập từ khóa: min-height: 3.25rem = ô cao thoải mái dễ bấm; border-radius: var(--radius-pill) = bo tròn hoàn toàn 2 đầu như viên thuốc; */
-/* ▸ padding-inline: đệm trái-phải để chữ không sát mép; box-shadow: đổ bóng cỡ vừa cho ô nổi lên khỏi nền. */
-.tc-tim__o { min-height: 3.25rem; border-radius: var(--radius-pill); padding-inline: var(--space-5); box-shadow: var(--shadow-md); }
+/* ▸ .tc-tim = form tìm kiếm gồm 2 hàng: hàng từ khóa + nút (.tc-tim__hang) và hàng bộ lọc (.tc-tim__loc). */
+.tc-tim { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); max-width: 46rem; }
+/* ▸ Hàng 1: ô từ khóa + nút (xuống dòng trên điện thoại). Hàng 2: 4 bộ lọc chia lưới tự động. */
+.tc-tim__hang { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.tc-tim__loc { display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); gap: var(--space-3); }
+/* ▸ .tc-tim__o = ô nhập từ khóa dạng viên thuốc. */
+.tc-tim__o { flex: 1 1 14rem; min-width: 0; min-height: 3.25rem; border-radius: var(--radius-pill); padding-inline: var(--space-5); box-shadow: var(--shadow-md); }
+/* ▸ .tc-tim__chon = ô chọn bộ lọc, cùng kiểu viên thuốc với ô từ khóa. */
+.tc-tim__chon { min-height: 3rem; border-radius: var(--radius-pill); padding-left: var(--space-5); box-shadow: var(--shadow-md); }
 /* ▸ .tc-goi-y = dòng "Gợi ý nhanh": display: flex = xếp ngang; flex-wrap: wrap = hết chỗ tự xuống dòng; align-items: center = căn giữa theo chiều dọc; gap = khoảng cách giữa các nút; margin: cách phía trên (--space-5), các cạnh khác 0. */
 .tc-goi-y { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-5) 0 0; }
 /* ▸ .tc-goi-y__nhan = chữ "Gợi ý nhanh:": font-size nhỏ (--text-sm); opacity: .75 = hơi mờ; margin-right: chút khoảng cách bên phải trước các nút. */
@@ -155,9 +159,7 @@
 /* ▸ @media (min-width: 640px) = quy tắc CHỈ ÁP DỤNG khi màn hình rộng từ 640px trở lên (máy tính bảng, laptop). */
 @media (min-width: 640px) {
   /* ▸ Form tìm kiếm chuyển sang xếp HÀNG NGANG (row): ô nhập bên trái, nút "Tìm kiếm" bên phải. */
-  .tc-tim { flex-direction: row; }
-  /* ▸ Ô nhập giãn chiếm hết chỗ còn lại (flex: 1); min-width: 0 = cho phép co nhỏ hơn nội dung để không làm tràn form. */
-  .tc-tim__o { flex: 1; min-width: 0; }
+  .tc-tim__hang { flex-wrap: nowrap; }
 /* ▸ Đóng nhóm @media 640px. */
 }
 /* ▸ @media (min-width: 960px) = chỉ áp dụng khi màn hình rộng từ 960px trở lên (laptop, màn hình máy tính). */
@@ -196,7 +198,7 @@
 /* ▸ Lưới các bước: mặc định (điện thoại) = 1 cột. list-style: none = bỏ số "1. 2. 3." tự động của thẻ <ol> (base.css chỉ bỏ cho <ul>); margin: 0 và padding: 0 = bỏ phần thụt lề mặc định để các thẻ thẳng hàng với tiêu đề; số thứ tự đã nằm trong hình tròn đen. */
 .tc-luoi--buoc { list-style: none; margin: 0; padding: 0; grid-template-columns: 1fr; }
 /* ▸ Thẻ mỗi bước: background: nền "bề mặt" (trắng) nổi trên nền xám; border: viền mảnh 1px; border-radius: bo góc lớn; padding: đệm bên trong cho thoáng. */
-.tc-buoc { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-5); }
+.tc-buoc { list-style: none; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-5); }
 /* ▸ Vòng tròn số thứ tự: display: grid + place-items: center = số nằm chính giữa; width/height 2.5rem = hình vuông; margin-bottom: cách tiêu đề bên dưới; border-radius: 50% = hình tròn; */
 /* ▸ background: nền đen; color: số màu trắng; font-weight: đậm như tiêu đề. */
 .tc-buoc__so { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; margin-bottom: var(--space-4); border-radius: 50%; background: var(--color-black); color: var(--color-white); font-weight: var(--fw-heading); }
