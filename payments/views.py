@@ -10,7 +10,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from accounts.permissions import chi_khach_hang               # chỉ vai trò Khách hàng (đã có sẵn của Phanh)
 from bookings.models import Booking
 from profiles.decorators import nhiep_anh_gia_da_duyet      # (N3) chỉ Nhiếp ảnh gia hồ sơ Đã duyệt (decorator chung của leader)
-from core.constants import LoaiThanhToan                     # (N3) loại khoản thanh toán
+from core.constants import LoaiThanhToan, TrangThaiBooking  # (N3) loại khoản thanh toán và trạng thái Booking
 from payments import services
 from payments.forms import MinhChungForm, YeuCauBoSungForm
 from payments.models import ThanhToan
@@ -56,7 +56,9 @@ def xem_minh_chung(request, ma_minh_chung):                   # trả ảnh minh
         tep = kho.open(mc.DuongDanTep, 'rb')
     except OSError:
         raise Http404
-    return FileResponse(tep, content_type=mimetypes.guess_type(mc.DuongDanTep)[0] or 'application/octet-stream')
+    phan_hoi = FileResponse(tep, content_type=mimetypes.guess_type(mc.DuongDanTep)[0] or 'application/octet-stream')
+    phan_hoi['X-Content-Type-Options'] = 'nosniff'             # trình duyệt không tự đoán lại loại tệp
+    return phan_hoi
 
 
 @nhiep_anh_gia_da_duyet                                       # N3: chỉ NAG hồ sơ Đã duyệt; decorator truyền thêm tham số nag
@@ -89,4 +91,5 @@ def xac_nhan_thanh_toan_coc(request, nag, ma_booking):        # trang UC5.2
     return render(request, 'payments/xac_nhan_thanh_toan_coc.html', {
         'booking': booking, 'thanh_toan': thanh_toan,
         'minh_chungs': thanh_toan.minh_chungs.order_by('-NgayTaiLen') if thanh_toan else [],
-        'khong_xu_ly_duoc': khong_xu_ly_duoc, 'form': form})
+        'khong_xu_ly_duoc': khong_xu_ly_duoc, 'form': form,
+        'da_chot': booking.TrangThai == TrangThaiBooking.CHOT_BOOKING})   # để template hiện dòng "Booking đã được chốt"

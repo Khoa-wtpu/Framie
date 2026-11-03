@@ -35,14 +35,13 @@ def chen_watermark(tep, dinh_dang):                          # hàm chính: nh�
     nen = anh.convert('RGBA')                                # chuyển về hệ màu có kênh trong suốt để chồng lớp
     rong, cao = nen.size
     dau = _con_dau(rong, cao)
-    lop = Image.new('RGBA', nen.size, (0, 0, 0, 0))          # lớp watermark trong suốt, to bằng ảnh
     buoc_x, buoc_y = int(dau.width * 1.5), int(dau.height * 1.6)   # khoảng cách giữa các con dấu
     for hang, y in enumerate(range(-dau.height // 2, cao, buoc_y)):  # duyệt từng hàng
         lech = buoc_x // 2 if hang % 2 else 0                # hàng lẻ lệch nửa bước cho đẹp
         for x in range(-dau.width // 2 + lech, rong, buoc_x):
             if x < rong and y < cao:                         # con dấu còn nằm trong ảnh
-                lop.alpha_composite(dau, (max(x, 0), max(y, 0)), (max(-x, 0), max(-y, 0)))  # dán con dấu, tự cắt phần tràn ra ngoài
-    ket_qua = Image.alpha_composite(nen, lop)                # chồng lớp watermark lên ảnh
+                nen.alpha_composite(dau, (max(x, 0), max(y, 0)), (max(-x, 0), max(-y, 0)))  # dán con dấu, tự cắt phần tràn ra ngoài
+    ket_qua = nen                                             # watermark đã được dán trực tiếp lên nền để tiết kiệm RAM
     dem = io.BytesIO()
     if dinh_dang == 'PNG':
         ket_qua.save(dem, 'PNG', compress_level=3)           # PNG giữ nguyên định dạng (nén vừa phải để kịp 5 giây, không dùng optimize vì rất chậm)

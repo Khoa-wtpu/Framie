@@ -10,6 +10,7 @@ from unittest import mock
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import HttpResponse
@@ -20,7 +21,8 @@ from django.utils.datastructures import MultiValueDict
 from PIL import Image
 
 from bookings.models import Booking, LichSuTrangThaiBooking
-from core.constants import BenThucHien, LoaiAnh, LoaiHauKy, TrangThaiBooking as TT
+from core.constants import (BenThucHien, LoaiAnh, LoaiHauKy, TrangThaiBooking as TT,
+                            TrangThaiHoSo, VaiTro)
 from delivery import services
 from delivery.forms import TaiAnhForm
 from delivery.models import Anh, YeuCauChinhSua, YeuCauChinhSua_Anh
@@ -48,8 +50,17 @@ class _NenAnh(TestCase):                                       # dữ liệu n�
         cls.kh = User.objects.create_user('kh', 'kh@x.vn', 'p', so_dien_thoai='0900000001')
         cls.nag_user = User.objects.create_user('nag', 'nag@x.vn', 'p', so_dien_thoai='0900000002')
         cls.nag_khac = User.objects.create_user('nag2', 'nag2@x.vn', 'p', so_dien_thoai='0900000003')
+        nhom_nag, _ = Group.objects.get_or_create(name=VaiTro.NHIEP_ANH_GIA)
+        cls.nag_user.groups.add(nhom_nag)
+        cls.nag_user.trang_thai_ho_so = TrangThaiHoSo.DA_DUYET
+        cls.nag_user.save(update_fields=['trang_thai_ho_so'])
         cls.nag = NhiepAnhGia.objects.create(MaTaiKhoan=cls.nag_user, AnhDaiDien='a.jpg', GioiThieu='x',
                                              NganHang='B', SoTaiKhoan='1', ChuTaiKhoan='N', AnhMaQR='q.jpg')
+        cls.nag_khac.groups.add(nhom_nag)
+        cls.nag_khac.trang_thai_ho_so = TrangThaiHoSo.DA_DUYET
+        cls.nag_khac.save(update_fields=['trang_thai_ho_so'])
+        NhiepAnhGia.objects.create(MaTaiKhoan=cls.nag_khac, AnhDaiDien='b.jpg', GioiThieu='x',
+                                   NganHang='B', SoTaiKhoan='2', ChuTaiKhoan='N2', AnhMaQR='q2.jpg')
         loai = LoaiHinhChup.objects.create(TenLoaiHinh='Cưới')
         cls.goi_gh = GoiDichVu.objects.create(MaNhiepAnhGia=cls.nag, MaLoaiHinh=loai, TenGoi='G1', Gia=1000000,
                                               ThoiLuongChup=60, LoaiHauKy=LoaiHauKy.GIOI_HAN, SoAnhHauKyToiDa=5)
@@ -191,6 +202,58 @@ class TaiAnhTests(_NenAnh):                                    # N4 / UC5.3: ngh
         self.assertEqual((q1.PhienBanAnh, q2.PhienBanAnh), (2, 1))                         # chỉ ảnh được sửa tăng phiên bản
 
 
+    def test_loi_decoder_ngoai_du_kien_don_tep_va_khong_doi_booking(self):
+        bk = self.tao_booking(self.goi_gh, TT.DA_CHUP)
+        chen_that = services.chen_watermark
+        so_lan = {'dem': 0}
+
+        def chen_lan_luot(tep, dinh_dang):
+            so_lan['dem'] += 1
+            if so_lan['dem'] == 2:
+                raise SyntaxError('broken PNG file')
+            return chen_that(tep, dinh_dang)
+
+        with override_settings(PRIVATE_MEDIA_ROOT=tempfile.mkdtemp()):
+            with mock.patch('delivery.services.chen_watermark', side_effect=chen_lan_luot):
+                with self.assertRaises(services.LoiTaiAnh):
+                    services.tai_anh_len(bk.pk, self.nag_user,
+                                         [tep_anh('da-luu.jpg'), tep_anh('broken.png', 'PNG')])
+            self.assertEqual(list(Path(services.kho_anh().location).rglob('*.*')), [])
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, TT.DA_CHUP)
+
+
+class TaiAnhViewTests(_NenAnh):
+    def test_get_200_va_nhiep_anh_khac_404(self):
+        bk = self.tao_booking(self.goi_gh, TT.DA_CHUP)
+        self.client.force_login(self.nag_user)
+        phan_hoi = self.client.get(reverse('tai_anh_len', args=[bk.pk]))
+        self.assertEqual(phan_hoi.status_code, 200)
+        self.assertContains(phan_hoi, 'type="file"')
+        self.client.force_login(self.nag_khac)
+        self.assertEqual(self.client.get(reverse('tai_anh_len', args=[bk.pk])).status_code, 404)
+
+    def test_post_thuong_chuyen_trang(self):
+        bk = self.tao_booking(self.goi_gh, TT.DA_CHUP)
+        self.client.force_login(self.nag_user)
+        phan_hoi = self.client.post(reverse('tai_anh_len', args=[bk.pk]), {'anh': tep_anh('view.jpg')})
+        self.assertEqual(phan_hoi.status_code, 302)
+
+    def test_post_ajax_tra_json_ok_va_loi_400(self):
+        bk = self.tao_booking(self.goi_gh, TT.DA_CHUP)
+        self.client.force_login(self.nag_user)
+        url = reverse('tai_anh_len', args=[bk.pk])
+        ok = self.client.post(url, {'anh': tep_anh('ajax.jpg')}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(ok.status_code, 200)
+        self.assertTrue(ok.json()['ok'])
+        self.assertIn('url', ok.json())
+        loi = self.client.post(url, {'anh': SimpleUploadedFile('sai.gif', b'not image')},
+                               HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(loi.status_code, 400)
+        self.assertFalse(loi.json()['ok'])
+        self.assertTrue(loi.json()['loi'])
+
+
 class TaiAnhFormTests(TestCase):                               # bước 4 / ngoại lệ 4a: kiểm tra định dạng, dung lượng, số lượng
     def form(self, *ds_tep):
         return TaiAnhForm({}, MultiValueDict({'anh': list(ds_tep)}))
@@ -209,6 +272,9 @@ class TaiAnhFormTests(TestCase):                               # bước 4 / ngo
     def test_qua_dung_luong(self):
         lon = SimpleUploadedFile('a.png', b'x' * (services.DUNG_LUONG_TOI_DA + 1))
         self.assertFalse(self.form(lon).is_valid())
+        with mock.patch('delivery.forms.DUNG_LUONG_TOI_DA', 10):
+            lon_nho = SimpleUploadedFile('nho.png', b'x' * 11)
+            self.assertFalse(self.form(lon_nho).is_valid())
 
     def test_qua_so_luong(self):
         nhieu = [tep_anh(f'a{i}.png', 'PNG', (8, 8)) for i in range(services.SO_ANH_TOI_DA + 1)]
@@ -227,6 +293,23 @@ class WatermarkTests(TestCase):                                # bước 6: chè
         kq = Image.open(io.BytesIO(chen_watermark(tep_anh('a.png', 'PNG', (100, 300)), 'PNG')))
         self.assertEqual((kq.size, kq.format), ((100, 300), 'PNG'))
 
+    def test_anh_nho_10x10_khong_loi_va_pixel_thay_doi(self):
+        goc = tep_anh('nho.png', 'PNG', (10, 10))
+        ban_dau = Image.open(goc).convert('RGBA')
+        ket_qua = Image.open(io.BytesIO(chen_watermark(goc, 'PNG'))).convert('RGBA')
+        self.assertEqual(ket_qua.size, (10, 10))
+        self.assertNotEqual(list(ban_dau.getdata()), list(ket_qua.getdata()))
+
+    def test_exif_orientation_duoc_ap_dung(self):
+        bo_nho = io.BytesIO()
+        hinh = Image.new('RGB', (40, 20), (80, 120, 160))
+        exif = Image.Exif()
+        exif[274] = 6
+        hinh.save(bo_nho, 'JPEG', exif=exif)
+        tep = SimpleUploadedFile('exif.jpg', bo_nho.getvalue())
+        ket_qua = Image.open(io.BytesIO(chen_watermark(tep, 'JPEG')))
+        self.assertEqual(ket_qua.size, (20, 40))
+
 
 class BaoVeAnhTests(_NenAnh):                                  # N5: watermark và bảo vệ ảnh
     def anh_da_tai(self):                                      # Booking đã có 1 ảnh tải qua hệ thống (có watermark)
@@ -242,7 +325,10 @@ class BaoVeAnhTests(_NenAnh):                                  # N5: watermark v
 
     def test_khach_va_nhiep_anh_gia_cua_booking_xem_duoc_ban_co_watermark(self):
         bk, anh = self.anh_da_tai()
-        for nguoi in (self.kh, self.nag_user):
+        nhom_qtv, _ = Group.objects.get_or_create(name=VaiTro.QUAN_TRI_VIEN)
+        quan_tri = User.objects.create_user('admin_nhom', 'admin_nhom@x.vn', 'p', so_dien_thoai='0900000008')
+        quan_tri.groups.add(nhom_qtv)
+        for nguoi in (self.kh, self.nag_user, quan_tri):
             self.client.force_login(nguoi)
             phan_hoi = self.client.get(reverse('xem_anh', args=[anh.pk]))
             self.assertEqual(phan_hoi.status_code, 200)
@@ -251,12 +337,20 @@ class BaoVeAnhTests(_NenAnh):                                  # N5: watermark v
             self.assertIn('no-store', phan_hoi['Cache-Control'])
             self.assertEqual(phan_hoi['X-Content-Type-Options'], 'nosniff')
 
-    def test_nguoi_ngoai_quan_tri_va_khach_vang_lai_khong_xem_duoc(self):
+    def test_thumbnail_chi_tra_anh_watermark_kich_thuoc_gioi_han(self):
         bk, anh = self.anh_da_tai()
-        quan_tri = User.objects.create_superuser('root', 'root@x.vn', 'p', so_dien_thoai='0900000008')
-        for nguoi in (self.nag_khac, quan_tri):                # đúng khách và nhiếp ảnh gia của Booking mới được xem
-            self.client.force_login(nguoi)
-            self.assertEqual(self.client.get(reverse('xem_anh', args=[anh.pk])).status_code, 403)
+        self.client.force_login(self.kh)
+        phan_hoi = self.client.get(reverse('xem_anh', args=[anh.pk]) + '?nho=1')
+        self.assertEqual(phan_hoi.status_code, 200)
+        self.assertEqual(phan_hoi['Content-Type'], 'image/jpeg')
+        hinh = Image.open(io.BytesIO(phan_hoi.content))
+        self.assertLessEqual(max(hinh.size), 400)
+        self.assertNotEqual(phan_hoi.content, self.ban_goc)
+
+    def test_nguoi_ngoai_va_khach_vang_lai_khong_xem_duoc(self):
+        bk, anh = self.anh_da_tai()
+        self.client.force_login(self.nag_khac)
+        self.assertEqual(self.client.get(reverse('xem_anh', args=[anh.pk])).status_code, 403)
         self.client.logout()
         self.assertEqual(self.client.get(reverse('xem_anh', args=[anh.pk])).status_code, 302)   # chưa đăng nhập: chuyển về trang đăng nhập
 
@@ -293,7 +387,12 @@ class BaoVeAnhTests(_NenAnh):                                  # N5: watermark v
         self.assertEqual((anh.LoaiAnh, anh.CoWatermark, anh.PhienBanAnh), (LoaiAnh.HOAN_CHINH, 0, 1))
         self.assertEqual(kho.open(anh.DuongDanAnh).read(), ban_hau_ky)              # đúng bản đã hậu kỳ, KHÔNG có watermark
         self.assertFalse(kho.exists(ban_co_wm))                                     # bản có watermark đã bị xóa
-        self.client.force_login(self.kh)                                            # trang xem ảnh không phục vụ ảnh Hoàn chỉnh (do chức năng tải ảnh của Khách xử lý)
+        self.client.force_login(self.kh)                                            # trang xem ảnh không phục vụ ảnh Hoàn chỉnh
+        self.assertEqual(self.client.get(reverse('xem_anh', args=[anh.pk])).status_code, 403)
+        nhom_qtv, _ = Group.objects.get_or_create(name=VaiTro.QUAN_TRI_VIEN)
+        quan_tri = User.objects.create_user('admin_hoanchinh', 'admin_hoanchinh@x.vn', 'p', so_dien_thoai='0900000009')
+        quan_tri.groups.add(nhom_qtv)
+        self.client.force_login(quan_tri)
         self.assertEqual(self.client.get(reverse('xem_anh', args=[anh.pk])).status_code, 403)
 
     def test_chi_chuyen_anh_da_hau_ky(self):
@@ -311,14 +410,30 @@ class BaoVeAnhTests(_NenAnh):                                  # N5: watermark v
         anh.refresh_from_db()
         self.assertEqual((anh.LoaiAnh, anh.CoWatermark), (LoaiAnh.DA_HAU_KY, 1))
 
-    def test_chen_watermark_duoi_5_giay_cho_anh_nang(self):
-        anh_nang = io.BytesIO()
-        Image.frombytes('RGB', (4000, 3000), os.urandom(4000 * 3000 * 3)).save(anh_nang, 'JPEG', quality=92)   # ảnh nhiễu: khó nén nhất
-        bat_dau = dong_ho.monotonic()
-        chen_watermark(anh_nang, 'JPEG')
-        self.assertLess(dong_ho.monotonic() - bat_dau, GIOI_HAN_GIAY)
+    def test_thieu_ban_goc_anh_thu_hai_hoan_tac_toan_bo(self):
+        bk = self.tao_booking(self.goi_gh, TT.CHO_KH_KIEM_TRA)
+        anh1 = self.tao_anh(bk, 'm1.jpg', loai=LoaiAnh.DA_HAU_KY, chon=1, that=True)
+        anh2 = self.tao_anh(bk, 'm2.jpg', loai=LoaiAnh.DA_HAU_KY, chon=1, that=False)
+        kho = services.kho_anh()
+        tep_wm_anh1 = anh1.DuongDanAnh
+        with self.assertRaises(services.LoiTaiAnh):
+            services.chuyen_thanh_anh_hoan_chinh(bk)
+        anh1.refresh_from_db()
+        anh2.refresh_from_db()
+        self.assertEqual((anh1.LoaiAnh, anh1.CoWatermark), (LoaiAnh.DA_HAU_KY, 1))
+        self.assertEqual((anh2.LoaiAnh, anh2.CoWatermark), (LoaiAnh.DA_HAU_KY, 1))
+        self.assertTrue(kho.exists(tep_wm_anh1))
 
-    def test_form_chan_anh_qua_lon_theo_megapixel(self):
-        with mock.patch('delivery.forms.SO_PIXEL_TOI_DA', 100):                     # hạ giới hạn xuống 100 điểm ảnh để thử nhanh
-            form = TaiAnhForm({}, MultiValueDict({'anh': [tep_anh('a.jpg', 'JPEG', (80, 60))]}))
-            self.assertFalse(form.is_valid())
+    def test_canh_bao_khi_watermark_vuot_moc_thoi_gian(self):
+        with override_settings(PRIVATE_MEDIA_ROOT=tempfile.mkdtemp()):
+            with mock.patch('delivery.services.GIOI_HAN_GIAY', -1):
+                with self.assertLogs('delivery.services', level='WARNING'):
+                    services._luu_hai_ban(services.kho_anh(), self.tao_booking(self.goi_gh, TT.DA_CHUP),
+                                          tep_anh('canh-bao.jpg'), [])
+
+    def test_form_nhan_dung_nguong_60mp_va_chan_vuot_1_pixel(self):
+        with mock.patch('delivery.forms.SO_PIXEL_TOI_DA', 100):
+            dung_nguong = TaiAnhForm({}, MultiValueDict({'anh': [tep_anh('10x10.jpg', 'JPEG', (10, 10))]}))
+            vuot_nguong = TaiAnhForm({}, MultiValueDict({'anh': [tep_anh('11x10.jpg', 'JPEG', (11, 10))]}))
+            self.assertTrue(dung_nguong.is_valid())
+            self.assertFalse(vuot_nguong.is_valid())

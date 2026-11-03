@@ -44,6 +44,10 @@ def xac_dinh_khoan(booking):                                 # Booking đang c�
             'trang_thai_cho': cho}                           # trạng thái khoản thanh toán khi đang chờ NAG xác nhận
 
 
+# TÌNH HUỐNG ĐÃ BÁO LEADER (chưa xử lý, chờ leader quyết định):
+# Nhiếp ảnh gia yêu cầu bổ sung minh chứng SAU hạn đặt cọc (HanDatCoc) -> Khách hàng không tải lại được nữa vì
+# hàm dưới đây chặn "Đã quá hạn thanh toán", trong khi Booking vẫn ở Chờ đặt cọc cho tới khi hệ thống tự chuyển
+# sang Hết thời hạn đặt cọc. Leader sẽ quyết định có gia hạn hay không; code hiện giữ nguyên hành vi chặn.
 def ly_do_khong_gui_duoc(khoan, thanh_toan):                 # trả về câu báo lỗi nếu KHÔNG được gửi, hoặc None nếu được gửi
     if khoan['han'] and timezone.now() > khoan['han']:       # quá hạn chót
         return 'Đã quá hạn thanh toán, không thể tải minh chứng.'

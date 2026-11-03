@@ -1,0 +1,26 @@
+.tai-anh__luoi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.tai-anh__the {
+  width: 140px;
+  margin: 0;
+}
+.tai-anh__the img {
+  display: block;
+  width: 140px;
+  height: 95px;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.tai-anh__chu-thich {
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+}
+.tai-anh__tien-trinh {
+  display: block;
+  width: 100%;
+}

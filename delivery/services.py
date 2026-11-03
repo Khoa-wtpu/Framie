@@ -15,7 +15,8 @@ from PIL import Image                                          # chỉ để b�
 from bookings.models import Booking                            # model Booking (của Tuyền)
 from bookings.services import chuyen_trang_thai_booking        # HÀM T2: nơi DUY NHẤT được đổi trạng thái Booking
 from core.constants import (BenThucHien, LoaiAnh, LoaiHauKy, LuuTruAnh,
-                            TrangThaiBooking)
+                            TrangThaiBooking, VaiTro)
+from accounts.permissions import lay_vai_tro
 from core.constants import DinhDangTep                         # JPG / JPEG / PNG
 from delivery.models import Anh, YeuCauChinhSua
 from delivery.watermark import GIOI_HAN_GIAY, chen_watermark   # chèn watermark (bước 6) và mốc 5 giây của N5
@@ -171,6 +172,9 @@ def tai_anh_len(ma_booking, nag_user, ds_tep):                 # bước 5-8 c�
     except (OSError, DatabaseError, ValueError, Image.DecompressionBombError):   # lỗi ghi tệp, lỗi DB, ảnh quá lớn/hỏng (ngoại lệ 7a)
         _xoa_tep(kho, da_luu)
         raise LoiTaiAnh('Không thể lưu ảnh sau khi xử lý, vui lòng thực hiện tải ảnh lại.')
+    except Exception as loi:                                  # Pillow/decoder có thể ném SyntaxError hoặc lỗi ngoài dự kiến
+        _xoa_tep(kho, da_luu)
+        raise LoiTaiAnh('Không thể lưu ảnh sau khi xử lý, vui lòng thực hiện tải ảnh lại.') from loi
 
     khach = booking.MaKhachHang                                # bước 8: báo Khách hàng
     if trang_thai_moi == TrangThaiBooking.CHO_KH_CHON_ANH:
@@ -193,7 +197,8 @@ def mo_anh(user, ma_anh):                                      # dùng cho trang
     except Anh.DoesNotExist:
         return None, None
     bk = anh.MaBooking
-    duoc_xem = user.pk in (bk.MaKhachHang_id, bk.MaNhiepAnhGia.MaTaiKhoan_id)   # N5: chỉ ĐÚNG Khách hàng và Nhiếp ảnh gia của Booking
+    duoc_xem = (user.pk in (bk.MaKhachHang_id, bk.MaNhiepAnhGia.MaTaiKhoan_id)
+                or lay_vai_tro(user) == VaiTro.QUAN_TRI_VIEN)  # Quản trị viên được xem bản watermark để xử lý tranh chấp
     if not duoc_xem or anh.LoaiAnh == LoaiAnh.HOAN_CHINH:      # ảnh Hoàn chỉnh (không watermark) do chức năng tải ảnh của Khách xử lý, không phục vụ ở đây
         return False, None
     if anh.TrangThaiLuuTru != LuuTruAnh.CON_LUU:

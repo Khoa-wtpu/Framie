@@ -1,10 +1,14 @@
 # delivery/views.py - N4 / UC5.3: Nhiếp ảnh gia tải ảnh lên Booking
+import io
 import mimetypes                                               # đoán loại tệp (image/jpeg...) khi trả ảnh về trình duyệt
+
+from PIL import Image
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.http import FileResponse, Http404, JsonResponse
+from django.core.paginator import Paginator
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
@@ -44,9 +48,12 @@ def tai_anh_len(request, nag, ma_booking):
     booking.refresh_from_db()                                  # đọc lại trạng thái mới nhất
     giai_doan = services.xac_dinh_giai_doan(booking)
     cho_hau_ky = list(services.anh_can_hau_ky(booking)) if giai_doan and giai_doan['loai'] == LoaiAnh.DA_HAU_KY else []
+    page_obj = Paginator(
+        Anh.objects.filter(MaBooking=booking, TrangThaiLuuTru=LuuTruAnh.CON_LUU).order_by('TenAnh'), 24
+    ).get_page(request.GET.get('page'))
     return render(request, 'delivery/tai_anh_len.html', {
         'booking': booking, 'giai_doan': giai_doan, 'form': form,
-        'anhs': Anh.objects.filter(MaBooking=booking, TrangThaiLuuTru=LuuTruAnh.CON_LUU).order_by('TenAnh'),
+        'anhs': page_obj.object_list, 'page_obj': page_obj,
         'cho_hau_ky': cho_hau_ky, 'so_anh_toi_da': services.SO_ANH_TOI_DA,
         'gioi_han': booking.MaGoi.LoaiHauKy == LoaiHauKy.GIOI_HAN,
         'dang_o_buoc_goc': booking.TrangThai == TrangThaiBooking.DA_CHUP})
@@ -63,7 +70,20 @@ def xem_anh(request, ma_anh):                                  # bước 7: hi�
         tep = kho.open(anh.DuongDanAnh, 'rb')
     except OSError:
         raise Http404
-    phan_hoi = FileResponse(tep, content_type=mimetypes.guess_type(anh.DuongDanAnh)[0] or 'application/octet-stream')
+    if request.GET.get('nho') == '1':
+        try:
+            with Image.open(tep) as hinh:
+                hinh.thumbnail((400, 400))
+                hinh = hinh.convert('RGB')
+                dem = io.BytesIO()
+                hinh.save(dem, format='JPEG', quality=82, optimize=True)
+        except Exception:
+            tep.close()
+            raise Http404
+        tep.close()
+        phan_hoi = HttpResponse(dem.getvalue(), content_type='image/jpeg')
+    else:
+        phan_hoi = FileResponse(tep, content_type=mimetypes.guess_type(anh.DuongDanAnh)[0] or 'application/octet-stream')
     phan_hoi['Content-Disposition'] = 'inline'                 # N5: chỉ cho XEM trên trang, trình duyệt không tự tải xuống
     phan_hoi['Cache-Control'] = 'private, no-store, max-age=0'  # không cho lưu bản sao vào bộ nhớ đệm / proxy
     phan_hoi['X-Content-Type-Options'] = 'nosniff'             # trình duyệt không đoán lại loại tệp
