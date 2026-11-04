@@ -25,7 +25,7 @@ from django.urls import NoReverseMatch, reverse
 
 # ▸ Nạp 2 bảng dữ liệu: LoaiHinhChup (danh mục loại hình: Cưới, Chân dung...)
 # ▸ và NhiepAnhGia_LoaiHinhChup (bảng nối: nhiếp ảnh gia nào nhận chụp loại hình nào).
-from profiles.models import LoaiHinhChup, NhiepAnhGia_LoaiHinhChup
+from profiles.models import KhuVuc, LoaiHinhChup, NhiepAnhGia_LoaiHinhChup
 # ▸ Nạp hàm do bạn Khoa viết: trả về danh sách nhiếp ảnh gia nổi bật (điểm đánh giá cao...).
 from profiles.services import nhiep_anh_gia_noi_bat
 # ▸ Nạp hàm của module tìm kiếm: trả về các nhiếp ảnh gia ĐANG CÔNG KHAI (hồ sơ đã được duyệt).
@@ -77,8 +77,8 @@ def _the_noi_bat():
         cac_the.append({**nag,
                         # ▸ Mục 'href': đường dẫn tới hồ sơ của người đó (nag['nhiep_anh_gia'].pk là mã định danh trong CSDL).
                         'href': _duong_dan_ho_so(nag['nhiep_anh_gia'].pk),
-                        # ▸ Mục 'diem': điểm đánh giá trung bình làm tròn 1 chữ số thập phân (vd 4.8) dạng chữ, để hiển thị giống trang tìm kiếm.
-                        'diem': f"{nag['diem_trung_binh']:.1f}"})
+                        # ▸ Mục 'diem': điểm trung bình làm tròn 1 chữ số (vd "4.8"); chưa có đánh giá (None) thì '' để giao diện hiện "Chưa có đánh giá".
+                        'diem': '' if nag['diem_trung_binh'] is None else f"{nag['diem_trung_binh']:.1f}"})
     # ▸ Trả danh sách các thẻ đã hoàn chỉnh về cho nơi gọi.
     return cac_the
 
@@ -101,6 +101,11 @@ def _loai_hinh_kem_so_nguoi():
             for lh in LoaiHinhChup.objects.all()]
 
 
+# ▸ Hàm phụ: danh sách khu vực cho ô lọc ở banner.
+def _khu_vuc_ds():
+    return [{'ma': kv.pk, 'ten': kv.TenKhuVuc} for kv in KhuVuc.objects.all()]
+
+
 # ▸ HÀM CHÍNH của file: Django gọi hàm này mỗi khi có khách mở Trang chủ. "request" là thông tin yêu cầu của khách (trình duyệt, tài khoản đăng nhập...).
 def trang_chu(request):
     # ▸ Dựng trang web: dùng file giao diện 'core/trang_chu.html' và truyền vào 3 gói dữ liệu dưới đây; kết quả trả thẳng về trình duyệt của khách.
@@ -109,6 +114,8 @@ def trang_chu(request):
         'noi_bat': _the_noi_bat(),
         # ▸ Gói 2: danh sách loại hình chụp kèm số người (dùng ở ô "Gợi ý nhanh" và khối số 4).
         'loai_hinh_ds': _loai_hinh_kem_so_nguoi(),
+        # ▸ Gói 2b: danh sách khu vực cho bộ lọc trong ô tìm kiếm.
+        'khu_vuc_ds': _khu_vuc_ds(),
         # ▸ Gói 3: 5 bước đặt lịch (khối số 3).
         'buoc_dat_lich': BUOC_DAT_LICH,
     # ▸ Đóng ngoặc: kết thúc lệnh render và kết thúc hàm.

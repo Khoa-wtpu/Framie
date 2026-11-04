@@ -432,6 +432,8 @@ def chi_tiet_yeu_cau(request, ma_booking):
         'da_qua_gio_chup': da_qua_gio_chup(booking),                          # qua giờ chụp: ẩn nút Chấp nhận, vẫn cho Từ chối
         # Cờ 'còn xử lý được' để giao diện chỉ hiện nút khi Booking đang chờ xác nhận.
         'co_the_xu_ly': booking.TrangThai == TrangThaiBooking.CHO_XAC_NHAN,   # chỉ lúc này mới hiện nút xử lý
+        # T8: Booking đang 'Chốt Booking' -> hiện khối 'Đã chụp'; nút chỉ bấm được khi buổi chụp đã diễn ra.
+        'dang_chot_booking': booking.TrangThai == TrangThaiBooking.CHOT_BOOKING,   # True nếu Booking đang 'Chốt Booking' -> template hiện khối nút 'Đã chụp'
         # Tổng giá trị Booking đã định dạng (ví dụ 1.500.000).
         'tong_gia': _tien(booking.TongGiaTri),
         # Số tiền cọc 40% (tính bằng tinh_so_tien) đã định dạng, để báo trước cho Nhiếp ảnh gia.
