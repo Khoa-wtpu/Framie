@@ -48,6 +48,13 @@ def cac_tep_tren_dia(kho):                                     # danh sách mọ
 
 @override_settings(MINH_CHUNG_ROOT=tempfile.mkdtemp(), ROOT_URLCONF='payments.tests')   # tệp test ghi vào thư mục tạm, không đụng private_media
 class _DuLieuNen(TestCase):                                    # dữ liệu nền dùng chung (không có test riêng)
+    def setUp(self):
+        self._thu_muc_minh_chung = tempfile.TemporaryDirectory()
+        self.addCleanup(self._thu_muc_minh_chung.cleanup)
+        self._cau_hinh_kho_minh_chung = override_settings(MINH_CHUNG_ROOT=self._thu_muc_minh_chung.name)
+        self._cau_hinh_kho_minh_chung.enable()
+        self.addCleanup(self._cau_hinh_kho_minh_chung.disable)
+
     @classmethod
     def setUpTestData(cls):
         nhom_nag, _ = Group.objects.get_or_create(name=VaiTro.NHIEP_ANH_GIA)
@@ -154,14 +161,31 @@ class TaiLenMinhChungTests(_DuLieuNen):                        # nghiệp vụ U
         with self.assertRaisesMessage(services.LoiTaiMinhChung, 'Booking hiện không ở giai đoạn thanh toán.'):
             services.tai_len_minh_chung(bk.pk, self.kh, tep_anh())
 
-    def test_qua_han_bi_chan(self):
+    def test_qua_han_bi_chan_khi_chua_co_yeu_cau_bo_sung(self):
         bk = self.tao_booking()
         Booking.objects.filter(pk=bk.pk).update(                      # Booking tạo cách đây 2 ngày, hạn cọc đã qua 1 giờ
             NgayTao=timezone.now() - timedelta(days=2),               # DB có CHECK: HanDatCoc phải SAU NgayTao
             HanDatCoc=timezone.now() - timedelta(hours=1))
+        tt = ThanhToan.objects.create(
+            MaBooking=bk, LoaiThanhToan=LoaiThanhToan.TIEN_COC, SoTien=400000,
+            TrangThai=TrangThaiThanhToan.CHO_XAC_NHAN_COC)
         with self.assertRaisesMessage(services.LoiTaiMinhChung, 'Đã quá hạn thanh toán, không thể tải minh chứng.'):
             services.tai_len_minh_chung(bk.pk, self.kh, tep_anh())
-        self.assertFalse(MinhChungThanhToan.objects.exists())
+        self.assertEqual(tt.minh_chungs.count(), 0)
+
+    def test_qua_han_van_duoc_gui_lai_khi_nag_da_yeu_cau_bo_sung(self):
+        bk = self.tao_booking()
+        Booking.objects.filter(pk=bk.pk).update(
+            NgayTao=timezone.now() - timedelta(days=2),
+            HanDatCoc=timezone.now() - timedelta(hours=1))
+        tt = ThanhToan.objects.create(
+            MaBooking=bk, LoaiThanhToan=LoaiThanhToan.TIEN_COC, SoTien=400000,
+            TrangThai=TrangThaiThanhToan.CHO_XAC_NHAN_COC, LyDoTuChoi='Vui lòng gửi lại ảnh rõ hơn.')
+        services.tai_len_minh_chung(bk.pk, self.kh, tep_anh('gui-lai.png'))
+        tt.refresh_from_db()
+        self.assertEqual(tt.minh_chungs.count(), 1)
+        self.assertIsNone(tt.LyDoTuChoi)
+        self.assertEqual(tt.TrangThai, TrangThaiThanhToan.CHO_XAC_NHAN_COC)
 
     def test_booking_cua_nguoi_khac_bi_chan(self):
         bk = self.tao_booking()

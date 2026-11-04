@@ -15,7 +15,7 @@
         <p>Khách hàng đã chọn <strong>{{ anh_da_chon|length }}</strong> ảnh cần hậu kỳ:</p>{# số ảnh Khách chọn #}
         <p class="muted">{% for a in anh_da_chon %}{{ a.TenAnh }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{# tên các ảnh Khách chọn #}
       {% else %}{# gói hậu kỳ toàn bộ: không có bước chọn #}
-        <p>Gói hậu kỳ toàn bộ ảnh: bạn hậu kỳ tất cả ảnh đã tải lên.</p>{# giải thích #}
+        <p>Gói hậu kỳ toàn bộ ảnh: sau khi bấm <strong>Bắt đầu hậu kỳ</strong>, bạn tải lên toàn bộ ảnh đã hậu kỳ.</p>{# giải thích #}
       {% endif %}
       <form method="post" action="{% url 'bat_dau_hau_ky' booking.pk %}">{# gửi POST tới view bat_dau_hau_ky #}
         {% csrf_token %}{# mã chống giả mạo yêu cầu #}

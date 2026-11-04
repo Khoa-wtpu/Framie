@@ -21,6 +21,7 @@ from django.utils.datastructures import MultiValueDict
 from PIL import Image
 
 from bookings.models import Booking, LichSuTrangThaiBooking
+from bookings.services import chuyen_trang_thai_booking
 from core.constants import (BenThucHien, LoaiAnh, LoaiHauKy, TrangThaiBooking as TT,
                             TrangThaiHoSo, VaiTro)
 from delivery import services
@@ -45,6 +46,13 @@ def tep_anh(ten='a.jpg', dinh_dang='JPEG', kich_thuoc=(80, 60)):   # tạo tệp
 
 @override_settings(PRIVATE_MEDIA_ROOT=tempfile.mkdtemp(), ROOT_URLCONF='delivery.tests')   # tệp test ghi vào thư mục tạm, không đụng private_media
 class _NenAnh(TestCase):                                       # dữ liệu nền + hàm tạo Booking/ảnh dùng chung (không có test riêng)
+    def setUp(self):
+        self._thu_muc_anh = tempfile.TemporaryDirectory()
+        self.addCleanup(self._thu_muc_anh.cleanup)
+        self._cau_hinh_kho_anh = override_settings(PRIVATE_MEDIA_ROOT=self._thu_muc_anh.name)
+        self._cau_hinh_kho_anh.enable()
+        self.addCleanup(self._cau_hinh_kho_anh.disable)
+
     @classmethod
     def setUpTestData(cls):
         cls.kh = User.objects.create_user('kh', 'kh@x.vn', 'p', so_dien_thoai='0900000001')
@@ -118,6 +126,32 @@ class TaiAnhTests(_NenAnh):                                    # N4 / UC5.3: ngh
         services.tai_anh_len(bk.pk, self.nag_user, [tep_anh('b1.jpg')])
         bk.refresh_from_db()
         self.assertEqual(bk.TrangThai, TT.CHO_HAU_KY)                                       # bỏ qua bước Khách chọn ảnh
+
+    def test_goi_toan_bo_tu_chot_booking_den_tai_anh_hau_ky(self):
+        # Mô phỏng đúng chuỗi trạng thái do NAG thực hiện sau khi Booking được chốt:
+        # Chốt Booking -> Đã chụp -> Chờ hậu kỳ -> Đang hậu kỳ.
+        bk = self.tao_booking(self.goi_tb, TT.CHOT_BOOKING)
+        chuyen_trang_thai_booking(bk, TT.DA_CHUP, BenThucHien.NHIEP_ANH_GIA)
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, TT.DA_CHUP)
+        chuyen_trang_thai_booking(bk, TT.CHO_HAU_KY, BenThucHien.NHIEP_ANH_GIA)
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, TT.CHO_HAU_KY)
+
+        services.bat_dau_hau_ky(bk.pk, self.nag_user)
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, TT.DANG_HAU_KY)
+        ket_qua = services.tai_anh_len(bk.pk, self.nag_user, [tep_anh('anh-da-hau-ky.jpg')])
+
+        bk.refresh_from_db()
+        anh = Anh.objects.get(MaBooking=bk)
+        kho = services.kho_anh()
+        self.assertEqual(bk.TrangThai, TT.CHO_KH_KIEM_TRA)
+        self.assertEqual(ket_qua['trang_thai_moi'], TT.CHO_KH_KIEM_TRA)
+        self.assertEqual((anh.LoaiAnh, anh.PhienBanAnh, anh.CoWatermark),
+                         (LoaiAnh.DA_HAU_KY, 1, 1))
+        self.assertTrue(kho.exists(anh.DuongDanAnh))
+        self.assertTrue(kho.exists(services.duong_dan_goc(anh.DuongDanAnh)))
 
     def test_ten_trung_voi_anh_da_co_bi_chan(self):
         bk = self.tao_booking(self.goi_gh, TT.DA_CHUP)

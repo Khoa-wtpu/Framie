@@ -12,7 +12,7 @@ from bookings.models import Booking, LichSuTrangThaiBooking   # Booking và lị
 from core.constants import BenThucHien, LoaiAnh, TrangThaiBooking as TT   # hằng số dùng chung
 from delivery import services                                  # hàm nghiệp vụ cần kiểm tra
 from delivery.models import Anh                                # bảng ảnh
-from delivery.tests import _NenAnh                             # lớp nền có sẵn của N4/N5 (tạo Khách, Nhiếp ảnh gia, gói, hàm tao_booking, tao_anh)
+from delivery.tests import _NenAnh, tep_anh                             # lớp nền có sẵn của N4/N5 (tạo Khách, Nhiếp ảnh gia, gói, hàm tao_booking, tao_anh)
 from notifications.models import ThongBao                      # bảng thông báo
 
 User = get_user_model()                                        # lấy model User
@@ -143,11 +143,19 @@ class ChonAnhServiceTests(_NenChonAnh):                        # nghiệp vụ c
         bk2.refresh_from_db()  # đọc lại dữ liệu mới nhất từ database
         self.assertEqual(bk2.TrangThai, TT.CHO_KH_CHON_ANH)  # kiểm tra hai giá trị bằng nhau
 
-    def test_goi_toan_bo_bat_dau_hau_ky_duoc(self):            # gói toàn bộ: Chờ hậu kỳ -> Đang hậu kỳ
-        bk = self.tao_booking(self.goi_tb, TT.CHO_HAU_KY)  # tạo Booking ở trạng thái cần thử
-        services.bat_dau_hau_ky(bk.pk, self.nag_user)  # gọi hàm Nhiếp ảnh gia bắt đầu hậu kỳ
-        bk.refresh_from_db()  # đọc lại dữ liệu mới nhất từ database
-        self.assertEqual(bk.TrangThai, TT.DANG_HAU_KY)  # kiểm tra hai giá trị bằng nhau
+    def test_goi_toan_bo_bat_dau_hau_ky_duoc(self):            # gói toàn bộ: bắt đầu hậu kỳ rồi tải trực tiếp ảnh đã hậu kỳ
+        bk = self.tao_booking(self.goi_tb, TT.CHO_HAU_KY)       # T8 đưa gói toàn bộ vào Chờ hậu kỳ, chưa có ảnh gốc
+        services.bat_dau_hau_ky(bk.pk, self.nag_user)          # NAG bấm "Bắt đầu hậu kỳ"
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, TT.DANG_HAU_KY)
+
+        ket_qua = services.tai_anh_len(bk.pk, self.nag_user, [tep_anh('anh-hoan-thien.jpg')])
+        bk.refresh_from_db()
+        anh = Anh.objects.get(MaBooking=bk)
+        self.assertEqual(bk.TrangThai, TT.CHO_KH_KIEM_TRA)
+        self.assertEqual(ket_qua['trang_thai_moi'], TT.CHO_KH_KIEM_TRA)
+        self.assertEqual((anh.LoaiAnh, anh.PhienBanAnh, anh.CoWatermark),
+                         (LoaiAnh.DA_HAU_KY, 1, 1))
 
 
 class ChonAnhViewTests(_NenChonAnh):                           # trang web của UC5.4
@@ -237,6 +245,15 @@ class ChonAnhViewTests(_NenChonAnh):                           # trang web của
 
 
 class BatDauHauKyViewTests(_NenChonAnh):                       # nút "Bắt đầu hậu kỳ" của Nhiếp ảnh gia
+    def test_goi_toan_bo_hien_huong_dan_tai_anh_da_hau_ky(self):
+        bk = self.tao_booking(self.goi_tb, TT.CHO_HAU_KY)
+        self.client.force_login(self.nag_user)
+        trang = self.client.get(reverse('tai_anh_len', args=[bk.pk]))
+        self.assertEqual(trang.status_code, 200)
+        self.assertContains(trang, 'sau khi bấm')
+        self.assertContains(trang, 'bạn tải lên toàn bộ ảnh đã hậu kỳ')
+        self.assertNotContains(trang, 'bạn hậu kỳ tất cả ảnh đã tải lên')
+
     def test_trang_tai_anh_hien_nut_khi_cho_hau_ky(self):  # tên test cho biết tình huống đang kiểm tra
         bk = self.tao_booking_cho_chon()  # tạo Booking ở Chờ Khách hàng lựa chọn ảnh, kèm sẵn các ảnh mẫu
         services.luu_lua_chon(bk.pk, self.kh, self.ma(1, 2))  # gọi hàm lưu lựa chọn ảnh

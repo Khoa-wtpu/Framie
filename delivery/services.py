@@ -117,6 +117,26 @@ def _them_anh_goc(kho, booking, ds_tep, da_luu):               # giai đoạn 1:
 
 
 def _them_ban_hau_ky(kho, booking, ds_tep, da_luu, xoa_sau):   # giai đoạn 2: tải ảnh đã hậu kỳ (ghi đè ảnh cũ, chỉ giữ bản mới nhất)
+    # Gói hậu kỳ toàn bộ đi thẳng từ "Đang hậu kỳ" mà chưa có bước tải ảnh gốc.
+    # Vì vậy lượt tải đầu tiên của gói này tạo bản ghi ảnh mới, không ghép theo tên ảnh gốc.
+    if (booking.MaGoi.LoaiHauKy == LoaiHauKy.TOAN_BO
+            and not Anh.objects.filter(MaBooking=booking).exists()):
+        da_co_trong_luot, trung = set(), []
+        for tep in ds_tep:
+            khoa = _khoa_ten(tep.name)
+            if khoa in da_co_trong_luot:
+                trung.append(tep.name)
+            da_co_trong_luot.add(khoa)
+        if trung:
+            raise LoiTaiAnh('Tên ảnh bị trùng trong lần tải này: ' + ', '.join(trung[:10]))
+        for tep in ds_tep:
+            duong_dan, kich_thuoc, dinh_dang = _luu_hai_ban(kho, booking, tep, da_luu)
+            Anh.objects.create(
+                MaBooking=booking, TenAnh=Path(tep.name).name[:255], DuongDanAnh=duong_dan,
+                DinhDangAnh=dinh_dang, KichThuocAnh=kich_thuoc, LoaiAnh=LoaiAnh.DA_HAU_KY,
+                PhienBanAnh=1, CoWatermark=1, DuocChonHauKy=0, NgayTaiLen=timezone.now())
+        return TrangThaiBooking.CHO_KH_KIEM_TRA
+
     can = {_khoa_ten(a.TenAnh): a for a in anh_can_hau_ky(booking)}
     la, lap, thay = [], set(), []
     for tep in ds_tep:
@@ -175,6 +195,7 @@ def tai_anh_len(ma_booking, nag_user, ds_tep):                 # bước 5-8 c�
         _xoa_tep(kho, da_luu)
         raise LoiTaiAnh('Không thể lưu ảnh sau khi xử lý, vui lòng thực hiện tải ảnh lại.')
     except Exception as loi:                                  # Pillow/decoder có thể ném SyntaxError hoặc lỗi ngoài dự kiến
+        logger.exception('Lỗi bất ngờ khi tải ảnh lên Booking #%s', ma_booking)
         _xoa_tep(kho, da_luu)
         raise LoiTaiAnh('Không thể lưu ảnh sau khi xử lý, vui lòng thực hiện tải ảnh lại.') from loi
 

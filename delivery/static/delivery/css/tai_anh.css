@@ -24,3 +24,6 @@
   display: block;
   width: 100%;
 }
+.tai-anh__tien-trinh[hidden] {
+  display: none;
+}
