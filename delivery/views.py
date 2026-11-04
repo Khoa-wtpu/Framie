@@ -8,9 +8,11 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
+from django.db import DatabaseError                            # N8: bắt lỗi database khi tải ảnh (ngoại lệ 2a)
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone                              # N8: đổi hạn thanh toán sang giờ địa phương để hiện cho Khách
 from django.views.decorators.http import require_POST          # N6: chỉ nhận phương thức POST (bấm nút), gõ địa chỉ trực tiếp thì báo 405
 
 from accounts.permissions import chi_khach_hang                # N6: chỉ vai trò Khách hàng (chưa đăng nhập -> trang đăng nhập; sai vai trò -> 403)
@@ -207,3 +209,44 @@ def yeu_cau_chinh_sua(request, ma_booking):                    # trang UC5.5
         'so_lan_toi_da': services.SO_LAN_CHINH_SUA_TOI_DA, 'so_lan_con_lai': con_lai,  # dữ liệu gửi sang template (2)
         'so_lan_da_dung': services.SO_LAN_CHINH_SUA_TOI_DA - con_lai,  # dữ liệu gửi sang template (3)
         'lich_su': YeuCauChinhSua.objects.filter(MaBooking=booking).order_by('SoLanYeuCau')})   # lịch sử các lần đã yêu cầu
+
+
+# =====================================================================
+# N8 / UC5.6: Khách hàng xác nhận hoàn tất bàn giao
+# =====================================================================
+@chi_khach_hang                                                # chỉ Khách hàng mới vào được trang này
+def xac_nhan_ban_giao(request, ma_booking):                    # trang UC5.6
+    booking = get_object_or_404(                               # bước 1: chỉ mở được Booking của chính mình
+        Booking.objects.select_related('MaGoi', 'MaNhiepAnhGia'), pk=ma_booking, MaKhachHang=request.user)  # lấy kèm Gói và Nhiếp ảnh gia
+    hoi_xac_nhan = False                                       # True = hiện hộp "Bạn có chắc chắn xác nhận?" (bước xác nhận)
+
+    if request.method == 'POST':                               # Khách bấm một trong các nút
+        hanh_dong = request.POST.get('hanh_dong')              # nút nào: hoi / xac_nhan
+        try:                                                   # bắt lỗi nghiệp vụ
+            if hanh_dong == 'hoi':                             # bước 4: Khách bấm "Xác nhận hoàn tất bàn giao" -> hỏi lại cho chắc
+                ly_do = services.ly_do_khong_xac_nhan_duoc(booking)   # kiểm tra có được xác nhận không
+                if ly_do:                                      # không được
+                    raise services.LoiBanGiao(ly_do)           # báo lỗi
+                hoi_xac_nhan = True                            # hiện hộp xác nhận, CHƯA ghi gì
+            elif hanh_dong == 'xac_nhan':                      # Khách bấm "Có, xác nhận hoàn tất bàn giao"
+                kq = services.xac_nhan_hoan_tat_ban_giao(booking.pk, request.user)   # bước 5-7: tạo Bàn giao, khoản 60%, đổi trạng thái, thông báo
+                messages.success(request, f'Đã xác nhận hoàn tất bàn giao. Vui lòng thanh toán {services.dinh_dang_tien(kq["so_tien"])} '  # báo thành công kèm số tiền
+                                          f'(phần còn lại) trước {timezone.localtime(kq["han"]).strftime("%d/%m/%Y %H:%M")}.')   # báo thành công kèm số tiền và hạn
+                return redirect('xac_nhan_ban_giao', ma_booking=booking.pk)   # tránh gửi lại khi F5
+            else:                                              # nút lạ
+                messages.error(request, 'Thao tác không hợp lệ.')   # báo thao tác lạ
+        except services.LoiBanGiao as loi:                     # lỗi nghiệp vụ: 5a, 6a, sai trạng thái...
+            messages.error(request, str(loi))                  # hiện lỗi cho Khách
+
+    booking.refresh_from_db()                                  # đọc lại trạng thái mới nhất
+    ly_do = services.ly_do_khong_xac_nhan_duoc(booking)        # None = được xác nhận; có chữ = không được
+    try:                                                       # bước 2: tải các ảnh đã hậu kỳ có watermark
+        anhs = list(services.anh_de_chinh_sua(booking))        # danh sách ảnh
+    except DatabaseError:                                      # ngoại lệ 2a: không tải được ảnh
+        anhs = []                                              # không có ảnh để hiện
+        messages.error(request, 'Không thể tải ảnh hậu kỳ, vui lòng thử lại.')   # báo cho Khách
+    return render(request, 'delivery/xac_nhan_ban_giao.html', {  # hiển thị trang xác nhận bàn giao
+        'booking': booking, 'ly_do': ly_do, 'anhs': anhs, 'hoi_xac_nhan': hoi_xac_nhan,  # dữ liệu gửi sang template (1)
+        'so_tien_con_lai': services.dinh_dang_tien(services.so_tien_con_lai(booking)),   # số tiền 60% để báo trước cho Khách
+        'so_lan_chinh_sua_con_lai': services.so_lan_chinh_sua_con_lai(booking),   # còn mấy lần yêu cầu chỉnh sửa (nhánh 4a)
+        'da_xac_nhan': booking.TrangThai == TrangThaiBooking.CHO_XAC_NHAN_THANH_TOAN})   # đã xác nhận, đang chờ thanh toán

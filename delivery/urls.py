@@ -1,4 +1,4 @@
-# delivery/urls.py - N4 / UC5.3, N6 / UC5.4, N7 / UC5.5
+# delivery/urls.py - N4 / UC5.3, N6 / UC5.4, N7 / UC5.5, N8 / UC5.6
 from django.urls import path
 
 from . import views
@@ -9,4 +9,5 @@ urlpatterns = [
     path('booking/<int:ma_booking>/chon-anh/', views.chon_anh_hau_ky, name='chon_anh_hau_ky'),   # N6: Khách hàng chọn ảnh cần hậu kỳ
     path('booking/<int:ma_booking>/bat-dau-hau-ky/', views.bat_dau_hau_ky, name='bat_dau_hau_ky'),   # N6: Nhiếp ảnh gia bấm bắt đầu hậu kỳ
     path('booking/<int:ma_booking>/yeu-cau-chinh-sua/', views.yeu_cau_chinh_sua, name='yeu_cau_chinh_sua'),   # N7: Khách hàng yêu cầu chỉnh sửa ảnh
+    path('booking/<int:ma_booking>/xac-nhan-ban-giao/', views.xac_nhan_ban_giao, name='xac_nhan_ban_giao'),   # N8: Khách hàng xác nhận hoàn tất bàn giao
 ]

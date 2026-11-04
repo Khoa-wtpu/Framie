@@ -18,7 +18,9 @@ from core.constants import (BenThucHien, LoaiAnh, LoaiHauKy, LuuTruAnh,
                             TrangThaiBooking, VaiTro)
 from accounts.permissions import lay_vai_tro
 from core.constants import DinhDangTep                         # JPG / JPEG / PNG
-from delivery.models import Anh, YeuCauChinhSua, YeuCauChinhSua_Anh   # N7: thêm bảng chi tiết từng ảnh cần sửa
+from delivery.models import Anh, BanGiao, YeuCauChinhSua, YeuCauChinhSua_Anh   # N7: bảng yêu cầu chỉnh sửa; N8: thêm bảng Bàn giao
+from core.constants import LoaiThanhToan, TrangThaiThanhToan   # N8: loại và trạng thái của khoản thanh toán 60%
+from payments.models import ThanhToan, tinh_so_tien            # N8: bảng Thanh toán và hàm tính số tiền (cọc 40%, còn lại 60%)
 from delivery.watermark import GIOI_HAN_GIAY, chen_watermark   # chèn watermark (bước 6) và mốc 5 giây của N5
 from notifications.services import gui_thong_bao               # hàm thông báo dùng chung (của Phanh)
 
@@ -426,3 +428,64 @@ def gui_yeu_cau_chinh_sua(ma_booking, khach, nhan_xet, ds_anh):   # bước 4-6 
         logger.error('UC5.5: không gửi được thông báo yêu cầu chỉnh sửa lần %s của Booking %s (MaYeuCauChinhSua=%s), cần gửi lại',
                      so_lan, booking.pk, yeu_cau.pk)           # ghi nhận để xử lý lại (đặc tả chưa có cột lưu trạng thái này)
     return {'so_lan': so_lan, 'so_anh': len(chuan), 'da_bao_nag': da_bao_nag}   # trả kết quả cho view
+
+
+# =====================================================================
+# N8 / UC5.6: Khách hàng xác nhận hoàn tất bàn giao
+# =====================================================================
+class LoiBanGiao(Exception):                                   # lỗi nghiệp vụ của UC5.6: view bắt lại để hiện cho Khách hàng
+    pass                                                       # không cần thêm gì, chỉ dùng làm "nhãn" cho lỗi
+
+
+def so_tien_con_lai(booking):                                  # số tiền khoản thanh toán 60% còn lại (hàm tính của payments)
+    return tinh_so_tien(booking.TongGiaTri, LoaiThanhToan.PHAN_CON_LAI)   # Tổng giá trị - tiền cọc 40% (làm tròn)
+
+
+def dinh_dang_tien(so_tien):                                   # 600000 -> "600.000 VNĐ" để hiện cho Khách
+    return f'{int(so_tien):,}'.replace(',', '.') + ' VNĐ'      # đổi dấu phẩy ngăn cách nghìn thành dấu chấm
+
+
+def ly_do_khong_xac_nhan_duoc(booking):                        # trả về câu báo nếu Khách KHÔNG xác nhận bàn giao được lúc này, hoặc None nếu được
+    if booking.TrangThai in (TrangThaiBooking.CHO_XAC_NHAN_THANH_TOAN, TrangThaiBooking.HOAN_THANH):   # đã xác nhận rồi
+        return 'Bạn đã xác nhận hoàn tất bàn giao cho Booking này.'  # báo: đã xác nhận rồi
+    if booking.TrangThai == TrangThaiBooking.DANG_HAU_KY:      # Nhiếp ảnh gia đang hậu kỳ
+        return 'Nhiếp ảnh gia đang hậu kỳ ảnh, chưa đến lúc kiểm tra và xác nhận bàn giao.'  # báo: đang hậu kỳ
+    if booking.TrangThai != TrangThaiBooking.CHO_KH_KIEM_TRA:  # Pre-condition: Nhiếp ảnh gia đã tải ảnh hậu kỳ lên (Chờ Khách hàng kiểm tra)
+        return f'Booking đang ở trạng thái "{booking.TrangThai}", chưa đến lúc xác nhận bàn giao.'  # báo: chưa đến lúc xác nhận
+    return None                                                # mọi điều kiện đều ổn: được xác nhận
+
+
+def xac_nhan_hoan_tat_ban_giao(ma_booking, khach):             # bước 4-7 của UC5.6
+    buoc = 'ban_giao'                                          # đang làm bước nào, để báo đúng lỗi 5a hay 6a
+    try:                                                       # bắt lỗi hệ thống để báo cho Khách
+        with transaction.atomic():                             # 1 giao dịch: Bàn giao + Thanh toán 60% + đổi trạng thái cùng thành công hoặc cùng hủy
+            try:                                               # lấy Booking của chính Khách này
+                booking = (Booking.objects.select_for_update().select_related('MaGoi')   # khóa dòng để hai lần bấm cùng lúc không tạo trùng
+                           .get(pk=ma_booking, MaKhachHang=khach))  # phải là Booking của chính Khách này
+            except Booking.DoesNotExist:                       # không có hoặc của người khác
+                raise LoiBanGiao('Booking không tồn tại hoặc không thuộc về bạn.')  # báo: Booking không tồn tại hoặc của người khác
+            ly_do = ly_do_khong_xac_nhan_duoc(booking)         # kiểm tra trạng thái
+            if ly_do:                                          # có lý do cấm
+                raise LoiBanGiao(ly_do)                        # báo lỗi và dừng
+            bay_gio = timezone.now()                           # mốc giờ xác nhận
+            BanGiao.objects.create(MaBooking=booking, NgayXacNhan=bay_gio)   # bước 5: tạo bản ghi Bàn giao, trạng thái mặc định "Hoàn tất bàn giao"
+            ThanhToan.objects.create(                          # tạo khoản thanh toán 60% còn lại
+                MaBooking=booking, LoaiThanhToan=LoaiThanhToan.PHAN_CON_LAI,   # loại: phần còn lại
+                SoTien=so_tien_con_lai(booking), TrangThai=TrangThaiThanhToan.CHO_XAC_NHAN_60)   # số tiền 60%, trạng thái chờ xác nhận
+            buoc = 'booking'                                   # từ đây là bước 6: đổi trạng thái Booking
+            booking = chuyen_trang_thai_booking(booking, TrangThaiBooking.CHO_XAC_NHAN_THANH_TOAN, BenThucHien.KHACH_HANG)   # HÀM T2: tự gán hạn thanh toán 2 ngày và ghi lịch sử
+    except ValidationError as loi:                             # hàm của Tuyền từ chối bước chuyển
+        raise LoiBanGiao(' '.join(loi.messages))               # đổi thành lỗi của UC5.6 để view hiển thị
+    except DatabaseError:                                      # lỗi database: hoàn tác cả giao dịch
+        if buoc == 'ban_giao':                                 # ngoại lệ 5a: lỗi khi tạo Bàn giao / khoản thanh toán
+            raise LoiBanGiao('Không thể cập nhật trạng thái bàn giao, vui lòng thực hiện lại thao tác.')  # ngoại lệ 5a: báo lỗi tạo Bàn giao
+        raise LoiBanGiao('Không thể cập nhật Booking sang trạng thái chờ thanh toán phần còn lại, vui lòng thử lại.')   # ngoại lệ 6a
+    so_tien = so_tien_con_lai(booking)                         # số tiền phải thanh toán
+    han_text = timezone.localtime(booking.HanThanhToanConLai).strftime('%d/%m/%Y %H:%M')   # hạn thanh toán (2 ngày) dạng chữ
+    gui_thong_bao(khach, 'Vui lòng thanh toán phần còn lại',   # bước 6: báo Khách hàng thanh toán 60%
+                  f'Booking #{booking.pk}: bạn đã xác nhận hoàn tất bàn giao. Vui lòng thanh toán {dinh_dang_tien(so_tien)} '
+                  f'(phần còn lại) trước {han_text}.', booking=booking)  # nối tiếp câu báo thành công
+    gui_thong_bao(booking.MaNhiepAnhGia.MaTaiKhoan, 'Khách hàng đã xác nhận hoàn tất bàn giao',   # bước 7: báo Nhiếp ảnh gia
+                  f'Booking #{booking.pk}: Khách hàng đã xác nhận hoàn tất bàn giao. '
+                  f'Đang chờ Khách hàng thanh toán phần còn lại ({dinh_dang_tien(so_tien)}).', booking=booking)  # nối tiếp nội dung thông báo
+    return {'so_tien': so_tien, 'han': booking.HanThanhToanConLai}   # trả kết quả cho view
