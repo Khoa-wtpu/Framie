@@ -1,0 +1,57 @@
+{% extends "base.html" %}{# N11 - UC6.1: Khách hàng đánh giá nhiếp ảnh gia sau khi Booking Hoàn thành #}
+{% load ui static danh_gia %}
+{% block title %}Đánh giá nhiếp ảnh gia{% endblock %}
+{% block content %}
+<div class="container stack dg-trang">
+  <header>
+    <h1>Đánh giá nhiếp ảnh gia</h1>
+    <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>
+    <p>Nhiếp ảnh gia: <strong>{{ ten_nag }}</strong></p>
+  </header>
+
+  {% if danh_gia %}{# đã đánh giá: chỉ xem lại, không sửa (mỗi Booking một lần) #}
+    <section class="panel stack">
+      <h2>Đánh giá của bạn</h2>
+      <p>{% sao danh_gia.Diem %} <strong>{{ danh_gia.Diem }}/5</strong> · <span class="muted">{{ danh_gia.NgayDanhGia|date:"d/m/Y H:i" }}</span></p>
+      {% if danh_gia.NhanXet %}<p>{{ danh_gia.NhanXet|linebreaksbr }}</p>{% else %}<p class="muted">Bạn không để lại nhận xét.</p>{% endif %}
+      <p class="muted">Mỗi Booking chỉ được đánh giá một lần. Đánh giá này đang hiển thị công khai trên hồ sơ nhiếp ảnh gia.</p>
+      <p><a class="btn btn--secondary" href="{% url 'photographer_reviews' booking.MaNhiepAnhGia_id %}">Xem đánh giá công khai</a></p>
+    </section>
+  {% elif ly_do %}{# Booking chưa Hoàn thành #}
+    {% include "includes/alert.html" with level="info" text=ly_do %}
+  {% else %}
+    <form method="post" id="form-danh-gia" class="panel stack" novalidate>
+      {% csrf_token %}
+      <fieldset class="field{% if form.diem.errors %} has-error{% endif %} dg-chon-sao">
+        <legend class="field__label">Số sao<span class="field__req" aria-hidden="true"> *</span></legend>
+        <div class="dg-sao-chon">{# các ô radio xếp 5 -> 1, CSS đảo chiều để hiện 1 -> 5 và tô sáng các sao bên trái #}
+          {% for i in "54321" %}
+            <input type="radio" name="diem" id="sao-{{ i }}" value="{{ i }}"{% if diem_chon|stringformat:"d" == i %} checked{% endif %}>
+            <label for="sao-{{ i }}" title="{{ i }} sao"><span aria-hidden="true">★</span><span class="dg-an">{{ i }} sao</span></label>
+          {% endfor %}
+        </div>
+        {% for loi in form.diem.errors %}<p class="field__error">{{ loi }}</p>{% endfor %}
+      </fieldset>
+
+      <div class="field{% if form.nhan_xet.errors %} has-error{% endif %}">
+        <label class="field__label" for="nhan-xet">Nhận xét (không bắt buộc, tối đa {{ toi_da }} ký tự)</label>
+        <textarea class="input" id="nhan-xet" name="nhan_xet" rows="5" maxlength="{{ toi_da }}"
+                  placeholder="Chia sẻ trải nghiệm của bạn với nhiếp ảnh gia...">{{ nhan_xet_nhap }}</textarea>
+        <p class="field__hint"><span id="dem-ky-tu">0</span>/{{ toi_da }} ký tự</p>
+        {% for loi in form.nhan_xet.errors %}<p class="field__error">{{ loi }}</p>{% endfor %}
+      </div>
+
+      <p class="muted">Đánh giá sẽ hiển thị công khai trên hồ sơ nhiếp ảnh gia và chỉ gửi được một lần cho mỗi Booking.</p>
+      <div><button class="btn btn--primary" type="submit">Gửi đánh giá</button></div>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'reviews/css/danh_gia.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'reviews/js/danh_gia.js' %}" defer></script>
+{% endblock %}
