@@ -10,18 +10,27 @@
     <p>Tìm theo từ khóa hoặc ID Nhiếp ảnh gia, sau đó dùng bộ lọc để thu hẹp kết quả.</p>
   </header>
 
-  <form class="tim__form" method="get" action="{% url 'search' %}" novalidate>
-    <div class="tim__hang">
-      <label class="tim__o-tim">
-        <span class="tim__an">Từ khóa hoặc ID Nhiếp ảnh gia</span>
-        {{ form.q|add_class:"input" }}
-      </label>
-      <button class="btn btn--primary" type="submit">Tìm kiếm</button>
-    </div>
+  <form class="tim__form" id="form-tim-kiem" method="get" action="{% url 'search' %}" novalidate>
+    <div class="tim__tim-kiem">
+      {# Một ô duy nhất: [kính lúp | ô nhập | nút Bộ lọc | nút Tìm kiếm]. Nút Bộ lọc nằm BÊN TRONG ô, phía bên phải. #}
+      <div class="tim__pill">
+        <svg class="tim__bieu-tuong" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <label class="tim__o-tim">
+          <span class="tim__an">Từ khóa hoặc ID Nhiếp ảnh gia</span>
+          {{ form.q|add_class:"tim__input" }}
+        </label>
+        <button class="tim__nut-loc" id="nut-bo-loc" type="button" aria-expanded="false" aria-controls="bang-bo-loc">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+          <span class="tim__nhan">Bộ lọc</span>{% if so_bo_loc %}<span class="tim__so-loc">{{ so_bo_loc }}</span>{% endif %}
+        </button>
+        <button class="tim__gui" type="submit">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <span class="tim__nhan">Tìm kiếm</span>
+        </button>
+      </div>
 
-    <details class="tim__loc"{% if so_bo_loc or loi %} open{% endif %}>
-      <summary class="btn btn--secondary btn--sm">Bộ lọc{% if so_bo_loc %} ({{ so_bo_loc }}){% endif %}</summary>
-      <div class="tim__loc-noi-dung panel">
+      {# Bảng bộ lọc: JS thu gọn lại và mở bằng nút Bộ lọc; không có JS thì luôn hiện sẵn để vẫn dùng được. #}
+      <div class="tim__bang" id="bang-bo-loc" role="group" aria-label="Bộ lọc nhiếp ảnh gia"{% if loi %} data-mo="1"{% endif %}>
         <fieldset class="tim__nhom">
           <legend>Loại hình chụp</legend>
           <div class="tim__chon">{% for c in form.loai_hinh %}<label class="tim__muc">{{ c.tag }}<span>{{ c.choice_label }}</span></label>{% endfor %}</div>
@@ -47,7 +56,7 @@
           <button class="btn btn--primary" type="submit">Áp dụng</button>
         </div>
       </div>
-    </details>
+    </div>
 
     {% for e in loi %}{% include "includes/alert.html" with level="danger" text=e %}{% endfor %}
 
@@ -71,7 +80,7 @@
         {% for the in cac_the %}
         <li>
           <article class="card tim__the{% if the.href %} card--link{% endif %}">
-            <div class="card__media">{% if the.anh %}<img src="{{ the.anh }}" alt="Ảnh đại diện của {{ the.ten }}" loading="lazy">{% endif %}</div>
+            <div class="card__media">{% if the.anh %}<img src="{{ the.anh }}" alt="Ảnh đại diện của {{ the.ten }}" loading="lazy">{% endif %}{% if the.href %}<span class="tim__xem" aria-hidden="true">Xem hồ sơ →</span>{% endif %}</div>
             <div class="card__body">
               <h2 class="card__title">{% if the.href %}<a class="card__link" href="{{ the.href }}">{{ the.ten }}</a>{% else %}{{ the.ten }}{% endif %}</h2>
               <p class="card__meta">ID: {{ the.ma }}</p>
