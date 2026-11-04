@@ -1,6 +1,6 @@
 {# P10: nút Nhắn tin. Dùng class nút có sẵn (README_GIAO_DIEN mục 3), không tự viết CSS. #}
 {% if kieu == 'form' %}
-  <form method="post" action="{% url 'khoi_tao_cuoc_tro_chuyen' ma_nhiep_anh_gia %}" onsubmit="this.querySelector('button').classList.add('is-loading')">{# POST + CSRF; is-loading theo README giao diện #}
+  <form method="post" action="{% url 'khoi_tao_cuoc_tro_chuyen' ma_nhiep_anh_gia %}">{# POST + CSRF. is-loading và chặn bấm đúp do static/js/app.js xử lý chung #}
     {% csrf_token %}
     <button class="btn btn--secondary" type="submit">Nhắn tin</button>
   </form>

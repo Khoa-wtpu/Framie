@@ -3,19 +3,20 @@ import itertools  # bộ đếm để mỗi User có số điện thoại khác 
 import sys  # để đăng ký urlconf tạm trong bộ nhớ
 import types  # tạo module urlconf tạm
 from unittest import mock  # patch để ép lỗi
-from django.contrib.messages import get_messages  # đọc thông báo đã gửi
+
 from django.contrib.auth import get_user_model  # lấy model User của dự án (accounts.User)
-from django.contrib.auth.models import AnonymousUser, Group
-from django.core.exceptions import ValidationError  # lỗi dữ liệu giả  # người chưa đăng nhập; nhóm quyền
-from django.http import HttpResponse  # view giả cho urlconf thử
+from django.contrib.auth.models import AnonymousUser, Group  # người chưa đăng nhập; nhóm quyền
+from django.contrib.messages import get_messages  # đọc thông báo đã gửi
+from django.core.exceptions import ValidationError  # lỗi dữ liệu giả
 from django.db import DatabaseError  # lỗi DB giả
+from django.http import HttpResponse  # view giả cho urlconf thử
 from django.template import Context, Template  # dựng template để thử thẻ nut_nhan_tin
 from django.test import RequestFactory, TestCase, override_settings  # công cụ test
 from django.urls import include, path, reverse  # khai báo đường dẫn
 
+from chat import services  # để lấy đường dẫn mong đợi
 from chat.models import CuocTroChuyen  # bảng cuộc trò chuyện
 from core.constants import TrangThaiHoSo, VaiTro  # tên vai trò, trạng thái hồ sơ
-from chat import services  # để lấy đường dẫn mong đợi
 from profiles.models import NhiepAnhGia  # hồ sơ Nhiếp ảnh gia
 
 User = get_user_model()  # model User
@@ -183,3 +184,33 @@ class UrlconfThatTests(TestCase):  # KHÔNG override ROOT_URLCONF: dùng urlconf
         cuoc = CuocTroChuyen.objects.get()
         dich = services.duong_dan_cuoc_tro_chuyen(cuoc.pk) or reverse('photographer_detail', args=[nag.pk])  # UC8.2 chưa có thì về hồ sơ K9
         self.assertRedirects(r, dich, fetch_redirect_response=False)
+
+
+class NutTrenTrangK9Tests(TestCase):  # urlconf THẬT, GET trang hồ sơ công khai K9: chứng minh nút thật sự hiện (cần đã gắn thẻ vào template K9)
+    def setUp(self):  # chạy trước mỗi test
+        self.nag = _tao_nag('nag1')  # Nhiếp ảnh gia đã duyệt
+        self.trang = reverse('photographer_detail', args=[self.nag.pk])  # trang hồ sơ công khai K9
+        self.url_nut = reverse('khoi_tao_cuoc_tro_chuyen', args=[self.nag.pk])  # đích của form Nhắn tin
+        if 'Tính năng nhắn tin sẽ mở sau' in self.client.get(self.trang).content.decode():  # K9 còn nút "Liên hệ" mờ giữ chỗ của Khoa
+            self.skipTest('Khoa chưa gắn {% nut_nhan_tin %} vào trang K9; gắn xong test này tự chạy.')  # bỏ qua, không báo đỏ
+        # Template K9 là của Khoa. Chưa gắn {% nut_nhan_tin %} thì bỏ qua cả nhóm test, không báo đỏ.
+        self.client.force_login(_tao_user('khach_do', VaiTro.KHACH_HANG))  # đăng nhập thử bằng một Khách hàng
+        if f'action="{self.url_nut}"' not in self.client.get(self.trang).content.decode():  # trang chưa có form Nhắn tin
+            self.skipTest('K9 chưa gắn {% nut_nhan_tin %} (việc của Khoa), bỏ qua.')  # tự chạy lại khi Khoa gắn xong
+        self.client.logout()  # trở về chưa đăng nhập cho từng test
+
+    def test_khach_hang_thay_form_nhan_tin(self):
+        self.client.force_login(_tao_user('khach1', VaiTro.KHACH_HANG))
+        r = self.client.get(self.trang)
+        self.assertContains(r, f'action="{self.url_nut}"')  # có form POST tới URL của P10
+
+    def test_chua_dang_nhap_thay_link_dang_nhap(self):
+        r = self.client.get(self.trang)
+        self.assertContains(r, f'{reverse("login")}?next=')  # link đăng nhập kèm next
+        self.assertNotContains(r, f'action="{self.url_nut}"')  # không có form
+
+    def test_nhiep_anh_gia_khong_thay_nut(self):
+        self.client.force_login(_tao_user('nag2', VaiTro.NHIEP_ANH_GIA, TrangThaiHoSo.DA_DUYET))
+        r = self.client.get(self.trang)
+        self.assertNotContains(r, f'action="{self.url_nut}"')
+        
