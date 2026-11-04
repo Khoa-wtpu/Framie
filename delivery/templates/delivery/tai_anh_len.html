@@ -8,7 +8,22 @@
     <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaKhachHang.get_full_name }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>
   </header>
 
-  {% if not giai_doan %}
+  {% if cho_bat_dau_hau_ky %}{# N6: Khách đã gửi danh sách (hoặc gói hậu kỳ toàn bộ) -> Nhiếp ảnh gia bắt đầu hậu kỳ #}
+    <section class="panel stack">{# khung bắt đầu hậu kỳ #}
+      <h2>Bắt đầu hậu kỳ</h2>{# tiêu đề khung #}
+      {% if gioi_han %}{# gói giới hạn: có danh sách Khách chọn #}
+        <p>Khách hàng đã chọn <strong>{{ anh_da_chon|length }}</strong> ảnh cần hậu kỳ:</p>{# số ảnh Khách chọn #}
+        <p class="muted">{% for a in anh_da_chon %}{{ a.TenAnh }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{# tên các ảnh Khách chọn #}
+      {% else %}{# gói hậu kỳ toàn bộ: không có bước chọn #}
+        <p>Gói hậu kỳ toàn bộ ảnh: bạn hậu kỳ tất cả ảnh đã tải lên.</p>{# giải thích #}
+      {% endif %}
+      <form method="post" action="{% url 'bat_dau_hau_ky' booking.pk %}">{# gửi POST tới view bat_dau_hau_ky #}
+        {% csrf_token %}{# mã chống giả mạo yêu cầu #}
+        <button class="btn btn--primary" type="submit">Bắt đầu hậu kỳ</button>{# nút bấm #}
+      </form>
+      <p class="muted">Bấm xong, Booking chuyển sang <strong>Đang hậu kỳ</strong> và có hạn 3 ngày để tải ảnh đã hậu kỳ.</p>{# nhắc hạn #}
+    </section>
+  {% elif not giai_doan %}
     {% include "includes/alert.html" with level="info" text="Booking này chưa đến lúc tải ảnh. Chỉ tải được sau khi buổi chụp hoàn tất (Đã chụp) hoặc khi đang hậu kỳ." %}
   {% else %}
     <section class="panel stack">

@@ -228,3 +228,110 @@ def chuyen_thanh_anh_hoan_chinh(booking):                      # N5: ảnh Hoàn
     except (OSError, DatabaseError):
         raise LoiTaiAnh('Không thể chuyển ảnh sang bản hoàn chỉnh, vui lòng thực hiện lại.')
     return len(ds)
+
+
+# =====================================================================
+# N6 / UC5.4: Khách hàng lựa chọn ảnh cần hậu kỳ  +  Nhiếp ảnh gia bấm "Bắt đầu hậu kỳ"
+# =====================================================================
+TRANG_THAI_DA_GUI_DANH_SACH = (                                # các trạng thái SAU bước chọn ảnh: danh sách đã được gửi đi rồi
+    TrangThaiBooking.CHO_HAU_KY, TrangThaiBooking.DANG_HAU_KY, TrangThaiBooking.CHO_KH_KIEM_TRA,  # các trạng thái sau bước chọn ảnh (tiếp theo)
+    TrangThaiBooking.CHO_XAC_NHAN_THANH_TOAN, TrangThaiBooking.HOAN_THANH)  # các trạng thái cuối quy trình
+
+
+class LoiChonAnh(Exception):                                   # lỗi nghiệp vụ của UC5.4: view bắt lại để hiện cho Khách hàng
+    pass                                                       # không cần thêm gì, chỉ dùng làm "nhãn" cho lỗi
+
+
+class LoiBatDauHauKy(Exception):                               # lỗi khi Nhiếp ảnh gia bấm "Bắt đầu hậu kỳ"
+    pass                                                       # không cần thêm gì, chỉ dùng làm "nhãn" cho lỗi
+
+
+def so_anh_toi_da_cua_goi(booking):                            # số ảnh được hậu kỳ tối đa theo gói dịch vụ của Booking
+    return booking.MaGoi.SoAnhHauKyToiDa or 0                  # gói giới hạn luôn có số này (CHECK của DB); phòng khi None thì coi là 0
+
+
+def anh_de_chon(booking):                                      # các ảnh Khách được xem và chọn: ảnh gốc có watermark, còn lưu
+    return Anh.objects.filter(                                 # lấy từ bảng ANH
+        MaBooking=booking, TrangThaiLuuTru=LuuTruAnh.CON_LUU,  # đúng Booking này và file ảnh còn tồn tại
+        LoaiAnh=LoaiAnh.CHUA_HAU_KY).order_by('TenAnh')        # chỉ ảnh "Chưa hậu kỳ", xếp theo tên cho dễ tìm
+
+
+def ly_do_khong_chon_duoc(booking):                            # trả về câu báo lỗi nếu Khách KHÔNG được chọn ảnh lúc này, hoặc None nếu được
+    if booking.MaGoi.LoaiHauKy != LoaiHauKy.GIOI_HAN:          # Pre-condition: gói phải có quy định số ảnh được hậu kỳ
+        return 'Gói dịch vụ của Booking này hậu kỳ toàn bộ ảnh nên không cần lựa chọn ảnh.'   # gói toàn bộ: không có bước chọn
+    if booking.TrangThai in TRANG_THAI_DA_GUI_DANH_SACH:       # đã gửi danh sách cho Nhiếp ảnh gia rồi
+        return 'Danh sách ảnh cần hậu kỳ đã được gửi cho Nhiếp ảnh gia, bạn không thể chọn lại.'  # báo: danh sách đã gửi rồi
+    if booking.TrangThai != TrangThaiBooking.CHO_KH_CHON_ANH:  # chưa đến bước chọn ảnh (hoặc Booking đã hủy...)
+        return f'Booking đang ở trạng thái "{booking.TrangThai}", chưa đến lúc lựa chọn ảnh.'  # báo: chưa đến bước chọn ảnh
+    if booking.HanChonAnh and timezone.now() > booking.HanChonAnh:   # N6: chỉ được chọn trong hạn 2 ngày
+        return 'Đã quá hạn lựa chọn ảnh (2 ngày kể từ khi ảnh được tải lên), không thể chọn thêm.'  # báo: đã quá hạn 2 ngày
+    return None                                                # mọi điều kiện đều ổn: được chọn
+
+
+def _lay_booking_de_chon(ma_booking, khach):                   # khóa Booking của Khách và kiểm tra được chọn ảnh; PHẢI gọi trong transaction.atomic
+    try:                                                       # thử lấy Booking
+        booking = (Booking.objects.select_for_update().select_related('MaGoi')   # khóa dòng để 2 lần bấm cùng lúc không đè nhau
+                   .get(pk=ma_booking, MaKhachHang=khach))     # phải là Booking của chính Khách này
+    except Booking.DoesNotExist:                               # không có hoặc của người khác
+        raise LoiChonAnh('Booking không tồn tại hoặc không thuộc về bạn.')  # báo: Booking không tồn tại hoặc của người khác
+    ly_do = ly_do_khong_chon_duoc(booking)                     # kiểm tra trạng thái, gói, hạn chót
+    if ly_do:                                                  # có lý do cấm
+        raise LoiChonAnh(ly_do)                                # báo lỗi và dừng
+    return booking                                             # hợp lệ: trả Booking đã khóa
+
+
+def _ghi_lua_chon(booking, ds_ma_anh):                         # bước 4: ghi danh sách ảnh được chọn vào cột DuocChonHauKy; trả về số ảnh đã chọn
+    ds = set(ds_ma_anh)                                        # bỏ mã trùng (nếu có)
+    toi_da = so_anh_toi_da_cua_goi(booking)                    # giới hạn của gói
+    if len(ds) > toi_da:                                       # ngoại lệ 4b: chọn vượt quá số ảnh được phép
+        raise LoiChonAnh(f'Bạn đã chọn {len(ds)} ảnh, vượt quá giới hạn {toi_da} ảnh của gói dịch vụ. '  # ngoại lệ 4b: báo chọn vượt giới hạn
+                         f'Vui lòng bỏ bớt {len(ds) - toi_da} ảnh.')  # nối tiếp câu báo: số ảnh cần bỏ bớt
+    hop_le = set(anh_de_chon(booking).filter(pk__in=ds).values_list('pk', flat=True))   # những mã thật sự là ảnh của Booking này
+    if hop_le != ds:                                           # có mã lạ (ảnh Booking khác, ảnh đã hậu kỳ...) -> không tin dữ liệu gửi lên
+        raise LoiChonAnh('Có ảnh được chọn không thuộc Booking này hoặc không còn để chọn, vui lòng tải lại trang.')  # báo: có mã ảnh không hợp lệ
+    anh_de_chon(booking).filter(pk__in=ds).update(DuocChonHauKy=1)       # các ảnh được chọn -> đánh dấu 1
+    anh_de_chon(booking).exclude(pk__in=ds).update(DuocChonHauKy=0)      # các ảnh còn lại -> bỏ đánh dấu (để lưu lại nhiều lần được)
+    return len(ds)                                             # số ảnh đã chọn
+
+
+def luu_lua_chon(ma_booking, khach, ds_ma_anh):                # bước 3-4: lưu lựa chọn (chưa gửi cho Nhiếp ảnh gia); trả về số ảnh đã chọn
+    try:                                                       # bắt lỗi hệ thống để báo cho Khách
+        with transaction.atomic():                             # 1 giao dịch: lỗi ở đâu thì hoàn tác hết
+            booking = _lay_booking_de_chon(ma_booking, khach)  # khóa Booking và kiểm tra quyền, trạng thái, hạn
+            return _ghi_lua_chon(booking, ds_ma_anh)           # ghi lựa chọn và trả số ảnh
+    except DatabaseError:                                      # lỗi database
+        raise LoiChonAnh('Không thể lưu danh sách ảnh được lựa chọn, vui lòng thực hiện lại thao tác.')   # ngoại lệ 6a
+
+
+def gui_danh_sach_hau_ky(ma_booking, khach):                   # bước 5-6: Khách xác nhận, gửi danh sách ĐÃ LƯU cho Nhiếp ảnh gia
+    try:                                                       # bắt lỗi hệ thống để báo cho Khách
+        with transaction.atomic():                             # 1 giao dịch: đổi trạng thái + ghi lịch sử cùng thành công hoặc cùng hủy
+            booking = _lay_booking_de_chon(ma_booking, khach)  # khóa Booking và kiểm tra quyền, trạng thái, hạn
+            so_chon = anh_de_chon(booking).filter(DuocChonHauKy=1).count()   # đếm ảnh đã lưu là "được chọn"
+            if so_chon == 0:                                   # chưa chọn ảnh nào
+                raise LoiChonAnh('Vui lòng chọn ít nhất một ảnh cần hậu kỳ.')  # báo: chưa chọn ảnh nào
+            if so_chon > so_anh_toi_da_cua_goi(booking):       # phòng dữ liệu cũ vượt giới hạn
+                raise LoiChonAnh('Số ảnh đã chọn vượt quá giới hạn của gói dịch vụ, vui lòng bỏ bớt ảnh.')  # báo: vượt giới hạn (dữ liệu cũ)
+            chuyen_trang_thai_booking(booking, TrangThaiBooking.CHO_HAU_KY, BenThucHien.KHACH_HANG)   # HÀM T2: Chờ KH chọn ảnh -> Chờ hậu kỳ, tự ghi lịch sử
+    except ValidationError as loi:                             # hàm của Tuyền từ chối bước chuyển
+        raise LoiChonAnh(' '.join(loi.messages))               # đổi thành lỗi của UC5.4 để view hiển thị
+    except DatabaseError:                                      # lỗi database
+        raise LoiChonAnh('Không thể lưu danh sách ảnh được lựa chọn, vui lòng thực hiện lại thao tác.')   # ngoại lệ 6a
+    gui_thong_bao(booking.MaNhiepAnhGia.MaTaiKhoan, 'Khách hàng đã chọn ảnh cần hậu kỳ',   # bước 6: báo Nhiếp ảnh gia
+                  f'Booking #{booking.pk}: Khách hàng đã gửi danh sách {so_chon} ảnh cần hậu kỳ, vui lòng bắt đầu hậu kỳ.',
+                  booking=booking)                             # gắn thông báo vào Booking
+    return {'so_anh': so_chon}                                 # trả số ảnh đã gửi để view hiện thông báo
+
+
+def bat_dau_hau_ky(ma_booking, nag_user):                      # Nhiếp ảnh gia bấm "Bắt đầu hậu kỳ": Chờ hậu kỳ -> Đang hậu kỳ (hạn 3 ngày)
+    try:                                                       # bắt lỗi để báo cho Nhiếp ảnh gia
+        with transaction.atomic():                             # 1 giao dịch
+            try:                                               # lấy Booking của chính Nhiếp ảnh gia này
+                booking = Booking.objects.select_for_update().get(pk=ma_booking, MaNhiepAnhGia__MaTaiKhoan=nag_user)  # khóa Booking của Nhiếp ảnh gia này
+            except Booking.DoesNotExist:                       # không có hoặc của người khác
+                raise LoiBatDauHauKy('Booking không tồn tại hoặc không thuộc về bạn.')  # báo: Booking không tồn tại hoặc của người khác
+            return chuyen_trang_thai_booking(booking, TrangThaiBooking.DANG_HAU_KY, BenThucHien.NHIEP_ANH_GIA)   # HÀM T2: tự gán HanHauKy = 3 ngày và ghi lịch sử
+    except ValidationError as loi:                             # hàm của Tuyền từ chối (sai trạng thái, sai bên thực hiện...)
+        raise LoiBatDauHauKy(' '.join(loi.messages))           # đổi thành lỗi để view hiển thị
+    except DatabaseError:                                      # lỗi database
+        raise LoiBatDauHauKy('Không thể bắt đầu hậu kỳ, vui lòng thử lại.')  # báo: lỗi hệ thống
