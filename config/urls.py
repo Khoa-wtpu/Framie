@@ -29,6 +29,7 @@ urlpatterns = [
     path('bookings/', include('bookings.gui_booking')),
     path('bookings/', include('bookings.tiep_nhan')),   # UC4.3-4.5 (đã có file, trước đây chưa nối)
     path('bookings/', include('bookings.da_chup')),     # T8: nút Đã chụp
+    path('bookings/', include('bookings.huy_booking')), # T9 / UC4.6: Hủy Booking + xác nhận đã nhận lại tiền cọc
     path('bookings/', include('bookings.theo_doi')),    # T7 / UC4.7: Booking của tôi + Quản trị tra cứu
 
     path('', include('core.urls')),               # nối core/urls.py, có /ui-kit/

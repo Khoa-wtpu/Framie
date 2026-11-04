@@ -50,6 +50,7 @@ from django.views.decorators.http import require_GET  # nhãn: chỉ cho mở tr
 # lay_vai_tro: biết người đang đăng nhập là Khách hàng / Nhiếp ảnh gia / Quản trị viên.
 # vai_tro_required: nhãn chặn người sai vai trò (chưa đăng nhập -> trang đăng nhập; sai vai trò -> 403).
 from accounts.permissions import lay_vai_tro, vai_tro_required  # biết vai trò người đăng nhập / nhãn chặn sai vai trò
+from bookings.huy_booking import co_the_huy, co_the_xac_nhan_hoan_tien, lay_yeu_cau_huy  # T9: nút Hủy + khối thông tin hủy
 from bookings.models import Booking  # bảng Booking trong cơ sở dữ liệu
 # Hằng số tên trạng thái / vai trò dùng chung của nhóm (không tự gõ chữ tiếng Việt).
 from core.constants import LoaiThanhToan, TrangThaiBooking, TrangThaiThanhToan, VaiTro  # tên các trạng thái/vai trò dùng chung
@@ -222,6 +223,8 @@ def _trang_chi_tiet(request, ma_booking, ten_url_danh_sach):
         for cau in canh_bao:  # với mỗi chỗ lệch...
             logger.warning('Booking #%s lệch dữ liệu thanh toán: %s', booking.pk, cau)  # ...ghi log để lập trình viên biết
     la_nag = vai_tro == VaiTro.NHIEP_ANH_GIA  # người xem có phải Nhiếp ảnh gia không
+    la_khach = vai_tro == VaiTro.KHACH_HANG  # người xem có phải Khách hàng không
+    yeu_cau_huy = lay_yeu_cau_huy(booking)  # T9: yêu cầu hủy của Booking (None nếu chưa bị hủy)
     return render(request, 'bookings/theo_doi_chi_tiet.html', {  # dựng trang chi tiết, kèm dữ liệu bên dưới
         'booking': booking,  # Booking đang xem
         'vai_tro': vai_tro,  # vai trò người xem
@@ -236,6 +239,9 @@ def _trang_chi_tiet(request, ma_booking, ten_url_danh_sach):
         'lich_su': booking.lich_su_trang_thai.all(),                     # lịch sử đổi trạng thái, đã sắp từ cũ đến mới (Meta.ordering)
         'thanh_toan': lay_thanh_toan(booking),  # các khoản thanh toán của Booking
         'canh_bao': canh_bao,  # cảnh báo lệch (chỉ Quản trị viên có nội dung)
+        'co_the_huy': (la_khach or la_nag) and co_the_huy(booking),  # T9: hiện nút "Hủy Booking" (Quản trị viên không hủy)
+        'yeu_cau_huy': yeu_cau_huy,  # T9: khối "Thông tin hủy" (bên hủy, lý do, xử lý tiền cọc, hoàn tiền)
+        'co_the_xac_nhan_hoan_tien': la_khach and co_the_xac_nhan_hoan_tien(yeu_cau_huy),  # T9: nút "Tôi đã nhận lại tiền cọc"
         'url_danh_sach': reverse(ten_url_danh_sach),  # địa chỉ của nút "Quay lại danh sách"
         # Nhiếp ảnh gia còn việc phải làm với Booking này ("Chờ xác nhận" / "Chốt Booking") -> link tới màn xử lý của T5/T8.
         'url_xu_ly': (reverse('chi_tiet_yeu_cau_booking', kwargs={'ma_booking': booking.pk})  # địa chỉ màn xử lý của Nhiếp ảnh gia...
