@@ -2,9 +2,12 @@
 # Các bạn khác import hàm ở đây để gửi thông báo khi có sự kiện (Booking mới, duyệt hồ sơ...)
 import logging  # thư viện ghi log: để in cảnh báo ra Terminal khi có lỗi, thay vì làm sập web
 
-from django.db import transaction  # transaction.atomic: bọc thao tác lưu để lỗi không lan sang nơi khác
+from django.db import DatabaseError, transaction  # transaction.atomic: bọc thao tác lưu; DatabaseError: bắt lỗi DB để trang không sập
+from django.db.models import Case, Count, IntegerField, Q, Value, When  # Count: đếm; Q: lọc OR/AND; Case/When/Value: xếp thứ tự có điều kiện (ghim sao)
+from django.urls import NoReverseMatch, reverse  # reverse: đổi tên URL thành địa chỉ; NoReverseMatch: chưa có URL đó
 
-from core.constants import TrangThaiDoc  # hằng số 'Chưa đọc'/'Đã đọc' (README: không tự gõ chữ tiếng Việt)
+from core.constants import DanhDauSao, TrangThaiDoc, VaiTro  # hằng số trạng thái đọc, sao và 3 vai trò (README: không tự gõ chữ tiếng Việt)
+from core.navigation import get_role  # lấy vai trò của người dùng (Khách hàng / Nhiếp ảnh gia / Quản trị viên)
 from notifications.models import ThongBao  # model bảng THONGBAO đã có sẵn trong notifications/models.py
 
 logger = logging.getLogger(__name__)  # tạo bộ ghi log riêng cho file này
@@ -60,3 +63,121 @@ def dem_chua_doc(user):  # đếm số thông báo chưa đọc của một ngư
         MaNguoiNhan=user,  # chỉ thông báo của người này
         TrangThaiDoc=TrangThaiDoc.CHUA_DOC,  # chỉ thông báo còn 'Chưa đọc'
     ).count()  # trả về số lượng
+
+
+
+# =====================================================================
+# P8 (UC9.1 và UC9.2): XEM VÀ ĐÁNH DẤU THÔNG BÁO
+# Quy tắc chung: MỌI hàm dưới đây đều nhận user và chỉ đụng tới thông báo CỦA user đó.
+# =====================================================================
+LOC_TAT_CA = 'tat_ca'  # khóa nhóm "Tất cả" (dùng trên thanh địa chỉ ?loc=tat_ca)
+LOC_CHUA_DOC = 'chua_doc'  # khóa nhóm "Chưa đọc"
+LOC_SAO = 'sao'  # khóa nhóm "Đã đánh dấu sao"
+NHAN_NHOM = {  # nhãn hiển thị của từng nhóm; thứ tự ở đây là thứ tự trong menu "Lọc thông báo"
+    LOC_TAT_CA: 'Tất cả',  # nhóm 1
+    LOC_CHUA_DOC: 'Chưa đọc',  # nhóm 2
+    LOC_SAO: 'Đã đánh dấu sao',  # nhóm 3
+}  # hết bảng nhãn nhóm
+SO_DONG_MOI_TRANG = 10  # mỗi trang danh sách hiện tối đa 10 thông báo (phân trang chung của nhóm)
+SO_THONG_BAO_TRONG_KHUNG = 4  # khung chuông thả xuống chỉ hiện 4 thông báo mới nhất (đúng wireframe)
+DO_DAI_TU_KHOA_TOI_DA = 100  # tìm kiếm tối đa 100 ký tự, tránh chuỗi quá dài
+
+# Tên URL trang chi tiết Booking theo vai trò. Muốn đổi tên URL của Tuyền thì CHỈ sửa ở đây.
+URL_BOOKING_THEO_VAI_TRO = {
+    VaiTro.NHIEP_ANH_GIA: 'chi_tiet_yeu_cau_booking',  # đã có trong bookings/tiep_nhan.py (nhận ma_booking)
+    VaiTro.KHACH_HANG: 'chi_tiet_booking',  # Tuyền sẽ tạo khi làm UC4.7; chưa có thì link tạm là '#'
+}  # Quản trị viên chưa có trang Booking nên không có link
+
+
+def chuan_hoa_loc(loc):  # biến giá trị ?loc= người dùng gõ thành giá trị hợp lệ
+    """Giá trị lạ (hoặc rỗng) thì dùng nhóm 'Tất cả'."""  # mô tả hàm
+    return loc if loc in NHAN_NHOM else LOC_TAT_CA  # nằm trong 3 nhóm thì giữ, không thì về 'Tất cả'
+
+
+def thong_bao_cua(nguoi_dung):  # bộ lọc gốc: chỉ thông báo của người này
+    """Mọi truy vấn của P8 đều bắt đầu từ đây nên không thể lộ thông báo của người khác."""  # mô tả hàm
+    return ThongBao.objects.filter(MaNguoiNhan=nguoi_dung)  # WHERE MaNguoiNhan = người này
+
+
+def lay_danh_sach(nguoi_dung, loc=LOC_TAT_CA, tu_khoa=''):  # danh sách cho trang SC9.1
+    """Trả về QuerySet (chưa chạy truy vấn) đã lọc nhóm, tìm kiếm; thông báo có sao ghim lên đầu, sau đó mới nhất trước."""  # mô tả hàm
+    ds = thong_bao_cua(nguoi_dung)  # bắt đầu từ thông báo của người này
+    loc = chuan_hoa_loc(loc)  # làm sạch giá trị nhóm
+    if loc == LOC_CHUA_DOC:  # nhóm "Chưa đọc"
+        ds = ds.filter(TrangThaiDoc=TrangThaiDoc.CHUA_DOC)  # chỉ lấy dòng còn Chưa đọc
+    elif loc == LOC_SAO:  # nhóm "Đã đánh dấu sao"
+        ds = ds.filter(DanhDauSao=DanhDauSao.DA_DANH_DAU)  # chỉ lấy dòng đã gắn sao
+    tu_khoa = (tu_khoa or '').strip()[:DO_DAI_TU_KHOA_TOI_DA]  # bỏ khoảng trắng thừa, cắt còn 100 ký tự
+    if tu_khoa:  # có gõ từ khóa
+        ds = ds.filter(Q(TieuDe__icontains=tu_khoa) | Q(NoiDung__icontains=tu_khoa))  # khớp tiêu đề HOẶC nội dung
+    ds = ds.annotate(thu_tu_sao=Case(  # cột tạm: 0 nếu đã đánh dấu sao, 1 nếu chưa (không dựa vào thứ tự chữ cái của chuỗi)
+        When(DanhDauSao=DanhDauSao.DA_DANH_DAU, then=Value(0)),  # có sao -> 0
+        default=Value(1), output_field=IntegerField()))  # còn lại -> 1
+    return ds.order_by('thu_tu_sao', '-NgayTao', '-MaThongBao')  # FR-38: có sao ghim lên đầu; trong mỗi nhóm thì mới nhất trước
+
+
+def dem_theo_nhom(nguoi_dung):  # đếm số thông báo của 3 nhóm bằng ĐÚNG 1 câu truy vấn
+    """Trả về dict {'tat_ca': n, 'chua_doc': n, 'sao': n}."""  # mô tả hàm
+    ket_qua = thong_bao_cua(nguoi_dung).aggregate(  # gom đếm trong một lần chạy SQL
+        tat_ca=Count('pk'),  # tổng số thông báo
+        chua_doc=Count('pk', filter=Q(TrangThaiDoc=TrangThaiDoc.CHUA_DOC)),  # số dòng Chưa đọc
+        sao=Count('pk', filter=Q(DanhDauSao=DanhDauSao.DA_DANH_DAU)),  # số dòng đã đánh dấu sao
+    )  # hết aggregate
+    return {khoa: ket_qua[khoa] or 0 for khoa in (LOC_TAT_CA, LOC_CHUA_DOC, LOC_SAO)}  # đảm bảo luôn là số nguyên
+
+
+def lay_moi_nhat(nguoi_dung, so_luong=SO_THONG_BAO_TRONG_KHUNG):  # dữ liệu cho khung chuông thả xuống
+    """Trả về list các thông báo mới nhất (mặc định 4)."""  # mô tả hàm
+    return list(thong_bao_cua(nguoi_dung).order_by('-NgayTao', '-MaThongBao')[:so_luong])  # cắt lấy 4 dòng đầu
+
+
+def queryset_chi_tiet(nguoi_dung):  # nguồn dữ liệu cho trang chi tiết SC9.2
+    """Dùng với get_object_or_404: thông báo của người khác sẽ thành 404, không lộ nội dung."""  # mô tả hàm
+    return thong_bao_cua(nguoi_dung).select_related('MaBooking__MaGoi')  # nạp sẵn Booking và Gói để trang chi tiết không truy vấn thêm
+
+
+def _cap_nhat(nguoi_dung, ma_thong_bao, **cot):  # hàm dùng chung: sửa cột của MỘT thông báo của người này
+    """Trả về True nếu sửa được đúng 1 dòng; False nếu không có dòng (của người khác) hoặc DB lỗi."""  # mô tả hàm
+    try:  # thử cập nhật; lỗi DB thì bắt lại để hiện hộp "Cập nhật không thành công"
+        so_dong = thong_bao_cua(nguoi_dung).filter(pk=ma_thong_bao).update(**cot)  # UPDATE ... WHERE đúng chủ và đúng mã
+    except DatabaseError:  # lỗi cơ sở dữ liệu
+        logger.exception('thong_bao: cập nhật thất bại (mã %s)', ma_thong_bao)  # ghi log đầy đủ để sửa sau
+        return False  # báo thất bại, không ném lỗi ra ngoài
+    return so_dong == 1  # đúng 1 dòng bị sửa là thành công
+
+
+def dat_trang_thai_doc(nguoi_dung, ma_thong_bao, da_doc):  # UC9.2: đổi Chưa đọc <-> Đã đọc
+    """da_doc=True: Đã đọc; da_doc=False: Chưa đọc. Đặt thẳng giá trị đích nên bấm hai lần vẫn an toàn."""  # mô tả hàm
+    trang_thai = TrangThaiDoc.DA_DOC if da_doc else TrangThaiDoc.CHUA_DOC  # chọn giá trị đích
+    return _cap_nhat(nguoi_dung, ma_thong_bao, TrangThaiDoc=trang_thai)  # ghi vào DB
+
+
+def dat_dau_sao(nguoi_dung, ma_thong_bao, co_sao):  # UC9.2: đánh dấu sao hoặc bỏ đánh dấu sao
+    """co_sao=True: Đã đánh dấu sao; co_sao=False: Chưa đánh dấu sao."""  # mô tả hàm
+    gia_tri = DanhDauSao.DA_DANH_DAU if co_sao else DanhDauSao.CHUA_DANH_DAU  # chọn giá trị đích
+    return _cap_nhat(nguoi_dung, ma_thong_bao, DanhDauSao=gia_tri)  # ghi vào DB
+
+
+def tu_dong_danh_dau_da_doc(nguoi_dung, thong_bao):  # UC9.2: mở xem thì tự chuyển Chưa đọc -> Đã đọc
+    """Trả về True nếu thông báo đã (hoặc vừa được) chuyển sang Đã đọc; False nếu cập nhật lỗi."""  # mô tả hàm
+    if thong_bao.TrangThaiDoc == TrangThaiDoc.DA_DOC:  # đã đọc từ trước
+        return True  # không cần làm gì
+    if dat_trang_thai_doc(nguoi_dung, thong_bao.pk, True):  # ghi 'Đã đọc' vào DB thành công
+        thong_bao.TrangThaiDoc = TrangThaiDoc.DA_DOC  # cập nhật luôn bản đang cầm để trang hiển thị đúng
+        return True  # thành công
+    return False  # thất bại: thông báo vẫn Chưa đọc (wireframe: Lỗi cập nhật đã đọc)
+
+
+def url_booking(thong_bao, nguoi_dung):  # địa chỉ trang Booking liên quan, theo vai trò người xem
+    """None: không có Booking hoặc vai trò này chưa có trang Booking (ẩn nút).
+    '#': có Booking nhưng trang chi tiết chưa được làm (nút hiện nhưng chưa bấm được).
+    Chuỗi địa chỉ: link thật."""  # mô tả 3 kết quả
+    if thong_bao.MaBooking_id is None:  # thông báo không gắn Booking
+        return None  # không có gì để dẫn tới
+    ten_url = URL_BOOKING_THEO_VAI_TRO.get(get_role(nguoi_dung))  # tên URL ứng với vai trò
+    if ten_url is None:  # vai trò chưa có trang Booking (Quản trị viên)
+        return None  # ẩn nút
+    try:  # thử tạo địa chỉ từ tên URL
+        return reverse(ten_url, kwargs={'ma_booking': thong_bao.MaBooking_id})  # ví dụ /bookings/quan-ly/12/
+    except NoReverseMatch:  # chưa có URL đó trong project
+        return '#'  # link tạm, không làm lỗi trang

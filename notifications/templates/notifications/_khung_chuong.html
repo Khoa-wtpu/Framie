@@ -1,0 +1,26 @@
+{# Mảnh HTML cho khung chuông thả xuống. JS (chuong.js) nạp mảnh này vào menu khi người dùng bấm chuông #}
+{% load thong_bao_tags %}
+<div class="tb-khung__dau">
+  <strong>Thông báo</strong>
+  {% if so_chua_doc %}<span class="badge badge--blue">{{ so_chua_doc }} chưa đọc</span>{% endif %}
+</div>
+{% if ds %}
+<ul class="tb-khung__ds">
+  {% for tb in ds %}
+  <li>
+    {# Bấm một dòng: sang trang chi tiết (trang đó tự chuyển sang Đã đọc) #}
+    <a class="tb-khung__muc{% if tb|chua_doc %} is-unread{% endif %}" href="{% url 'chi_tiet_thong_bao' tb.MaThongBao %}">
+      <span class="tb-dong__cham" aria-hidden="true"></span>
+      <span class="tb-khung__chu">
+        <span class="tb-khung__tieu-de">{{ tb.TieuDe }}{% if tb|chua_doc %}<span class="sr-only"> (chưa đọc)</span>{% endif %}</span>
+        <span class="tb-khung__gio muted">{{ tb.NgayTao|thoi_gian_ngan }}</span>
+      </span>
+      <span class="tb-khung__sao" aria-hidden="true">{% if tb|co_sao %}★{% else %}☆{% endif %}</span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="tb-khung__rong muted">Chưa có thông báo</p>
+{% endif %}
+<a class="tb-khung__chan" href="{% url 'notifications' %}">Xem tất cả thông báo</a>

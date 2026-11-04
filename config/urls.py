@@ -34,7 +34,8 @@ urlpatterns = [
     path('', include('search.urls')),
     path('', include('schedule.urls')),
     path('', include('profiles.urls_cong_khai')),
-
+    path('', include('notifications.urls')),
+    path('', include('chat.urls')),
 ]
 
 # Khi chạy thử (DEBUG = True): địa chỉ /media/... dẫn tới thư mục media/ trên máy,
