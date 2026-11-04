@@ -1,5 +1,5 @@
 {% extends "base.html" %}{# K9 - UC2.3 Hồ sơ Nhiếp ảnh gia (wireframe SC2.3) #}
-{% load static ui %}
+{% load static ui chat_tags %}
 {% block title %}{{ ten }} - Nhiếp ảnh gia{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{% static 'schedule/css/lich.css' %}"><link rel="stylesheet" href="{% static 'profiles/css/ho_so_cong_khai.css' %}">{% endblock %}
 {% block extra_js %}<script src="{% static 'profiles/js/ho_so_cong_khai.js' %}" defer></script>{% endblock %}
@@ -19,8 +19,7 @@
     </div>
     {% if vai_tro != 'khac' %}
     <div class="hscc__hanh-dong">
-      {% if url_lien_he %}<a class="btn btn--secondary" href="{{ url_lien_he }}">Liên hệ</a>
-      {% else %}<span class="btn btn--secondary is-disabled" role="link" aria-disabled="true" title="Tính năng nhắn tin sẽ mở sau">Liên hệ</span>{% endif %}
+      {% nut_nhan_tin nag.pk %}
       {% if co_goi %}<a class="btn btn--primary" href="#{{ mo_ta_lich }}">Đặt lịch</a>{% endif %}
     </div>
     {% endif %}
