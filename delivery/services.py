@@ -18,7 +18,7 @@ from core.constants import (BenThucHien, LoaiAnh, LoaiHauKy, LuuTruAnh,
                             TrangThaiBooking, VaiTro)
 from accounts.permissions import lay_vai_tro
 from core.constants import DinhDangTep                         # JPG / JPEG / PNG
-from delivery.models import Anh, YeuCauChinhSua
+from delivery.models import Anh, YeuCauChinhSua, YeuCauChinhSua_Anh   # N7: thêm bảng chi tiết từng ảnh cần sửa
 from delivery.watermark import GIOI_HAN_GIAY, chen_watermark   # chèn watermark (bước 6) và mốc 5 giây của N5
 from notifications.services import gui_thong_bao               # hàm thông báo dùng chung (của Phanh)
 
@@ -335,3 +335,94 @@ def bat_dau_hau_ky(ma_booking, nag_user):                      # Nhiếp ảnh g
         raise LoiBatDauHauKy(' '.join(loi.messages))           # đổi thành lỗi để view hiển thị
     except DatabaseError:                                      # lỗi database
         raise LoiBatDauHauKy('Không thể bắt đầu hậu kỳ, vui lòng thử lại.')  # báo: lỗi hệ thống
+
+
+# =====================================================================
+# N7 / UC5.5: Khách hàng yêu cầu chỉnh sửa ảnh (tối đa 3 lần cho mỗi Booking)
+# =====================================================================
+SO_LAN_CHINH_SUA_TOI_DA = 3                                    # BR5.5-1: tối đa 03 lần yêu cầu chỉnh sửa cho mỗi Booking
+DO_DAI_NHAN_XET_TOI_DA = 1000                                  # nhận xét tổng quát tối đa 1000 ký tự (cột NoiDung của YEUCAUCHINHSUA)
+DO_DAI_NOI_DUNG_ANH_TOI_DA = 500                               # nội dung sửa của mỗi ảnh tối đa 500 ký tự (cột NoiDungChinhSua)
+
+
+class LoiYeuCauChinhSua(Exception):                            # lỗi nghiệp vụ của UC5.5: view bắt lại để hiện cho Khách hàng
+    pass                                                       # không cần thêm gì, chỉ dùng làm "nhãn" cho lỗi
+
+
+def so_lan_chinh_sua_da_dung(booking):                         # bước 2: Booking này đã gửi bao nhiêu lần yêu cầu chỉnh sửa
+    return YeuCauChinhSua.objects.filter(MaBooking=booking).count()   # đếm số dòng yêu cầu của Booking
+
+
+def so_lan_chinh_sua_con_lai(booking):                         # bước 2: còn bao nhiêu lần được yêu cầu
+    return max(0, SO_LAN_CHINH_SUA_TOI_DA - so_lan_chinh_sua_da_dung(booking))   # không để số âm
+
+
+def anh_de_chinh_sua(booking):                                 # các ảnh Khách được xem và chọn sửa: ảnh đã hậu kỳ (có watermark), còn lưu
+    return Anh.objects.filter(                                 # lấy từ bảng ANH
+        MaBooking=booking, TrangThaiLuuTru=LuuTruAnh.CON_LUU,  # đúng Booking này và file ảnh còn tồn tại
+        LoaiAnh=LoaiAnh.DA_HAU_KY).order_by('TenAnh')          # chỉ ảnh "Đã hậu kỳ", xếp theo tên
+
+
+def ly_do_khong_yeu_cau_duoc(booking):                         # trả về câu báo nếu Khách KHÔNG được yêu cầu chỉnh sửa lúc này, hoặc None nếu được
+    if booking.TrangThai == TrangThaiBooking.DANG_HAU_KY:      # Nhiếp ảnh gia đang hậu kỳ (lần đầu hoặc đang sửa theo yêu cầu)
+        return 'Nhiếp ảnh gia đang hậu kỳ ảnh, chưa đến lúc kiểm tra và yêu cầu chỉnh sửa.'
+    if booking.TrangThai in (TrangThaiBooking.CHO_XAC_NHAN_THANH_TOAN, TrangThaiBooking.HOAN_THANH):   # Khách đã xác nhận bàn giao
+        return 'Bạn đã xác nhận bàn giao ảnh nên không thể yêu cầu chỉnh sửa nữa.'
+    if booking.TrangThai != TrangThaiBooking.CHO_KH_KIEM_TRA:  # Pre-condition: Nhiếp ảnh gia đã tải ảnh hậu kỳ lên (Chờ Khách hàng kiểm tra)
+        return f'Booking đang ở trạng thái "{booking.TrangThai}", chưa đến lúc kiểm tra ảnh.'
+    if so_lan_chinh_sua_con_lai(booking) == 0:                 # luồng 2a: đã dùng đủ 3 lần
+        return (f'Bạn đã sử dụng tối đa {SO_LAN_CHINH_SUA_TOI_DA:02d} lần yêu cầu chỉnh sửa cho Booking này '
+                'nên không thể gửi thêm yêu cầu chỉnh sửa.')
+    return None                                                # mọi điều kiện đều ổn: được yêu cầu
+
+
+def _lay_booking_de_yeu_cau(ma_booking, khach):                # khóa Booking của Khách và kiểm tra được yêu cầu; PHẢI gọi trong transaction.atomic
+    try:                                                       # thử lấy Booking
+        booking = (Booking.objects.select_for_update().select_related('MaGoi')   # khóa dòng để hai lần bấm cùng lúc không tạo trùng
+                   .get(pk=ma_booking, MaKhachHang=khach))     # phải là Booking của chính Khách này
+    except Booking.DoesNotExist:                               # không có hoặc của người khác
+        raise LoiYeuCauChinhSua('Booking không tồn tại hoặc không thuộc về bạn.')   # báo lỗi và dừng
+    ly_do = ly_do_khong_yeu_cau_duoc(booking)                  # kiểm tra trạng thái và số lần
+    if ly_do:                                                  # có lý do cấm
+        raise LoiYeuCauChinhSua(ly_do)                         # báo lỗi và dừng
+    return booking                                             # hợp lệ: trả Booking đã khóa
+
+
+def gui_yeu_cau_chinh_sua(ma_booking, khach, nhan_xet, ds_anh):   # bước 4-6 của UC5.5; ds_anh = {mã ảnh: nội dung cần sửa}
+    nhan_xet = (nhan_xet or '').strip()                        # bỏ khoảng trắng 2 đầu của nhận xét tổng quát
+    chuan = {int(ma): (nd or '').strip() for ma, nd in (ds_anh or {}).items()}   # chuẩn hóa: mã ảnh là số, nội dung bỏ khoảng trắng 2 đầu
+    try:                                                       # bắt lỗi hệ thống để báo cho Khách
+        with transaction.atomic():                             # 1 giao dịch: lưu yêu cầu + đổi trạng thái + ghi lịch sử cùng thành công hoặc cùng hủy
+            booking = _lay_booking_de_yeu_cau(ma_booking, khach)   # khóa Booking và kiểm tra quyền, trạng thái, số lần
+            if not chuan:                                      # ngoại lệ 4a: chưa chọn ảnh nào
+                raise LoiYeuCauChinhSua('Vui lòng chọn ít nhất một ảnh cần chỉnh sửa.')
+            if not nhan_xet:                                   # ngoại lệ 4b: nhận xét tổng quát trống
+                raise LoiYeuCauChinhSua('Nội dung yêu cầu không hợp lệ: vui lòng nhập nhận xét tổng quát.')
+            if len(nhan_xet) > DO_DAI_NHAN_XET_TOI_DA:         # ngoại lệ 4b: nhận xét quá dài
+                raise LoiYeuCauChinhSua(f'Nội dung yêu cầu không hợp lệ: nhận xét tổng quát tối đa {DO_DAI_NHAN_XET_TOI_DA} ký tự.')
+            ten_anh = dict(anh_de_chinh_sua(booking).filter(pk__in=chuan).values_list('pk', 'TenAnh'))   # {mã: tên} của các ảnh hợp lệ
+            if set(ten_anh) != set(chuan):                      # có mã lạ (ảnh Booking khác, ảnh chưa hậu kỳ...) -> không tin dữ liệu gửi lên
+                raise LoiYeuCauChinhSua('Có ảnh được chọn không thuộc Booking này hoặc chưa được hậu kỳ, vui lòng tải lại trang.')
+            thieu = [ten_anh[ma] for ma, nd in chuan.items() if not nd]   # các ảnh đã chọn nhưng chưa nhập nội dung
+            if thieu:                                          # ngoại lệ 4b: thiếu nội dung chỉnh sửa
+                raise LoiYeuCauChinhSua('Nội dung yêu cầu không hợp lệ: vui lòng nhập nội dung chỉnh sửa cho ảnh ' + ', '.join(sorted(thieu)[:10]) + '.')
+            dai = [ten_anh[ma] for ma, nd in chuan.items() if len(nd) > DO_DAI_NOI_DUNG_ANH_TOI_DA]   # các ảnh có nội dung quá dài
+            if dai:                                            # ngoại lệ 4b: nội dung quá dài
+                raise LoiYeuCauChinhSua(f'Nội dung yêu cầu không hợp lệ: nội dung chỉnh sửa tối đa {DO_DAI_NOI_DUNG_ANH_TOI_DA} ký tự (ảnh ' + ', '.join(sorted(dai)[:10]) + ').')
+            so_lan = so_lan_chinh_sua_da_dung(booking) + 1     # bước 5: đây là lần yêu cầu thứ mấy
+            yeu_cau = YeuCauChinhSua.objects.create(MaBooking=booking, NoiDung=nhan_xet, SoLanYeuCau=so_lan)   # lưu yêu cầu (nhận xét tổng quát) và số lần đã dùng
+            YeuCauChinhSua_Anh.objects.bulk_create([           # lưu nội dung chỉnh sửa của từng ảnh
+                YeuCauChinhSua_Anh(MaYeuCauChinhSua=yeu_cau, MaAnh_id=ma, NoiDungChinhSua=nd) for ma, nd in chuan.items()])
+            chuyen_trang_thai_booking(booking, TrangThaiBooking.DANG_HAU_KY, BenThucHien.KHACH_HANG)   # HÀM T2: Chờ KH kiểm tra -> Đang hậu kỳ, tự tính lại hạn 3 ngày và ghi lịch sử
+    except ValidationError as loi:                             # hàm của Tuyền từ chối bước chuyển
+        raise LoiYeuCauChinhSua(' '.join(loi.messages))        # đổi thành lỗi của UC5.5 để view hiển thị
+    except DatabaseError:                                      # ngoại lệ 5a: lỗi lưu yêu cầu (kể cả trùng số lần do hai lần bấm cùng lúc)
+        raise LoiYeuCauChinhSua('Không thể lưu yêu cầu chỉnh sửa, vui lòng thực hiện lại thao tác.')
+    thong_bao = gui_thong_bao(booking.MaNhiepAnhGia.MaTaiKhoan, 'Khách hàng yêu cầu chỉnh sửa ảnh',   # bước 6: báo Nhiếp ảnh gia
+                              f'Booking #{booking.pk}: Khách hàng gửi yêu cầu chỉnh sửa lần {so_lan}/{SO_LAN_CHINH_SUA_TOI_DA} '
+                              f'cho {len(chuan)} ảnh, vui lòng chỉnh sửa và tải phiên bản mới.', booking=booking)
+    da_bao_nag = thong_bao is not None                         # gui_thong_bao trả None nếu lỗi
+    if not da_bao_nag:                                         # ngoại lệ 6a: không gửi được thông báo
+        logger.error('UC5.5: không gửi được thông báo yêu cầu chỉnh sửa lần %s của Booking %s (MaYeuCauChinhSua=%s), cần gửi lại',
+                     so_lan, booking.pk, yeu_cau.pk)           # ghi nhận để xử lý lại (đặc tả chưa có cột lưu trạng thái này)
+    return {'so_lan': so_lan, 'so_anh': len(chuan), 'da_bao_nag': da_bao_nag}   # trả kết quả cho view

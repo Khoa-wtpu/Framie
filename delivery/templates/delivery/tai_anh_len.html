@@ -43,6 +43,26 @@
       {% endif %}
     </section>
 
+    {% if yeu_cau_moi %}{# N7: Khách đã gửi yêu cầu chỉnh sửa -> Nhiếp ảnh gia đọc để sửa #}
+      <section class="panel stack">{# khung yêu cầu chỉnh sửa của Khách #}
+        <h2>Khách hàng yêu cầu chỉnh sửa (lần {{ yeu_cau_moi.SoLanYeuCau }}/3)</h2>{# lần thứ mấy #}
+        <p><strong>Nhận xét tổng quát:</strong> {{ yeu_cau_moi.NoiDung }}</p>{# nhận xét chung của Khách #}
+        <div style="display:flex; flex-direction:column; gap:1rem;">{# danh sách từng ảnh cần sửa, mỗi ảnh một dòng #}
+          {% for ct in yeu_cau_anhs %}{# duyệt từng ảnh #}
+            <div style="display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-start;">{# một dòng: ảnh bên trái, nội dung bên phải #}
+              <a href="{% url 'xem_anh' ct.MaAnh.pk %}" target="_blank" rel="noopener">{# bấm vào ảnh để xem lớn ở tab mới #}
+                <img src="{% url 'xem_anh' ct.MaAnh.pk %}?nho=1" alt="{{ ct.MaAnh.TenAnh }}" loading="lazy" draggable="false" style="width:180px; height:120px; object-fit:cover; border-radius:8px; display:block;">{# ảnh thu nhỏ của ảnh cần sửa #}
+              </a>
+              <div style="flex:1; min-width:200px;">{# tên ảnh và nội dung cần sửa #}
+                <strong>{{ ct.MaAnh.TenAnh }}</strong>{# tên ảnh #}
+                <p>{{ ct.NoiDungChinhSua }}</p>{# nội dung Khách yêu cầu sửa #}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
     <form method="post" enctype="multipart/form-data" id="form-tai-anh" class="panel stack" novalidate data-so-anh-toi-da="{{ so_anh_toi_da }}">
       {% csrf_token %}
       <div id="khung-loi">

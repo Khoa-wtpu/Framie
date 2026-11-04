@@ -1,0 +1,58 @@
+.yc-sua__danh-sach { /* danh sách các dòng ảnh */
+  display: flex; /* xếp dọc từng dòng */
+  flex-direction: column; /* mỗi ảnh một dòng */
+  gap: var(--space-3); /* khoảng cách giữa các dòng */
+}
+.yc-sua__muc { /* một dòng gồm ảnh và ô nội dung */
+  display: flex; /* ảnh bên trái, nội dung bên phải */
+  flex-wrap: wrap; /* màn hình hẹp thì xuống hàng */
+  gap: var(--space-3); /* khoảng cách ảnh và nội dung */
+  padding: var(--space-2); /* viền trong */
+  border: 2px solid var(--color-border); /* viền xám khi chưa chọn */
+  border-radius: var(--radius-sm); /* bo góc */
+}
+.yc-sua__muc--chon { /* dòng đang được chọn sửa */
+  border-color: var(--color-black); /* viền đen đậm */
+  background: var(--color-surface-alt); /* nền xám nhạt */
+}
+.yc-sua__anh { /* khung ảnh có ô tick */
+  position: relative; /* để ô tick đặt ở góc ảnh */
+  display: block; /* một khối */
+  width: 160px; /* chiều rộng khung ảnh */
+  cursor: pointer; /* con trỏ bàn tay */
+}
+.yc-sua__anh img { /* ảnh thu nhỏ */
+  display: block; /* bỏ khoảng trống dưới ảnh */
+  width: 100%; /* vừa chiều rộng khung */
+  height: 110px; /* chiều cao cố định */
+  object-fit: cover; /* cắt ảnh cho vừa khung */
+  user-select: none; /* không cho bôi đen ảnh */
+  -webkit-user-drag: none; /* không cho kéo ảnh ra ngoài */
+}
+.yc-sua__anh input[type="checkbox"] { /* ô tick */
+  position: absolute; /* đặt đè lên ảnh */
+  top: var(--space-2); /* cách mép trên */
+  left: var(--space-2); /* cách mép trái */
+  width: 1.25rem; /* kích thước ô tick */
+  height: 1.25rem; /* kích thước ô tick */
+  z-index: 1; /* nằm trên ảnh */
+}
+.yc-sua__ten { /* tên ảnh dưới khung */
+  display: block; /* xuống dòng riêng */
+  margin-top: var(--space-1); /* cách ảnh một chút */
+  font-size: var(--text-xs); /* chữ nhỏ */
+  overflow-wrap: anywhere; /* tên dài thì tự xuống dòng */
+}
+.yc-sua__noi-dung { /* khung nhập nội dung chỉnh sửa */
+  flex: 1; /* chiếm phần còn lại của dòng */
+  min-width: 220px; /* không nhỏ hơn 220px */
+}
+.yc-sua__noi-dung textarea { /* ô nhập nội dung */
+  width: 100%; /* rộng hết khung */
+}
+.yc-sua__xem-lon { /* liên kết "Xem lớn" */
+  display: inline-block; /* cho phép đặt khoảng cách */
+  margin-top: var(--space-1); /* cách ô nhập */
+  font-size: var(--text-xs); /* chữ nhỏ */
+  text-decoration: underline; /* gạch chân cho dễ nhận biết là liên kết */
+}

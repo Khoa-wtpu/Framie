@@ -18,7 +18,7 @@ from bookings.models import Booking
 from core.constants import LoaiAnh, LoaiHauKy, LuuTruAnh, TrangThaiBooking
 from delivery import services
 from delivery.forms import TaiAnhForm
-from delivery.models import Anh
+from delivery.models import Anh, YeuCauChinhSua, YeuCauChinhSua_Anh   # N7: bảng yêu cầu chỉnh sửa và chi tiết từng ảnh
 from profiles.decorators import nhiep_anh_gia_da_duyet         # chỉ Nhiếp ảnh gia hồ sơ Đã duyệt (decorator chung của leader)
 
 
@@ -56,8 +56,13 @@ def tai_anh_len(request, nag, ma_booking):
     cho_bat_dau = booking.TrangThai == TrangThaiBooking.CHO_HAU_KY    # N6: Khách đã gửi danh sách -> Nhiếp ảnh gia bấm "Bắt đầu hậu kỳ"
     anh_da_chon = (list(Anh.objects.filter(MaBooking=booking, TrangThaiLuuTru=LuuTruAnh.CON_LUU, DuocChonHauKy=1).order_by('TenAnh'))
                    if cho_bat_dau and booking.MaGoi.LoaiHauKy == LoaiHauKy.GIOI_HAN else [])   # N6: danh sách ảnh Khách đã chọn (chỉ gói giới hạn)
+    yeu_cau_moi = (YeuCauChinhSua.objects.filter(MaBooking=booking).order_by('-SoLanYeuCau').first()   # N7: yêu cầu chỉnh sửa gần nhất của Khách
+                   if booking.TrangThai == TrangThaiBooking.DANG_HAU_KY else None)   # N7: chỉ hiện khi đang hậu kỳ
+    yeu_cau_anhs = (list(YeuCauChinhSua_Anh.objects.filter(MaYeuCauChinhSua=yeu_cau_moi).select_related('MaAnh').order_by('MaAnh__TenAnh'))
+                    if yeu_cau_moi else [])   # N7: nội dung cần sửa của từng ảnh để Nhiếp ảnh gia đọc
     return render(request, 'delivery/tai_anh_len.html', {
         'booking': booking, 'giai_doan': giai_doan, 'form': form,
+        'yeu_cau_moi': yeu_cau_moi, 'yeu_cau_anhs': yeu_cau_anhs,   # N7: dữ liệu cho khung "Khách hàng yêu cầu chỉnh sửa"
         'cho_bat_dau_hau_ky': cho_bat_dau, 'anh_da_chon': anh_da_chon,   # N6: dữ liệu cho khung "Bắt đầu hậu kỳ"
 
         'anhs': page_obj.object_list, 'page_obj': page_obj,
@@ -162,3 +167,43 @@ def bat_dau_hau_ky(request, nag, ma_booking):                  # Nhiếp ảnh g
     except services.LoiBatDauHauKy as loi:                     # sai trạng thái...
         messages.error(request, str(loi))                      # hiện lỗi
     return redirect('tai_anh_len', ma_booking=booking.pk)      # quay lại trang tải ảnh của Booking
+
+
+# =====================================================================
+# N7 / UC5.5: Khách hàng yêu cầu chỉnh sửa ảnh
+# =====================================================================
+@chi_khach_hang                                                # chỉ Khách hàng mới vào được trang này
+def yeu_cau_chinh_sua(request, ma_booking):                    # trang UC5.5
+    booking = get_object_or_404(                               # bước 1: chỉ mở được Booking của chính mình
+        Booking.objects.select_related('MaGoi', 'MaNhiepAnhGia'), pk=ma_booking, MaKhachHang=request.user)  # lấy kèm Gói và Nhiếp ảnh gia trong 1 truy vấn
+    nhan_xet = ''                                              # nhận xét tổng quát đang hiển thị trong ô nhập
+    ds_tick = set()                                            # các mã ảnh đang được tick
+    noi_dung_nhap = {}                                         # {mã ảnh: nội dung đã nhập} để giữ lại khi báo lỗi
+
+    if request.method == 'POST':                               # Khách bấm "Gửi yêu cầu chỉnh sửa"
+        nhan_xet = request.POST.get('nhan_xet', '')            # nhận xét tổng quát
+        ds_tick = {int(g) for g in request.POST.getlist('anh') if g.isdigit()}   # các ảnh Khách tick (chỉ nhận chuỗi số)
+        noi_dung_nhap = {ma: request.POST.get(f'noi_dung_{ma}', '') for ma in ds_tick}   # nội dung sửa của từng ảnh đã tick
+        try:                                                   # bắt lỗi nghiệp vụ
+            kq = services.gui_yeu_cau_chinh_sua(booking.pk, request.user, nhan_xet, noi_dung_nhap)   # bước 5-6: lưu và báo Nhiếp ảnh gia
+            messages.success(request, f'Đã gửi yêu cầu chỉnh sửa lần {kq["so_lan"]}/{services.SO_LAN_CHINH_SUA_TOI_DA} '  # báo thành công: lần thứ mấy, bao nhiêu ảnh
+                                      f'cho {kq["so_anh"]} ảnh. Nhiếp ảnh gia sẽ chỉnh sửa và tải phiên bản mới.')   # báo thành công
+            if not kq['da_bao_nag']:                           # ngoại lệ 6a: yêu cầu đã lưu nhưng thông báo bị lỗi
+                messages.warning(request, 'Yêu cầu đã được lưu nhưng hệ thống chưa gửi được thông báo đến Nhiếp ảnh gia. '  # báo yêu cầu đã lưu nhưng thông báo bị lỗi
+                                          'Hệ thống đã ghi nhận để xử lý lại.')   # báo cho Khách biết
+            return redirect('yeu_cau_chinh_sua', ma_booking=booking.pk)   # tránh gửi lại khi F5
+        except services.LoiYeuCauChinhSua as loi:              # lỗi nghiệp vụ: 2a, 4a, 4b, 5a
+            messages.error(request, str(loi))                  # hiện lỗi cho Khách (giữ nguyên dữ liệu đã nhập)
+
+    booking.refresh_from_db()                                  # đọc lại trạng thái mới nhất
+    ly_do = services.ly_do_khong_yeu_cau_duoc(booking)         # None = được yêu cầu; có chữ = không được (gồm luồng 2a)
+    anhs = list(services.anh_de_chinh_sua(booking))            # các ảnh đã hậu kỳ (có watermark) của Booking
+    for a in anhs:                                             # gắn thêm dữ liệu hiển thị cho từng ảnh
+        a.da_tick = a.pk in ds_tick                            # ảnh này đang được tick không
+        a.noi_dung_nhap = noi_dung_nhap.get(a.pk, '')          # nội dung đã nhập (nếu có)
+    con_lai = services.so_lan_chinh_sua_con_lai(booking)       # bước 2: số lần còn lại
+    return render(request, 'delivery/yeu_cau_chinh_sua.html', {  # hiển thị trang yêu cầu chỉnh sửa
+        'booking': booking, 'ly_do': ly_do, 'anhs': anhs, 'nhan_xet': nhan_xet,  # dữ liệu gửi sang template (1)
+        'so_lan_toi_da': services.SO_LAN_CHINH_SUA_TOI_DA, 'so_lan_con_lai': con_lai,  # dữ liệu gửi sang template (2)
+        'so_lan_da_dung': services.SO_LAN_CHINH_SUA_TOI_DA - con_lai,  # dữ liệu gửi sang template (3)
+        'lich_su': YeuCauChinhSua.objects.filter(MaBooking=booking).order_by('SoLanYeuCau')})   # lịch sử các lần đã yêu cầu
