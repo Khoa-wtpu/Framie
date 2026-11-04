@@ -60,7 +60,7 @@
       {% csrf_token %}
       {% for loi in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=loi %}{% endfor %}
       <fieldset class="duyet__chon">
-        <legend>{{ form.hanh_dong.label }}</legend>
+        <legend class="sr-only">{{ form.hanh_dong.label }}</legend>{# tiêu đề nhóm chỉ dành cho trình đọc màn hình, vì h2 "Quyết định" ngay phía trên đã hiện #}
         {% for radio in form.hanh_dong %}
         <label class="duyet__lua-chon">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>
         {% endfor %}

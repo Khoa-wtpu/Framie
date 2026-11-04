@@ -197,7 +197,7 @@ class UC43TiepNhan(TiepNhanBase):
         self.assertEqual(list(trang1.context['page_obj']), coc[:10])
         link = re.search(r'href="([^"]*page=2[^"]*)"', trang1.content.decode())
         self.assertIsNotNone(link, 'Trang 1 phải có link sang trang 2')
-        trang2 = self.client.get(unescape(link.group(1)))
+        trang2 = self.client.get(self.url + unescape(link.group(1)))   # link chỉ có phần '?...', trình duyệt tự ghép vào trang hiện tại
         self.assertEqual(list(trang2.context['page_obj']), coc[10:])      # nếu link làm rơi bộ lọc, trang 2 sẽ sai
         self.assertEqual(trang2.context['trang_thai'], BK.CHO_DAT_COC)
         self.assertEqual(trang2.context['sap_xep'], 'chup_gan')

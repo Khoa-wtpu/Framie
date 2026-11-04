@@ -130,6 +130,18 @@ class TimKiemTestCase(TestCase):
         self.assertContains(res, 'class="tim__so-loc">1<')
         self.assertNotContains(self.client.get(self.url), 'tim__so-loc')
 
+    def test_o_chon_de_trong_tu_trang_chu_khong_bi_bao_loi(self):
+        # Trang chủ gửi ?q=...&loai_hinh=&khu_vuc=&gia_tu=&gia_den= khi các ô lọc để trống: phải tìm bình thường, không báo "không hợp lệ"
+        res = self.client.get(self.url, {'q': 'Khôi', 'loai_hinh': '', 'khu_vuc': '', 'gia_tu': '', 'gia_den': ''})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context['loi'], [])
+        self.assertContains(res, 'Lê Minh Khôi')
+
+    def test_chon_mot_loai_hinh_tu_trang_chu_van_loc_dung(self):
+        res = self.client.get(self.url, {'q': '', 'loai_hinh': self.cuoi.pk, 'khu_vuc': ''})
+        self.assertEqual(res.context['loi'], [])
+        self.assertContains(res, 'Lê Minh Khôi')
+
     def test_ho_so_ve_cho_duyet_thi_bien_mat_khoi_ket_qua(self):
         self.a.MaTaiKhoan.trang_thai_ho_so = TrangThaiHoSo.CHO_DUYET
         self.a.MaTaiKhoan.save()
