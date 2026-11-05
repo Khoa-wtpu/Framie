@@ -23,6 +23,11 @@ urlpatterns = [
     path('', include('profiles.urls_cong_khai')),
     path('', include('profiles.urls_duyet')),
     path('', include('profiles.urls_cua_toi')),
+
+    # ---- Phần của Nguyên (N2-N11) ----
+    path('', include('payments.urls')),           # N2, N3, N9: minh chứng, xác nhận cọc, xác nhận phần còn lại
+    path('', include('delivery.urls')),           # N4-N8: bàn giao ảnh
+    path('', include('reviews.urls')),            # N11: đánh giá nhiếp ảnh gia
 ]
 
 # Khi chạy thử (DEBUG = True): địa chỉ /media/... dẫn tới thư mục media/ trên máy,
@@ -30,8 +35,3 @@ urlpatterns = [
 # Khi triển khai thật (DEBUG = False) đoạn này tự tắt, máy chủ thật sẽ phát file.
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-    path('admin/', admin.site.urls),
-    path('', include('payments.urls')),
-]
-
