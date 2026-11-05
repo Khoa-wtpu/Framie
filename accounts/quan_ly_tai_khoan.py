@@ -2,6 +2,8 @@
 # accounts/quan_ly_tai_khoan.py  -  P7 (UC7.3): quản lý vai trò và khóa/mở tài khoản
 # Chỗ DUY NHẤT chứa luật nghiệp vụ; view chỉ gọi các hàm ở đây.
 # =====================================================================
+import logging  # ghi một dòng vết mỗi lần đổi vai trò hoặc khóa/mở (không cần model, không cần migration)
+
 from django.contrib.auth import get_user_model  # lấy class User của dự án (accounts.User)
 from django.contrib.auth.models import Group  # bảng nhóm quyền của Django (mỗi nhóm = một vai trò)
 from django.db import transaction  # gom nhiều thao tác DB thành một khối, lỗi thì hoàn tác
@@ -10,6 +12,7 @@ from django.db.models import Q  # ghép điều kiện lọc bằng "hoặc" (|)
 from core.constants import VaiTro  # tên 3 vai trò, không tự gõ chữ tiếng Việt (README)
 
 User = get_user_model()  # class User của dự án
+logger = logging.getLogger(__name__)  # bộ ghi log riêng của file này
 
 # Vai trò mà Quản trị viên được GÁN cho tài khoản. Nhiếp ảnh gia KHÔNG nằm ở đây vì phải đăng ký + điền hồ sơ + được duyệt (P5, K7).
 VAI_TRO_CHO_DOI = (VaiTro.KHACH_HANG, VaiTro.QUAN_TRI_VIEN)  # muốn cho phép thêm vai trò thì sửa đúng dòng này
@@ -78,6 +81,7 @@ def doi_vai_tro(nguoi_thuc_hien, user, vai_tro_moi):  # đổi vai trò chính c
     with transaction.atomic():  # từ dòng này, lỗi ở đâu thì hoàn tác hết
         nhom_moi, _ = Group.objects.get_or_create(name=vai_tro_moi)  # lấy nhóm của vai trò mới (migration 0003 đã tạo sẵn)
         user.groups.set([nhom_moi])  # set: THAY toàn bộ nhóm cũ bằng đúng 1 nhóm mới => mỗi tài khoản một vai trò chính
+    logger.warning('Đổi vai trò: %s đổi tài khoản %s từ %s sang %s', nguoi_thuc_hien.email, user.email, hien_tai, vai_tro_moi)  # ai làm, với tài khoản nào, trước và sau; dùng warning vì settings.py chưa có LOGGING nên mức info không hiện ra Terminal
 
 
 def khoa_mo_tai_khoan(nguoi_thuc_hien, user, khoa):  # khoa=True: khóa; khoa=False: mở lại
@@ -89,3 +93,4 @@ def khoa_mo_tai_khoan(nguoi_thuc_hien, user, khoa):  # khoa=True: khóa; khoa=Fa
         raise LoiQuanLyTaiKhoan('Tài khoản đã ở trạng thái này.')  # báo nhẹ
     user.is_active = not khoa  # khóa: is_active=False; mở: is_active=True
     user.save(update_fields=['is_active'])  # chỉ lưu đúng cột này; phiên đăng nhập cũ tự mất hiệu lực ở lần truy cập kế tiếp
+    logger.warning('%s tài khoản %s bởi %s', 'Khóa' if khoa else 'Mở', user.email, nguoi_thuc_hien.email)  # ghi vết khóa/mở: ai làm, với tài khoản nào

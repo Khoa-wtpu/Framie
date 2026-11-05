@@ -1,5 +1,7 @@
 {% extends "base.html" %}{# dùng khung chung: header, footer, messages #}
+{% load static %}{# nạp thư viện static để lấy đường dẫn file CSS; load phải đặt sau extends #}
 {% block title %}Đăng ký{% endblock %}{# chữ trên tab trình duyệt #}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'profiles/css/ho_so.css' %}">{% endblock %}{# nạp CSS của khối .ho-so__khoi (dùng chung với trang Nhiếp ảnh gia) để hai trang đăng ký có cùng khung và khoảng cách #}
 {% block content %}{# phần nội dung riêng của trang #}
 <div class="container">{# cùng khung với trang đăng ký Nhiếp ảnh gia để hai trang giống nhau #}
   <h1>Đăng ký tài khoản Khách hàng</h1>{# tiêu đề trang #}
@@ -22,4 +24,3 @@
   <p class="card__meta auth-switch-note">Đã có tài khoản? <a href="{% url 'login' %}">Đăng nhập</a></p>{# class thay cho style inline; {% url %} báo lỗi ngay nếu sai tên #}
 </div>
 {% endblock %}
-

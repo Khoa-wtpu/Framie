@@ -9,6 +9,10 @@
 .tq-so__o { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-5); background: var(--color-black); color: var(--color-white); border-radius: var(--radius-lg); } /* một ô: nền đen chữ trắng, xếp con số trên nhãn, bo góc lớn */
 .tq-so__gia-tri { font-size: var(--text-xl); font-weight: var(--fw-heading); line-height: 1.1; } /* con số: chữ to, đậm */
 .tq-so__nhan { font-size: var(--text-sm); opacity: .8; } /* nhãn dưới con số: chữ nhỏ, hơi mờ */
+.tq-so { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-4); margin-bottom: var(--space-5); }
+.tq-so__o { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-5); background: var(--btn-primary-bg); color: var(--color-white); border-radius: var(--radius-lg); }
+.tq-so__gia-tri { font-size: var(--text-xl); font-weight: var(--fw-heading); line-height: 1.1; }
+.tq-so__nhan { font-size: var(--text-sm); opacity: .8; }
 
 /* Lưới các khối nội dung */
 .tq-luoi { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); align-items: start; } /* điện thoại: 1 cột; minmax(0, 1fr) để nội dung dài không làm tràn ngang; align start để khối không bị kéo cao bằng nhau */

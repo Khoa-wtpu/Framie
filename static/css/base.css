@@ -3,12 +3,18 @@
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 body {
   margin: 0; min-height: 100vh; display: flex; flex-direction: column;
-  background: var(--color-bg); color: var(--color-text);
+  background-color: var(--color-bg); background-image: var(--bg-gradient); background-repeat: no-repeat; background-attachment: fixed; /* nền gradient đen-xám / trắng-xám */
+  color: var(--color-text);
   font-family: var(--font-sans); font-weight: var(--fw-regular);
   font-size: var(--text-base); line-height: var(--leading);
 }
 h1, h2, h3, h4 { margin: 0 0 var(--space-3); font-weight: var(--fw-heading); line-height: var(--leading-tight); letter-spacing: -.01em; }
-h1 { font-size: var(--text-3xl); } h2 { font-size: var(--text-2xl); } h3 { font-size: var(--text-xl); } h4 { font-size: var(--text-lg); }
+/* Tiêu đề h1 là chữ gradient. line-height và padding đủ cao để không bị cắt dấu tiếng Việt (background-clip:text cắt theo khung dòng).
+   Tiêu đề h1 nằm trên nền đậm riêng (ví dụ khung đen của trang Tìm kiếm) thì thêm class .no-gradient-text để lấy lại chữ đặc. */
+h1 { font-size: var(--text-3xl); line-height: 1.35; padding-block: .12em; color: var(--color-text); background: var(--text-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+h1.no-gradient-text { background: none; -webkit-text-fill-color: currentColor; }
+@media (forced-colors: active) { h1 { background: none; -webkit-text-fill-color: currentColor; } }
+ h2 { font-size: var(--text-2xl); } h3 { font-size: var(--text-xl); } h4 { font-size: var(--text-lg); }
 p { margin: 0 0 var(--space-4); }
 a { color: inherit; text-underline-offset: 3px; }
 img { max-width: 100%; display: block; }
@@ -27,19 +33,23 @@ ul { margin: 0; padding: 0; list-style: none; }
 .skip-link:focus { left: var(--space-3); top: var(--space-3); }
 
 /* ---------- Header ---------- */
-.site-header { position: sticky; top: 0; z-index: 50; background: rgba(255, 255, 255, .92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--color-border); }
+.site-header { position: sticky; top: 0; z-index: 50; background: var(--header-bg); backdrop-filter: blur(10px); border-bottom: 1px solid var(--color-border); }
 .site-header__inner { display: flex; align-items: center; gap: var(--space-4); min-height: var(--header-h); }
 .brand { flex: none; display: inline-flex; align-items: center; gap: var(--space-2); text-decoration: none; font-weight: var(--fw-heading); letter-spacing: .08em; font-size: var(--text-lg); }
 .brand__mark { width: 1.25rem; height: 1.25rem; border: 2px solid var(--color-black); border-radius: 50%; position: relative; }
 .brand__mark::after { content: ""; position: absolute; inset: 3px; background: var(--color-black); border-radius: 50%; }
 .brand__logo { display: block; height: 1.75rem; width: auto; max-width: none; flex: none; }
+/* Hai bản logo: chữ đen cho nền trắng, chữ trắng cho nền đen. Chỉ hiện bản hợp với chế độ màu hiện tại. */
+.brand__logo--nen-trang { display: none; }
+:root[data-theme="light"] .brand__logo--nen-trang { display: block; }
+:root[data-theme="light"] .brand__logo--nen-den { display: none; }
 /* Điện thoại: menu ẩn mặc định, thành bảng thả xuống dưới header khi bấm nút ba gạch (header có class is-open) */
 .site-nav { display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--color-white); border-bottom: 1px solid var(--color-border); box-shadow: var(--shadow-md); padding: var(--space-2) var(--space-4) var(--space-3); margin-left: 0; min-width: 0; }
 .site-header.is-open .site-nav { display: block; }
 .site-nav__list { display: flex; flex-direction: column; gap: var(--space-1); }
 .site-nav__link { display: block; padding: var(--space-2) var(--space-3); border-radius: var(--radius-pill); text-decoration: none; font-size: var(--text-xs); color: var(--color-text-muted); transition: background .15s, color .15s; text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; }
 .site-nav__link:hover { background: var(--color-surface-alt); color: var(--color-text); }
-.site-nav__link.is-active { background: var(--color-black); color: var(--color-white); }
+.site-nav__link.is-active { background: var(--btn-primary-bg); color: var(--color-white); }
 
 .site-header__actions { display: flex; align-items: center; gap: var(--space-2); margin-left: auto; order: 2; }
 .nav-toggle { order: 3; width: 2.5rem; height: 2.5rem; border: 1px solid var(--color-border); border-radius: 50%; background: var(--color-white); cursor: pointer; display: grid; place-items: center; }
@@ -48,7 +58,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 
 .icon-btn { position: relative; width: 2.5rem; height: 2.5rem; display: grid; place-items: center; border-radius: 50%; color: var(--color-text); text-decoration: none; }
 .icon-btn:hover { background: var(--color-surface-alt); }
-.icon-btn__badge { position: absolute; top: 2px; right: 0; min-width: 1.125rem; height: 1.125rem; padding: 0 4px; border-radius: var(--radius-pill); background: var(--tone-red-dot); color: var(--color-white); font-size: 10px; font-weight: var(--fw-heading); line-height: 1.125rem; text-align: center; border: 2px solid var(--color-white); box-sizing: content-box; }
+.icon-btn__badge { position: absolute; top: 2px; right: 0; min-width: 1.125rem; height: 1.125rem; padding: 0 4px; border-radius: var(--radius-pill); background: var(--tone-red-dot); color: var(--on-danger); font-size: 10px; font-weight: var(--fw-heading); line-height: 1.125rem; text-align: center; border: 2px solid var(--color-white); box-sizing: content-box; }
 
 .account-btn { display: flex; align-items: center; gap: var(--space-2); padding: 4px var(--space-2) 4px 4px; border: 1px solid var(--color-border); border-radius: var(--radius-pill); background: var(--color-white); font: inherit; cursor: pointer; }
 .account-btn:hover { background: var(--color-surface-alt); }
@@ -57,6 +67,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 .account-btn__role { font-size: var(--text-xs); color: var(--color-text-muted); }
 .avatar { width: 2rem; height: 2rem; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--color-black); color: var(--color-white); font-weight: var(--fw-heading); font-size: var(--text-sm); }
 .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar { width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center; background: var(--btn-primary-bg); color: var(--color-white); font-weight: var(--fw-heading); font-size: var(--text-sm); }
 
 .dropdown { position: relative; }
 .dropdown__menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 12rem; background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-md); padding: var(--space-2); }
@@ -73,6 +84,16 @@ ul { margin: 0; padding: 0; list-style: none; }
   .account-btn__text { display: flex; }
   .account-btn { padding-right: var(--space-4); }
 }
+
+/* ---------- Nút chuyển nền Trắng / Đen (mặt trời = nền trắng, mặt trăng khuyết = nền đen) ---------- */
+.theme-toggle { position: relative; flex: none; display: inline-flex; align-items: center; justify-content: space-between; width: 3.5rem; height: 2rem; padding: 0 .4rem; border: 1px solid var(--color-border); border-radius: var(--radius-pill); background: var(--gradient-white-gray); cursor: pointer; }
+.theme-toggle__icon { position: relative; z-index: 1; width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; color: var(--color-text-muted); transition: color .2s; }
+.theme-toggle__thumb { position: absolute; top: .1875rem; left: .1875rem; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--btn-primary-bg); box-shadow: var(--shadow-sm); transition: transform .25s ease; transform: translateX(1.5rem); } /* mặc định chế độ Đen: nút trượt sang mặt trăng */
+.theme-toggle__moon { color: var(--color-white); } /* biểu tượng đang chọn nằm trên nút trượt nên dùng màu nền để nổi lên */
+:root[data-theme="light"] .theme-toggle__thumb { transform: translateX(0); }
+:root[data-theme="light"] .theme-toggle__moon { color: var(--color-text-muted); }
+:root[data-theme="light"] .theme-toggle__sun { color: var(--color-white); }
+@media (prefers-reduced-motion: reduce) { .theme-toggle__thumb, .theme-toggle__icon { transition: none; } }
 
 /* Màn hình vừa (960 đến 1279px): menu nhiếp ảnh gia có 7 mục nên thu nhỏ thêm */
 @media (min-width: 960px) and (max-width: 1279px) {
