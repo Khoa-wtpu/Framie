@@ -19,7 +19,7 @@ from django.views.decorators.http import require_GET
 from accounts.permissions import lay_vai_tro
 from bookings.theo_doi import booking_cua_nguoi_dung          # "cửa ngõ" lấy Booking của chính người dùng (BR4.7-1)
 from bookings.tiep_nhan import dem_cho_xac_nhan               # số yêu cầu đang chờ Nhiếp ảnh gia xác nhận
-from core.constants import TrangThaiBooking as BK, TrangThaiDoc, TrangThaiHoSo, VaiTro
+from core.constants import KetQuaDuyetHoSo, TrangThaiBooking as BK, TrangThaiDoc, TrangThaiHoSo, VaiTro
 from notifications.models import ThongBao
 from notifications.services import dem_chua_doc
 from profiles.models import DuyetHoSo
@@ -55,7 +55,9 @@ def _ten(user):
 def _du_lieu_khach_hang(user):
     dang_xu_ly = (booking_cua_nguoi_dung(user, VaiTro.KHACH_HANG)
                   .exclude(TrangThai__in=TRANG_THAI_KET_THUC).order_by('-NgayTao', '-MaBooking'))
-    thong_bao = ThongBao.objects.filter(MaNguoiNhan=user, TrangThaiDoc=TrangThaiDoc.CHUA_DOC)   # mặc định mới nhất lên đầu
+    # Sắp xếp rõ ràng (mới nhất lên đầu) ngay tại đây, không dựa vào Meta.ordering của model, rồi mới cắt [:5].
+    thong_bao = (ThongBao.objects.filter(MaNguoiNhan=user, TrangThaiDoc=TrangThaiDoc.CHUA_DOC)
+                 .order_by('-NgayTao', '-MaThongBao'))
     return {
         'so_dang_xu_ly': dang_xu_ly.count(),
         'dang_xu_ly': [_dong_booking(b, 'chi_tiet_booking', _ten(b.MaNhiepAnhGia.MaTaiKhoan))
@@ -71,10 +73,12 @@ def _du_lieu_khach_hang(user):
 
 
 # ------------------------------------------------------------- Nhiếp ảnh gia
-def _phan_hoi_gan_nhat(nag):
-    """Lý do Quản trị viên đã ghi ở lượt duyệt gần nhất (hiện khi hồ sơ chưa được duyệt)."""
-    luot = DuyetHoSo.objects.filter(MaNhiepAnhGia=nag, KetQua__isnull=False).first()   # mặc định lượt mới nhất lên đầu
-    return luot.NoiDungPhanHoi if luot and luot.NoiDungPhanHoi else ''
+def _luot_duyet_moi_nhat(nag):
+    """Lượt duyệt MỚI NHẤT của hồ sơ (kể cả lượt chưa có kết quả), sắp theo LanNop giảm dần.
+    Cùng cách xác định với màn "Hồ sơ của tôi" (profiles/views_cua_toi.py): chỉ lượt mới nhất mới quyết định
+    Nhiếp ảnh gia đang ở trạng thái nào. Nhờ lấy cả lượt chưa có kết quả, hồ sơ vừa được nộp lại sẽ hiện
+    "đang chờ duyệt" chứ không hiện lại lý do của lượt trước."""
+    return DuyetHoSo.objects.filter(MaNhiepAnhGia=nag).order_by('-LanNop').first()
 
 
 def _du_lieu_nhiep_anh_gia(user):
@@ -85,14 +89,23 @@ def _du_lieu_nhiep_anh_gia(user):
     except ObjectDoesNotExist:          # tài khoản có vai trò Nhiếp ảnh gia nhưng chưa tạo hồ sơ
         nag = None
 
+    # Chỉ hồ sơ chưa duyệt mới cần lượt duyệt gần nhất (để biết bị từ chối hay bị yêu cầu chỉnh sửa, và lý do).
+    luot = None if da_duyet or nag is None else _luot_duyet_moi_nhat(nag)
+    ket_qua = luot.KetQua if luot else None
+    da_tu_choi = trang_thai == TrangThaiHoSo.DA_TU_CHOI
+    # Theo quy ước của nhóm, "Yêu cầu chỉnh sửa" vẫn giữ User.trang_thai_ho_so = 'Chờ duyệt' nên không thể nhận ra
+    # từ trạng thái hồ sơ; phải xem KetQua của lượt duyệt mới nhất.
+    can_chinh_sua = not da_tu_choi and ket_qua == KetQuaDuyetHoSo.YEU_CAU_CHINH_SUA
     du_lieu = {
         'da_duyet': da_duyet,
-        'da_tu_choi': trang_thai == TrangThaiHoSo.DA_TU_CHOI,
+        'da_tu_choi': da_tu_choi,
+        'can_chinh_sua': can_chinh_sua,
         'trang_thai_ho_so': trang_thai,
-        'phan_hoi': '' if da_duyet or nag is None else _phan_hoi_gan_nhat(nag),
+        # Lý do chỉ có khi lượt mới nhất là "Đã từ chối" hoặc "Yêu cầu chỉnh sửa"; đang chờ duyệt thì để trống.
+        'phan_hoi': (luot.NoiDungPhanHoi or '') if (can_chinh_sua or (da_tu_choi and ket_qua == KetQuaDuyetHoSo.DA_TU_CHOI)) else '',
         'url_ho_so': _url('photographer_profile') or _url('cap_nhat_ho_so'),
     }
-    if not da_duyet:                    # Chờ duyệt / Đã từ chối: chỉ có tình trạng hồ sơ
+    if not da_duyet:                    # Chờ duyệt / Yêu cầu chỉnh sửa / Đã từ chối: chỉ có tình trạng hồ sơ
         return du_lieu
 
     cua_toi = booking_cua_nguoi_dung(user, VaiTro.NHIEP_ANH_GIA)

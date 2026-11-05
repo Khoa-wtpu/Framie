@@ -24,7 +24,7 @@
         </a>
         <div class="dropdown" data-dropdown>
           <button class="account-btn" type="button" aria-haspopup="true" aria-expanded="false" data-dropdown-toggle>
-            <span class="avatar" aria-hidden="true">{{ display_initial }}</span>
+            <span class="avatar" aria-hidden="true">{% if display_avatar_url %}<img src="{{ display_avatar_url }}" alt="">{% else %}{{ display_initial }}{% endif %}</span>
             <span class="account-btn__text"><span class="account-btn__name">{{ display_name }}</span><span class="account-btn__role">{{ role }}</span></span>
           </button>
           <div class="dropdown__menu" data-dropdown-menu hidden>

@@ -1,4 +1,4 @@
-/* core/static/core/css/tong_quan.css - B9: Trang tổng quan sau đăng nhập. Chỉ dùng token trong tokens.css. */
+/* static/css/tong_quan.css - B9: Trang tổng quan sau đăng nhập. Chỉ dùng token trong tokens.css. */
 .tq { padding-block: var(--space-6); }
 .tq-dau { margin-bottom: var(--space-5); }
 .tq-dau h1 { margin-bottom: var(--space-1); }

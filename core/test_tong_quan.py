@@ -97,6 +97,17 @@ class KhachHang(TongQuanBase):
     def test_khong_co_thong_bao(self):
         self.assertContains(self.mo(self.khach), 'Không có thông báo mới.')
 
+    def test_thong_bao_moi_nhat_len_dau_roi_moi_cat_5(self):
+        # Tạo từ MỚI nhất đến CŨ nhất, để mã (pk) ngược với thời gian: nếu chỉ dựa vào thứ tự tạo / mã thì sẽ lấy nhầm 5 cái cũ nhất.
+        bay_gio = timezone.now()
+        for i in range(6, -1, -1):                                       # i = 6 là mới nhất, i = 0 là cũ nhất
+            tb = ThongBao.objects.create(MaNguoiNhan=self.khach, TieuDe=f'TB{i}', NoiDung='x')
+            ThongBao.objects.filter(pk=tb.pk).update(NgayTao=bay_gio - timedelta(hours=10 - i))   # NgayTao tự điền khi tạo, nên chỉnh lại bằng update
+        res = self.mo(self.khach)
+        self.assertEqual([t['tieu_de'] for t in res.context['khach']['thong_bao']],
+                         ['TB6', 'TB5', 'TB4', 'TB3', 'TB2'])            # 5 thông báo MỚI nhất, mới nhất lên đầu
+        self.assertEqual(res.context['khach']['so_thong_bao'], 7)
+
     def test_chi_hien_toi_da_5_dong(self):
         for _ in range(7):
             self.tao_booking()
@@ -152,10 +163,63 @@ class NhiepAnhGiaChuaDuyet(TongQuanBase):
         self.assertNotContains(res, 'Yêu cầu Booking mới')
         self.assertNotContains(res, 'Lịch sắp tới')
 
+    def _tao_luot(self, lan, ket_qua=None, phan_hoi=None, cung_thoi_diem_nop=False):
+        """Tạo một lượt duyệt hồ sơ. ket_qua=None là lượt đang chờ duyệt (nộp / nộp lại).
+        DuyetHoSo.save() tự đồng bộ User.trang_thai_ho_so theo lượt MỚI NHẤT (đúng như hệ thật).
+        cung_thoi_diem_nop=True: mọi lượt cùng một ThoiDiemNop, để chỉ còn LanNop phân biệt lượt mới / cũ."""
+        gio_nop = timezone.now() - timedelta(days=3) + (timedelta(0) if cung_thoi_diem_nop else timedelta(hours=lan))
+        du_lieu = dict(MaNhiepAnhGia=self.nag, LanNop=lan, ThoiDiemNop=gio_nop)
+        if ket_qua:                                                     # ràng buộc DB: có kết quả thì có Quản trị viên + ThoiDiemDuyet >= ThoiDiemNop
+            du_lieu.update(MaQuanTriVien=self.admin, ThoiDiemDuyet=timezone.now() - timedelta(days=1),
+                           KetQua=ket_qua, NoiDungPhanHoi=phan_hoi)
+        return DuyetHoSo.objects.create(**du_lieu)
+
+    def setUp(self):
+        super().setUp()
+        self.admin = tao_user('qt', VaiTro.QUAN_TRI_VIEN)
+
     def test_bi_tu_choi_hien_ly_do(self):
-        admin = tao_user('qt', VaiTro.QUAN_TRI_VIEN)
-        DuyetHoSo.objects.create(MaNhiepAnhGia=self.nag, MaQuanTriVien=admin, ThoiDiemDuyet=timezone.now(),
-                                 KetQua=KetQuaDuyetHoSo.DA_TU_CHOI, NoiDungPhanHoi='Ảnh Portfolio chưa rõ nét.')
-        res = self.mo(self._doi_trang_thai(TrangThaiHoSo.DA_TU_CHOI))
+        self._tao_luot(1, KetQuaDuyetHoSo.DA_TU_CHOI, 'Ảnh Portfolio chưa rõ nét.')       # save() đưa hồ sơ sang 'Đã từ chối'
+        res = self.mo(self.nag.MaTaiKhoan)
         self.assertContains(res, 'Ảnh Portfolio chưa rõ nét.')
         self.assertContains(res, TrangThaiHoSo.DA_TU_CHOI)
+        self.assertFalse(res.context['nag']['can_chinh_sua'])
+
+    def test_hai_luot_duyet_hien_ly_do_cua_luot_moi_nhat(self):
+        # Hai lượt CÙNG ThoiDiemNop: chỉ LanNop phân biệt cũ / mới, nên chỉ đúng khi view sắp rõ ràng theo '-LanNop'.
+        self._tao_luot(1, KetQuaDuyetHoSo.DA_TU_CHOI, 'Lý do của lượt cũ.', cung_thoi_diem_nop=True)
+        self._tao_luot(2, KetQuaDuyetHoSo.DA_TU_CHOI, 'Lý do của lượt mới nhất.', cung_thoi_diem_nop=True)
+        res = self.mo(self.nag.MaTaiKhoan)
+        self.assertEqual(res.context['nag']['phan_hoi'], 'Lý do của lượt mới nhất.')
+        self.assertContains(res, 'Lý do của lượt mới nhất.')
+        self.assertNotContains(res, 'Lý do của lượt cũ.')
+
+    def test_yeu_cau_chinh_sua_hien_ly_do_va_nut_cap_nhat(self):
+        self._tao_luot(1, KetQuaDuyetHoSo.YEU_CAU_CHINH_SUA, 'Bổ sung thêm 3 ảnh Portfolio.')
+        user = self.nag.MaTaiKhoan
+        user.refresh_from_db()
+        self.assertEqual(user.trang_thai_ho_so, TrangThaiHoSo.CHO_DUYET)  # quy ước nhóm: hồ sơ vẫn 'Chờ duyệt'
+        res = self.mo(user)
+        self.assertTrue(res.context['nag']['can_chinh_sua'])
+        self.assertContains(res, 'Quản trị viên yêu cầu chỉnh sửa hồ sơ')
+        self.assertContains(res, 'Bổ sung thêm 3 ảnh Portfolio.')
+        self.assertContains(res, 'Cập nhật hồ sơ')                        # nút để sửa
+        self.assertNotContains(res, 'đang chờ Quản trị viên duyệt')       # không hiện câu "đang chờ duyệt"
+        self.assertNotContains(res, 'Yêu cầu Booking mới')                # vẫn chỉ thấy tình trạng hồ sơ
+
+    def test_yeu_cau_chinh_sua_lan_dau_roi_nop_lai_hien_dang_cho_duyet(self):
+        # Lượt 1: bị yêu cầu chỉnh sửa. Lượt 2: Nhiếp ảnh gia đã nộp lại, chưa có kết quả -> không được hiện lại lý do cũ.
+        self._tao_luot(1, KetQuaDuyetHoSo.YEU_CAU_CHINH_SUA, 'Lý do đã được xử lý.')
+        self._tao_luot(2)
+        res = self.mo(self.nag.MaTaiKhoan)
+        self.assertFalse(res.context['nag']['can_chinh_sua'])
+        self.assertEqual(res.context['nag']['phan_hoi'], '')
+        self.assertContains(res, 'đang chờ Quản trị viên duyệt')
+        self.assertNotContains(res, 'Lý do đã được xử lý.')
+        self.assertNotContains(res, 'Quản trị viên yêu cầu chỉnh sửa hồ sơ')
+
+    def test_cho_duyet_lan_dau_khong_co_ly_do(self):
+        self._tao_luot(1)                                               # vừa nộp lần đầu, chưa có kết quả
+        res = self.mo(self.nag.MaTaiKhoan)
+        self.assertFalse(res.context['nag']['can_chinh_sua'])
+        self.assertContains(res, 'đang chờ Quản trị viên duyệt')

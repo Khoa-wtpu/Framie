@@ -43,7 +43,7 @@ from django.core.paginator import Paginator  # Paginator: cắt danh sách dài 
 # get_object_or_404: lấy một dòng dữ liệu, không có thì trả trang 404. render: dựng trang HTML.
 from django.shortcuts import get_object_or_404, render  # lấy 1 dòng dữ liệu (không có -> 404) / dựng trang HTML
 # path: khai báo đường dẫn. reverse: từ tên URL suy ra địa chỉ.
-from django.urls import path, reverse  # path: khai báo địa chỉ; reverse: từ TÊN url suy ra địa chỉ thật
+from django.urls import NoReverseMatch, path, reverse  # path: khai báo địa chỉ; reverse: từ TÊN url suy ra địa chỉ thật; NoReverseMatch: lỗi khi tên url chưa tồn tại
 # Chỉ cho phép mở trang bằng GET (xem), không nhận POST.
 from django.views.decorators.http import require_GET  # nhãn: chỉ cho mở trang bằng GET (xem), chặn POST
 
@@ -83,9 +83,24 @@ TRANG_THAI_CHUA_CO_COC = {  # tập hợp các trạng thái mà cọc CHƯA Đ�
 }
 
 
+# Trạng thái mà Nhiếp ảnh gia còn việc với ảnh (module Bàn giao ảnh của Nguyên): tải ảnh gốc / bắt đầu hậu kỳ / đang hậu kỳ.
+TRANG_THAI_NAG_XU_LY_ANH = (TrangThaiBooking.DA_CHUP, TrangThaiBooking.CHO_HAU_KY, TrangThaiBooking.DANG_HAU_KY)  # 3 trạng thái hiện nút "Tải ảnh / Bắt đầu hậu kỳ"
+# Trạng thái mà Khách hàng phải chọn ảnh cần hậu kỳ.
+TRANG_THAI_KHACH_CHON_ANH = (TrangThaiBooking.CHO_KH_CHON_ANH,)  # chỉ "Chờ Khách hàng lựa chọn ảnh" hiện nút "Chọn ảnh cần hậu kỳ"
+
+
 # ---------------------------------------------------------------------
 # PHẦN 3: HÀM NGHIỆP VỤ (SERVICE)
 # ---------------------------------------------------------------------
+def _url_neu_co(ten_url, ma_booking):
+    """Tên URL -> địa chỉ trang của module khác (delivery, của Nguyên). Trang đó chưa có trên máy này (chưa merge)
+    thì trả None để template ẩn nút, không báo lỗi - cùng cách với hàm _url ở core/views_tong_quan.py (B9)."""
+    try:  # thử suy ra địa chỉ
+        return reverse(ten_url, kwargs={'ma_booking': ma_booking})  # có tên url -> trả địa chỉ thật
+    except NoReverseMatch:  # tên url chưa tồn tại
+        return None  # None: template không hiện nút
+
+
 def _ten_hien_thi(user):
     """Họ tên đầy đủ; rỗng thì lấy tên đăng nhập."""
     return user.get_full_name() or user.username  # có họ tên thì dùng, trống thì lấy tên đăng nhập
@@ -247,6 +262,12 @@ def _trang_chi_tiet(request, ma_booking, ten_url_danh_sach):
         'url_xu_ly': (reverse('chi_tiet_yeu_cau_booking', kwargs={'ma_booking': booking.pk})  # địa chỉ màn xử lý của Nhiếp ảnh gia...
                       if la_nag and booking.TrangThai in (TrangThaiBooking.CHO_XAC_NHAN,  # ...chỉ khi là Nhiếp ảnh gia VÀ Booking đang ở
                                                           TrangThaiBooking.CHOT_BOOKING) else None),  # "Chờ xác nhận"/"Chốt Booking"; không thì None
+        # Khách hàng khi Booking "Chờ Khách hàng lựa chọn ảnh" -> nút tới trang chọn ảnh (N6). Quản trị viên và Nhiếp ảnh gia không có nút này.
+        'url_chon_anh': (_url_neu_co('chon_anh_hau_ky', booking.pk)  # địa chỉ trang chọn ảnh cần hậu kỳ (tên url của Nguyên)...
+                         if la_khach and booking.TrangThai in TRANG_THAI_KHACH_CHON_ANH else None),  # ...chỉ khi là Khách VÀ đúng trạng thái; không thì None
+        # Nhiếp ảnh gia khi Booking "Đã chụp" / "Chờ hậu kỳ" / "Đang hậu kỳ" -> nút tới trang tải ảnh / hậu kỳ (N4, N5). Khách và Quản trị viên không có nút này.
+        'url_tai_anh': (_url_neu_co('tai_anh_len', booking.pk)  # địa chỉ trang tải ảnh / hậu kỳ (tên url của Nguyên)...
+                        if la_nag and booking.TrangThai in TRANG_THAI_NAG_XU_LY_ANH else None),  # ...chỉ khi là Nhiếp ảnh gia VÀ đúng trạng thái; không thì None
     })
 
 

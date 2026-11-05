@@ -84,6 +84,8 @@
       <p>Hồ sơ của bạn đã được duyệt và đang hiển thị công khai. Bạn có thể nhận Booking từ Khách hàng.</p>
       {% elif nag.da_tu_choi %}
       <p>Hồ sơ của bạn chưa được duyệt.{% if nag.phan_hoi %} Lý do: <strong>{{ nag.phan_hoi }}</strong>{% endif %}</p>
+      {% elif nag.can_chinh_sua %}
+      <p>Quản trị viên yêu cầu chỉnh sửa hồ sơ{% if nag.phan_hoi %}: <strong>{{ nag.phan_hoi }}</strong>{% endif %}</p>
       {% else %}
       <p>Hồ sơ đang chờ Quản trị viên duyệt. Bạn sẽ nhận được thông báo khi có kết quả.</p>
       {% endif %}

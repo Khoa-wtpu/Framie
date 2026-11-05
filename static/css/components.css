@@ -9,6 +9,10 @@
 .btn--soft { background: var(--gradient-white-gray); color: var(--color-black); border-color: transparent; }
 .btn--soft:hover { box-shadow: var(--shadow-md); border-color: transparent; transform: translateY(-2px); }
 .btn--soft:active { box-shadow: var(--shadow-sm); transform: translateY(0); }
+/* Nút xám gradient: chữ luôn nằm trên 1 hàng (cột bảng hẹp không làm chữ bị xuống dòng); bản nhỏ trong bảng có viền mảnh + bóng nhẹ cho nổi hơn */
+.btn--soft { white-space: nowrap; flex: none; }
+.btn--soft.btn--sm { padding: var(--space-2) var(--space-5); border-color: var(--color-border); box-shadow: var(--shadow-sm); }
+.btn--soft.btn--sm:hover { border-color: var(--color-border); }
 .btn--danger { background: var(--danger-fg); color: var(--color-white); }
 .btn--danger:hover { filter: brightness(.9); }
 .btn--sm { min-height: 2.25rem; padding: var(--space-2) var(--space-4); }
