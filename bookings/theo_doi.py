@@ -92,7 +92,7 @@ TRANG_THAI_KHACH_CHON_ANH = (TrangThaiBooking.CHO_KH_CHON_ANH,)  # chỉ "Chờ 
 # ---------------------------------------------------------------------
 # PHẦN 3: HÀM NGHIỆP VỤ (SERVICE)
 # ---------------------------------------------------------------------
-def _url_neu_co(ten_url, ma_booking):
+def _url_neu_co(ten_url, ma_booking):  # đổi tên url của module khác thành địa chỉ; chưa có thì trả None
     """Tên URL -> địa chỉ trang của module khác (delivery, của Nguyên). Trang đó chưa có trên máy này (chưa merge)
     thì trả None để template ẩn nút, không báo lỗi - cùng cách với hàm _url ở core/views_tong_quan.py (B9)."""
     try:  # thử suy ra địa chỉ
@@ -101,17 +101,17 @@ def _url_neu_co(ten_url, ma_booking):
         return None  # None: template không hiện nút
 
 
-def _ten_hien_thi(user):
+def _ten_hien_thi(user):  # tên hiển thị của một người
     """Họ tên đầy đủ; rỗng thì lấy tên đăng nhập."""
     return user.get_full_name() or user.username  # có họ tên thì dùng, trống thì lấy tên đăng nhập
 
 
-def _tien(so):
+def _tien(so):  # định dạng tiền kiểu Việt Nam
     """Định dạng tiền kiểu Việt Nam: 1500000 -> '1.500.000'."""
     return f'{int(so):,}'.replace(',', '.')  # int(): bỏ phần lẻ; :, thêm dấu phẩy ngăn nghìn; replace: đổi phẩy thành chấm
 
 
-def booking_cua_nguoi_dung(user, vai_tro):
+def booking_cua_nguoi_dung(user, vai_tro):  # cửa ngõ lấy Booking đúng phạm vi của người dùng
     """HÀM 'CỬA NGÕ' LẤY DỮ LIỆU của UC4.7 - mọi truy vấn của file này đều đi qua đây nên không thể xem lọt
     Booking của người khác (BR4.7-1).
       Khách hàng     -> chỉ Booking do chính mình đặt.
@@ -130,12 +130,12 @@ def booking_cua_nguoi_dung(user, vai_tro):
     return goc.select_related('MaKhachHang', 'MaGoi__MaLoaiHinh', 'MaLich', 'MaNhiepAnhGia__MaTaiKhoan')  # nạp kèm các bảng liên quan trong 1 lần truy vấn
 
 
-def chuan_hoa_trang_thai(trang_thai):
+def chuan_hoa_trang_thai(trang_thai):  # làm sạch giá trị lọc trạng thái
     """Giá trị lạ trên URL (gõ tay) -> quay về 'tất cả', không gây lỗi."""
     return trang_thai if trang_thai in TrangThaiBooking.ALL else LOC_TAT_CA  # hợp lệ thì giữ, lạ thì coi như "tất cả"
 
 
-def lay_danh_sach_booking(user, vai_tro, trang_thai=LOC_TAT_CA, tu_khoa=''):
+def lay_danh_sach_booking(user, vai_tro, trang_thai=LOC_TAT_CA, tu_khoa=''):  # danh sách Booking đã lọc, mới nhất lên đầu
     """UC4.7 bước 2 và luồng 2a: danh sách Booking của người dùng, lọc theo trạng thái, mới nhất lên đầu.
     tu_khoa (chỉ Quản trị viên dùng): mã Booking hoặc tên / email / tên đăng nhập của Khách hay Nhiếp ảnh gia."""
     ds = booking_cua_nguoi_dung(user, vai_tro)  # bước 1: lấy đúng phạm vi Booking của người này (BR4.7-1)
@@ -157,12 +157,12 @@ def lay_danh_sach_booking(user, vai_tro, trang_thai=LOC_TAT_CA, tu_khoa=''):
     return ds.order_by('-NgayTao', '-MaBooking')  # dấu '-' = giảm dần: Booking mới nhất lên đầu
 
 
-def lay_chi_tiet_booking(user, vai_tro, ma_booking):
+def lay_chi_tiet_booking(user, vai_tro, ma_booking):  # một Booking của người dùng; của người khác -> 404
     """UC4.7 bước 3-4: một Booking của người dùng. Của người khác hoặc không tồn tại -> Http404 (BR4.7-1)."""
     return get_object_or_404(booking_cua_nguoi_dung(user, vai_tro), pk=ma_booking)  # tìm trong phạm vi của người này; không có -> 404
 
 
-def lay_thanh_toan(booking):
+def lay_thanh_toan(booking):  # các khoản thanh toán của Booking, cọc trước còn lại sau
     """Các khoản thanh toán của Booking (cọc 40% trước, phần còn lại 60% sau) để hiện cạnh trạng thái (BR4.7-2)."""
     thu_tu = {LoaiThanhToan.TIEN_COC: 0, LoaiThanhToan.PHAN_CON_LAI: 1}  # bảng thứ tự: cọc trước (0), còn lại sau (1)
     cac_khoan = list(booking.thanh_toans.all())  # lấy mọi khoản thanh toán của Booking này thành danh sách
@@ -170,7 +170,7 @@ def lay_thanh_toan(booking):
     return cac_khoan  # trả danh sách đã sắp
 
 
-def doi_chieu_thanh_toan(booking):
+def doi_chieu_thanh_toan(booking):  # soát trạng thái Booking có lệch dữ liệu thanh toán không
     """BR4.7-2: soát xem trạng thái Booking có KHỚP dữ liệu thanh toán không.
     Trả về danh sách câu mô tả chỗ lệch (rỗng = khớp). Chỉ đọc, không sửa gì: sửa là việc của người gọi
     chuyen_trang_thai_booking (Nguyên - Thanh toán). Lệch là dấu hiệu có ai đó đổi trạng thái / thanh toán
@@ -201,7 +201,7 @@ chi_khach_va_nag = vai_tro_required(VaiTro.KHACH_HANG, VaiTro.NHIEP_ANH_GIA)  # 
 chi_quan_tri = vai_tro_required(VaiTro.QUAN_TRI_VIEN)  # nhãn: chỉ Quản trị viên vào được
 
 
-def _trang_danh_sach(request, ten_url_chi_tiet, tieu_de, co_tim_kiem):
+def _trang_danh_sach(request, ten_url_chi_tiet, tieu_de, co_tim_kiem):  # phần chung của hai trang danh sách
     """Phần chung của hai trang danh sách (Khách / Nhiếp ảnh gia và Quản trị viên)."""
     vai_tro = lay_vai_tro(request.user)  # biết người đang xem là ai
     trang_thai = chuan_hoa_trang_thai(request.GET.get('trang_thai', LOC_TAT_CA))  # đọc ô lọc trên thanh địa chỉ (?trang_thai=...), làm sạch
@@ -228,7 +228,7 @@ def _trang_danh_sach(request, ten_url_chi_tiet, tieu_de, co_tim_kiem):
     })
 
 
-def _trang_chi_tiet(request, ma_booking, ten_url_danh_sach):
+def _trang_chi_tiet(request, ma_booking, ten_url_danh_sach):  # phần chung của hai trang chi tiết
     """Phần chung của hai trang chi tiết."""
     vai_tro = lay_vai_tro(request.user)  # biết người đang xem là ai
     booking = lay_chi_tiet_booking(request.user, vai_tro, ma_booking)   # lấy Booking; của người khác -> 404 (BR4.7-1)
@@ -273,28 +273,28 @@ def _trang_chi_tiet(request, ma_booking, ten_url_danh_sach):
 
 @chi_khach_va_nag  # nhãn: chặn người sai vai trò (chưa đăng nhập -> trang đăng nhập; sai vai trò -> 403)
 @require_GET  # nhãn: chỉ nhận yêu cầu xem (GET)
-def danh_sach_cua_toi(request):
+def danh_sach_cua_toi(request):  # view: Booking của tôi (Khách / Nhiếp ảnh gia)
     """UC4.7 bước 1-2 và luồng 2a: "Booking của tôi" của Khách hàng / Nhiếp ảnh gia."""
     return _trang_danh_sach(request, 'chi_tiet_booking', 'Booking của tôi', co_tim_kiem=False)  # không có ô tìm kiếm; link chi tiết = chi_tiet_booking
 
 
 @chi_khach_va_nag  # chặn sai vai trò
 @require_GET  # chỉ GET
-def chi_tiet_cua_toi(request, ma_booking):
+def chi_tiet_cua_toi(request, ma_booking):  # view: chi tiết Booking của tôi
     """UC4.7 bước 3-4: chi tiết + lịch sử đổi trạng thái. Booking của người khác -> 404."""
     return _trang_chi_tiet(request, ma_booking, 'my_bookings')  # nút quay lại trỏ về "Booking của tôi"
 
 
 @chi_quan_tri  # chỉ Quản trị viên
 @require_GET  # chỉ GET
-def danh_sach_quan_tri(request):
+def danh_sach_quan_tri(request):  # view: Quản trị viên xem tất cả Booking
     """Quản trị viên tra cứu tất cả Booking (lọc theo trạng thái + tìm theo mã / tên / email)."""
     return _trang_danh_sach(request, 'admin_booking_detail', 'Tất cả Booking', co_tim_kiem=True)  # có ô tìm kiếm; link chi tiết dành cho Quản trị
 
 
 @chi_quan_tri  # chỉ Quản trị viên
 @require_GET  # chỉ GET
-def chi_tiet_quan_tri(request, ma_booking):
+def chi_tiet_quan_tri(request, ma_booking):  # view: Quản trị viên xem chi tiết một Booking
     """Quản trị viên xem chi tiết một Booking bất kỳ (kèm cảnh báo nếu lệch dữ liệu thanh toán)."""
     return _trang_chi_tiet(request, ma_booking, 'admin_bookings')  # nút quay lại trỏ về danh sách của Quản trị
 
