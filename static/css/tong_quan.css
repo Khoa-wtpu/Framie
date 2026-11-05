@@ -6,7 +6,7 @@
 
 /* Hàng ô số liệu */
 .tq-so { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-4); margin-bottom: var(--space-5); }
-.tq-so__o { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-5); background: var(--color-black); color: var(--color-white); border-radius: var(--radius-lg); }
+.tq-so__o { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-5); background: var(--btn-primary-bg); color: var(--color-white); border-radius: var(--radius-lg); }
 .tq-so__gia-tri { font-size: var(--text-xl); font-weight: var(--fw-heading); line-height: 1.1; }
 .tq-so__nhan { font-size: var(--text-sm); opacity: .8; }
 

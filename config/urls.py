@@ -26,11 +26,6 @@ urlpatterns = [
     path('', include('payments.urls')),  # N2, N3, N9: minh chứng, xác nhận cọc, xác nhận phần còn lại
     path('', include('delivery.urls')),  # N4-N8: bàn giao ảnh
     path('', include('reviews.urls')),  # N11: đánh giá nhiếp ảnh gia
-
-    # ---- Phần của Nguyên (N2-N11) ----
-    path('', include('payments.urls')),           # N2, N3, N9: minh chứng, xác nhận cọc, xác nhận phần còn lại
-    path('', include('delivery.urls')),           # N4-N8: bàn giao ảnh
-    path('', include('reviews.urls')),            # N11: đánh giá nhiếp ảnh gia
 ]
 
 # Khi chạy thử (DEBUG = True): địa chỉ /media/... dẫn tới thư mục media/ trên máy,
