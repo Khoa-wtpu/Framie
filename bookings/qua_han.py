@@ -83,7 +83,7 @@ def xu_ly_het_han_dat_coc(bay_gio=None):
 # 3. Quá 2 ngày chưa thanh toán 60%
 # ---------------------------------------------------------------------
 def xu_ly_qua_han_thanh_toan(bay_gio=None):
-    """Khoản 'Phần còn lại' đang 'Chờ xác nhận thanh toán (60%)', Khách chưa tải minh chứng và Booking đã quá
+    """Khoản 'Phần còn lại' đang 'Chờ xác nhận thanh toán', Khách chưa tải minh chứng và Booking đã quá
     HanThanhToanConLai -> khoản thanh toán thành 'Quá hạn thanh toán'. Trạng thái Booking giữ nguyên
     (bảng chuyển của bookings/services.py không có bước nào từ 'Chờ xác nhận thanh toán' sang trạng thái khác)."""
     bay_gio = bay_gio or timezone.now()

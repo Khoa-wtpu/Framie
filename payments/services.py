@@ -76,7 +76,7 @@ def tai_len_minh_chung(ma_booking, khach_hang, tep):         # bước 4-7 của
             if thanh_toan is None:                           # lần tải đầu của khoản cọc: tạo khoản thanh toán
                 thanh_toan = ThanhToan.objects.create(
                     MaBooking=booking, LoaiThanhToan=khoan['loai'], SoTien=khoan['so_tien'],
-                    TrangThai=khoan['trang_thai_cho'])       # 'Chờ xác nhận thanh toán cọc (40%)'
+                    TrangThai=khoan['trang_thai_cho'])       # 'Chờ xác nhận thanh toán cọc'
 
             duoi = Path(tep.name).suffix.lstrip('.').lower()  # đuôi tệp: png / jpg / jpeg
             duong_dan = kho.save(f'minh_chung/{thanh_toan.pk}/{uuid.uuid4().hex}.{duoi}', tep)  # ghi tệp xuống ổ đĩa

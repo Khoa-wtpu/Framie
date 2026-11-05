@@ -30,7 +30,7 @@ def tai_len_minh_chung(request, ma_booking):
                 form.add_error(None, str(loi))
             else:
                 messages.success(request, 'Đã gửi minh chứng. Vui lòng chờ Nhiếp ảnh gia xác nhận.')
-                return redirect('tai_len_minh_chung', ma_booking=booking.pk)  # tránh gửi lại khi F5
+                return redirect('chi_tiet_booking', ma_booking=booking.pk)  # minh chứng đã gửi: quay về chi tiết Booking
     else:
         form = MinhChungForm()                                # bước 2: biểu mẫu trống
 
@@ -73,13 +73,13 @@ def xac_nhan_thanh_toan_coc(request, nag, ma_booking):        # trang UC5.2
             if hanh_dong == 'xac_nhan':                       # bước 4
                 services.xac_nhan_thanh_toan_coc(booking.pk, request.user)    # bước 5
                 messages.success(request, 'Đã xác nhận tiền cọc. Booking được chốt.')
-                return redirect('xac_nhan_thanh_toan_coc', ma_booking=booking.pk)
+                return redirect('chi_tiet_booking', ma_booking=booking.pk)
             elif hanh_dong == 'bo_sung':                      # nhánh 4a
                 form = YeuCauBoSungForm(request.POST)
                 if form.is_valid():
                     services.yeu_cau_bo_sung_minh_chung(booking.pk, request.user, form.cleaned_data['ly_do'])
                     messages.success(request, 'Đã gửi yêu cầu bổ sung minh chứng cho Khách hàng.')
-                    return redirect('xac_nhan_thanh_toan_coc', ma_booking=booking.pk)
+                    return redirect('chi_tiet_booking', ma_booking=booking.pk)
             else:
                 messages.error(request, 'Thao tác không hợp lệ.')
         except services.LoiXacNhanCoc as loi:                 # lỗi nghiệp vụ hoặc lỗi hệ thống (5a)
