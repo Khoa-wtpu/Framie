@@ -219,8 +219,9 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
 /* P8 bổ sung: lời nhắc "thông báo có sao sẽ lên đầu danh sách" cạnh tiêu đề nhóm */
 .tb-nhom-dau { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-1) var(--space-4); margin-bottom: var(--space-4); }  /* tiêu đề bên trái, lời nhắc bên phải cùng hàng, hẹp thì xuống dòng */
 .tb-nhom-dau .tb-nhom-tieu-de { margin: 0; }  /* bỏ khoảng cách dưới riêng của tiêu đề, hàng bao ngoài đã lo */
-.tb-nhom-dau .tb-meo { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }  /* chữ nhỏ, màu nhạt */
-.tb-nhom-dau .tb-meo__sao { color: var(--tone-amber-dot); }  /* ngôi sao vàng giống nút ★ trong danh sách */
+
+.tb-nhom-dau .tb-meo { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }  /* chữ nhỏ, màu nhạt, tự đặt màu nên không phụ thuộc class muted */
+.tb-nhom-dau .tb-meo__sao { color: var(--tone-amber-dot); }  /* ngôi sao vàng giống nút ★ trong danh sách (luật dài hơn nên không bị ghi đè) */
 
 /* ---------- Hiệu ứng LÓE SÁNG khi rê chuột: dùng chung cho mọi nút và hộp ----------
    Tự áp dụng cho .btn và .card. Hộp khác (ô, thẻ riêng của từng trang) chỉ cần thêm class "loe-sang". */

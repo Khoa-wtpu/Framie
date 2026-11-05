@@ -1,0 +1,33 @@
+/* chat/static/chat/css/chat.css - P11. CHỈ dùng biến trong tokens.css (README_GIAO_DIEN mục 1), không gõ mã màu. */
+.chat-trang { max-width: 860px; } /* cột hẹp cho dễ đọc */
+.chat { display: flex; flex-direction: column; gap: var(--space-3); } /* xếp dọc: đầu, danh sách, form */
+.chat__dau { display: flex; align-items: center; gap: var(--space-3); } /* hàng đầu: nút quay lại, ảnh, tên */
+.chat__avatar { width: 2.5rem; height: 2.5rem; flex: none; } /* ảnh đại diện to hơn avatar ở header (2rem) */
+.chat__ten { margin: 0; font-size: var(--text-lg); min-width: 0; } /* tên đối phương, nhỏ lại so với h1 mặc định */
+.chat__ten a { text-decoration: none; } /* bỏ gạch chân cho gọn */
+.chat__ten a:hover { text-decoration: underline; } /* rê chuột thì hiện gạch chân để biết bấm được */
+.chat__trang-thai { padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); background: var(--warning-bg); color: var(--warning-fg); font-size: var(--text-sm); } /* thanh báo mất kết nối, dùng màu cảnh báo */
+.chat__khung { position: relative; } /* làm mốc cho nút "Có tin mới" */
+.chat__danh-sach { height: clamp(20rem, 60vh, 40rem); overflow-y: auto; padding: var(--space-4); background: var(--surface-gradient); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overscroll-behavior: contain; } /* khung cuộn chứa các tin */
+.chat__tin { display: flex; flex-direction: column; gap: var(--space-2); } /* các bong bóng xếp dọc */
+.chat__tai-cu { display: flex; margin: 0 auto var(--space-3); } /* nút "Xem tin cũ hơn" ở giữa, phía trên */
+.chat__trong { color: var(--color-text-muted); text-align: center; margin: var(--space-5) 0; } /* câu hướng dẫn khi chưa có tin */
+.chat__tin-moi { position: absolute; left: 50%; bottom: var(--space-3); transform: translateX(-50%); box-shadow: var(--shadow-md); } /* nút nổi ở đáy khung cuộn */
+.chat__tin-moi:hover { transform: translateX(-50%) translateY(-2px); } /* giữ căn giữa khi rê chuột (btn--soft có translateY riêng) */
+.chat__loi { margin: 0; font-size: var(--text-sm); } /* dòng lỗi dưới khung, màu đỏ lấy từ .field__error */
+.tn { max-width: 78%; padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); overflow-wrap: anywhere; } /* bong bóng: tối đa 78% bề ngang, tự ngắt từ dài */
+.tn__noi-dung { margin: 0; } /* bỏ khoảng cách dưới của thẻ p */
+.tn__gio { display: block; margin-top: var(--space-1); font-size: var(--text-xs); opacity: .75; } /* giờ gửi, chữ nhỏ */
+.tn--cua-toi { align-self: flex-end; background: var(--btn-primary-bg); color: var(--color-white); border-bottom-right-radius: var(--radius-sm); } /* tin của mình: bên phải, nền đậm như nút chính */
+.tn--cua-toi .tn__gio { text-align: right; } /* giờ canh phải */
+.tn--doi-phuong { align-self: flex-start; background: var(--color-surface-alt); border: 1px solid var(--color-border); border-bottom-left-radius: var(--radius-sm); } /* tin của đối phương: bên trái, nền nhạt */
+.chat__soan { display: flex; align-items: flex-end; gap: var(--space-3); } /* hàng nhập: ô nhập và nút Gửi */
+.chat__soan textarea.input { flex: 1; min-height: 2.75rem; max-height: 9rem; resize: none; } /* ô nhập tự cao lên tới 9rem; thắng quy tắc min-height 6rem của textarea.input */
+.hop-thu { display: grid; gap: var(--space-3); } /* danh sách cuộc trò chuyện */
+.hop-thu__muc { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4); background: var(--surface-gradient); border: 1px solid var(--color-border); border-radius: var(--radius-lg); text-decoration: none; transition: transform .2s, box-shadow .2s; } /* mỗi dòng giống thẻ card */
+.hop-thu__muc:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); } /* rê chuột nhấc nhẹ như card--link */
+.hop-thu__chu { display: grid; min-width: 0; flex: 1; } /* khối chữ chiếm phần còn lại, cho phép cắt chữ dài */
+.hop-thu__ten { font-weight: var(--fw-heading); } /* tên đối phương đậm */
+.hop-thu__xem-truoc { color: var(--color-text-muted); font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* xem trước tin cuối, một dòng */
+.hop-thu__gio { color: var(--color-text-muted); font-size: var(--text-xs); flex: none; } /* giờ tin cuối */
+@media (max-width: 600px) { .tn { max-width: 90%; } .hop-thu__gio { display: none; } } /* điện thoại: bong bóng rộng hơn, ẩn giờ ở danh sách cho đỡ chật */

@@ -1,0 +1,5 @@
+{# P11: MỘT bong bóng tin nhắn. Dùng chung cho trang (vòng for) và cho JSON polling (render_to_string). Cần biến: tin, nguoi_xem_id #}
+<article class="tn {% if tin.MaNguoiGui_id == nguoi_xem_id %}tn--cua-toi{% else %}tn--doi-phuong{% endif %}" data-id="{{ tin.pk }}">{# data-id để chat.js chống chèn trùng; tin của mình nằm bên phải #}
+  <p class="tn__noi-dung">{{ tin.NoiDung|linebreaksbr }}</p>{# linebreaksbr tự escape HTML trước rồi mới đổi xuống dòng thành <br>, chống XSS #}
+  <time class="tn__gio" datetime="{{ tin.ThoiGianGui|date:'c' }}" title="{{ tin.ThoiGianGui|date:'d/m/Y H:i:s' }}">{{ tin.ThoiGianGui|date:'H:i d/m/Y' }}</time>{# giờ gửi theo TIME_ZONE Asia/Ho_Chi_Minh #}
+</article>

@@ -164,6 +164,14 @@ def dat_dau_sao(nguoi_dung, ma_thong_bao, co_sao):  # UC9.2: đánh dấu sao ho
     gia_tri = DanhDauSao.DA_DANH_DAU if co_sao else DanhDauSao.CHUA_DANH_DAU  # chọn giá trị đích
     return _cap_nhat(nguoi_dung, ma_thong_bao, DanhDauSao=gia_tri)  # ghi vào DB
 
+def xoa_thong_bao(nguoi_dung, ma_thong_bao):  # UC9.2 bổ sung: xóa MỘT thông báo của người này
+    """Trả về True nếu xóa được; False nếu không có dòng (của người khác) hoặc DB lỗi."""  # mô tả hàm
+    try:  # thử xóa; lỗi DB thì bắt lại để hiện hộp "Không thể xóa"
+        so_dong, _ = thong_bao_cua(nguoi_dung).filter(pk=ma_thong_bao).delete()  # DELETE ... WHERE đúng chủ và đúng mã; trả về (số dòng đã xóa, chi tiết theo bảng)
+    except DatabaseError:  # lỗi cơ sở dữ liệu
+        logger.exception('thong_bao: xóa thất bại (mã %s)', ma_thong_bao)  # ghi log đầy đủ để sửa sau
+        return False  # báo thất bại, không ném lỗi ra ngoài
+    return so_dong > 0  # xóa được ít nhất 1 dòng là thành công
 
 def tu_dong_danh_dau_da_doc(nguoi_dung, thong_bao):  # UC9.2: mở xem thì tự chuyển Chưa đọc -> Đã đọc
     """Trả về True nếu thông báo đã (hoặc vừa được) chuyển sang Đã đọc; False nếu cập nhật lỗi."""  # mô tả hàm

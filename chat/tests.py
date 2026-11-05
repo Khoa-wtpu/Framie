@@ -39,7 +39,6 @@ def _urlconf(ten, co_chi_tiet):  # tạo urlconf tạm, độc lập với các 
 
 
 CO_UC82 = _urlconf('chat_urlconf_co_uc82', True)  # urlconf có UC8.2
-KHONG_UC82 = _urlconf('chat_urlconf_khong_uc82', False)  # urlconf chưa có UC8.2
 
 
 def _tao_user(ten, vai_tro, trang_thai=None):  # tạo User thuộc một nhóm
@@ -143,17 +142,6 @@ class KhoiTaoCuocTroChuyenTests(TestCase):
         self.assertEqual(CuocTroChuyen.objects.count(), 0)
 
 
-@override_settings(ROOT_URLCONF=KHONG_UC82, LOGIN_URL='login')  # urlconf chưa có UC8.2
-class ChuaCoUC82Tests(TestCase):
-    def test_chua_co_uc82_quay_ve_ho_so_kem_thong_bao(self):
-        khach = _tao_user('khach1', VaiTro.KHACH_HANG)
-        nag = _tao_nag('nag1')
-        self.client.force_login(khach)
-        r = self.client.post(f'/tin-nhan/bat-dau/{nag.pk}/')
-        self.assertRedirects(r, f'/nhiep-anh-gia/{nag.pk}/', fetch_redirect_response=False)  # về hồ sơ
-        self.assertEqual(CuocTroChuyen.objects.count(), 1)  # vẫn tạo được
-
-
 @override_settings(ROOT_URLCONF=CO_UC82, LOGIN_URL='login')
 class NutNhanTinTests(TestCase):
     def _ve(self, user):  # dựng thẻ nut_nhan_tin cho một người dùng
@@ -213,4 +201,3 @@ class NutTrenTrangK9Tests(TestCase):  # urlconf THẬT, GET trang hồ sơ công
         self.client.force_login(_tao_user('nag2', VaiTro.NHIEP_ANH_GIA, TrangThaiHoSo.DA_DUYET))
         r = self.client.get(self.trang)
         self.assertNotContains(r, f'action="{self.url_nut}"')
-        
