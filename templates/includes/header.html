@@ -2,7 +2,8 @@
  <div class="container site-header__inner">
    {% url 'admin_dashboard' as url_tong_quan %}{# trang Tổng quan của Quản trị viên #}
    <a class="brand" href="{% if role|slugify == 'quan-tri-vien' and url_tong_quan %}{{ url_tong_quan }}{% else %}{{ urls.home }}{% endif %}" aria-label="{{ site_name }} – Trang chủ">
-     <img class="brand__logo" src="{% static 'img/logo.png' %}" alt="{{ site_name }}">
+     <img class="brand__logo brand__logo--nen-trang" src="{% static 'img/logo.png' %}" alt="{{ site_name }}">{# bản chữ đen: hiện ở chế độ Trắng #}
+     <img class="brand__logo brand__logo--nen-den" src="{% static 'img/logo-dark.png' %}" alt="" aria-hidden="true">{# bản chữ trắng: hiện ở chế độ Đen #}
    </a>
 
 
@@ -21,6 +22,11 @@
 
 
    <div class="site-header__actions">
+     <button class="theme-toggle" type="button" role="switch" aria-checked="true" aria-label="Nền đen" title="Chuyển nền Trắng / Đen" data-theme-toggle>{# nút chuyển nền; theme.js cập nhật aria-checked và nhãn #}
+       <svg class="theme-toggle__icon theme-toggle__sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+       <svg class="theme-toggle__icon theme-toggle__moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+       <span class="theme-toggle__thumb" aria-hidden="true"></span>
+     </button>
      {% if is_logged_in %}
        {# P8: chuông + khung thả xuống. Không có JS hoặc chưa nối notifications.urls thì chuông vẫn là link tới trang danh sách. #}
        {% url 'khung_thong_bao' as khung_thong_bao_url %}

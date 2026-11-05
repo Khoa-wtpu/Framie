@@ -1,15 +1,15 @@
 /* ---------- Nút ---------- */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: 2.75rem; padding: var(--space-2) var(--space-5); border: 1px solid transparent; border-radius: var(--radius-pill); font: inherit; font-size: var(--text-sm); font-weight: var(--fw-heading); line-height: 1; text-decoration: none; cursor: pointer; transition: background .15s, color .15s, border-color .15s, box-shadow .15s, transform .15s; }
-.btn--primary { background: var(--color-black); color: var(--color-white); }
-.btn--primary:hover { background: var(--color-black-hover); }
-.btn--secondary { background: var(--color-white); color: var(--color-black); border-color: var(--color-black); }
-.btn--secondary:hover { background: var(--color-surface-alt); }
+.btn { position: relative; overflow: hidden; isolation: isolate; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: 2.75rem; padding: var(--space-2) var(--space-5); border: 1px solid transparent; border-radius: var(--radius-pill); font: inherit; font-size: var(--text-sm); font-weight: var(--fw-heading); line-height: 1; text-decoration: none; cursor: pointer; transition: background .15s, color .15s, border-color .15s, box-shadow .15s, transform .15s; }
+.btn--primary { background: var(--btn-primary-bg); color: var(--color-white); }
+.btn--primary:hover { background: var(--btn-primary-bg-hover); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.btn--secondary { background: var(--btn-primary-bg); color: var(--color-white); }
+.btn--secondary:hover { background: var(--btn-primary-bg-hover); box-shadow: var(--shadow-md); transform: translateY(-2px); }
 .btn--ghost { background: transparent; color: var(--color-black); }
 .btn--ghost:hover { background: var(--color-surface-alt); }
-.btn--soft { background: var(--gradient-white-gray); color: var(--color-black); border-color: transparent; }
-.btn--soft:hover { box-shadow: var(--shadow-md); border-color: transparent; transform: translateY(-2px); }
+.btn--soft { background: var(--btn-primary-bg); color: var(--color-white); border-color: transparent; }
+.btn--soft:hover { background: var(--btn-primary-bg-hover); box-shadow: var(--shadow-md); border-color: transparent; transform: translateY(-2px); }
 .btn--soft:active { box-shadow: var(--shadow-sm); transform: translateY(0); }
-.btn--danger { background: var(--danger-fg); color: var(--color-white); }
+.btn--danger { background: var(--danger-solid-bg); color: var(--on-danger); }
 .btn--danger:hover { filter: brightness(.9); }
 .btn--sm { min-height: 2.25rem; padding: var(--space-2) var(--space-4); }
 .btn--lg { min-height: 3.25rem; padding: var(--space-3) var(--space-6); font-size: var(--text-base); }
@@ -17,13 +17,13 @@
 .btn[disabled], .btn.is-disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
 .btn.is-loading { position: relative; color: transparent; pointer-events: none; }
 .btn.is-loading::after { content: ""; position: absolute; width: 1rem; height: 1rem; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; color: var(--color-white); animation: spin .7s linear infinite; }
-.btn--secondary.is-loading::after, .btn--ghost.is-loading::after, .btn--soft.is-loading::after { color: var(--color-black); }
+.btn--ghost.is-loading::after { color: var(--color-black); }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 
 /* ---------- Thẻ ---------- */
-.card { display: flex; flex-direction: column; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; position: relative; transition: transform .2s, box-shadow .2s; }
-.card--link:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.card { display: flex; flex-direction: column; background: var(--surface-gradient); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; position: relative; transition: transform .2s, box-shadow .2s; }
+.card--link:hover, .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
 .card__media { aspect-ratio: 4 / 3; background: var(--gradient-white-gray); }
 .card__media img { width: 100%; height: 100%; object-fit: cover; }
 .card__body { padding: var(--space-4) var(--space-5) var(--space-5); display: flex; flex-direction: column; gap: var(--space-2); align-items: flex-start; }
@@ -32,24 +32,24 @@
 .card__link::after { content: ""; position: absolute; inset: 0; }
 .card__meta { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }
 .card__text { margin: 0; font-size: var(--text-sm); }
-.panel { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-5); }
+.panel { background: var(--surface-gradient); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-5); }
 
 
 /* ---------- Ô nhập ---------- */
 .field { display: grid; gap: var(--space-1); margin-bottom: var(--space-4); }
 .field__label { font-size: var(--text-sm); font-weight: var(--fw-heading); }
 .field__req { color: var(--danger-fg); }
-.input { width: 100%; min-height: 2.75rem; padding: var(--space-2) var(--space-4); background: var(--color-white); color: var(--color-text); border: 1px solid var(--color-border); border-radius: var(--radius-md); font: inherit; font-size: var(--text-base); transition: border-color .15s, box-shadow .15s; }
+.input { width: 100%; min-height: 2.75rem; padding: var(--space-2) var(--space-4); background: var(--color-input-bg); color: var(--color-text); border: 1px solid var(--color-border); border-radius: var(--radius-md); font: inherit; font-size: var(--text-base); transition: border-color .15s, box-shadow .15s; }
 textarea.input { min-height: 6rem; resize: vertical; }
-select.input { appearance: none; padding-right: 2.5rem; background: var(--color-white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%231A1A1A' stroke-width='2'%3E%3Cpath d='m1 1 5 5 5-5'/%3E%3C/svg%3E") no-repeat right 1rem center; }
-.input::placeholder { color: #8A8A8A; }
-.input:hover { border-color: #A8A8A8; }
-.input:focus { outline: none; border-color: var(--color-black); box-shadow: 0 0 0 3px rgba(26, 26, 26, .12); }
+select.input { appearance: none; padding-right: 2.5rem; background: var(--color-input-bg) var(--select-arrow) no-repeat right 1rem center; }
+.input::placeholder { color: var(--color-placeholder); }
+.input:hover { border-color: var(--color-border-hover); }
+.input:focus { outline: none; border-color: var(--color-black); box-shadow: 0 0 0 3px var(--ring-focus); }
 .input:disabled { background: var(--color-surface-alt); color: var(--color-text-muted); cursor: not-allowed; }
 .field__hint { margin: 0; font-size: var(--text-xs); color: var(--color-text-muted); }
 .field__error { margin: 0; font-size: var(--text-xs); color: var(--danger-fg); }
-.field.has-error .input { border-color: var(--danger-fg); background: #FFF8F8; }
-.field.has-error .input:focus { box-shadow: 0 0 0 3px rgba(154, 27, 27, .15); }
+.field.has-error .input { border-color: var(--danger-fg); background: var(--error-input-bg); }
+.field.has-error .input:focus { box-shadow: 0 0 0 3px var(--ring-error); }
 
 
 /* ---------- Hộp thông báo ---------- */
@@ -208,11 +208,11 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
 .tb-khung__sao-form { margin: 0; padding-right: var(--space-2); }
 
 /* Popup xác nhận (đăng xuất) và hàng nút căn giữa */
-.modal { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 0; width: min(92vw, 24rem); background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-md); }
-.modal::backdrop { background: rgba(26, 26, 26, .45); }
+.modal { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 0; width: min(92vw, 24rem); background: var(--surface-gradient); color: var(--color-text); box-shadow: var(--shadow-md); }
+.modal::backdrop { background: var(--overlay); }
 .modal__body { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-6); text-align: center; }
 .modal__title { margin: 0; font-size: var(--text-xl); }
-.modal__text { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }
+.modal__text { margin: 0; font-size: var(--text-sm); color: var(--color-  text-muted); }
 .modal__actions { display: flex; justify-content: center; gap: var(--space-3); margin-top: var(--space-4); }
 .modal__actions .btn { min-width: 7.5rem; }  /* hai nút rộng bằng nhau */
 
@@ -221,3 +221,17 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
 .tb-nhom-dau .tb-nhom-tieu-de { margin: 0; }  /* bỏ khoảng cách dưới riêng của tiêu đề, hàng bao ngoài đã lo */
 .tb-nhom-dau .tb-meo { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }  /* chữ nhỏ, màu nhạt, tự đặt màu nên không phụ thuộc class muted */
 .tb-nhom-dau .tb-meo__sao { color: var(--tone-amber-dot); }  /* ngôi sao vàng giống nút ★ trong danh sách (luật dài hơn nên không bị ghi đè) */
+/* ---------- Hiệu ứng LÓE SÁNG khi rê chuột: dùng chung cho mọi nút và hộp ----------
+   Tự áp dụng cho .btn và .card. Hộp khác (ô, thẻ riêng của từng trang) chỉ cần thêm class "loe-sang". */
+.loe-sang { position: relative; overflow: hidden; isolation: isolate; transition: transform .2s, box-shadow .2s, border-color .2s, background .2s; }
+.loe-sang:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.btn::before, .card::before, .loe-sang::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; transform: translateX(-130%);
+  background: linear-gradient(110deg, transparent 38%, var(--shine) 50%, transparent 62%); }
+.btn--primary::before, .btn--secondary::before, .btn--soft::before, .btn--danger::before { background: linear-gradient(110deg, transparent 38%, var(--shine-strong) 50%, transparent 62%); }
+.btn:hover::before, .card:hover::before, .loe-sang:hover::before { opacity: 1; transform: translateX(130%); transition: transform .7s ease, opacity .15s; }
+.btn:active { transform: translateY(0); box-shadow: var(--shadow-sm); }
+@media (prefers-reduced-motion: reduce) {
+  .btn::before, .card::before, .loe-sang::before { display: none; }
+  .btn, .card, .loe-sang { transition: none; }
+  .btn:hover, .card:hover, .loe-sang:hover { transform: none; }
+}

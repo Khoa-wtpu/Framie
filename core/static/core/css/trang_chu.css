@@ -26,6 +26,10 @@
 .tc-khoi--toi .btn--secondary { background: transparent; color: var(--color-white); border-color: var(--color-white); }
 /* ▸ Khi rê chuột (:hover) lên nút phụ trong khối tối: nền thành trắng pha 14% (color-mix trộn 14% màu trắng với trong suốt) = sáng mờ nhẹ, báo hiệu "đang trỏ vào nút". */
 .tc-khoi--toi .btn--secondary:hover { background: color-mix(in srgb, var(--color-white) 14%, transparent); }
+/* Nút chính (soft/primary) trong khối tối: gradient TRẮNG - XÁM, chữ đen (khối tối luôn dùng bảng màu trắng nên không đảo theo nút chuyển nền) */
+.tc-khoi--toi .btn--soft, .tc-khoi--toi .btn--primary { background: linear-gradient(135deg, var(--color-white) 0%, var(--color-gray) 55%, color-mix(in srgb, var(--color-gray) 60%, var(--color-black)) 100%); color: var(--color-black); }
+.tc-khoi--toi .btn--soft:hover, .tc-khoi--toi .btn--primary:hover { background: linear-gradient(135deg, var(--color-gray) 0%, var(--color-white) 55%, var(--color-gray) 100%); }
+.tc-khoi--toi .btn--soft::before, .tc-khoi--toi .btn--primary::before { background: linear-gradient(110deg, transparent 38%, var(--shine) 50%, transparent 62%); }
 
 /* ▸ .tc-nhan = nhãn nhỏ phía trên tiêu đề banner. margin: cách dưới 1 khoảng --space-3, các cạnh khác 0; font-size: cỡ chữ cực nhỏ (--text-xs); */
 /* ▸ text-transform: uppercase = IN HOA toàn bộ; letter-spacing: .12em = giãn khoảng cách giữa các chữ cái cho thanh thoát; opacity: .75 = độ đậm 75% (hơi mờ). */

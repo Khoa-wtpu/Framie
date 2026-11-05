@@ -1,0 +1,52 @@
+{% extends "base.html" %}{# N2 - UC5.1: Khách hàng tải lên minh chứng thanh toán #}
+{% load ui %}
+{% block title %}Tải lên minh chứng thanh toán{% endblock %}
+{% block content %}
+<div class="container stack">
+  <header>
+    <h1>Tải lên minh chứng thanh toán</h1>
+    <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>
+  </header>
+
+  {% if not khoan %}
+    {% include "includes/alert.html" with level="info" text="Booking này hiện chưa đến giai đoạn thanh toán." %}
+  {% else %}
+    <section class="panel stack">
+      <h2>{{ khoan.loai }}</h2>
+      <p>Số tiền cần chuyển: <strong>{{ khoan.so_tien|floatformat:"0g" }} đ</strong></p>
+      {% if khoan.han %}<p class="muted">Hạn thanh toán: {{ khoan.han|date:"d/m/Y H:i" }}</p>{% endif %}
+      <p>Ngân hàng: <strong>{{ nag.NganHang }}</strong></p>
+      <p>Số tài khoản: <strong>{{ nag.SoTaiKhoan }}</strong></p>
+      <p>Chủ tài khoản: <strong>{{ nag.ChuTaiKhoan }}</strong></p>
+      {% if nag.AnhMaQR %}<p><img src="{{ nag.AnhMaQR.url }}" alt="Mã QR nhận tiền" width="220"></p>{% endif %}
+    </section>
+
+    {% if thanh_toan and thanh_toan.LyDoTuChoi %}
+      {% include "includes/alert.html" with level="warning" title="Nhiếp ảnh gia yêu cầu bổ sung minh chứng" text=thanh_toan.LyDoTuChoi %}
+    {% endif %}
+
+    {% if khong_gui_duoc %}
+      {% include "includes/alert.html" with level="warning" text=khong_gui_duoc %}
+    {% else %}
+      <form method="post" enctype="multipart/form-data" class="panel stack" novalidate>
+        {% csrf_token %}
+        {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}
+        {% include "includes/form_field.html" with field=form.tep %}
+        <button class="btn btn--primary" type="submit">Gửi minh chứng</button>
+      </form>
+    {% endif %}
+
+    {% if minh_chungs %}
+      <section class="panel stack">
+        <h2>Minh chứng đã gửi</h2>
+        {% if thanh_toan %}<p>Trạng thái khoản thanh toán: {% status_badge thanh_toan.TrangThai %}</p>{% endif %}
+        <ul>
+          {% for mc in minh_chungs %}
+            <li>{{ mc.NgayTaiLen|date:"d/m/Y H:i" }} · <a href="{% url 'xem_minh_chung' mc.pk %}" target="_blank" rel="noopener">{{ mc.TenTep }}</a> ({{ mc.DinhDangTep }})</li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,34 +1,17 @@
-"""
-URL configuration for config project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
-from django.conf import settings                  # đọc cài đặt trong settings.py
-from django.conf.urls.static import static        # hàm nối địa chỉ web với thư mục file
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path             # (1) thêm include
-admin.site.site_header = 'FRAMIE - Quản trị'
-admin.site.site_title = 'FRAMIE'
-admin.site.index_title = 'Quản trị hệ thống'
+from django.urls import include, path
 
 urlpatterns = [
+
     path('admin/', admin.site.urls),              # /admin dẫn tới trang quản trị
 
     path('bookings/', include('bookings.giu_cho')),
     path('bookings/', include('bookings.gui_booking')),
     path('bookings/', include('bookings.tiep_nhan')),   # UC4.3-4.5 (đã có file, trước đây chưa nối)
     path('bookings/', include('bookings.da_chup')),     # T8: nút Đã chụp
+    path('bookings/', include('bookings.huy_booking')), # T9 / UC4.6: Hủy Booking + xác nhận đã nhận lại tiền cọc
     path('bookings/', include('bookings.theo_doi')),    # T7 / UC4.7: Booking của tôi + Quản trị tra cứu
     path('', include('core.urls')),               # nối core/urls.py, có /ui-kit/
     path('', include('accounts.urls')),           # nối accounts/urls.py: /dang-nhap/, /dang-xuat/ (P3 của Phanh)
@@ -40,6 +23,9 @@ urlpatterns = [
     path('', include('chat.urls')),
     path('', include('profiles.urls_duyet')),
     path('', include('profiles.urls_cua_toi')),
+    path('', include('payments.urls')),  # N2, N3, N9: minh chứng, xác nhận cọc, xác nhận phần còn lại
+    path('', include('delivery.urls')),  # N4-N8: bàn giao ảnh
+    path('', include('reviews.urls')),  # N11: đánh giá nhiếp ảnh gia
 ]
 
 # Khi chạy thử (DEBUG = True): địa chỉ /media/... dẫn tới thư mục media/ trên máy,

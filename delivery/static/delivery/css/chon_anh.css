@@ -1,0 +1,56 @@
+.chon-anh__luoi { /* lưới ảnh xếp nhiều hàng */
+  display: flex; /* xếp ngang */
+  flex-wrap: wrap; /* hết chỗ thì xuống hàng */
+  gap: var(--space-3); /* khoảng cách giữa các ô */
+}
+.chon-anh__the { /* một ô ảnh */
+  position: relative; /* để ô tick đặt ở góc ảnh */
+  display: block; /* mỗi ô là một khối */
+  width: 160px; /* chiều rộng ô */
+  margin: 0; /* bỏ lề mặc định của figure */
+  padding: var(--space-1); /* viền trong */
+  border: 2px solid var(--color-border); /* viền xám khi chưa chọn */
+  border-radius: var(--radius-sm); /* bo góc */
+  cursor: pointer; /* con trỏ bàn tay */
+}
+.chon-anh__the--chon { /* ô đang được chọn */
+  border-color: var(--color-black); /* viền đen đậm */
+  background: var(--color-surface-alt); /* nền xám nhạt */
+}
+.chon-anh__the--vuot { /* ô được chọn nhưng đã vượt giới hạn */
+  border-color: var(--tone-red-dot); /* viền đỏ */
+}
+.chon-anh__the img { /* ảnh thu nhỏ */
+  display: block; /* bỏ khoảng trống dưới ảnh */
+  width: 100%; /* vừa chiều rộng ô */
+  height: 110px; /* chiều cao cố định */
+  object-fit: cover; /* cắt ảnh cho vừa khung */
+  user-select: none; /* không cho bôi đen ảnh */
+  -webkit-user-drag: none; /* không cho kéo ảnh ra ngoài */
+}
+.chon-anh__the input[type="checkbox"] { /* ô tick */
+  position: absolute; /* đặt đè lên ảnh */
+  top: var(--space-2); /* cách mép trên */
+  left: var(--space-2); /* cách mép trái */
+  width: 1.25rem; /* kích thước ô tick */
+  height: 1.25rem; /* kích thước ô tick */
+  z-index: 1; /* nằm trên ảnh */
+}
+.chon-anh__chu-thich { /* tên ảnh dưới ô */
+  display: block; /* xuống dòng riêng */
+  margin-top: var(--space-1); /* cách ảnh một chút */
+  font-size: var(--text-xs); /* chữ nhỏ */
+  overflow-wrap: anywhere; /* tên dài thì tự xuống dòng */
+}
+.chon-anh__xem-lon { /* liên kết "Xem lớn" */
+  display: inline-block; /* cho phép đặt khoảng cách */
+  margin-top: var(--space-1); /* cách tên ảnh */
+  font-size: var(--text-xs); /* chữ nhỏ */
+  text-decoration: underline; /* gạch chân cho dễ nhận biết là liên kết */
+}
+.chon-anh__nut, .chon-anh__nut-hoi { /* hàng nút */
+  display: flex; /* xếp ngang */
+  flex-wrap: wrap; /* hết chỗ thì xuống hàng */
+  gap: var(--space-3); /* khoảng cách giữa các nút */
+  align-items: center; /* canh giữa theo chiều dọc */
+}
