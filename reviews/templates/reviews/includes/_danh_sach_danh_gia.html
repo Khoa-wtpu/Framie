@@ -1,0 +1,34 @@
+{% load ui danh_gia %}{# N11 - UC6.1: khối "Đánh giá" hiện công khai. Cần: thong_ke, page_obj. Dùng trong trang riêng và có thể nhúng vào hồ sơ công khai (K9): {% include "reviews/includes/_danh_sach_danh_gia.html" %} #}
+<section class="panel stack dg-khoi" aria-labelledby="dg-tieu-de">
+  <h2 id="dg-tieu-de">Đánh giá từ khách hàng</h2>
+  {% if thong_ke.so_danh_gia %}
+    <div class="dg-tong-quan">{# điểm trung bình + phân bố #}
+      <div class="dg-tong-quan__diem">
+        <span class="dg-tong-quan__so">{{ thong_ke.diem_tb|stringformat:".1f" }}</span>
+        <span class="muted">/ 5</span>
+        <div>{% sao thong_ke.diem_tb %}</div>
+        <p class="muted">{{ thong_ke.so_danh_gia }} lượt đánh giá</p>
+      </div>
+      <ul class="dg-phan-bo">
+        {% for dong in thong_ke.phan_bo %}
+          <li><span>{{ dong.sao }} ★</span>
+            <span class="dg-phan-bo__thanh"><span style="width: {{ dong.phan_tram }}%"></span></span>
+            <span class="muted">{{ dong.so }}</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+    <ul class="dg-ds">
+      {% for dg in page_obj %}
+        <li class="dg-muc">
+          <div class="dg-muc__dau">{% sao dg.Diem %}
+            <strong>{{ dg.MaBooking.MaKhachHang.get_full_name|default:"Khách hàng" }}</strong>
+            <span class="muted">· {{ dg.NgayDanhGia|date:"d/m/Y" }} · {{ dg.MaBooking.MaGoi.TenGoi }}</span></div>
+          {% if dg.NhanXet %}<p class="dg-muc__nhan-xet">{{ dg.NhanXet|linebreaksbr }}</p>{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+    {% if page_obj.paginator.num_pages > 1 %}{% include "includes/pagination.html" %}{% endif %}
+  {% else %}
+    <p class="muted">Nhiếp ảnh gia này chưa có đánh giá nào.</p>
+  {% endif %}
+</section>

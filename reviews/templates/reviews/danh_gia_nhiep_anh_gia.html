@@ -1,0 +1,16 @@
+{% extends "base.html" %}{# N11 - UC6.1: trang công khai hiện đánh giá + điểm trung bình của một nhiếp ảnh gia #}
+{% load static %}
+{% block title %}Đánh giá về {{ ten_nag }}{% endblock %}
+{% block content %}
+<div class="container stack dg-trang">
+  <header>
+    <h1>Đánh giá về {{ ten_nag }}</h1>
+    <p class="muted">Mã nhiếp ảnh gia NAG-{{ nag.pk|stringformat:"04d" }}</p>
+  </header>
+  {% include "reviews/includes/_danh_sach_danh_gia.html" %}
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'reviews/css/danh_gia.css' %}">
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}{# N6 - UC5.4: Khách hàng lựa chọn ảnh cần hậu kỳ #}
+{% load ui static %}{# nạp thẻ status_badge và static #}
+{% block title %}Lựa chọn ảnh cần hậu kỳ{% endblock %}{# tiêu đề tab trình duyệt #}
+{% block content %}
+<div class="container stack chon-anh">{# khung chính của trang #}
+  <header>{# đầu trang #}
+    <h1>Lựa chọn ảnh cần hậu kỳ</h1>{# tiêu đề trang #}
+    <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>{# thông tin Booking #}
+  </header>
+
+  {% if ly_do %}{# Khách không được chọn lúc này (sai trạng thái, quá hạn, đã gửi, gói toàn bộ) #}
+    {% include "includes/alert.html" with level="info" text=ly_do %}{# hiện lý do #}
+    {% if anhs %}{# nếu đã có ảnh được chọn thì cho xem lại #}
+      <section class="panel stack">{# khung danh sách ảnh đã chọn #}
+        <h2>Ảnh bạn đã chọn ({{ anhs|length }})</h2>{# số ảnh đã chọn #}
+        <div class="chon-anh__luoi">{# lưới ảnh #}
+          {% for a in anhs %}{# duyệt từng ảnh đã chọn #}
+            <figure class="chon-anh__the">{# một ô ảnh #}
+              <img src="{% url 'xem_anh' a.pk %}?nho=1" alt="{{ a.TenAnh }}" loading="lazy" draggable="false">{# ảnh thu nhỏ có watermark #}
+              <figcaption class="muted chon-anh__chu-thich">{{ a.TenAnh }}</figcaption>{# tên ảnh #}
+            </figure>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+  {% else %}{# Khách được phép chọn #}
+    <section class="panel stack">{# khung hướng dẫn #}
+      <p>Gói <strong>{{ booking.MaGoi.TenGoi }}</strong> cho phép chọn tối đa <strong>{{ so_toi_da }}</strong> ảnh để hậu kỳ.
+        Bạn xem ảnh (có watermark) rồi tick vào các ảnh muốn hậu kỳ.</p>{# hướng dẫn #}
+      {% if booking.HanChonAnh %}<p class="muted">Hạn lựa chọn ảnh: {{ booking.HanChonAnh|date:"d/m/Y H:i" }}</p>{% endif %}{# hạn chót 2 ngày #}
+      <p>Đã chọn: <strong id="so-da-chon">{{ so_da_chon }}</strong> / {{ so_toi_da }} ảnh</p>{# bộ đếm, JavaScript cập nhật khi tick #}
+      <p id="canh-bao-vuot" class="field__error" hidden>Bạn đã chọn vượt quá số ảnh cho phép, vui lòng bỏ bớt ảnh.</p>{# JavaScript hiện khi vượt giới hạn #}
+    </section>
+
+    {% if hoi_chon_them %}{# luồng 4a: chưa đạt số lượng tối đa #}
+      <section class="panel stack">{# khung hỏi #}
+        {% include "includes/alert.html" with level="warning" text="Bạn có thể chọn thêm ảnh vì chưa đạt số lượng tối đa. Bạn có muốn tiếp tục chọn không?" %}{# câu hỏi đúng theo đặc tả #}
+        <div class="chon-anh__nut-hoi">{# hàng 2 nút #}
+          <a class="btn btn--secondary" href="{% url 'chon_anh_hau_ky' booking.pk %}">Có, bổ sung thêm ảnh</a>{# 4a-1: quay lại chọn tiếp (lựa chọn đã được lưu) #}
+          <form method="post">{# 4a-2: gửi danh sách đã lưu #}
+            {% csrf_token %}{# mã chống giả mạo yêu cầu #}
+            <input type="hidden" name="hanh_dong" value="gui_xac_nhan">{# báo cho view biết đây là nút gửi xác nhận #}
+            <button class="btn btn--primary" type="submit">Không, gửi danh sách ảnh đã chọn cho Nhiếp ảnh gia</button>{# nút gửi #}
+          </form>
+        </div>
+      </section>
+    {% endif %}
+
+    {% if anhs %}{# có ảnh để chọn #}
+      <form method="post" id="form-chon-anh" class="panel stack" data-so-toi-da="{{ so_toi_da }}">{# form chọn ảnh, JavaScript đọc số tối đa ở đây #}
+        {% csrf_token %}{# mã chống giả mạo yêu cầu #}
+        <div class="chon-anh__luoi">{# lưới ảnh #}
+          {% for a in anhs %}{# duyệt từng ảnh #}
+            <label class="chon-anh__the{% if a.pk in ds_tick %} chon-anh__the--chon{% endif %}">{# ô ảnh, nhấn vào là tick #}
+              <input type="checkbox" name="anh" value="{{ a.pk }}"{% if a.pk in ds_tick %} checked{% endif %}>{# ô tick, gửi mã ảnh lên server #}
+              <img src="{% url 'xem_anh' a.pk %}?nho=1" alt="{{ a.TenAnh }}" loading="lazy" draggable="false">{# ảnh thu nhỏ có watermark #}
+              <span class="muted chon-anh__chu-thich">{{ a.TenAnh }}</span>{# tên ảnh #}
+              <a class="chon-anh__xem-lon" href="{% url 'xem_anh' a.pk %}" target="_blank" rel="noopener">Xem lớn</a>{# mở ảnh lớn (vẫn có watermark) ở tab mới #}
+            </label>
+          {% endfor %}
+        </div>
+        <div class="chon-anh__nut">{# hàng nút #}
+          <button class="btn btn--secondary" type="submit" name="hanh_dong" value="luu">Lưu lựa chọn</button>{# bước 4: chỉ lưu, chưa gửi #}
+          <button class="btn btn--primary" type="submit" name="hanh_dong" value="gui">Xác nhận và gửi cho Nhiếp ảnh gia</button>{# bước 5: xác nhận #}
+        </div>
+      </form>
+    {% else %}{# chưa có ảnh nào #}
+      {% include "includes/alert.html" with level="info" text="Chưa có ảnh nào để lựa chọn." %}{# báo trống #}
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'delivery/css/chon_anh.css' %}">{# CSS riêng của trang #}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'delivery/js/chon_anh.js' %}" defer></script>{# JavaScript đếm số ảnh đã tick #}
+{% endblock %}
