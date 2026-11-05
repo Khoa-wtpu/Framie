@@ -217,7 +217,7 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
 .modal::backdrop { background: var(--overlay); }
 .modal__body { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-6); text-align: center; }
 .modal__title { margin: 0; font-size: var(--text-xl); }
-.modal__text { margin: 0; font-size: var(--text-sm); color: var(--color-  text-muted); }
+.modal__text { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }
 .modal__actions { display: flex; justify-content: center; gap: var(--space-3); margin-top: var(--space-4); }
 .modal__actions .btn { min-width: 7.5rem; }  /* hai nút rộng bằng nhau */
 
@@ -226,6 +226,12 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
 .tb-nhom-dau .tb-nhom-tieu-de { margin: 0; }  /* bỏ khoảng cách dưới riêng của tiêu đề, hàng bao ngoài đã lo */
 .tb-nhom-dau .tb-meo { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }  /* chữ nhỏ, màu nhạt, tự đặt màu nên không phụ thuộc class muted */
 .tb-nhom-dau .tb-meo__sao { color: var(--tone-amber-dot); }  /* ngôi sao vàng giống nút ★ trong danh sách (luật dài hơn nên không bị ghi đè) */
+/* P8 bổ sung: lời nhắc "thông báo có sao sẽ lên đầu danh sách" cạnh tiêu đề nhóm */
+.tb-nhom-dau { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-1) var(--space-4); margin-bottom: var(--space-4); }  /* tiêu đề bên trái, lời nhắc bên phải cùng hàng, hẹp thì xuống dòng */
+.tb-nhom-dau .tb-nhom-tieu-de { margin: 0; }  /* bỏ khoảng cách dưới riêng của tiêu đề, hàng bao ngoài đã lo */
+.tb-nhom-dau .tb-meo { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }  /* chữ nhỏ, màu nhạt */
+.tb-nhom-dau .tb-meo__sao { color: var(--tone-amber-dot); }  /* ngôi sao vàng giống nút ★ trong danh sách */
+
 /* ---------- Hiệu ứng LÓE SÁNG khi rê chuột: dùng chung cho mọi nút và hộp ----------
    Tự áp dụng cho .btn và .card. Hộp khác (ô, thẻ riêng của từng trang) chỉ cần thêm class "loe-sang". */
 .loe-sang { position: relative; overflow: hidden; isolation: isolate; transition: transform .2s, box-shadow .2s, border-color .2s, background .2s; }
