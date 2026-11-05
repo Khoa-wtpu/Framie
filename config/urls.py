@@ -19,12 +19,13 @@ urlpatterns = [
     path('', include('search.urls')),
     path('', include('schedule.urls')),
     path('', include('profiles.urls_cong_khai')),
+    path('', include('notifications.urls')),
+    path('', include('chat.urls')),
     path('', include('profiles.urls_duyet')),
     path('', include('profiles.urls_cua_toi')),
     path('', include('payments.urls')),  # N2, N3, N9: minh chứng, xác nhận cọc, xác nhận phần còn lại
     path('', include('delivery.urls')),  # N4-N8: bàn giao ảnh
     path('', include('reviews.urls')),  # N11: đánh giá nhiếp ảnh gia
-
 ]
 
 # Khi chạy thử (DEBUG = True): địa chỉ /media/... dẫn tới thư mục media/ trên máy,

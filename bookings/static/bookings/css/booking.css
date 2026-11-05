@@ -1,0 +1,58 @@
+/* ===== booking.css : giao diện chung cho trang chi tiết Booking và danh sách Booking của Admin ===== */
+/* Mọi class đều bắt đầu bằng "bk-" để không đụng CSS có sẵn của base.html */
+
+.bk-page { max-width: 1100px; margin: 0 auto; padding: 32px 20px 64px; } /* khung giữa trang: rộng tối đa 1100px, tự căn giữa, chừa lề */
+.bk-back { display: inline-block; margin-bottom: 20px; color: inherit; opacity: .8; text-decoration: none; } /* link "Quay lại": lấy màu chữ theo giao diện sáng/tối */
+.bk-back:hover { opacity: 1; text-decoration: underline; } /* rê chuột vào thì rõ hơn và gạch chân */
+
+.bk-title { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin: 0 0 28px; font-size: 2.4rem; font-weight: 600; } /* dòng tiêu đề: xếp ngang chữ "Booking #63" và nhãn trạng thái */
+
+/* ----- Thẻ (card) ----- */
+.bk-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; } /* lưới 2 cột đều nhau, mỗi thẻ nằm một ô */
+.bk-card { padding: 22px 24px; border-radius: 18px; background: rgba(128,128,128,.12); border: 1px solid rgba(128,128,128,.28); } /* nền xám trong suốt + viền xám: nhìn được trên cả nền đen và nền trắng */
+.bk-card--full { grid-column: 1 / -1; } /* thẻ này chiếm trọn cả 2 cột (dùng cho khối tổng tiền) */
+.bk-card__title { margin: 0 0 14px; font-size: .85rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; opacity: .65; } /* tiêu đề nhỏ viết hoa của từng thẻ */
+
+/* ----- Từng dòng "nhãn: giá trị" trong thẻ ----- */
+.bk-row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid rgba(128,128,128,.2); } /* nhãn nằm trái, giá trị nằm phải, có đường kẻ mờ phía dưới */
+.bk-row:last-child { border-bottom: none; } /* dòng cuối không cần đường kẻ */
+.bk-row dt { margin: 0; opacity: .65; } /* <dt> là nhãn (Nhiếp ảnh gia, Địa điểm...) nên làm mờ hơn */
+.bk-row dd { margin: 0; font-weight: 500; text-align: right; } /* <dd> là giá trị, đậm vừa, căn phải */
+
+.bk-total { font-size: 2rem; font-weight: 600; } /* số tiền tổng giá trị in to */
+
+/* ----- Nhãn trạng thái (badge) ----- */
+/* Cách sửa lỗi "chữ bị trong suốt": mỗi trạng thái có NỀN ĐẶC và MÀU CHỮ RIÊNG, không phụ thuộc nền trang */
+.bk-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px; font-size: .9rem; font-weight: 600; background: #D1D5DB; color: #111827; } /* kiểu mặc định (xám nhạt + chữ đen) cho trạng thái chưa khai báo màu */
+.bk-badge::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; } /* chấm tròn nhỏ phía trước, cùng màu với chữ */
+.bk-badge--cho_xac_nhan  { background: #FACC15; color: #3B2F00; } /* Chờ xác nhận: nền vàng, chữ nâu đậm */
+.bk-badge--cho_dat_coc   { background: #A5B4FC; color: #1E1B4B; } /* Chờ đặt cọc: nền tím nhạt, chữ tím đậm */
+.bk-badge--da_xac_nhan   { background: #86EFAC; color: #052E16; } /* Đã xác nhận: nền xanh lá nhạt, chữ xanh đậm */
+.bk-badge--hoan_thanh    { background: #E5E7EB; color: #111827; } /* Hoàn thành: nền xám sáng, chữ đen */
+.bk-badge--het_han_dat_coc,
+.bk-badge--da_tu_choi,
+.bk-badge--da_huy        { background: #FCA5A5; color: #450A0A; } /* 3 trạng thái "xấu" dùng chung nền đỏ nhạt, chữ đỏ đậm */
+
+/* ----- Trang admin: bộ lọc ----- */
+.bk-filter { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; margin-bottom: 24px; } /* các ô lọc xếp ngang, tự xuống dòng khi màn hẹp */
+.bk-field { display: flex; flex-direction: column; gap: 6px; flex: 1 1 220px; } /* mỗi ô lọc gồm nhãn trên, ô nhập dưới */
+.bk-field label { font-weight: 600; font-size: .9rem; } /* nhãn "Trạng thái", "Tìm kiếm" */
+.bk-field select,
+.bk-field input { padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(128,128,128,.4); background: rgba(128,128,128,.1); color: inherit; font: inherit; } /* ô chọn/ô nhập: nền xám mờ, chữ theo giao diện */
+.bk-btn { display: inline-block; padding: 12px 22px; border: none; border-radius: 999px; background: #F3F4F6; color: #111827; font: inherit; font-weight: 600; text-decoration: none; cursor: pointer; } /* nút bo tròn nền sáng chữ đen: rõ trên cả hai nền */
+.bk-btn:hover { background: #FFFFFF; } /* rê chuột thì sáng hơn */
+
+/* ----- Trang admin: danh sách thẻ Booking ----- */
+.bk-list { display: flex; flex-direction: column; gap: 16px; } /* các thẻ booking xếp dọc, cách nhau 16px */
+.bk-item { display: grid; grid-template-columns: 70px 1.2fr 1.2fr 1.2fr 1fr auto; gap: 20px; align-items: center; padding: 20px 24px; border-radius: 18px; background: rgba(128,128,128,.12); border: 1px solid rgba(128,128,128,.28); } /* mỗi thẻ chia thành 6 cột: mã | khách | nhiếp ảnh gia | lịch chụp | trạng thái | nút */
+.bk-item__id { font-size: 1.2rem; font-weight: 600; } /* mã booking in đậm */
+.bk-item__label { display: block; font-size: .75rem; opacity: .6; margin-bottom: 4px; } /* dòng nhãn nhỏ phía trên giá trị */
+.bk-item__value { font-weight: 500; } /* giá trị chính */
+.bk-item__sub { display: block; font-size: .85rem; opacity: .65; } /* dòng phụ (loại hình, địa điểm) */
+.bk-empty { padding: 40px; text-align: center; opacity: .7; } /* thông báo khi không có booking nào */
+
+/* ----- Màn hình hẹp (điện thoại, máy tính bảng) ----- */
+@media (max-width: 860px) { /* áp dụng khi chiều rộng <= 860px */
+  .bk-grid { grid-template-columns: 1fr; } /* lưới thẻ chi tiết còn 1 cột */
+  .bk-item { grid-template-columns: 1fr 1fr; } /* thẻ admin còn 2 cột cho khỏi chật */
+}

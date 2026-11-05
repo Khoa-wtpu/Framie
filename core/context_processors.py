@@ -39,8 +39,18 @@ def layout(request):
     if role == PHOTOGRAPHER and chua_duyet:
         menu = [m for m in menu if m[1] == "photographer_profile"]
 
+    # Ảnh đại diện trên header: Nhiếp ảnh gia có AnhDaiDien thì hiện ảnh, không có thì hiện chữ cái đầu.
+    avatar_url = ""
+    if user.is_authenticated and role == PHOTOGRAPHER and not preview:
+        try:
+            anh = user.ho_so_nhiep_anh_gia.AnhDaiDien
+            avatar_url = anh.url if anh else ""
+        except Exception:  # chưa có hồ sơ Nhiếp ảnh gia hoặc file ảnh lỗi: dùng chữ cái đầu
+            avatar_url = ""
+
     return {
         "role": role,
+        "display_avatar_url": avatar_url,
         "is_logged_in": logged_in,
         "display_name": name,
         "display_initial": name[:1].upper() if name else "",

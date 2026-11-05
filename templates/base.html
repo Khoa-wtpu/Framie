@@ -1,8 +1,9 @@
 {% load static %}<!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="{% static 'js/theme.js' %}"></script>{# nạp ĐỒNG BỘ ở đầu trang để đặt chế độ màu trước khi vẽ, tránh chớp nền #}
   <title>{% block title %}FRAMIE{% endblock %} · FRAMIE</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

@@ -1,27 +1,65 @@
 /* ==========================================================================
    FRAMIE – design tokens. MÀU và FONT chỉ khai báo ở file này.
    Nguồn: Cốt quét nhóm 5 (trắng / đen / xám, Be Vietnam Pro).
+
+   HAI CHẾ ĐỘ MÀU NỀN (nút mặt trời / mặt trăng ở header, lưu trong trình duyệt, mặc định ĐEN):
+     - :root                      = chế độ ĐEN (mặc định, cả khi chưa chạy JavaScript)
+     - :root[data-theme="light"]  = chế độ TRẮNG
+   QUAN TRỌNG: --color-white và --color-black là tên "vai trò" chứ không phải màu cố định.
+     --color-white = màu NỀN / mặt thẻ   (trắng ở chế độ Trắng, đen xám ở chế độ Đen)
+     --color-black = màu CHỮ / nút đậm   (đen ở chế độ Trắng, trắng ở chế độ Đen)
+   Nhờ vậy mọi chỗ đã dùng hai biến này tự đổi màu theo chế độ, không phải sửa từng trang.
+   Chữ trắng nằm trên màu đỏ cố định thì dùng --on-danger (không đổi theo chế độ).
    ========================================================================== */
 :root {
-  /* --- Màu theo cốt quét --- */
-  --color-white: #FFFFFF;
-  --color-black: #1A1A1A;
-  --color-gray: #D9D9D9;
-  --gradient-white-black: linear-gradient(135deg, #FFFFFF 0%, #1A1A1A 100%);
-  --gradient-white-gray: linear-gradient(135deg, #FFFFFF 0%, #D9D9D9 100%);
+  color-scheme: dark; /* ô nhập, thanh cuộn, lịch của trình duyệt cũng theo nền đen */
 
-  /* --- Màu suy ra từ bộ trên (độ đậm nhạt cho hover, chữ phụ) --- */
-  --color-black-hover: #3A3A3A;
-  --color-gray-soft: #F3F3F3;
-  --color-text-muted: #5C5C5C;
+  /* =================== CHẾ ĐỘ ĐEN (mặc định) =================== */
+  --color-white: #222222;      /* nền thẻ, ô, menu */
+  --color-black: #F4F4F4;      /* chữ, nút đậm */
+  --color-gray: #3A3A3A;       /* viền */
+  --gradient-white-black: linear-gradient(135deg, #222222 0%, #F4F4F4 100%);
+  --gradient-white-gray: linear-gradient(135deg, #343434 0%, #222222 100%);
 
-  /* --- Vai trò sử dụng --- */
-  --color-bg: var(--color-white);
+  --color-black-hover: #D2D2D2;
+  --color-gray-soft: #262626;
+  --color-text-muted: #A6A6A6;
+
+  --color-bg: #141414;
   --color-text: var(--color-black);
   --color-border: var(--color-gray);
   --color-surface: var(--color-white);
-  --color-surface-alt: var(--color-gray-soft);
+  --color-surface-alt: #2A2A2A;
   --color-focus: var(--color-black);
+
+  /* nền trang, mặt thẻ, nút đậm và chữ tiêu đề: đều là gradient đen - xám */
+  --bg-gradient: radial-gradient(ellipse 70% 50% at 88% -6%, #585858 0%, rgba(88, 88, 88, 0) 72%), radial-gradient(ellipse 60% 45% at 5% 105%, #444444 0%, rgba(68, 68, 68, 0) 70%), linear-gradient(180deg, #2A2A2A 0%, #0A0A0A 100%);
+  --surface-gradient: linear-gradient(180deg, #353535 0%, #232323 100%);
+  --surface-solid: #2A2A2A;       /* nền trơn cho khung cần phẳng (Admin Tổng quan) */
+  --text-gradient: linear-gradient(180deg, #FFFFFF 30%, #8A8A8A 100%);
+  --btn-primary-bg: linear-gradient(135deg, var(--color-black) 0%, var(--color-black-hover) 55%, var(--color-text-muted) 100%);
+  --btn-primary-bg-hover: linear-gradient(135deg, var(--color-black-hover) 0%, var(--color-black) 55%, var(--color-black-hover) 100%);
+  --header-bg: rgba(24, 24, 24, .78);
+
+  /* ô nhập */
+  --color-input-bg: #181818;
+  --color-placeholder: #8C8C8C;
+  --color-border-hover: #5A5A5A;
+  --ring-focus: rgba(244, 244, 244, .18);
+  --error-input-bg: #2A1A1A;
+  --ring-error: rgba(240, 120, 120, .28);
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23F4F4F4' stroke-width='2'%3E%3Cpath d='m1 1 5 5 5-5'/%3E%3C/svg%3E");
+  --overlay: rgba(0, 0, 0, .65);
+
+  /* nút nguy hiểm: chữ luôn trắng */
+  --on-danger: #FFFFFF;
+  --danger-solid-bg: linear-gradient(135deg, #C9443F 0%, #A12A2A 100%);
+
+  --shine: rgba(255, 255, 255, .16);        /* vệt lóe sáng khi rê chuột vào nút / hộp */
+  --shine-strong: rgba(255, 255, 255, .45); /* vệt lóe trên nút đậm */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, .45);
+  --shadow-card: 0 14px 28px -22px rgba(0, 0, 0, .8);
 
   /* --- Font --- */
   --font-sans: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
@@ -41,36 +79,121 @@
   --leading: 1.6;
   --leading-tight: 1.2;
 
-  /* --- Khoảng cách, bo góc, đổ bóng, kích thước --- */
+  /* --- Khoảng cách, bo góc, kích thước --- */
   --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem;
   --space-5: 1.5rem; --space-6: 2rem; --space-7: 3rem; --space-8: 4.5rem;
   --radius-sm: .5rem; --radius-md: .875rem; --radius-lg: 1.25rem; --radius-pill: 999px;
-  --shadow-sm: 0 1px 2px rgba(26, 26, 26, .06);
-  --shadow-md: 0 8px 24px rgba(26, 26, 26, .10);
-  --shadow-card: 0 14px 28px -22px rgba(26, 26, 26, .45); /* bóng mảnh chỉ lộ ở đáy thẻ, cùng gam đen 26,26,26 với các bóng khác */
   --container: 1200px;
   --header-h: 4.5rem;
 
-  /* --- Bảng tông màu cho nhãn trạng thái và hộp thông báo (ngoài cốt quét: chỉnh tại đây).
-         Mỗi tông có nền nhạt (bg), chữ đậm (fg) và màu chấm/nhấn (dot). Gán trạng thái -> tông ở core/status_tones.py --- */
-  --tone-amber-bg: #FFF1CC; --tone-amber-fg: #8A5A00; --tone-amber-dot: #F5B301;
-  --tone-orange-bg: #FFE4D2; --tone-orange-fg: #9A4A0F; --tone-orange-dot: #F28A3C;
-  --tone-red-bg: #FDE2E2; --tone-red-fg: #A12020; --tone-red-dot: #EF4444;
-  --tone-rose-bg: #FFE1EC; --tone-rose-fg: #A3224F; --tone-rose-dot: #F43F75;
-  --tone-pink-bg: #FCE4F3; --tone-pink-fg: #9D2B77; --tone-pink-dot: #EC4FB0;
-  --tone-violet-bg: #EDE7FF; --tone-violet-fg: #5B3CC4; --tone-violet-dot: #8B6CF0;
-  --tone-indigo-bg: #E3E8FF; --tone-indigo-fg: #3646B3; --tone-indigo-dot: #5C6CF0;
-  --tone-blue-bg: #DCEBFF; --tone-blue-fg: #1D55B8; --tone-blue-dot: #3B82F6;
-  --tone-sky-bg: #D9F3FB; --tone-sky-fg: #0B6A86; --tone-sky-dot: #22B8DE;
-  --tone-teal-bg: #D6F5EE; --tone-teal-fg: #0B6B59; --tone-teal-dot: #14B8A6;
-  --tone-green-bg: #DDF5E4; --tone-green-fg: #17653A; --tone-green-dot: #22C55E;
-  --tone-lime-bg: #EAF6CF; --tone-lime-fg: #4A6A0A; --tone-lime-dot: #84CC16;
-  --tone-brown-bg: #F4E6D8; --tone-brown-fg: #7A4B22; --tone-brown-dot: #C08457;
-  --tone-gray-bg: #ECECEC; --tone-gray-fg: #4B4B4B; --tone-gray-dot: #9A9A9A;
+  /* --- Bảng tông màu cho nhãn trạng thái và hộp thông báo.
+         Mỗi tông có nền (bg), chữ (fg) và màu chấm/nhấn (dot). Gán trạng thái -> tông ở core/status_tones.py.
+         Chấm (dot) giống nhau ở cả hai chế độ. Nền và chữ: chế độ Đen tự suy ra từ chấm (nền tối pha màu, chữ sáng pha màu) --- */
+  --tone-amber-dot: #F5B301;
+  --tone-orange-dot: #F28A3C;
+  --tone-red-dot: #EF4444;
+  --tone-rose-dot: #F43F75;
+  --tone-pink-dot: #EC4FB0;
+  --tone-violet-dot: #8B6CF0;
+  --tone-indigo-dot: #5C6CF0;
+  --tone-blue-dot: #3B82F6;
+  --tone-sky-dot: #22B8DE;
+  --tone-teal-dot: #14B8A6;
+  --tone-green-dot: #22C55E;
+  --tone-lime-dot: #84CC16;
+  --tone-brown-dot: #C08457;
+  --tone-gray-dot: #9A9A9A;
+  --tone-amber-bg: color-mix(in srgb, var(--tone-amber-dot) 20%, #1C1C1C); --tone-amber-fg: color-mix(in srgb, var(--tone-amber-dot) 45%, #FFFFFF);
+  --tone-orange-bg: color-mix(in srgb, var(--tone-orange-dot) 20%, #1C1C1C); --tone-orange-fg: color-mix(in srgb, var(--tone-orange-dot) 45%, #FFFFFF);
+  --tone-red-bg: color-mix(in srgb, var(--tone-red-dot) 20%, #1C1C1C); --tone-red-fg: color-mix(in srgb, var(--tone-red-dot) 45%, #FFFFFF);
+  --tone-rose-bg: color-mix(in srgb, var(--tone-rose-dot) 20%, #1C1C1C); --tone-rose-fg: color-mix(in srgb, var(--tone-rose-dot) 45%, #FFFFFF);
+  --tone-pink-bg: color-mix(in srgb, var(--tone-pink-dot) 20%, #1C1C1C); --tone-pink-fg: color-mix(in srgb, var(--tone-pink-dot) 45%, #FFFFFF);
+  --tone-violet-bg: color-mix(in srgb, var(--tone-violet-dot) 20%, #1C1C1C); --tone-violet-fg: color-mix(in srgb, var(--tone-violet-dot) 45%, #FFFFFF);
+  --tone-indigo-bg: color-mix(in srgb, var(--tone-indigo-dot) 20%, #1C1C1C); --tone-indigo-fg: color-mix(in srgb, var(--tone-indigo-dot) 45%, #FFFFFF);
+  --tone-blue-bg: color-mix(in srgb, var(--tone-blue-dot) 20%, #1C1C1C); --tone-blue-fg: color-mix(in srgb, var(--tone-blue-dot) 45%, #FFFFFF);
+  --tone-sky-bg: color-mix(in srgb, var(--tone-sky-dot) 20%, #1C1C1C); --tone-sky-fg: color-mix(in srgb, var(--tone-sky-dot) 45%, #FFFFFF);
+  --tone-teal-bg: color-mix(in srgb, var(--tone-teal-dot) 20%, #1C1C1C); --tone-teal-fg: color-mix(in srgb, var(--tone-teal-dot) 45%, #FFFFFF);
+  --tone-green-bg: color-mix(in srgb, var(--tone-green-dot) 20%, #1C1C1C); --tone-green-fg: color-mix(in srgb, var(--tone-green-dot) 45%, #FFFFFF);
+  --tone-lime-bg: color-mix(in srgb, var(--tone-lime-dot) 20%, #1C1C1C); --tone-lime-fg: color-mix(in srgb, var(--tone-lime-dot) 45%, #FFFFFF);
+  --tone-brown-bg: color-mix(in srgb, var(--tone-brown-dot) 20%, #1C1C1C); --tone-brown-fg: color-mix(in srgb, var(--tone-brown-dot) 45%, #FFFFFF);
+  --tone-gray-bg: color-mix(in srgb, var(--tone-gray-dot) 20%, #1C1C1C); --tone-gray-fg: color-mix(in srgb, var(--tone-gray-dot) 45%, #FFFFFF);
 
-  /* Màu ngữ nghĩa (dùng cho hộp thông báo, lỗi form, nút nguy hiểm) */
+  /* Màu ngữ nghĩa (dùng cho hộp thông báo, lỗi form) */
   --success-bg: var(--tone-green-bg); --success-fg: var(--tone-green-fg);
   --danger-bg: var(--tone-red-bg); --danger-fg: var(--tone-red-fg);
   --warning-bg: var(--tone-amber-bg); --warning-fg: var(--tone-amber-fg);
   --info-bg: var(--tone-blue-bg); --info-fg: var(--tone-blue-fg);
 }
+
+/* =================== CHẾ ĐỘ TRẮNG =================== */
+:root[data-theme="light"],
+.giu-mau-trang {
+  /* .giu-mau-trang: gắn vào MỘT khối (vd. phần đầu trang chủ) để khối đó luôn dùng bảng màu TRẮNG
+     dù cả trang đang ở chế độ Đen. Khối này giữ nguyên màu như khi bật chế độ Trắng. */
+  color-scheme: light;
+
+  /* các biến suy ra phải khai báo lại ở đây, nếu không khối con vẫn lấy giá trị của chế độ Đen */
+  --color-text: var(--color-black);
+  --color-border: var(--color-gray);
+  --color-surface: var(--color-white);
+  --color-focus: var(--color-black);
+  --success-bg: var(--tone-green-bg); --success-fg: var(--tone-green-fg);
+  --danger-bg: var(--tone-red-bg); --danger-fg: var(--tone-red-fg);
+  --warning-bg: var(--tone-amber-bg); --warning-fg: var(--tone-amber-fg);
+  --info-bg: var(--tone-blue-bg); --info-fg: var(--tone-blue-fg);
+
+  --color-white: #FFFFFF;
+  --color-black: #1A1A1A;
+  --color-gray: #D9D9D9;
+  --gradient-white-black: linear-gradient(135deg, #FFFFFF 0%, #1A1A1A 100%);
+  --gradient-white-gray: linear-gradient(135deg, #FFFFFF 0%, #D9D9D9 100%);
+
+  --color-black-hover: #3A3A3A;
+  --color-gray-soft: #F3F3F3;
+  --color-text-muted: #5C5C5C;
+
+  --color-bg: #FFFFFF;
+  --color-surface-alt: var(--color-gray-soft);
+
+  --bg-gradient: radial-gradient(ellipse 70% 50% at 88% -6%, #C4C4C4 0%, rgba(196, 196, 196, 0) 72%), radial-gradient(ellipse 60% 45% at 5% 105%, #D2D2D2 0%, rgba(210, 210, 210, 0) 70%), linear-gradient(180deg, #FFFFFF 0%, #DDDDDD 100%);
+  --surface-gradient: linear-gradient(180deg, #FFFFFF 0%, #EDEDED 100%);
+  --surface-solid: #FFFFFF;
+  --text-gradient: linear-gradient(180deg, #1A1A1A 30%, #777777 100%);
+  --btn-primary-bg: linear-gradient(135deg, var(--color-black) 0%, var(--color-black-hover) 55%, var(--color-text-muted) 100%);
+  --btn-primary-bg-hover: linear-gradient(135deg, var(--color-black-hover) 0%, var(--color-black) 55%, var(--color-black-hover) 100%);
+  --header-bg: rgba(255, 255, 255, .82);
+
+  --color-input-bg: #FFFFFF;
+  --color-placeholder: #8A8A8A;
+  --color-border-hover: #A8A8A8;
+  --ring-focus: rgba(26, 26, 26, .12);
+  --error-input-bg: #FFF8F8;
+  --ring-error: rgba(154, 27, 27, .15);
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%231A1A1A' stroke-width='2'%3E%3Cpath d='m1 1 5 5 5-5'/%3E%3C/svg%3E");
+  --overlay: rgba(26, 26, 26, .45);
+
+  --danger-solid-bg: linear-gradient(135deg, #B22A2A 0%, #8E1B1B 100%);
+
+  --shine: rgba(26, 26, 26, .07);
+  --shine-strong: rgba(255, 255, 255, .4);
+  --shadow-sm: 0 1px 2px rgba(26, 26, 26, .06);
+  --shadow-md: 0 8px 24px rgba(26, 26, 26, .10);
+  --shadow-card: 0 14px 28px -22px rgba(26, 26, 26, .45);
+
+  --tone-amber-bg: #FFF1CC; --tone-amber-fg: #8A5A00;
+  --tone-orange-bg: #FFE4D2; --tone-orange-fg: #9A4A0F;
+  --tone-red-bg: #FDE2E2; --tone-red-fg: #A12020;
+  --tone-rose-bg: #FFE1EC; --tone-rose-fg: #A3224F;
+  --tone-pink-bg: #FCE4F3; --tone-pink-fg: #9D2B77;
+  --tone-violet-bg: #EDE7FF; --tone-violet-fg: #5B3CC4;
+  --tone-indigo-bg: #E3E8FF; --tone-indigo-fg: #3646B3;
+  --tone-blue-bg: #DCEBFF; --tone-blue-fg: #1D55B8;
+  --tone-sky-bg: #D9F3FB; --tone-sky-fg: #0B6A86;
+  --tone-teal-bg: #D6F5EE; --tone-teal-fg: #0B6B59;
+  --tone-green-bg: #DDF5E4; --tone-green-fg: #17653A;
+  --tone-lime-bg: #EAF6CF; --tone-lime-fg: #4A6A0A;
+  --tone-brown-bg: #F4E6D8; --tone-brown-fg: #7A4B22;
+  --tone-gray-bg: #ECECEC; --tone-gray-fg: #4B4B4B;
+}
+
+.giu-mau-trang { color: var(--color-text); }

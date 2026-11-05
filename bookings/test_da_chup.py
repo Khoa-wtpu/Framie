@@ -4,6 +4,7 @@
 # Mỗi hàm test_... là MỘT tình huống; test chạy trên cơ sở dữ liệu tạm, không đụng dữ liệu thật.
 # =====================================================================
 from datetime import timedelta  # timedelta: một khoảng thời gian (ví dụ 2 ngày, 1 giờ)
+from unittest import mock  # mock: giả lập tạm một hàm trong lúc test
 
 from django.test import override_settings  # cho phép đổi cài đặt chỉ trong lúc chạy test
 from django.urls import reverse  # từ TÊN url suy ra địa chỉ thật
@@ -97,6 +98,27 @@ class DaChupTest(nen.TiepNhanBase):  # nhóm test T8, kế thừa dữ liệu m�
         url_nut = lambda b: reverse('da_chup_booking', kwargs={'ma_booking': b.pk})  # hàm nhỏ: địa chỉ nút "Đã chụp" của một Booking
         self.assertContains(self.client.get(reverse('chi_tiet_yeu_cau_booking', kwargs={'ma_booking': sau.pk})), url_nut(sau))  # Booking đã qua giờ: trang có chứa địa chỉ nút
         self.assertNotContains(self.client.get(reverse('chi_tiet_yeu_cau_booking', kwargs={'ma_booking': truoc.pk})), url_nut(truoc))  # Booking chưa tới giờ: trang KHÔNG có nút
+
+    def test_trang_chi_tiet_dua_co_da_den_gio_chup_vao_context(self):  # tình huống: biến quyết định hiện nút phải có trong context
+        sau = self.booking_chot()  # Booking đã qua giờ chụp
+        truoc = self.booking_chot(da_qua_gio=False, gio='15:00')  # Booking chưa tới giờ chụp
+        res_sau = self.client.get(reverse('chi_tiet_yeu_cau_booking', kwargs={'ma_booking': sau.pk}))  # mở chi tiết Booking đã qua giờ
+        res_truoc = self.client.get(reverse('chi_tiet_yeu_cau_booking', kwargs={'ma_booking': truoc.pk}))  # mở chi tiết Booking chưa tới giờ
+        self.assertTrue(res_sau.context['dang_chot_booking'])  # đang "Chốt Booking" -> hiện khối Đã chụp
+        self.assertTrue(res_sau.context['da_den_gio_chup'])  # đã tới giờ -> True
+        self.assertFalse(res_truoc.context['da_den_gio_chup'])  # chưa tới giờ -> False
+        self.assertContains(res_sau, 'Sau khi chụp xong, bấm')  # nhánh đã tới giờ: lời hướng dẫn + nút
+        self.assertContains(res_truoc, 'Buổi chụp chưa diễn ra nên chưa thể bấm Đã chụp.')  # nhánh chưa tới giờ: dòng thông tin
+        self.assertNotContains(res_truoc, 'Sau khi chụp xong, bấm')  # và không có lời hướng dẫn / nút
+
+    def test_nut_da_chup_va_viec_bam_dung_chung_mot_cach_tinh_gio(self):  # tình huống: nút hiện thì bấm phải được, nút ẩn thì bấm bị chặn
+        bk = self.booking_chot()  # Booking đã qua giờ chụp
+        with mock.patch.object(uc, 'da_den_gio_chup', return_value=False):  # giả lập: đổi cách tính giờ thành "chưa tới giờ"
+            res = self.client.get(reverse('chi_tiet_yeu_cau_booking', kwargs={'ma_booking': bk.pk}))  # mở chi tiết
+            self.assertFalse(res.context['da_den_gio_chup'])  # nút bị ẩn theo cách tính mới
+            self.bam(bk)  # và bấm cũng bị chặn theo cách tính mới
+        bk.refresh_from_db()  # đọc lại Booking
+        self.assertEqual(bk.TrangThai, BK.CHOT_BOOKING)  # vẫn "Chốt Booking": hai nơi không bao giờ lệch nhau
 
 
 def _co_cot_so_luong():  # hàm phụ: kiểm tra bảng gói có cột "số lượng ảnh tối đa" không

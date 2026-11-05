@@ -65,12 +65,6 @@
   </table>
 </section>
 
-{% if trang.has_other_pages %}{# chỉ hiện chuyển trang khi có nhiều hơn 1 trang #}
-<nav class="admin-pager" aria-label="Chuyển trang">{# thanh chuyển trang #}
-  {% if trang.has_previous %}<a class="btn btn--soft btn--sm" href="?{% if query_loc %}{{ query_loc }}&amp;{% endif %}trang={{ trang.previous_page_number }}">Trang trước</a>{% endif %}{# giữ bộ lọc khi chuyển trang #}
-  <span class="card__meta">Trang {{ trang.number }} / {{ trang.paginator.num_pages }}</span>{# đang ở trang mấy #}
-  {% if trang.has_next %}<a class="btn btn--soft btn--sm" href="?{% if query_loc %}{{ query_loc }}&amp;{% endif %}trang={{ trang.next_page_number }}">Trang sau</a>{% endif %}{# giữ bộ lọc khi chuyển trang #}
-</nav>
-{% endif %}
+{% include "includes/pagination.html" with page_obj=page_obj %}{# phân trang dùng chung của nhóm: tự ẩn khi chỉ có 1 trang, tự giữ bộ lọc trên link #}
 {% endblock %}{# hết nội dung #}
 {% block extra_js %}<script src="{% static 'accounts/js/quan_tri_tai_khoan.js' %}" defer></script>{% endblock %}{# nạp JS xác nhận (JS phải nằm trong file tĩnh, không viết trong HTML) #}
