@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Không tìm thấy trang{% endblock %}
+{% block content %}
+<div class="container" style="max-width:40rem;text-align:center;padding-block:var(--space-8)">
+  <p class="muted" style="font-size:var(--text-3xl);font-weight:var(--fw-heading);margin:0">404</p>
+  <h1>Không tìm thấy trang bạn cần</h1>
+  <p class="muted">Địa chỉ này không tồn tại, đã bị xóa hoặc bạn không được phép xem. Hãy kiểm tra lại đường dẫn hoặc quay về trang chủ.</p>
+  <p style="margin-top:var(--space-5)"><a class="btn btn--primary" href="{% url 'home' %}">Về trang chủ</a></p>
+</div>
+{% endblock %}

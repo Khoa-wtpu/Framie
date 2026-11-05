@@ -1,0 +1,64 @@
+{% extends "base.html" %}{# N10 - UC5.8: Khách hàng tải về thiết bị ảnh hoàn chỉnh (không watermark) #}
+{% load ui static %}
+{% block title %}Tải ảnh hoàn chỉnh{% endblock %}
+{% block content %}
+<div class="container stack tahc">
+  <header>
+    <h1>Tải ảnh hoàn chỉnh</h1>
+    <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>
+  </header>
+
+  {% if ly_do %}{# chưa hoàn thành / hết hạn lưu trữ (4a) / chưa có ảnh #}
+    {% include "includes/alert.html" with level="warning" text=ly_do %}
+  {% else %}
+    <section class="panel stack">
+      <p>Đây là ảnh <strong>hoàn chỉnh</strong>, độ phân giải đầy đủ và không có watermark.
+        Bạn có thể tải đến hết <strong>{{ han_tai|date:"d/m/Y H:i" }}</strong>; sau thời điểm này ảnh sẽ bị xóa khỏi hệ thống và không thể tải nữa.</p>
+      <p class="muted">Nếu lần tải bị lỗi, bạn chỉ cần bấm tải lại.</p>
+    </section>
+
+    <form method="post" class="panel stack" id="form-tai-anh">
+      {% csrf_token %}
+      <h2>Ảnh hoàn chỉnh ({{ anhs|length }})</h2>
+      <label class="tahc__chon-het"><input type="checkbox" id="chon-het"> Chọn tất cả</label>
+      <ul class="tahc__ds">
+        {% for a in anhs %}
+          <li class="tahc__dong">
+            <label class="tahc__ten"><input type="checkbox" name="anh" value="{{ a.pk }}"> {{ a.TenAnh }}</label>
+            <span class="muted">{{ a.DinhDangAnh }} · {{ a.KichThuocAnh|filesizeformat }}</span>
+            <button class="btn btn--secondary" type="submit" name="tai_mot" value="{{ a.pk }}">Tải</button>
+          </li>
+        {% endfor %}
+      </ul>
+      <div class="tahc__nut">
+        <button class="btn btn--primary" type="submit" name="tai_chon" value="1">Tải ảnh đã chọn</button>
+        <button class="btn btn--secondary" type="submit" name="tai_tat_ca" value="1">Tải tất cả ({{ anhs|length }} ảnh)</button>
+      </div>
+      <p class="muted">Tải nhiều ảnh cùng lúc sẽ nhận một tệp .zip.</p>
+    </form>
+  {% endif %}
+
+  {% if lich_su %}{# lịch sử tải: giữ lại cả sau khi ảnh bị xóa #}
+    <section class="panel stack">
+      <h2>Lịch sử tải gần đây</h2>
+      <ul class="tahc__ds">
+        {% for ls in lich_su %}
+          <li class="tahc__dong">
+            <span>{{ ls.ThoiDiemTaiAnh|date:"d/m/Y H:i" }}</span>
+            <span>{{ ls.MaAnh.TenAnh }}</span>
+            <span class="{% if ls.KetQuaTaiAnh == 'Tải ảnh thành công' %}tahc__ok{% else %}tahc__loi{% endif %}">{{ ls.KetQuaTaiAnh }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'delivery/css/tai_anh_hoan_chinh.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'delivery/js/tai_anh_hoan_chinh.js' %}" defer></script>
+{% endblock %}

@@ -18,6 +18,8 @@ URL_NAMES = {
     "login": "login",
     "register": "register",
     "notifications": "notifications",
+    "about": "about",   # B10 Giới thiệu
+    "terms": "terms",   # B10 Điều khoản sử dụng
     "logout_confirm": "logout_confirm",  # SC7.5 Xác nhận đăng xuất
 }
 
