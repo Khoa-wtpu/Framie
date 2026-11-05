@@ -190,17 +190,17 @@ class HoSoCongKhaiTestCase(TestCase):
                 self.assertIsNone(self.client.get(f'{self.url}?goi={sai}').context['goi_chon'])
 
     # =================================================================
-    # Nút "Liên hệ" / "Đặt lịch"
+    # Nút "Nhắn tin" (thẻ nut_nhan_tin của chat, P10) / "Đặt lịch"
     # =================================================================
     def test_nut_dau_trang(self):
         self.tao_goi()
         res = self.client.get(self.url)
-        self.assertContains(res, 'Liên hệ')
+        self.assertContains(res, 'Nhắn tin')
         self.assertNotContains(res, 'Chọn lịch chụp')                              # không còn nút này ở đầu trang
         self.assertContains(res, 'href="#lich-kha-dung">Đặt lịch<')                # "Đặt lịch" cuộn xuống lịch bên dưới
         self.client.force_login(self.tao_nag('Người', 'Khác').MaTaiKhoan)           # Nhiếp ảnh gia xem: không có nút nào
         res = self.client.get(self.url)
-        self.assertNotContains(res, 'Liên hệ')
+        self.assertNotContains(res, 'Nhắn tin')
         self.assertNotContains(res, 'Đặt lịch<')
 
     def test_chua_co_goi_dang_ap_dung_thi_khong_co_nut_dat_lich(self):
