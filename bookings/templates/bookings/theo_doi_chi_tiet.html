@@ -28,6 +28,14 @@
     <p><a class="btn btn--primary" href="{{ url_xu_ly }}">Xử lý Booking này</a></p>{# nút dẫn tới màn xử lý của Nhiếp ảnh gia (T5/T8) #}
   {% endif %}
 
+  {# Bàn giao ảnh (module của Nguyên): Khách chọn ảnh cần hậu kỳ; Nhiếp ảnh gia tải ảnh / bắt đầu hậu kỳ. Chỉ có giá trị khi trang của Nguyên đã có. #}
+  {% if url_chon_anh %}{# Khách hàng + Booking "Chờ Khách hàng lựa chọn ảnh" #}
+    <p><a class="btn btn--primary" href="{{ url_chon_anh }}">Chọn ảnh cần hậu kỳ</a></p>{# nút dẫn tới trang chọn ảnh (chon_anh_hau_ky) #}
+  {% endif %}
+  {% if url_tai_anh %}{# Nhiếp ảnh gia + Booking "Đã chụp" / "Chờ hậu kỳ" / "Đang hậu kỳ" #}
+    <p><a class="btn btn--primary" href="{{ url_tai_anh }}">Tải ảnh / Bắt đầu hậu kỳ</a></p>{# nút dẫn tới trang tải ảnh (tai_anh_len) #}
+  {% endif %}
+
   {# T9 / UC4.6: Khách hàng hoặc Nhiếp ảnh gia hủy khi Booking đang "Chờ đặt cọc" / "Chốt Booking". Bấm vào mở trang nhập lý do + xác nhận. #}
   {% if co_the_huy %}{# chỉ hiện khi Khách/Nhiếp ảnh gia được phép hủy (Booking đang "Chờ đặt cọc"/"Chốt Booking") #}
     <p><a class="btn btn--danger" href="{% url 'huy_booking' ma_booking=booking.pk %}">Hủy Booking</a></p>{# nút đỏ dẫn tới trang nhập lý do + xác nhận hủy #}
