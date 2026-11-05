@@ -50,3 +50,146 @@
   align-items: center;                                /* căn giữa theo chiều dọc */
   gap: var(--space-2);                                /* khoảng cách tối thiểu giữa hai phần */
 }
+
+/* ================= PHẦN THÊM MỚI: giao diện trang chi tiết Booking và trang danh sách Booking ================= */
+/* Quy ước: mọi class mới bắt đầu bằng "td-". Chỉ dùng biến trong tokens.css, không gõ màu cứng. */
+
+/* ---------- TRANG CHI TIẾT ---------- */
+
+.td-quay-lai {
+  display: inline-block;                              /* để có thể chừa lề trên/dưới */
+  color: var(--color-text-muted);                     /* màu xám nhạt cho link phụ */
+  text-decoration: none;                              /* bỏ gạch chân mặc định */
+  font-size: var(--text-sm);                          /* chữ nhỏ */
+}
+.td-quay-lai:hover { color: var(--color-text); text-decoration: underline; }   /* rê chuột: đậm màu + gạch chân */
+
+.td-dau {
+  display: flex;                                      /* tiêu đề bên trái, nút thao tác bên phải */
+  justify-content: space-between;                     /* đẩy hai phần về hai đầu */
+  align-items: flex-end;                              /* căn đáy hai phần cho thẳng hàng */
+  flex-wrap: wrap;                                    /* màn hình hẹp thì nút xuống dòng */
+  gap: var(--space-4);                                /* khoảng cách giữa hai phần */
+}
+.td-tieu-de { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3); }   /* "Booking #1" + nhãn trạng thái cùng hàng */
+.td-tieu-de h1 { margin: 0; }                         /* bỏ lề của <h1> cho thẳng hàng với nhãn */
+/* LÝ DO nhãn từng bị mất chữ: <h1> của cả web tô chữ gradient trong suốt, nhãn nằm trong <h1> bị thừa hưởng. Đặt nhãn NGOÀI <h1> là hết. */
+.td-dau__phu { margin: var(--space-1) 0 0; font-size: var(--text-sm); }   /* dòng "Gửi lúc ..." dưới tiêu đề */
+.td-hanh-dong { display: flex; flex-wrap: wrap; gap: var(--space-3); }    /* các nút thao tác (Xử lý, Hủy...) xếp ngang */
+.td-hanh-dong .btn { white-space: nowrap; }           /* chữ trên nút không bị ngắt dòng */
+
+/* ---- 4 ô số liệu nổi bật ---- */
+.td-chi-so {
+  display: grid;                                      /* xếp các ô theo lưới */
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));   /* tự chia số cột theo chiều rộng, mỗi ô tối thiểu 13rem */
+  gap: var(--space-4);                                /* khoảng cách giữa các ô */
+}
+.td-o { margin: 0; padding: var(--space-4) var(--space-5); min-width: 0; }   /* ô số liệu (đã có khung .panel); min-width:0 để chữ dài không vỡ lưới */
+.td-o__nhan {
+  margin: 0;                                          /* bỏ lề đoạn văn */
+  font-size: var(--text-xs);                          /* nhãn rất nhỏ */
+  font-weight: 600;                                   /* đậm */
+  text-transform: uppercase;                          /* viết HOA */
+  letter-spacing: .08em;                              /* giãn chữ */
+  color: var(--color-text-muted);                     /* xám nhạt */
+}
+.td-o__so { margin: var(--space-2) 0 0; font-size: var(--text-lg); font-weight: var(--fw-heading); overflow-wrap: anywhere; line-height: 1.35; }   /* giá trị chính của ô, in đậm vừa */
+.td-o__phu { margin: var(--space-1) 0 0; font-size: var(--text-sm); color: var(--color-text-muted); }   /* dòng phụ nhỏ bên dưới */
+.td-o--nhan-manh { border-color: var(--color-text-muted); }   /* ô Tổng giá trị: viền đậm hơn để nổi bật */
+.td-o--nhan-manh .td-o__so { font-size: var(--text-xl); }     /* số tiền in to hơn các ô khác */
+
+/* ---- Thân trang: cột chính bên trái + cột phụ bên phải ---- */
+.td-bo-cuc {
+  display: grid;                                      /* chia 2 cột */
+  grid-template-columns: minmax(0, 1fr) 22rem;        /* cột trái co giãn, cột phải cố định 22rem */
+  gap: var(--space-5);                                /* khoảng cách giữa hai cột */
+  align-items: start;                                 /* mỗi cột cao đúng nội dung, không bị kéo giãn */
+}
+.td-the { min-width: 0; }                             /* mỗi khối thông tin (đã có khung .panel); KHÔNG đặt margin:0 để .stack còn chừa khoảng cách giữa các khối */
+.td-the__tieu-de {
+  margin: 0 0 var(--space-2);                         /* chừa khoảng cách dưới tiêu đề khối */
+  font-size: var(--text-sm);                          /* chữ nhỏ */
+  font-weight: 600;                                   /* đậm */
+  text-transform: uppercase;                          /* viết HOA */
+  letter-spacing: .08em;                              /* giãn chữ */
+  color: var(--color-text-muted);                     /* xám nhạt, giống tiêu đề nhóm ở trang Duyệt hồ sơ */
+}
+
+/* ---- Danh sách "nhãn – giá trị": mỗi dòng có đường kẻ mờ ---- */
+.td-ds { margin: 0; }                                 /* bỏ lề mặc định của <dl> */
+.td-ds + p { margin-top: var(--space-3); }           /* đoạn chữ ngay dưới danh sách thì cách ra một chút */
+.td-dong {
+  display: flex;                                      /* nhãn bên trái, giá trị bên phải */
+  gap: var(--space-4);                                /* khoảng cách giữa nhãn và giá trị */
+  padding-block: var(--space-3);                      /* khoảng đệm trên/dưới mỗi dòng */
+  border-bottom: 1px solid var(--color-border);       /* đường kẻ mờ ngăn các dòng */
+}
+.td-dong:last-child { border-bottom: 0; padding-bottom: 0; }   /* dòng cuối không cần đường kẻ */
+.td-dong dt { flex: 0 0 8.5rem; color: var(--color-text-muted); font-size: var(--text-sm); }   /* nhãn: rộng cố định cho các giá trị thẳng cột */
+.td-dong dd { flex: 1; margin: 0; min-width: 0; overflow-wrap: anywhere; }   /* giá trị: chiếm phần còn lại, chữ dài tự xuống dòng */
+
+/* ---------- TRANG DANH SÁCH ---------- */
+
+.td-form { display: grid; gap: var(--space-4); margin-bottom: var(--space-5); }   /* form gồm ô tìm kiếm và hàng kết quả, xếp dọc */
+.td-pill {
+  display: flex;                                      /* [kính lúp | ô nhập | nút] xếp ngang */
+  align-items: center;                                /* căn giữa theo chiều dọc */
+  gap: var(--space-2);                                /* khoảng cách giữa các phần */
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);   /* lề trong: trên, phải, dưới, trái */
+  background: var(--color-white);                     /* nền theo giao diện (trắng hoặc đen tùy chế độ) */
+  border: 1px solid var(--color-border);              /* viền mảnh màu chuẩn */
+  border-radius: var(--radius-pill);                  /* bo tròn hoàn toàn */
+  box-shadow: var(--shadow-md);                       /* đổ bóng nhẹ cho nổi lên */
+}
+.td-pill:focus-within { border-color: var(--color-black); }   /* đang gõ vào ô thì viền đậm lên */
+.td-pill__icon { flex: none; color: var(--color-text-muted); }   /* biểu tượng kính lúp: không co lại, màu xám */
+.td-pill__nhap { flex: 1; min-width: 0; }             /* nhãn bao ô nhập: chiếm hết chỗ trống giữa kính lúp và nút */
+.td-pill__input {
+  width: 100%;                                        /* ô nhập rộng hết nhãn bao */
+  min-height: 2.75rem;                                /* chiều cao ô nhập */
+  border: 0;                                          /* bỏ viền vì đã có viền của viên thuốc */
+  background: transparent;                            /* nền trong suốt để thấy nền viên thuốc */
+  color: var(--color-text);                           /* màu chữ theo giao diện sáng/tối */
+  font: inherit;                                      /* dùng cùng font với cả trang */
+  outline: none;                                      /* bỏ viền mặc định (viền viên thuốc đã đổi màu ở trên) */
+}
+.td-pill__input::placeholder { color: var(--color-text-muted); }   /* chữ gợi ý mờ */
+
+.td-hang-kq { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); }   /* hàng: "N Booking" bên trái, ô lọc bên phải */
+.td-dem { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }   /* dòng "31 Booking" */
+.td-loc-tt { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); }   /* nhãn "Trạng thái" + ô chọn cùng hàng */
+.td-loc-tt .input { width: auto; min-height: 2.25rem; padding-block: var(--space-1); border-radius: var(--radius-pill); }   /* ô chọn bo tròn, gọn */
+
+.td-cuon { overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-lg); }   /* khung bảng: bo góc, quá rộng thì cuộn ngang */
+.td-bang { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }   /* bảng rộng hết khung, đường kẻ liền nhau */
+.td-bang th, .td-bang td {
+  padding: var(--space-3) var(--space-4);             /* khoảng đệm trong mỗi ô */
+  text-align: left;                                   /* căn trái toàn bảng cho mắt đọc theo một đường thẳng */
+  vertical-align: middle;                             /* căn giữa theo chiều dọc */
+  border-bottom: 1px solid var(--color-border);       /* đường kẻ mờ dưới mỗi dòng */
+}
+.td-bang thead th {
+  background: var(--gradient-white-gray);             /* nền tiêu đề gradient trắng–xám của nhóm */
+  font-size: var(--text-xs);                          /* chữ tiêu đề nhỏ */
+  font-weight: var(--fw-heading);                     /* đậm */
+  text-transform: uppercase;                          /* viết HOA */
+  letter-spacing: .06em;                              /* giãn chữ */
+  white-space: nowrap;                                /* tiêu đề cột không xuống dòng */
+}
+.td-bang tbody tr:last-child > * { border-bottom: 0; }          /* dòng cuối không cần đường kẻ vì đã có viền ngoài */
+.td-bang tbody tr:hover { background: var(--color-surface-alt); }   /* rê chuột vào dòng thì dòng sáng lên, dễ theo dõi */
+.td-ma { font-weight: var(--fw-heading); white-space: nowrap; }  /* mã Booking đậm, không xuống dòng */
+.td-chinh { display: block; font-weight: var(--fw-heading); }    /* dòng chính của một ô (tên, tên gói, ngày giờ) */
+.td-phu { display: block; color: var(--color-text-muted); font-size: var(--text-xs); }   /* dòng phụ dưới dòng chính (loại hình, địa điểm) */
+.td-cat { max-width: 15rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* địa điểm dài thì cắt gọn bằng dấu ... (rê chuột xem đủ) */
+.td-gio { white-space: nowrap; }                      /* ngày giờ không bị tách dòng giữa chừng */
+.td-nut { text-align: right; white-space: nowrap; }   /* cột nút: căn phải, nút không bị ngắt */
+
+/* ---------- Màn hình hẹp ---------- */
+@media (max-width: 60rem) {                           /* tablet: chiều rộng <= 60rem */
+  .td-bo-cuc { grid-template-columns: 1fr; }          /* hai cột chính/phụ xếp thành một cột dọc */
+}
+@media (max-width: 40rem) {                           /* điện thoại: chiều rộng <= 40rem */
+  .td-dong { flex-direction: column; gap: var(--space-1); }   /* nhãn nằm trên giá trị cho đủ chỗ */
+  .td-dong dt { flex: none; }                         /* bỏ độ rộng cố định của nhãn */
+}
