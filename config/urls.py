@@ -21,6 +21,8 @@ urlpatterns = [
     path('', include('search.urls')),
     path('', include('schedule.urls')),
     path('', include('profiles.urls_cong_khai')),
+    path('', include('notifications.urls')),
+    path('', include('chat.urls')),
     path('', include('profiles.urls_duyet')),
     path('', include('profiles.urls_cua_toi')),
 

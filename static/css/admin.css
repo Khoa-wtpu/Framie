@@ -202,7 +202,9 @@
 }
 .admin-filter .input { /* ô nhập và ô chọn trong hàng lọc */
   width: auto; /* không kéo dài hết hàng */
-  min-width: 18rem; /* đủ rộng để hiện hết chữ gợi ý */
+}
+.admin-filter input[type="search"] { /* chỉ ô tìm kiếm cần rộng, hai ô chọn để theo nội dung */
+  min-width: 20rem; /* đủ rộng để hiện hết chữ gợi ý */
 }
 .admin-table-wrap { /* khung bọc bảng */
   overflow-x: auto; /* bảng rộng hơn khung thì cuộn ngang, không làm tràn trang */
@@ -235,10 +237,4 @@
 }
 .admin-inline-form .input { /* ô chọn vai trò trong dòng */
   width: auto; /* vừa chữ */
-}
-.admin-pager { /* thanh Trang trước / Trang sau */
-  display: flex; /* xếp ngang */
-  gap: var(--space-3); /* khoảng cách */
-  align-items: center; /* canh giữa theo chiều dọc */
-  margin-top: var(--space-4); /* cách bảng bên trên */
 }
