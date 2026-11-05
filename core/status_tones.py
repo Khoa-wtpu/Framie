@@ -1,6 +1,3 @@
-"""Trạng thái -> tông màu. Giá trị lưu trong DB chính là chữ tiếng Việt ở core/constants.py,
-nên khóa ở đây lấy thẳng từ constants (không gõ lại chữ). Tông màu khai báo ở static/css/tokens.css.
-Tông có sẵn: amber, orange, red, rose, pink, violet, indigo, blue, sky, teal, green, lime, brown, gray."""
 from .constants import (KetQuaTaiAnh, LoaiAnh, LuuTruAnh, TrangThaiBooking as B,
                         TrangThaiDatLaiMatKhau as MK, TrangThaiDoc, TrangThaiGiuCho as GC,
                         TrangThaiGoi, TrangThaiGuiEmail, TrangThaiHoanTien, TrangThaiHoSo as HS,

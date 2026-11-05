@@ -1,0 +1,78 @@
+/* schedule/static/schedule/css/lich.css - K10: Quản lý lịch khả dụng. Chỉ dùng token trong tokens.css. */
+.lich { padding-block: var(--space-6); }
+.lich--hep { max-width: 40rem; }
+.lich__dau { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-5); }
+.lich__dau h1, .lich h1 { margin: 0 0 var(--space-1); font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.lich__dau p, .lich__mo-ta { margin: 0 0 var(--space-4); color: var(--color-text-muted); }
+.lich__dau p { margin-bottom: 0; }
+
+/* ---- thanh chế độ xem + điều hướng ---- */
+.lich__thanh { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-4); }
+.lich__che-do { display: inline-flex; padding: var(--space-1); background: var(--color-surface-alt); border-radius: var(--radius-pill); }
+.lich__tab { padding: var(--space-1) var(--space-5); border-radius: var(--radius-pill); font-size: var(--text-sm); font-weight: 600; color: var(--color-text-muted); }
+.lich__tab.is-active { background: var(--color-black); color: var(--color-white); }
+.lich__dieu-huong { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.lich__nhan { min-width: 11rem; text-align: center; }
+.lich__hom-nay { font-size: var(--text-sm); text-decoration: underline; color: var(--color-text-muted); }
+.lich__chu-thich { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: 0 0 var(--space-4); padding: 0; list-style: none; }
+.lich__trong { margin: var(--space-4) 0 0; padding: var(--space-5) var(--space-4); text-align: center; color: var(--color-text-muted); background: var(--color-surface-alt); border-radius: var(--radius-lg); }
+
+/* ---- lưới tuần: 7 cột, màn hẹp tự xuống hàng ---- */
+.lich__tuan { display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); gap: var(--space-3); }
+.lich-ngay { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3); background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+.lich-ngay.is-hom-nay { border-color: var(--color-black); }
+.lich-ngay.is-qua { background: var(--color-surface-alt); }
+.lich-ngay__ten { margin: 0; font-size: var(--text-sm); font-weight: 700; text-align: center; }
+.lich-ngay__nhan-hom-nay { display: block; font-size: var(--text-xs); font-weight: 600; color: var(--color-text-muted); }
+.lich-ngay__ds { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; flex: 1; align-content: start; }
+.lich-ngay__trong { font-size: var(--text-xs); text-align: center; color: var(--color-text-muted); }
+.lich-ngay__them { font-size: var(--text-xs); text-align: center; text-decoration: underline; color: var(--color-text-muted); }
+
+/* ---- ô khung giờ: viền trái theo màu trạng thái ---- */
+.lich-slot { --lich-dot: var(--tone-gray-dot); display: grid; justify-items: center; gap: var(--space-1); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3); text-align: center; background: var(--color-white); border: 1px solid var(--color-border); border-left: 4px solid var(--lich-dot); border-radius: var(--radius-md); }
+.lich-slot--sky { --lich-dot: var(--tone-sky-dot); }
+.lich-slot--amber { --lich-dot: var(--tone-amber-dot); }
+.lich-slot--blue { --lich-dot: var(--tone-blue-dot); }
+.lich-slot.is-qua { opacity: .6; }
+.lich-slot__gio { font-size: var(--text-sm); font-weight: 600; white-space: nowrap; }
+.lich-slot__ghi { font-size: var(--text-xs); color: var(--color-text-muted); }
+.lich-slot__booking { font-size: var(--text-xs); font-weight: 600; text-decoration: underline; }
+.lich-slot__nut { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-1); }
+/* Ô sửa được: thao tác nằm trong lớp phủ, chỉ hiện khi rê chuột / Tab vào / bấm (.is-mo do lich.js thêm khi chạm màn hình cảm ứng) */
+.lich-slot--thao-tac { position: relative; min-height: 4.5rem; cursor: pointer; align-content: center; }
+.lich-slot--thao-tac .lich-slot__nut { position: absolute; inset: 0; z-index: 1; align-content: center; padding: var(--space-1); background: var(--color-white); border-radius: inherit; opacity: 0; visibility: hidden; transition: opacity .12s ease; }
+.lich-slot--thao-tac:hover .lich-slot__nut, .lich-slot--thao-tac:focus-within .lich-slot__nut, .lich-slot--thao-tac.is-mo .lich-slot__nut { opacity: 1; visibility: visible; }
+.lich-slot--thao-tac:focus-visible { outline: 2px solid var(--color-black); outline-offset: 2px; }
+.lich-slot__xoa { color: var(--danger-fg); }
+
+/* ---- lưới tháng ---- */
+.lich__bao-thang { overflow-x: auto; background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+.lich-thang { width: 100%; min-width: 36rem; border-collapse: collapse; table-layout: fixed; }
+.lich-thang th { padding: var(--space-2); font-size: var(--text-sm); background: var(--color-surface-alt); border-bottom: 1px solid var(--color-border); }
+.lich-thang th:not(:last-child), .lich-o:not(:last-child) { border-right: 1px solid var(--color-border); }
+.lich-o { height: 6rem; padding: 0; vertical-align: top; border-bottom: 1px solid var(--color-border); }
+.lich-o__link { display: grid; align-content: start; gap: var(--space-1); height: 100%; padding: var(--space-2); color: var(--color-text); }
+.lich-o__link:hover, .lich-o__link:focus-visible { background: var(--color-surface-alt); }
+.lich-o.is-ngoai .lich-o__so { opacity: .4; }
+.lich-o.is-hom-nay .lich-o__so { display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem; background: var(--color-black); color: var(--color-white); border-radius: var(--radius-pill); }
+.lich-o__so { font-size: var(--text-sm); font-weight: 600; }
+.lich-o__chip { padding: 0 var(--space-2); font-size: var(--text-xs); border-radius: var(--radius-pill); white-space: nowrap; justify-self: start; }
+.lich-o__chip--sky { background: var(--tone-sky-bg); color: var(--tone-sky-fg); }
+.lich-o__chip--amber { background: var(--tone-amber-bg); color: var(--tone-amber-fg); }
+.lich-o__chip--blue { background: var(--tone-blue-bg); color: var(--tone-blue-fg); }
+
+/* ---- form thêm / sửa ---- */
+.lich-form__gio { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-4); }
+.lich-form__bao { margin-bottom: var(--space-4); }
+.lich-form__bao .alert__body { display: grid; gap: var(--space-1); }
+.lich-form__nut { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-3); margin-top: var(--space-4); }
+
+/* ---- popup xác nhận xóa (căn giữa) ---- */
+.lich-popup { border: 0; padding: 0; border-radius: var(--radius-lg); width: min(28rem, calc(100vw - 2 * var(--space-4))); box-shadow: 0 24px 64px rgba(0, 0, 0, .25); color: var(--color-text); }
+.lich-popup::backdrop { background: rgba(0, 0, 0, .5); }
+.lich-popup__khung { display: grid; gap: var(--space-3); justify-items: center; padding: var(--space-8) var(--space-6) var(--space-6); text-align: center; }
+.lich-popup__khung--trang { background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+.lich-popup__tieu-de { margin: 0; font-size: var(--text-xl); font-weight: 700; text-transform: none; letter-spacing: 0; }
+.lich-popup__hoi { margin: 0; color: var(--color-text-muted); line-height: 1.6; }
+.lich-popup__nut { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-3); margin-top: var(--space-3); }
+.lich-popup__nut .btn { min-width: 8rem; }

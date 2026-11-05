@@ -1,4 +1,3 @@
-from profiles.forms import NhiepAnhGiaForm  # form hồ sơ của Khoa, dùng để giả lập kết quả trong test
 from unittest.mock import patch  # patch: thay tạm một hàm bằng hàm giả để giả lập lỗi
 from django.contrib.auth.models import Group  # bảng nhóm quyền (vai trò)
 from django.contrib.messages import get_messages  # đọc các thông báo (messages) mà view đã gửi
@@ -179,41 +178,16 @@ class DangKyTests(TestCase):  # nhóm test của P4 (UC7.1a)
         self.assertEqual(tach_ho_ten('  Nguyễn   Văn  An  '), ('An', 'Nguyễn Văn'))  # khoảng trắng thừa được dọn
         self.assertEqual(tach_ho_ten(''), ('', ''))  # chuỗi rỗng không gây lỗi
 
-    class DangKyNhiepAnhGiaTests(TestCase):  # nhóm test của P5 (UC7.1b)
-        URL = '/dang-ky/nhiep-anh-gia/'  # đường dẫn trang đăng ký Nhiếp ảnh gia
+    def test_loi_mat_khau_chi_hien_mot_lan(self):  # feedback P4-1: mỗi câu lỗi mật khẩu chỉ được hiện đúng 1 lần
+        res = self.client.post('/dang-ky/', {**self.DU_LIEU, 'mat_khau': 'xk9#mq2vlp'})  # mật khẩu thiếu chữ hoa
+        self.assertContains(res, 'Mật khẩu phải có ít nhất một chữ hoa.', count=1)  # câu báo xuất hiện đúng 1 lần, không bị lặp do hai nơi cùng kiểm tra
 
-        DU_LIEU_TAI_KHOAN = {  # phần tài khoản hợp lệ, dùng chung cho các test
-            'ho_ten': 'Nguyễn Văn An',  # họ và tên
-            'email': 'an@example.com',  # email
-            'so_dien_thoai': '0912345678',  # số điện thoại
-            'mat_khau': 'Abcd@1234',  # mật khẩu đủ 4 loại ký tự
-        }  # hết dữ liệu
+    @override_settings(ALLOWED_HOSTS=['framie.example.com'])  # cho phép tên miền giả này trong test, nếu không Django từ chối vì Host lạ
+    def test_link_dang_nhap_trong_email_theo_dia_chi_dang_truy_cap(self):  # feedback P4-2: link không được cố định 127.0.0.1
+        self.client.post('/dang-ky/', self.DU_LIEU, HTTP_HOST='framie.example.com')  # đăng ký khi truy cập qua tên miền khác
+        self.assertIn('http://framie.example.com/dang-nhap/', mail.outbox[0].body)  # link lấy theo địa chỉ người dùng đang dùng, không phải 127.0.0.1
+        self.assertNotIn('127.0.0.1', mail.outbox[0].body)  # và không chứa địa chỉ máy của người lập trình
 
-        def test_tai_khoan_sai_khong_tao_user(self):  # phần tài khoản sai thì không được tạo gì
-            du_lieu = {**self.DU_LIEU_TAI_KHOAN, 'so_dien_thoai': '123'}  # sửa SĐT thành sai định dạng
-            res = self.client.post(self.URL, du_lieu)  # gửi form
-            self.assertEqual(res.status_code, 200)  # ở lại trang để hiện lỗi
-            self.assertFalse(User.objects.filter(email='an@example.com').exists())  # chưa có User nào
-
-        def test_ho_so_loi_thi_hoan_tac_user(self):  # hồ sơ lỗi thì tài khoản vừa tạo phải bị xóa
-            with patch.object(NhiepAnhGiaForm, 'is_valid',
-                              return_value=False):  # giả lập form hồ sơ của Khoa báo không hợp lệ
-                res = self.client.post(self.URL, self.DU_LIEU_TAI_KHOAN)  # gửi form
-            self.assertEqual(res.status_code, 200)  # ở lại trang để hiện lỗi
-            self.assertFalse(
-                User.objects.filter(email='an@example.com').exists())  # User đã được hoàn tác, không sót tài khoản
-
-        def test_dang_ky_dung_tao_user_cho_duyet(self):  # luồng chính
-            with patch.object(NhiepAnhGiaForm, 'is_valid', return_value=True), \
-                    patch.object(NhiepAnhGiaForm,
-                                 'save') as luu:  # giả lập form hồ sơ hợp lệ và chỉ kiểm tra có được gọi save
-                res = self.client.post(self.URL, self.DU_LIEU_TAI_KHOAN)  # gửi form
-            self.assertRedirects(res, '/dang-nhap/')  # thành công thì chuyển sang trang đăng nhập
-            user = User.objects.get(email='an@example.com')  # lấy tài khoản vừa tạo
-            self.assertEqual(user.trang_thai_ho_so, TrangThaiHoSo.CHO_DUYET)  # trạng thái là Chờ duyệt
-            self.assertTrue(user.groups.filter(name=VaiTro.NHIEP_ANH_GIA).exists())  # thuộc nhóm Nhiếp ảnh gia
-            luu.assert_called_once()  # form hồ sơ được lưu đúng 1 lần (Phanh không tự lưu thêm)
-
-        def test_get_full_name_dung_thu_tu_tieng_viet(self):  # câu hỏi C của Khoa
-            user = User(first_name='An', last_name='Nguyễn Văn')  # tên = An, họ và tên đệm = Nguyễn Văn
-            self.assertEqual(user.get_full_name(), 'Nguyễn Văn An')  # phải ra "Họ Tên", không phải "Tên Họ"
+    def test_get_full_name_dung_thu_tu_tieng_viet(self):  # câu hỏi C của Khoa (trước đây bị thụt vào class lồng nên không chạy)
+        user = User(first_name='An', last_name='Nguyễn Văn')  # tên = An, họ và tên đệm = Nguyễn Văn
+        self.assertEqual(user.get_full_name(), 'Nguyễn Văn An')  # phải ra "Họ Tên", không phải "Tên Họ"

@@ -1,0 +1,17 @@
+{% extends "base.html" %}{# K10: trang xác nhận xóa dự phòng (khi trình duyệt tắt JS); bình thường dùng popup ở trang lịch #}
+{% load static %}
+{% block title %}Xóa khung giờ{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'schedule/css/lich.css' %}">{% endblock %}
+{% block content %}
+<div class="container lich lich--hep">
+  <div class="lich-popup__khung lich-popup__khung--trang">
+    <h1 class="lich-popup__tieu-de">Xóa khung giờ?</h1>
+    <p class="lich-popup__hoi">Bạn có chắc muốn xóa khung giờ {{ nhan_ngay }} · {{ lich.GioBatDau|time:"H:i" }} – {{ lich.GioKetThuc|time:"H:i" }}? Khung giờ sẽ không còn hiển thị cho Khách hàng.</p>
+    <form method="post" class="lich-popup__nut">
+      {% csrf_token %}
+      <a class="btn btn--secondary" href="{{ url_quay_lai }}">Hủy</a>
+      <button class="btn btn--danger" type="submit">Xác nhận xóa</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

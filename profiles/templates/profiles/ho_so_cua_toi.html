@@ -1,0 +1,77 @@
+{% extends "base.html" %}{# K3b - SC1.2 Hồ sơ của tôi & trạng thái duyệt (wireframe Module 1) #}
+{% load static ui %}
+{% block title %}Hồ sơ của tôi{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'profiles/css/ho_so_cua_toi.css' %}">{% endblock %}
+{% block content %}
+<div class="container hsct">
+  {% if chua_co_ho_so %}
+  <header class="hsct__dau"><h1>Hồ sơ của tôi</h1></header>
+  <div class="hsct__trong" role="status">
+    <p>Tài khoản của bạn chưa có hồ sơ Nhiếp ảnh gia.</p>
+    <p class="muted">Vui lòng liên hệ Quản trị viên nếu bạn cho rằng đây là nhầm lẫn.</p>
+  </div>
+  {% else %}
+  <header class="hsct__dau">
+    <h1>Hồ sơ của tôi</h1>
+    {% status_badge trang_thai_user %}
+  </header>
+  <p class="hsct__mo-ta">{{ mo_ta }}</p>
+
+  {% if thong_bao %}
+  <div class="alert alert--{{ thong_bao.0 }}" role="{% if thong_bao.0 == 'success' or thong_bao.0 == 'info' %}status{% else %}alert{% endif %}">
+    <div class="alert__body">
+      <strong class="alert__title">{{ thong_bao.1 }}</strong>
+      <span class="alert__text hsct__noi-dung">{{ thong_bao.2 }}</span>
+      {% if thong_bao.3 %}<small class="hsct__gui-luc">Quản trị viên gửi lúc {{ thong_bao.3|date:"d/m/Y · H:i" }}</small>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="hsct__luoi">
+    <section class="panel hsct__khoi" aria-labelledby="hs-thong-tin">
+      <h2 id="hs-thong-tin">Thông tin hồ sơ</h2>
+      <div class="hsct__nguoi">
+        <div class="hsct__anh">
+          {% if nag.AnhDaiDien %}<img src="{{ nag.AnhDaiDien.url }}" alt="Ảnh đại diện của {{ ten }}">{% else %}<span aria-hidden="true">{{ ten|slice:":1" }}</span>{% endif %}
+        </div>
+        <div>
+          <p class="hsct__ten">{{ ten }}</p>
+          <p class="muted hsct__ma">ID: {{ ma }}</p>
+        </div>
+      </div>
+      <dl class="hsct__ds">
+        <dt>Số điện thoại</dt><dd>{{ user_nag.so_dien_thoai }}</dd>
+        <dt>Email</dt><dd>{{ user_nag.email }}</dd>
+        <dt>Loại hình chụp</dt><dd>{{ loai_hinh }}</dd>
+        <dt>Phong cách</dt><dd>{{ phong_cach }}</dd>
+        <dt>Khu vực hoạt động</dt><dd>{{ khu_vuc }}</dd>
+      </dl>
+      <h3>Giới thiệu bản thân</h3>
+      <p class="hsct__gioi-thieu">{{ nag.GioiThieu }}</p>
+    </section>
+
+    <div class="hsct__cot-phai">
+      <section class="panel hsct__khoi" aria-labelledby="hs-thanh-toan">
+        <h2 id="hs-thanh-toan">Thông tin nhận thanh toán</h2>
+        <dl class="hsct__ds">
+          <dt>Tên ngân hàng</dt><dd>{{ nag.NganHang }}</dd>
+          <dt>Số tài khoản</dt><dd>{{ nag.SoTaiKhoan }}</dd>
+          <dt>Chủ tài khoản</dt><dd>{{ nag.ChuTaiKhoan }}</dd>
+        </dl>
+        {% if nag.AnhMaQR %}<img class="hsct__qr" src="{{ nag.AnhMaQR.url }}" alt="Ảnh mã QR nhận thanh toán">{% endif %}
+      </section>
+
+      <section class="panel hsct__khoi" aria-labelledby="hs-thao-tac">
+        <h2 id="hs-thao-tac">Thao tác</h2>
+        <p class="muted">{{ cau_thao_tac }}</p>
+        {% if nut_dung_duoc %}
+        <a class="btn {% if nut_dam %}btn--primary{% else %}btn--secondary{% endif %} btn--block" href="{% url 'cap_nhat_ho_so' %}">{{ nhan_nut }}</a>
+        {% else %}
+        <span class="btn btn--secondary btn--block is-disabled" role="link" aria-disabled="true">{{ nhan_nut }}</span>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

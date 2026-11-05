@@ -3,6 +3,7 @@
 {# ===== KHUNG QUẢN TRỊ: module khác chỉ cần {% extends "accounts/quan_tri/khung.html" %} ===== #}
 {# Ghi đè 2 khối: admin_tieu_de (tiêu đề trang) và admin_noi_dung (nội dung trang). #}
 {% block title %}{% block admin_title_tab %}Quản trị{% endblock %}{% endblock %}{# chữ trên tab trình duyệt, con có thể ghi đè khối admin_title_tab #}
+{# LƯU Ý: trang con nào ghi đè khối extra_head (ví dụ để nạp thêm CSS) PHẢI gọi {{ block.super }} ở đầu khối, nếu không sẽ mất admin.css của khung này. #}
 {% block extra_head %}<link rel="stylesheet" href="{% static 'css/admin.css' %}">{% endblock %}{# nạp CSS riêng của khu Quản trị, đặt trong <head> của base.html #}
 {% block body_class %}is-admin{% endblock %}{# thêm class cho <body> để CSS nhận biết khu Quản trị #}
 {% block content %}{# khối nội dung của base.html #}
@@ -15,4 +16,3 @@
   </section>{# hết vùng nội dung #}
 </div>{# hết khung #}
 {% endblock %}{# hết khối content #}
-

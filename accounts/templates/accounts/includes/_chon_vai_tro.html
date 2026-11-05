@@ -1,7 +1,7 @@
-<div style="margin:.5rem 0 1rem;">{# khối chọn vai trò dùng chung cho 2 trang đăng ký #}
-  <p class="card__meta" style="margin:0 0 .5rem;">Bạn đăng ký với vai trò:</p>{# dòng chữ đứng riêng một hàng #}
-  <div style="display:flex; flex-wrap:wrap; gap:.5rem;">{# 2 nút nằm cạnh nhau, độ rộng vừa chữ #}
-    <a class="btn btn--secondary btn--sm" href="{{ urls.register }}"{% if hien_tai == 'khach_hang' %} aria-current="page" style="background:var(--color-gray-soft); border-color:var(--color-gray);"{% endif %}>Khách hàng</a>{# xám phẳng khi đang ở trang này #}
-    <a class="btn btn--secondary btn--sm" href="{% url 'register_photographer' %}"{% if hien_tai == 'nhiep_anh_gia' %} aria-current="page" style="background:var(--color-gray-soft); border-color:var(--color-gray);"{% endif %}>Nhiếp ảnh gia</a>{# xám phẳng khi đang ở trang này #}
+<div class="role-switch">{# khối chọn vai trò dùng chung cho 2 trang đăng ký; kiểu dáng nằm trong components.css (.role-switch) #}
+  <p class="card__meta role-switch__label">Bạn đăng ký với vai trò:</p>{# dòng chữ đứng riêng một hàng #}
+  <div class="role-switch__list">{# 2 nút nằm cạnh nhau, độ rộng vừa chữ #}
+    <a class="btn btn--secondary btn--sm" href="{% url 'register' %}"{% if hien_tai == 'khach_hang' %} aria-current="page"{% endif %}>Khách hàng</a>{# aria-current="page": CSS tô xám nút của trang đang mở #}
+    <a class="btn btn--secondary btn--sm" href="{% url 'register_photographer' %}"{% if hien_tai == 'nhiep_anh_gia' %} aria-current="page"{% endif %}>Nhiếp ảnh gia</a>{# aria-current="page": CSS tô xám nút của trang đang mở #}
   </div>
 </div>
