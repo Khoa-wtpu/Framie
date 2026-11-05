@@ -1,0 +1,41 @@
+{% extends "base.html" %}{# kế thừa khung chung của Tuyền: header, menu, footer, hộp thông báo #}
+{% load static %}
+{% block title %}Trao đổi với {{ doi_phuong.ten }}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'chat/css/chat.css' %}">{% endblock %}{# CSS riêng của chat, chỉ dùng biến màu trong tokens.css #}
+{% block content %}
+<div class="container chat-trang">
+  <section class="chat" aria-label="Cuộc trò chuyện với {{ doi_phuong.ten }}"
+           data-chat data-url-moi="{% url 'tin_nhan_moi' cuoc.pk %}" data-url-dang-nhap="{{ url_dang_nhap }}">{# chat.js đọc các địa chỉ từ data- #}
+    <header class="chat__dau">
+      <a class="btn btn--ghost btn--sm" href="{% url 'inbox' %}">‹ Tin nhắn</a>{# quay về danh sách cuộc trò chuyện #}
+      <span class="avatar chat__avatar" aria-hidden="true">{% if doi_phuong.anh %}<img src="{{ doi_phuong.anh }}" alt="">{% else %}{{ doi_phuong.chu_cai }}{% endif %}</span>
+      <h1 class="chat__ten no-gradient-text">{% if doi_phuong.ho_so %}<a href="{{ doi_phuong.ho_so }}">{{ doi_phuong.ten }}</a>{% else %}{{ doi_phuong.ten }}{% endif %}</h1>{# Khách hàng bấm tên Nhiếp ảnh gia để xem hồ sơ #}
+    </header>
+
+    {% if loi_tai %}{% include "includes/alert.html" with level="danger" text=loi_tai %}{% endif %}{# luồng ngoại lệ 2a của UC8.3 #}
+
+    <div class="chat__trang-thai" role="status" data-chat-trang-thai hidden></div>{# "Mất kết nối...", "Đã tạm dừng..." do chat.js ghi vào #}
+
+    <div class="chat__khung">
+      <div class="chat__danh-sach" role="log" aria-live="polite" aria-label="Nội dung trao đổi" tabindex="0"
+           data-chat-list data-id-dau="{{ id_dau }}" data-id-cuoi="{{ id_cuoi }}" data-con-cu="{% if con_cu %}1{% else %}0{% endif %}">{# mốc id để tải tin cũ và polling tin mới #}
+        {% if con_cu %}<button class="btn btn--soft btn--sm chat__tai-cu" type="button" data-chat-tai-cu>Xem tin cũ hơn</button>{% endif %}{# dự phòng cho trường hợp không kéo lên được #}
+        <div class="chat__tin" data-chat-tin>
+          {% for tin in tin_nhan %}{% include "chat/_tin_nhan.html" %}{% empty %}{% if not loi_tai %}<p class="chat__trong" data-chat-trong>Chưa có tin nhắn nào. Hãy gửi lời chào đầu tiên.</p>{% endif %}{% endfor %}{# UC8.3: lịch sử, cũ trước mới sau #}
+        </div>
+      </div>
+      <button class="btn btn--soft btn--sm chat__tin-moi" type="button" data-chat-tin-moi hidden>Có tin mới ↓</button>{# hiện khi có tin mới mà người dùng đang đọc phía trên #}
+    </div>
+
+    <p class="field__error chat__loi" role="alert" data-chat-loi hidden></p>{# lỗi gửi tin (luồng 5a) hoặc tải tin cũ (luồng 2a) #}
+
+    <form class="chat__soan" method="post" action="{% url 'gui_tin_nhan' cuoc.pk %}" data-chat-form>{# không có JavaScript thì form vẫn gửi được bằng POST thường #}
+      {% csrf_token %}
+      <label class="sr-only" for="chat-noi-dung">Nội dung tin nhắn</label>
+      <textarea id="chat-noi-dung" class="input chat__o-nhap" name="noi_dung" rows="1" maxlength="{{ gioi_han }}" placeholder="Nhập tin nhắn, Enter để gửi, Shift+Enter để xuống dòng" required></textarea>
+      <button class="btn btn--primary" type="submit">Gửi</button>{# nút chính duy nhất của màn hình #}
+    </form>
+  </section>
+</div>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'chat/js/chat.js' %}" defer></script>{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}{# kế thừa khung chung #}
+{% load static %}
+{% block title %}Tin nhắn{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'chat/css/chat.css' %}">{% endblock %}
+{% block content %}
+<div class="container chat-trang">
+  <h1>Tin nhắn</h1>
+  {% if loi %}{% include "includes/alert.html" with level="danger" text=loi %}{% endif %}{# không tải được danh sách #}
+  {% if cac_cuoc %}
+  <ul class="hop-thu">
+    {% for c in cac_cuoc %}
+    <li>
+      <a class="hop-thu__muc" href="{% url 'chi_tiet_cuoc_tro_chuyen' c.ma %}">
+        <span class="avatar chat__avatar" aria-hidden="true">{% if c.anh %}<img src="{{ c.anh }}" alt="">{% else %}{{ c.chu_cai }}{% endif %}</span>
+        <span class="hop-thu__chu">
+          <span class="hop-thu__ten">{{ c.ten }}</span>
+          <span class="hop-thu__xem-truoc">{% if c.noi_dung %}{% if c.cua_toi %}Bạn: {% endif %}{{ c.noi_dung|truncatechars:70 }}{% else %}Chưa có tin nhắn{% endif %}</span>{# xem trước tin cuối, cắt 70 ký tự #}
+        </span>
+        <time class="hop-thu__gio" datetime="{{ c.luc|date:'c' }}">{{ c.luc|date:'H:i d/m/Y' }}</time>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% elif not loi %}
+  <p class="chat__trong">{% if la_khach %}Bạn chưa có cuộc trò chuyện nào. Mở hồ sơ một Nhiếp ảnh gia và bấm Nhắn tin để bắt đầu.{% else %}Chưa có Khách hàng nào nhắn tin cho bạn.{% endif %}</p>
+  {% if la_khach %}{% url 'search' as url_tim %}{% if url_tim %}<a class="btn btn--primary" href="{{ url_tim }}">Tìm Nhiếp ảnh gia</a>{% endif %}{% endif %}{# url name 'search' của Khoa; chưa có thì không hiện nút #}
+  {% endif %}
+</div>
+{% endblock %}
