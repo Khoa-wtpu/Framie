@@ -8,7 +8,7 @@ admin.site.site_header = "Framie - test của tôi"
 urlpatterns = [
 
     path('admin/', admin.site.urls),              # /admin dẫn tới trang quản trị
-
+    # ---- Phần của Tuền ----
     path('bookings/', include('bookings.giu_cho')),
     path('bookings/', include('bookings.gui_booking')),
     path('bookings/', include('bookings.tiep_nhan')),   # UC4.3-4.5 (đã có file, trước đây chưa nối)
