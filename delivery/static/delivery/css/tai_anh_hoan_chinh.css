@@ -1,0 +1,10 @@
+/* N10 - UC5.8: trang tải ảnh hoàn chỉnh (chỉ dùng biến trong tokens.css) */
+.tahc { max-width: 52rem; margin-inline: auto; padding-block: var(--space-6); }
+.tahc__ds { list-style: none; margin: 0; padding: 0; }
+.tahc__dong { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between;
+              padding-block: var(--space-2); border-top: 1px solid var(--color-border); }
+.tahc__ten { flex: 1; min-width: 10rem; overflow-wrap: anywhere; }
+.tahc__nut { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.tahc__chon-het { font-weight: var(--fw-heading); }
+.tahc__ok { color: var(--tone-green-fg); }
+.tahc__loi { color: var(--tone-red-fg); }
