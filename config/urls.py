@@ -3,8 +3,6 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
-admin.site.site_header = "Framie - test của tôi"
-
 urlpatterns = [
 
     path('admin/', admin.site.urls),              # /admin dẫn tới trang quản trị
@@ -23,6 +21,9 @@ urlpatterns = [
     path('', include('profiles.urls_cong_khai')),
     path('', include('profiles.urls_duyet')),
     path('', include('profiles.urls_cua_toi')),
+    path('', include('payments.urls')),  # N2, N3, N9: minh chứng, xác nhận cọc, xác nhận phần còn lại
+    path('', include('delivery.urls')),  # N4-N8: bàn giao ảnh
+    path('', include('reviews.urls')),  # N11: đánh giá nhiếp ảnh gia
 
     # ---- Phần của Nguyên (N2-N11) ----
     path('', include('payments.urls')),           # N2, N3, N9: minh chứng, xác nhận cọc, xác nhận phần còn lại
@@ -35,3 +36,7 @@ urlpatterns = [
 # Khi triển khai thật (DEBUG = False) đoạn này tự tắt, máy chủ thật sẽ phát file.
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# B10
+handler403 = 'core.views_trang_loi.loi_403'
+handler404 = 'core.views_trang_loi.loi_404'
+handler500 = 'core.views_trang_loi.loi_500'
