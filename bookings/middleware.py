@@ -1,4 +1,4 @@
-py# bookings/middleware.py - T10: "Kiểm tra mỗi khi mở trang liên quan".
+# bookings/middleware.py - T10: "Kiểm tra mỗi khi mở trang liên quan".
 # Trước khi chạy view, nếu địa chỉ thuộc các trang liên quan thì quét xử lý quá hạn (bookings/qua_han.py).
 # Không bao giờ làm hỏng trang: mọi lỗi chỉ ghi log.
 import logging
