@@ -99,6 +99,10 @@ def _ket_qua_doi_trang_thai(request, thanh_cong, mac_dinh):  # phần kết thú
     return redirect(_trang_quay_lai(request, mac_dinh))  # quay về trang cũ (hoặc trang mặc định)
 
 
+def _la_ajax(request):  # MỚI: True nếu do JS gọi ngầm bằng fetch (có header X-Requested-With)
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest'  # chuong.js và thong_bao.js đều gửi header này
+
+
 @dang_nhap_bat_buoc  # phải đăng nhập
 @require_POST  # CHỈ nhận POST (kèm csrf_token) nên không đổi trạng thái được bằng cách mở link
 def doi_trang_thai_doc(request, ma_thong_bao):  # nút "Đánh dấu đã đọc" / "Đánh dấu chưa đọc"
@@ -107,9 +111,13 @@ def doi_trang_thai_doc(request, ma_thong_bao):  # nút "Đánh dấu đã đọc
     gia_tri = request.POST.get('gia_tri')  # giá trị đích do form gửi
     mac_dinh = _dia_chi_giu_trang_thai(reverse('chi_tiet_thong_bao', args=[thong_bao.pk]))  # không có địa chỉ quay lại thì về trang chi tiết (kèm giu=1)
     if gia_tri not in ('da_doc', 'chua_doc'):  # giá trị lạ (bị sửa tay)
+        if _la_ajax(request):  # MỚI: JS gọi ngầm
+            return HttpResponse(status=400)  # MỚI: JS sẽ chuyển sang gửi form kiểu thường để hiện hộp lỗi
         return _ket_qua_doi_trang_thai(request, False, mac_dinh)  # coi như thất bại
     thanh_cong = services.dat_trang_thai_doc(request.user, thong_bao.pk, gia_tri == 'da_doc')  # ghi vào DB
-    return _ket_qua_doi_trang_thai(request, thanh_cong, mac_dinh)  # báo lỗi nếu có rồi quay lại
+    if _la_ajax(request):  # MỚI: JS gọi ngầm: không chuyển trang
+        return HttpResponse(status=204 if thanh_cong else 500)  # MỚI: 204 = xong, 500 = lỗi để JS xử lý
+    return _ket_qua_doi_trang_thai(request, thanh_cong, mac_dinh)  # gọi kiểu cũ: báo lỗi nếu có rồi quay lại
 
 
 @dang_nhap_bat_buoc  # phải đăng nhập
@@ -120,8 +128,12 @@ def doi_dau_sao(request, ma_thong_bao):  # nút ★ và mục "Đánh dấu sao"
     gia_tri = request.POST.get('gia_tri')  # giá trị đích do form gửi
     mac_dinh = _dia_chi_giu_trang_thai(reverse('chi_tiet_thong_bao', args=[thong_bao.pk]))  # không có địa chỉ quay lại thì về trang chi tiết (kèm giu=1)
     if gia_tri not in ('co', 'khong'):  # giá trị lạ
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':  # gọi từ khung chuông
+            return HttpResponse(status=400)  # JS sẽ hiện lỗi gọn
         return _ket_qua_doi_trang_thai(request, False, mac_dinh)  # coi như thất bại
     thanh_cong = services.dat_dau_sao(request.user, thong_bao.pk, gia_tri == 'co')  # ghi vào DB
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':  # gọi từ khung chuông (chuong.js): không chuyển trang
+        return HttpResponse(status=204 if thanh_cong else 500)  # 204 = xong, JS tự tải lại khung
     return _ket_qua_doi_trang_thai(request, thanh_cong, mac_dinh)  # báo lỗi nếu có rồi quay lại
 
 

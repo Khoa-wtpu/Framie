@@ -131,7 +131,10 @@ class DichVuThongBaoTestCase(TestCase):  # nhóm test của các hàm trong serv
         khong_booking = SimpleNamespace(MaBooking_id=None)  # thông báo không gắn Booking
         self.assertIsNone(services.url_booking(khong_booking, self.a))  # không có link
         co_booking = SimpleNamespace(MaBooking_id=7)  # thông báo gắn Booking số 7
-        self.assertEqual(services.url_booking(co_booking, self.a), '#')  # A là Khách hàng, trang chi_tiet_booking chưa có nên '#'
+        from django.urls import reverse  # thêm dòng này lên đầu file tests.py nếu chưa có (đổi tên URL thành địa chỉ)
+
+        # dòng 134: thay '#' bằng link thật, vì Tuyền đã tạo trang chi_tiet_booking
+        self.assertEqual(services.url_booking(co_booking, self.a), reverse('chi_tiet_booking', kwargs={'ma_booking': co_booking.MaBooking_id}))  # A là Khách hàng, trang đã có nên phải ra link thật
         nhom, _ = Group.objects.get_or_create(name=VaiTro.NHIEP_ANH_GIA)  # nhóm Nhiếp ảnh gia
         self.a.groups.add(nhom)  # cho A vào nhóm đó
         self.assertEqual(services.url_booking(co_booking, self.a), reverse('chi_tiet_yeu_cau_booking', args=[7]))  # link thật của Tuyền
@@ -244,6 +247,20 @@ class GiaoDienThongBaoTestCase(TestCase):  # nhóm test của các trang (qua tr
         self.assertContains(res, 'Xem tất cả thông báo')  # có link sang trang danh sách
         self.assertNotContains(res, 'Bí mật của B')  # không lẫn thông báo người khác
 
+    def test_khung_chuong_sao_len_dau(self):  # thông báo có sao phải đứng đầu khung chuông dù cũ hơn
+        cu = ThongBao.objects.filter(MaNguoiNhan=self.a).order_by('NgayTao').first()  # thông báo cũ nhất của A
+        for i in range(5):  # thêm 5 thông báo mới hơn để cái cũ rớt khỏi 4 dòng mới nhất
+            gui_thong_bao(self.a, f'Mới {i}', 'nội dung')  # gửi thêm
+        services.dat_dau_sao(self.a, cu.pk, True)  # gắn sao cái cũ
+        self.client.force_login(self.a)  # đăng nhập A
+        res = self.client.get(reverse('khung_thong_bao'))  # gọi mảnh HTML
+        self.assertEqual(res.context['ds'][0].pk, cu.pk)  # có sao nên đứng đầu
+
+    def test_post_sao_ajax_tra_204(self):  # khung chuông gọi ngầm: không chuyển trang
+        self.client.force_login(self.a)  # đăng nhập A
+        res = self.client.post(reverse('doi_dau_sao', args=[self.tb.pk]), {'gia_tri': 'co'}, headers={'X-Requested-With': 'XMLHttpRequest'})  # gọi kiểu fetch
+        self.assertEqual(res.status_code, 204)  # xong, không redirect
+
     def test_khung_chuong_chua_dang_nhap_la_401(self):  # khách vãng lai gọi mảnh chuông
         self.assertEqual(self.client.get(reverse('khung_thong_bao')).status_code, 401)  # 401, không chuyển trang
 
@@ -317,3 +334,15 @@ class LoiDaDuocBaoTestCase(TestCase):  # test tái hiện 2 lỗi người kiể
         services.dat_dau_sao(self.a, cu.pk, False)  # rồi bỏ sao
         thu_tu = [tb.pk for tb in services.lay_danh_sach(self.a)]  # thứ tự hiển thị
         self.assertEqual(thu_tu, [moi.pk, cu.pk])  # mới hơn đứng trước như cũ
+
+    def test_post_doc_ajax_tra_204(self):  # JS gọi ngầm đổi đã đọc: không chuyển trang
+        self.client.force_login(self.a)  # đăng nhập A
+        res = self.client.post(reverse('doi_trang_thai_doc', args=[self.tb.pk]), {'gia_tri': 'da_doc'}, headers={'X-Requested-With': 'XMLHttpRequest'})  # gọi kiểu fetch
+        self.assertEqual(res.status_code, 204)  # xong, không redirect
+        self.tb.refresh_from_db()  # đọc lại từ DB
+        self.assertEqual(self.tb.TrangThaiDoc, TrangThaiDoc.DA_DOC)  # đã chuyển Đã đọc
+
+    def test_post_doc_ajax_gia_tri_la_tra_400(self):  # giá trị lạ qua fetch: báo 400
+        self.client.force_login(self.a)  # đăng nhập A
+        res = self.client.post(reverse('doi_trang_thai_doc', args=[self.tb.pk]), {'gia_tri': 'abc'}, headers={'X-Requested-With': 'XMLHttpRequest'})  # gửi giá trị lạ
+        self.assertEqual(res.status_code, 400)  # JS sẽ tự chuyển sang gửi form thường

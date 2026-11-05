@@ -25,6 +25,7 @@ def tong_quan(request):  # trang tổng quan /quan-tri/
     boi_canh = {  # dữ liệu gửi sang template
         'thong_ke': thong_ke_tong_quan(),  # các con số
         'url_duyet_ho_so': resolve('admin_profile_review'),  # link nút "Duyệt hồ sơ" (có thể là "#")
+        'url_tai_khoan': reverse('admin_accounts'),  # link nút "Xem tài khoản" ở thẻ Tổng tài khoản
         'url_booking': resolve('admin_bookings'),  # link nút "Xem Booking" (có thể là "#")
     }  # hết dict
     return render(request, 'accounts/quan_tri/tong_quan.html', boi_canh)  # hiện trang

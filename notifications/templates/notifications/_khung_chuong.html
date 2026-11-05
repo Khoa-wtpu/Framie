@@ -7,16 +7,22 @@
 {% if ds %}
 <ul class="tb-khung__ds">
   {% for tb in ds %}
-  <li>
-    {# Bấm một dòng: sang trang chi tiết (trang đó tự chuyển sang Đã đọc) #}
+  <li class="tb-khung__dong">
+    {# Bấm chữ: sang trang chi tiết (trang đó tự chuyển sang Đã đọc) #}
     <a class="tb-khung__muc{% if tb|chua_doc %} is-unread{% endif %}" href="{% url 'chi_tiet_thong_bao' tb.MaThongBao %}">
       <span class="tb-dong__cham" aria-hidden="true"></span>
       <span class="tb-khung__chu">
         <span class="tb-khung__tieu-de">{{ tb.TieuDe }}{% if tb|chua_doc %}<span class="sr-only"> (chưa đọc)</span>{% endif %}</span>
         <span class="tb-khung__gio muted">{{ tb.NgayTao|thoi_gian_ngan }}</span>
       </span>
-      <span class="tb-khung__sao" aria-hidden="true">{% if tb|co_sao %}★{% else %}☆{% endif %}</span>
     </a>
+    {# Nút sao nằm NGOÀI thẻ <a> (HTML không cho lồng nút trong link). chuong.js bắt submit, gửi fetch rồi tải lại khung #}
+    <form class="tb-khung__sao-form" method="post" action="{% url 'doi_dau_sao' tb.MaThongBao %}" data-bell-star>
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{% url 'notifications' %}">
+      <input type="hidden" name="gia_tri" value="{% if tb|co_sao %}khong{% else %}co{% endif %}">
+      <button class="tb-sao{% if tb|co_sao %} is-on{% endif %}" type="submit" aria-label="{% if tb|co_sao %}Bỏ đánh dấu sao{% else %}Đánh dấu sao{% endif %}">{% if tb|co_sao %}★{% else %}☆{% endif %}</button>
+    </form>
   </li>
   {% endfor %}
 </ul>

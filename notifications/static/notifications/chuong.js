@@ -42,6 +42,15 @@
     if (e.target.closest('[data-bell-retry]')) tai();  // bấm "Thử lại" thì tải lại
   });
 
+  menu.addEventListener('submit', function (e) {  // bấm ★ trong khung: gửi ngầm rồi tải lại khung (sao lên đầu ngay)
+    var form = e.target.closest('[data-bell-star]');  // chỉ xử lý form sao của khung chuông
+    if (!form) return;  // form khác thì để yên
+    e.preventDefault();  // chặn chuyển trang
+    fetch(form.action, { method: 'POST', body: new FormData(form), credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })  // FormData đã có csrfmiddlewaretoken
+      .then(function (res) { if (!res.ok) throw new Error('HTTP ' + res.status); tai(); })  // xong thì lấy lại danh sách đã sắp xếp
+      .catch(hienLoi);  // lỗi thì hiện dòng báo + nút Thử lại
+  });
+
   document.addEventListener('click', function (e) {  // bấm ra ngoài
     if (!goc.contains(e.target)) dong();  // ngoài khối chuông thì đóng khung (kể cả khi bấm menu tài khoản)
   }, true);  // true = bắt ở giai đoạn capture: chạy TRƯỚC app.js, nên không bị e.stopPropagation() của menu tài khoản chặn mất

@@ -1,60 +1,63 @@
 {# SC9.1 Danh sách thông báo (3 vai trò dùng chung). Có 4 trạng thái: bình thường, Rỗng, Lỗi tải, Không có kết quả lọc #}
 {% extends "base.html" %}
-{% load ui %}
+{% load static ui %}
 {% block title %}Thông báo{% endblock %}
 {% block content %}
-<div class="container tb-trang">
-  <div class="tb-dau">
-    <h1>Thông báo</h1>
-    {# Hàng công cụ: ô tìm kiếm và nút lọc. Rỗng hoặc Lỗi tải thì làm mờ (đúng wireframe) #}
-    <div class="tb-dau__cong-cu">
-      <form class="tb-tim" method="get" role="search">
-        <input type="hidden" name="loc" value="{{ loc }}">
-        <label class="sr-only" for="tb-q">Tìm kiếm thông báo</label>
-        <input class="input" id="tb-q" type="search" name="q" value="{{ q }}" maxlength="100" placeholder="Tìm kiếm thông báo"{% if loi_tai or khong_co_gi %} disabled{% endif %}>
-        <button class="btn btn--soft" type="submit"{% if loi_tai or khong_co_gi %} disabled{% endif %}>Tìm</button>
-      </form>
-      <div class="dropdown" data-dropdown>
-        <button class="btn btn--primary" type="button" data-dropdown-toggle aria-haspopup="true" aria-expanded="false"{% if loi_tai or khong_co_gi %} disabled{% endif %}>Lọc thông báo</button>
-        <div class="dropdown__menu" data-dropdown-menu hidden>
-          {% for nhom in cac_nhom %}
-          <a class="dropdown__item{% if nhom.khoa == loc %} is-active{% endif %}" href="?loc={{ nhom.khoa }}{% if q %}&amp;q={{ q|urlencode }}{% endif %}"{% if nhom.khoa == loc %} aria-current="true"{% endif %}>{{ nhom.nhan }} ({{ nhom.so }})</a>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-  </div>
+<div class="container tb-trang" data-tb-vung>
+ <div class="tb-dau">
+   <h1>Thông báo</h1>
+   {# Hàng công cụ: ô tìm kiếm và nút lọc. Rỗng hoặc Lỗi tải thì làm mờ (đúng wireframe) #}
+   <div class="tb-dau__cong-cu">
+     <form class="tb-tim" method="get" role="search">
+       <input type="hidden" name="loc" value="{{ loc }}">
+       <label class="sr-only" for="tb-q">Tìm kiếm thông báo</label>
+       <input class="input" id="tb-q" type="search" name="q" value="{{ q }}" maxlength="100" placeholder="Tìm kiếm thông báo"{% if loi_tai or khong_co_gi %} disabled{% endif %}>
+       <button class="btn btn--soft" type="submit"{% if loi_tai or khong_co_gi %} disabled{% endif %}>Tìm</button>
+     </form>
+     <div class="dropdown" data-dropdown>
+       <button class="btn btn--primary" type="button" data-dropdown-toggle aria-haspopup="true" aria-expanded="false"{% if loi_tai or khong_co_gi %} disabled{% endif %}>Lọc thông báo</button>
+       <div class="dropdown__menu" data-dropdown-menu hidden>
+         {% for nhom in cac_nhom %}
+         <a class="dropdown__item{% if nhom.khoa == loc %} is-active{% endif %}" href="?loc={{ nhom.khoa }}{% if q %}&amp;q={{ q|urlencode }}{% endif %}"{% if nhom.khoa == loc %} aria-current="true"{% endif %}>{{ nhom.nhan }} ({{ nhom.so }})</a>
+         {% endfor %}
+       </div>
+     </div>
+   </div>
+ </div>
 
-  {% if loi_tai %}
-    {# Lỗi tải: hộp đỏ đã hiện ở đầu trang nhờ messages.error trong view; ở đây là khung + nút Thử lại #}
-    <div class="panel tb-trong">
-      <span class="tb-trong__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
-      <h2>Không thể tải danh sách thông báo</h2>
-      <p class="muted">Đã xảy ra lỗi khi truy xuất thông báo của bạn. Vui lòng kiểm tra kết nối và thực hiện lại.</p>
-      <a class="btn btn--primary" href="{{ request.get_full_path }}">Thử lại</a>
-    </div>
-  {% elif khong_co_gi %}
-    {# Rỗng: người dùng chưa có thông báo nào #}
-    <div class="panel tb-trong">
-      <span class="tb-trong__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
-      <h2>Chưa có thông báo</h2>
-      <p class="muted">Các thông báo về Booking, thanh toán và ảnh của bạn sẽ hiển thị tại đây.</p>
-    </div>
-  {% else %}
-    <h2 class="tb-nhom-tieu-de">{{ ten_nhom }} ({{ so_trong_nhom }})</h2>
-    {% if page_obj.object_list %}
-      <ul class="tb-ds">
-        {% for tb in page_obj %}{% include "notifications/_dong_thong_bao.html" with tb=tb quay_lai=quay_lai %}{% endfor %}
-      </ul>
-      {% include "includes/pagination.html" with page_obj=page_obj %}
-    {% else %}
-      {# Có thông báo nhưng bộ lọc hoặc từ khóa không khớp dòng nào #}
-      <div class="panel tb-trong">
-        <h3>Không tìm thấy thông báo phù hợp</h3>
-        <p class="muted">Thử đổi từ khóa hoặc chọn nhóm khác.</p>
-        <a class="btn btn--secondary" href="{% url 'notifications' %}">Xóa bộ lọc</a>
-      </div>
-    {% endif %}
-  {% endif %}
+ {% if loi_tai %}
+   {# Lỗi tải: hộp đỏ đã hiện ở đầu trang nhờ messages.error trong view; ở đây là khung + nút Thử lại #}
+   <div class="panel tb-trong">
+     <span class="tb-trong__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+     <h2>Không thể tải danh sách thông báo</h2>
+     <p class="muted">Đã xảy ra lỗi khi truy xuất thông báo của bạn. Vui lòng kiểm tra kết nối và thực hiện lại.</p>
+     <a class="btn btn--primary" href="{{ request.get_full_path }}">Thử lại</a>
+   </div>
+ {% elif khong_co_gi %}
+   {# Rỗng: người dùng chưa có thông báo nào #}
+   <div class="panel tb-trong">
+     <span class="tb-trong__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
+     <h2>Chưa có thông báo</h2>
+     <p class="muted">Các thông báo về Booking, thanh toán và ảnh của bạn sẽ hiển thị tại đây.</p>
+   </div>
+ {% else %}
+   <h2 class="tb-nhom-tieu-de">{{ ten_nhom }} ({{ so_trong_nhom }})</h2>
+   {% if page_obj.object_list %}
+     <ul class="tb-ds">
+       {% for tb in page_obj %}{% include "notifications/_dong_thong_bao.html" with tb=tb quay_lai=quay_lai %}{% endfor %}
+     </ul>
+     {% include "includes/pagination.html" with page_obj=page_obj %}
+   {% else %}
+     {# Có thông báo nhưng bộ lọc hoặc từ khóa không khớp dòng nào #}
+     <div class="panel tb-trong">
+       <span class="tb-trong__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
+       <h2>Không tìm thấy thông báo phù hợp</h2>
+       <p class="muted">Thử đổi từ khóa hoặc chọn nhóm khác.</p>
+       <a class="btn btn--secondary" href="{% url 'notifications' %}">Xóa bộ lọc</a>
+     </div>
+   {% endif %}
+ {% endif %}
 </div>
+{# P8: bấm sao / đã đọc không tải lại cả trang (nằm NGOÀI vùng data-tb-vung để không bị thay mất) #}
+<script src="{% static 'notifications/thong_bao.js' %}" defer></script>
 {% endblock %}

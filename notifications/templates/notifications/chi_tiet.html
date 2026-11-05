@@ -1,67 +1,69 @@
 {# SC9.2 Chi tiết thông báo (3 vai trò dùng chung) #}
 {% extends "base.html" %}
-{% load ui thong_bao_tags %}
+{% load static ui thong_bao_tags %}
 {% block title %}Chi tiết thông báo{% endblock %}
 {% block content %}
-<div class="container tb-trang">
-  <div class="tb-dau">
-    <h1><a class="tb-quay-lai" href="{% url 'notifications' %}" aria-label="Quay lại danh sách thông báo">‹</a> Chi tiết thông báo</h1>
-  </div>
+<div class="container tb-trang" data-tb-vung>
+ <div class="tb-dau">
+   <h1><a class="tb-quay-lai" href="{% url 'notifications' %}" aria-label="Quay lại danh sách thông báo">‹</a> Chi tiết thông báo</h1>
+ </div>
 
-  {# Lỗi cập nhật đã đọc: nội dung vẫn hiện, thông báo vẫn ở trạng thái Chưa đọc (wireframe SC9.2) #}
-  {% if loi_cap_nhat_doc %}{% include "includes/alert.html" with level="danger" text=TB_LOI_DA_DOC dismissible=True %}{% endif %}
+ {# Lỗi cập nhật đã đọc: nội dung vẫn hiện, thông báo vẫn ở trạng thái Chưa đọc (wireframe SC9.2) #}
+ {% if loi_cap_nhat_doc %}{% include "includes/alert.html" with level="danger" text=TB_LOI_DA_DOC dismissible=True %}{% endif %}
 
-  <article class="panel tb-chi-tiet">
-    <header class="tb-chi-tiet__dau">
-      <div>
-        <h2 class="tb-chi-tiet__tieu-de">{{ tb.TieuDe }}</h2>
-        <p class="muted"><time datetime="{{ tb.NgayTao|date:'c' }}">{{ tb.NgayTao|thoi_gian_day_du }}</time></p>
-      </div>
-      <div class="tb-chi-tiet__nhan">
-        {% status_badge tb.TrangThaiDoc %}
-        {% if tb|co_sao %}<span class="badge badge--amber">★ Đã đánh dấu sao</span>{% endif %}
-      </div>
-    </header>
+ <article class="panel tb-chi-tiet">
+   <header class="tb-chi-tiet__dau">
+     <div>
+       <h2 class="tb-chi-tiet__tieu-de">{{ tb.TieuDe }}</h2>
+       <p class="muted"><time datetime="{{ tb.NgayTao|date:'c' }}">{{ tb.NgayTao|thoi_gian_day_du }}</time></p>
+     </div>
+     <div class="tb-chi-tiet__nhan">
+       {% status_badge tb.TrangThaiDoc %}
+       {% if tb|co_sao %}<span class="badge badge--amber">Đã đánh dấu sao</span>{% endif %}
+     </div>
+   </header>
 
-    {# linebreaks: giữ xuống dòng của nội dung, đồng thời tự thoát ký tự HTML nên an toàn #}
-    <div class="tb-chi-tiet__noi-dung">{{ tb.NoiDung|linebreaks }}</div>
+   {# linebreaks: giữ xuống dòng của nội dung, đồng thời tự thoát ký tự HTML nên an toàn #}
+   <div class="tb-chi-tiet__noi-dung">{{ tb.NoiDung|linebreaks }}</div>
 
-    {% if booking %}
-    <section class="tb-booking" aria-labelledby="tb-booking-tieu-de">
-      <h3 id="tb-booking-tieu-de">Booking liên quan</h3>
-      <dl class="tb-booking__luoi">
-        <div><dt class="muted">Mã Booking</dt><dd>#{{ booking.MaBooking }}</dd></div>
-        <div><dt class="muted">Gói dịch vụ</dt><dd>{{ booking.MaGoi.TenGoi }}</dd></div>
-        <div><dt class="muted">Ngày/giờ chụp</dt><dd>{{ booking.NgayGioChup|thoi_gian_day_du }}</dd></div>
-        <div><dt class="muted">Trạng thái Booking</dt><dd>{% status_badge booking.TrangThai %}</dd></div>
-      </dl>
-    </section>
-    {% endif %}
+   {% if booking %}
+   <section class="tb-booking" aria-labelledby="tb-booking-tieu-de">
+     <h3 id="tb-booking-tieu-de">Booking liên quan</h3>
+     <dl class="tb-booking__luoi">
+       <div><dt class="muted">Mã Booking</dt><dd>#{{ booking.MaBooking }}</dd></div>
+       <div><dt class="muted">Gói dịch vụ</dt><dd>{{ booking.MaGoi.TenGoi }}</dd></div>
+       <div><dt class="muted">Ngày/giờ chụp</dt><dd>{{ booking.NgayGioChup|thoi_gian_day_du }}</dd></div>
+       <div><dt class="muted">Trạng thái Booking</dt><dd>{% status_badge booking.TrangThai %}</dd></div>
+     </dl>
+   </section>
+   {% endif %}
 
-    <footer class="tb-chi-tiet__nut">
-      <div class="tb-chi-tiet__nut-trai">
-        {# Nút đổi đọc/chưa đọc: đặt giá trị đích ngược với trạng thái hiện tại #}
-        <form method="post" action="{% url 'doi_trang_thai_doc' tb.MaThongBao %}">
-          {% csrf_token %}
-          <input type="hidden" name="next" value="{{ quay_lai }}">
-          <input type="hidden" name="gia_tri" value="{% if tb|chua_doc %}da_doc{% else %}chua_doc{% endif %}">
-          <button class="btn btn--secondary" type="submit">{% if tb|chua_doc %}Đánh dấu đã đọc{% else %}Đánh dấu chưa đọc{% endif %}</button>
-        </form>
-        {# Nút sao: nhãn đổi theo trạng thái (wireframe: chưa gắn sao thì hiện "Đánh dấu sao") #}
-        <form method="post" action="{% url 'doi_dau_sao' tb.MaThongBao %}">
-          {% csrf_token %}
-          <input type="hidden" name="next" value="{{ quay_lai }}">
-          <input type="hidden" name="gia_tri" value="{% if tb|co_sao %}khong{% else %}co{% endif %}">
-          <button class="btn btn--secondary" type="submit">{% if tb|co_sao %}Bỏ đánh dấu sao{% else %}Đánh dấu sao{% endif %}</button>
-        </form>
-      </div>
-      {# Nút chính duy nhất của màn hình. '#' nghĩa là trang Booking chưa được làm: hiện mờ, chưa bấm được #}
-      {% if url_booking == '#' %}
-        <span class="btn btn--primary is-disabled" role="link" aria-disabled="true">Xem Booking</span>
-      {% elif url_booking %}
-        <a class="btn btn--primary" href="{{ url_booking }}">Xem Booking</a>
-      {% endif %}
-    </footer>
-  </article>
+   <footer class="tb-chi-tiet__nut">
+     <div class="tb-chi-tiet__nut-trai">
+       {# Nút đổi đọc/chưa đọc: đặt giá trị đích ngược với trạng thái hiện tại #}
+       <form method="post" action="{% url 'doi_trang_thai_doc' tb.MaThongBao %}" data-tb-form>
+         {% csrf_token %}
+         <input type="hidden" name="next" value="{{ quay_lai }}">
+         <input type="hidden" name="gia_tri" value="{% if tb|chua_doc %}da_doc{% else %}chua_doc{% endif %}">
+         <button class="btn btn--secondary" type="submit">{% if tb|chua_doc %}Đánh dấu đã đọc{% else %}Đánh dấu chưa đọc{% endif %}</button>
+       </form>
+       {# Nút sao: nhãn đổi theo trạng thái (wireframe: chưa gắn sao thì hiện "Đánh dấu sao") #}
+       <form method="post" action="{% url 'doi_dau_sao' tb.MaThongBao %}" data-tb-form>
+         {% csrf_token %}
+         <input type="hidden" name="next" value="{{ quay_lai }}">
+         <input type="hidden" name="gia_tri" value="{% if tb|co_sao %}khong{% else %}co{% endif %}">
+         <button class="btn btn--secondary tb-nut-sao{% if tb|co_sao %} is-on{% endif %}" type="submit"><span class="tb-nut-sao__icon" aria-hidden="true">{% if tb|co_sao %}★{% else %}☆{% endif %}</span>{% if tb|co_sao %}Bỏ đánh dấu sao{% else %}Đánh dấu sao{% endif %}</button>
+       </form>
+     </div>
+     {# Nút chính duy nhất của màn hình. '#' nghĩa là trang Booking chưa được làm: hiện mờ, chưa bấm được #}
+     {% if url_booking == '#' %}
+       <span class="btn btn--primary is-disabled" role="link" aria-disabled="true">Xem Booking</span>
+     {% elif url_booking %}
+       <a class="btn btn--primary" href="{{ url_booking }}">Xem Booking</a>
+     {% endif %}
+   </footer>
+ </article>
 </div>
+{# P8: bấm sao / đã đọc không tải lại cả trang (nằm NGOÀI vùng data-tb-vung để không bị thay mất) #}
+<script src="{% static 'notifications/thong_bao.js' %}" defer></script>
 {% endblock %}

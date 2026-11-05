@@ -2,11 +2,13 @@
 # Các bạn khác import hàm ở đây để gửi thông báo khi có sự kiện (Booking mới, duyệt hồ sơ...)
 import logging  # thư viện ghi log: để in cảnh báo ra Terminal khi có lỗi, thay vì làm sập web
 
+from django.core.mail import send_mail  # hàm gửi email của Django (khi làm thử chỉ in ra Terminal, xem MAILERS trong settings.py)
+
 from django.db import DatabaseError, transaction  # transaction.atomic: bọc thao tác lưu; DatabaseError: bắt lỗi DB để trang không sập
 from django.db.models import Case, Count, IntegerField, Q, Value, When  # Count: đếm; Q: lọc OR/AND; Case/When/Value: xếp thứ tự có điều kiện (ghim sao)
 from django.urls import NoReverseMatch, reverse  # reverse: đổi tên URL thành địa chỉ; NoReverseMatch: chưa có URL đó
 
-from core.constants import DanhDauSao, TrangThaiDoc, VaiTro  # hằng số trạng thái đọc, sao và 3 vai trò (README: không tự gõ chữ tiếng Việt)
+from core.constants import DanhDauSao, TrangThaiDoc, TrangThaiGuiEmail, VaiTro  # hằng số trạng thái đọc, sao, kết quả gửi email và 3 vai trò (README: không tự gõ chữ tiếng Việt)
 from core.navigation import get_role  # lấy vai trò của người dùng (Khách hàng / Nhiếp ảnh gia / Quản trị viên)
 from notifications.models import ThongBao  # model bảng THONGBAO đã có sẵn trong notifications/models.py
 
@@ -99,6 +101,14 @@ def thong_bao_cua(nguoi_dung):  # bộ lọc gốc: chỉ thông báo của ngư
     return ThongBao.objects.filter(MaNguoiNhan=nguoi_dung)  # WHERE MaNguoiNhan = người này
 
 
+def ghim_sao_len_dau(ds):  # xếp thứ tự dùng chung cho trang danh sách VÀ khung chuông
+    """Có sao đứng trước, sau đó mới nhất trước. Một nơi duy nhất để hai màn hình không lệch nhau."""  # mô tả hàm
+    return ds.annotate(thu_tu_sao=Case(  # cột tạm: 0 nếu đã đánh dấu sao, 1 nếu chưa
+        When(DanhDauSao=DanhDauSao.DA_DANH_DAU, then=Value(0)),  # có sao -> 0
+        default=Value(1), output_field=IntegerField()),  # còn lại -> 1
+    ).order_by('thu_tu_sao', '-NgayTao', '-MaThongBao')  # sao lên đầu, rồi mới nhất trước
+
+
 def lay_danh_sach(nguoi_dung, loc=LOC_TAT_CA, tu_khoa=''):  # danh sách cho trang SC9.1
     """Trả về QuerySet (chưa chạy truy vấn) đã lọc nhóm, tìm kiếm; thông báo có sao ghim lên đầu, sau đó mới nhất trước."""  # mô tả hàm
     ds = thong_bao_cua(nguoi_dung)  # bắt đầu từ thông báo của người này
@@ -110,10 +120,7 @@ def lay_danh_sach(nguoi_dung, loc=LOC_TAT_CA, tu_khoa=''):  # danh sách cho tra
     tu_khoa = (tu_khoa or '').strip()[:DO_DAI_TU_KHOA_TOI_DA]  # bỏ khoảng trắng thừa, cắt còn 100 ký tự
     if tu_khoa:  # có gõ từ khóa
         ds = ds.filter(Q(TieuDe__icontains=tu_khoa) | Q(NoiDung__icontains=tu_khoa))  # khớp tiêu đề HOẶC nội dung
-    ds = ds.annotate(thu_tu_sao=Case(  # cột tạm: 0 nếu đã đánh dấu sao, 1 nếu chưa (không dựa vào thứ tự chữ cái của chuỗi)
-        When(DanhDauSao=DanhDauSao.DA_DANH_DAU, then=Value(0)),  # có sao -> 0
-        default=Value(1), output_field=IntegerField()))  # còn lại -> 1
-    return ds.order_by('thu_tu_sao', '-NgayTao', '-MaThongBao')  # FR-38: có sao ghim lên đầu; trong mỗi nhóm thì mới nhất trước
+    return ghim_sao_len_dau(ds)  # FR-38: có sao ghim lên đầu; trong mỗi nhóm thì mới nhất trước
 
 
 def dem_theo_nhom(nguoi_dung):  # đếm số thông báo của 3 nhóm bằng ĐÚNG 1 câu truy vấn
@@ -127,8 +134,8 @@ def dem_theo_nhom(nguoi_dung):  # đếm số thông báo của 3 nhóm bằng �
 
 
 def lay_moi_nhat(nguoi_dung, so_luong=SO_THONG_BAO_TRONG_KHUNG):  # dữ liệu cho khung chuông thả xuống
-    """Trả về list các thông báo mới nhất (mặc định 4)."""  # mô tả hàm
-    return list(thong_bao_cua(nguoi_dung).order_by('-NgayTao', '-MaThongBao')[:so_luong])  # cắt lấy 4 dòng đầu
+    """Trả về list 4 thông báo đầu theo cùng thứ tự với trang danh sách: có sao lên đầu, rồi mới nhất."""  # mô tả hàm
+    return list(ghim_sao_len_dau(thong_bao_cua(nguoi_dung))[:so_luong])  # cắt lấy 4 dòng đầu
 
 
 def queryset_chi_tiet(nguoi_dung):  # nguồn dữ liệu cho trang chi tiết SC9.2
@@ -181,3 +188,68 @@ def url_booking(thong_bao, nguoi_dung):  # địa chỉ trang Booking liên quan
         return reverse(ten_url, kwargs={'ma_booking': thong_bao.MaBooking_id})  # ví dụ /bookings/quan-ly/12/
     except NoReverseMatch:  # chưa có URL đó trong project
         return '#'  # link tạm, không làm lỗi trang
+
+
+# =====================================================================
+# P9: GỬI EMAIL KÈM THÔNG BÁO TRÊN WEB (Phanh)
+# Email KHÔNG phải actor, chỉ là một bước tự động của hệ thống (kết quả A2 của báo cáo GĐ2).
+# Khi làm thử: email in ra Terminal; khi có .env mới gửi thật (cấu hình MAILERS trong config/settings.py).
+# Quy tắc: gửi email SAU KHI dữ liệu đã commit; lỗi email chỉ ghi 'Gửi thất bại', không làm hỏng việc chính.
+# CÁCH DÙNG cho các bạn khác (thay cho việc gọi gui_thong_bao rồi tự gọi gui_email_sau_commit):
+#     from notifications.services import gui_thong_bao_kem_email
+#     gui_thong_bao_kem_email(user, 'Tiêu đề', 'Nội dung', booking=bk)
+# =====================================================================
+def gui_email_sau_commit(thong_bao, nguoi_nhan, tieu_de, noi_dung):  # hẹn gửi email; cùng tên và cùng tham số với hàm của bookings/services.py
+    """Hẹn gửi email cho nguoi_nhan SAU KHI transaction hiện tại commit, rồi ghi kết quả vào thong_bao (có thể None)."""  # mô tả hàm
+    transaction.on_commit(  # nếu đang trong transaction.atomic thì chờ commit xong; nếu không thì chạy ngay
+        lambda: _gui_email_va_ghi_ket_qua(thong_bao, nguoi_nhan, tieu_de, noi_dung)  # việc gửi thật nằm ở hàm bên dưới
+    )  # hết đăng ký on_commit
+
+
+def _gui_email_va_ghi_ket_qua(thong_bao, nguoi_nhan, tieu_de, noi_dung):  # phần chạy thật: gửi mail rồi ghi TrangThaiGuiEmail
+    """Không bao giờ ném lỗi ra ngoài."""  # mô tả hàm
+    try:  # thử gửi; lỗi gì cũng nhảy xuống except
+        if not nguoi_nhan.email:  # người nhận chưa có địa chỉ email thì không gửi được
+            raise ValueError('Người nhận chưa có email')  # ném lỗi để nhảy xuống except và đánh dấu thất bại
+        send_mail(tieu_de, noi_dung, None, [nguoi_nhan.email], fail_silently=False)  # None = DEFAULT_FROM_EMAIL; fail_silently=False để lỗi SMTP nổi lên và bị bắt
+        ket_qua = TrangThaiGuiEmail.THANH_CONG  # gửi được (khi làm thử thì nghĩa là đã in ra Terminal)
+    except Exception:  # noqa: BLE001  # SMTP, DNS, mất mạng... lỗi gì cũng không được làm sập web
+        logger.exception('gui_email_sau_commit: gửi email thất bại (%s)', tieu_de)  # ghi log đầy đủ để sửa sau
+        ket_qua = TrangThaiGuiEmail.THAT_BAI  # đánh dấu gửi thất bại
+    if thong_bao is not None:  # có thông báo web đi kèm thì ghi kết quả vào đó
+        try:  # ghi kết quả cũng có thể lỗi DB
+            ThongBao.objects.filter(pk=thong_bao.pk).update(TrangThaiGuiEmail=ket_qua)  # UPDATE đúng một cột, không đụng cột khác
+        except DatabaseError:  # lỗi cơ sở dữ liệu
+            logger.exception('gui_email_sau_commit: không ghi được TrangThaiGuiEmail')  # chỉ ghi log
+
+
+def _noi_dung_email(nguoi_nhan, noi_dung):  # ghép lời chào và chữ ký quanh nội dung thông báo
+    ten = (nguoi_nhan.get_full_name() or '').strip() or nguoi_nhan.email  # ưu tiên họ tên, không có thì dùng email
+    return f'Xin chào {ten},\n\n{noi_dung}\n\nFRAMIE'  # cùng kiểu với email đăng ký ở accounts/services.py
+
+
+def gui_thong_bao_kem_email(nguoi_nhan, tieu_de, noi_dung, booking=None):  # HÀM CHÍNH P9: thông báo web + email
+    """Tạo thông báo web (như gui_thong_bao) và hẹn gửi email cho cùng người nhận. Trả về ThongBao, hoặc None nếu không tạo được."""  # mô tả hàm
+    thong_bao = gui_thong_bao(nguoi_nhan, tieu_de, noi_dung, booking=booking)  # bước 1: thông báo trên web (hàm này tự nuốt lỗi)
+    if nguoi_nhan is None or getattr(nguoi_nhan, 'pk', None) is None:  # không có người nhận hợp lệ
+        return thong_bao  # gui_thong_bao đã ghi cảnh báo, không có ai để gửi email
+    tieu_de = (tieu_de or '').strip()[:255]  # làm sạch tiêu đề giống gui_thong_bao
+    noi_dung = (noi_dung or '').strip()  # làm sạch nội dung giống gui_thong_bao
+    if not tieu_de or not noi_dung:  # thiếu tiêu đề hoặc nội dung thì không có gì để gửi
+        return thong_bao  # dừng, không gửi email rỗng
+    gui_email_sau_commit(thong_bao, nguoi_nhan, tieu_de, _noi_dung_email(nguoi_nhan, noi_dung))  # bước 2: hẹn gửi email sau commit
+    return thong_bao  # trả về thông báo web (có thể None nếu lưu web lỗi; email vẫn được gửi)
+
+
+def gui_thong_bao_nhieu_nguoi_kem_email(ds_nguoi_nhan, tieu_de, noi_dung, booking=None):  # như gui_thong_bao_nhieu_nguoi nhưng có email
+    """Ví dụ: báo cho tất cả Quản trị viên khi có hồ sơ mới. Mỗi người chỉ nhận một lần. Trả về list ThongBao tạo được."""  # mô tả hàm
+    da_gui = set()  # tập mã User đã xử lý để không gửi trùng
+    ket_qua = []  # danh sách thông báo web tạo thành công
+    for user in ds_nguoi_nhan:  # duyệt từng người nhận
+        if user is None or user.pk in da_gui:  # bỏ qua giá trị rỗng hoặc người đã gửi
+            continue  # sang người tiếp theo
+        da_gui.add(user.pk)  # ghi nhớ người này đã xử lý
+        thong_bao = gui_thong_bao_kem_email(user, tieu_de, noi_dung, booking=booking)  # gửi web + email cho từng người
+        if thong_bao is not None:  # chỉ giữ thông báo tạo thành công
+            ket_qua.append(thong_bao)  # thêm vào kết quả
+    return ket_qua  # trả về danh sách

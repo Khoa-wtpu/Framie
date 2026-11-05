@@ -20,6 +20,7 @@
 .btn--secondary.is-loading::after, .btn--ghost.is-loading::after, .btn--soft.is-loading::after { color: var(--color-black); }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+
 /* ---------- Thẻ ---------- */
 .card { display: flex; flex-direction: column; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; position: relative; transition: transform .2s, box-shadow .2s; }
 .card--link:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
@@ -32,6 +33,7 @@
 .card__meta { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }
 .card__text { margin: 0; font-size: var(--text-sm); }
 .panel { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-5); }
+
 
 /* ---------- Ô nhập ---------- */
 .field { display: grid; gap: var(--space-1); margin-bottom: var(--space-4); }
@@ -49,6 +51,7 @@ select.input { appearance: none; padding-right: 2.5rem; background: var(--color-
 .field.has-error .input { border-color: var(--danger-fg); background: #FFF8F8; }
 .field.has-error .input:focus { box-shadow: 0 0 0 3px rgba(154, 27, 27, .15); }
 
+
 /* ---------- Hộp thông báo ---------- */
 .alert { --bg: var(--tone-blue-bg); --fg: var(--tone-blue-fg); --dot: var(--tone-blue-dot); display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--bg); color: var(--fg); border: 1px solid color-mix(in srgb, var(--dot) 30%, var(--bg)); border-left: 4px solid var(--dot); border-radius: var(--radius-md); font-size: var(--text-sm); }
 .alert__title { display: block; }
@@ -58,6 +61,7 @@ select.input { appearance: none; padding-right: 2.5rem; background: var(--color-
 .alert--danger  { --bg: var(--tone-red-bg);   --fg: var(--tone-red-fg);   --dot: var(--tone-red-dot); }
 .alert--warning { --bg: var(--tone-amber-bg); --fg: var(--tone-amber-fg); --dot: var(--tone-amber-dot); }
 .alert--info    { --bg: var(--tone-blue-bg);  --fg: var(--tone-blue-fg);  --dot: var(--tone-blue-dot); }
+
 
 /* ---------- Nhãn trạng thái (tông màu lấy từ tokens.css) ---------- */
 .badge { --bg: var(--tone-gray-bg); --fg: var(--tone-gray-fg); --dot: var(--tone-gray-dot); display: inline-flex; align-items: center; gap: .4rem; padding: .2rem .75rem; border-radius: var(--radius-pill); background: var(--bg); color: var(--fg); border: 1px solid color-mix(in srgb, var(--dot) 28%, var(--bg)); font-size: var(--text-xs); font-weight: var(--fw-heading); line-height: 1.5; white-space: nowrap; }
@@ -77,6 +81,7 @@ select.input { appearance: none; padding-right: 2.5rem; background: var(--color-
 .badge--brown { --bg: var(--tone-brown-bg); --fg: var(--tone-brown-fg); --dot: var(--tone-brown-dot); }
 .badge--gray { --bg: var(--tone-gray-bg); --fg: var(--tone-gray-fg); --dot: var(--tone-gray-dot); }
 
+
 /* ---------- Phân trang ---------- */
 .pagination { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--space-1); margin-block: var(--space-6); }
 .pagination__item { min-width: 2.5rem; height: 2.5rem; padding: 0 var(--space-3); display: inline-grid; place-items: center; border-radius: var(--radius-pill); border: 1px solid transparent; text-decoration: none; font-size: var(--text-sm); }
@@ -86,13 +91,16 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
 .pagination__item.is-disabled { opacity: .4; }
 .pagination__gap { padding: 0 var(--space-1); color: var(--color-text-muted); }
 
+
 /* ---------- Trang xem thử ---------- */
 .swatch { width: 6rem; height: 4rem; border-radius: var(--radius-md); border: 1px solid var(--color-border); }
+
 
 .tone-swatch { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; font-size: var(--text-xs); }
 .tone-swatch i { width: 3rem; height: 1.75rem; border-radius: var(--radius-sm); }
 .container--narrow { max-width: 28rem; }  /* hộp hẹp ở giữa trang cho form đăng nhập/đăng ký/đăng xuất */
 .card__body--stretch { align-items: stretch; }  /* kéo giãn nội dung thẻ hết chiều ngang */
+
 
 /* ---- Chọn vai trò ở 2 trang đăng ký (accounts/includes/_chon_vai_tro.html) ---- */
 .role-switch { margin: var(--space-2) 0 var(--space-4); } /* khoảng cách trên và dưới khối chọn vai trò */
@@ -101,10 +109,12 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
 .role-switch .btn[aria-current="page"] { background: var(--color-gray-soft); border-color: var(--color-gray); } /* nút của trang đang mở: nền xám nhạt, viền xám (chỉ dùng token có sẵn) */
 .auth-switch-note { margin-top: var(--space-3); } /* dòng "Đã có tài khoản? Đăng nhập" dưới form đăng ký */
 
+
 /* ==========================================================================
-   P8 - Thông báo (notifications). DÁN VÀO CUỐI static/css/components.css (Khoa đã cho phép).
-   Chỉ dùng biến trong tokens.css, không gõ mã màu.
-   ========================================================================== */
+  P8 - Thông báo (notifications). DÁN VÀO CUỐI static/css/components.css (Khoa đã cho phép).
+  Chỉ dùng biến trong tokens.css, không gõ mã màu.
+  ========================================================================== */
+
 
 /* ---------- Khung trang danh sách và chi tiết ---------- */
 /* .tb-trang dùng đúng .container của nhóm (1200px) để thẳng hàng với header và chân trang, nên không đặt max-width riêng. */
@@ -123,6 +133,7 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
 .tb-quay-lai:hover { background: var(--color-surface-alt); }  /* rê chuột */
 .dropdown__item.is-active { font-weight: var(--fw-heading); background: var(--color-surface-alt); }  /* mục nhóm đang chọn trong menu lọc */
 
+
 /* ---------- Danh sách thông báo ---------- */
 .tb-ds { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }  /* các dòng cách đều nhau */
 .tb-dong { position: relative; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--color-surface-alt); border: 1px solid var(--color-border); border-radius: var(--radius-lg); color: var(--color-text-muted); }  /* dòng ĐÃ đọc: nền xám, chữ nhạt */
@@ -138,10 +149,22 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
 .tb-dong__tom-tat { margin: var(--space-1) 0 0; font-size: var(--text-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }  /* tóm tắt một dòng */
 .tb-dong__gio { flex: none; font-size: var(--text-sm); }  /* giờ ở bên phải */
 .tb-dong__form, .tb-dong__menu { position: relative; z-index: 1; flex: none; margin: 0; }  /* nút sao và menu nằm TRÊN lớp phủ liên kết */
-.tb-sao { background: none; border: 0; cursor: pointer; font-size: var(--text-lg); line-height: 1; color: var(--color-text); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); }  /* nút ★ */
-.tb-sao:hover { background: var(--color-surface-alt); }  /* rê chuột */
+/* Nút ★: xám khi chưa đánh dấu; vàng khi đã đánh dấu hoặc rê chuột (không dùng đỏ vì đỏ dành cho hành động nguy hiểm) */
+.tb-sao { background: none; border: 0; cursor: pointer; font-size: var(--text-lg); line-height: 1; color: var(--color-text-muted); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); }
+.tb-sao:hover, .tb-sao:focus-visible, .tb-sao.is-on { color: var(--tone-amber-dot); }
 .tb-menu-btn { width: 100%; text-align: left; background: none; border: 0; font: inherit; font-size: var(--text-sm); cursor: pointer; color: var(--color-text); }  /* mục menu dạng nút gửi form */
 .tb-dong__menu .dropdown__menu { z-index: 2; }  /* menu "…" nổi lên trên các dòng bên dưới */
+
+/* P8 sửa: menu "Lọc thông báo" và menu "…" không bị dòng thông báo đè */
+.tb-dau { position: relative; z-index: 20; }  /* thanh công cụ nằm trên danh sách */
+.tb-ds { position: relative; z-index: 0; }  /* danh sách tự khép z-index bên trong */
+.tb-dong:focus-within, .tb-dong:has([data-dropdown-menu]:not([hidden])) { z-index: 5; }  /* dòng đang mở menu "…" nổi lên trên các dòng dưới */
+
+/* P8 sửa: nút "…" dùng icon 3 chấm SVG, căn giữa, không viền */
+.tb-dong__menu .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--color-text-muted); cursor: pointer; }
+.tb-dong__menu .icon-btn:hover, .tb-dong__menu .icon-btn:focus-visible { background: var(--color-border); color: var(--color-black); }
+.tb-dots { width: 1.25rem; height: 1.25rem; fill: currentColor; }
+
 
 /* ---------- Trang chi tiết ---------- */
 .tb-chi-tiet { display: grid; gap: var(--space-5); }  /* các khối trong thẻ cách đều nhau */
@@ -158,6 +181,12 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
 .tb-chi-tiet__nut-trai { display: flex; flex-wrap: wrap; gap: var(--space-3); }  /* 2 nút phụ bên trái */
 .tb-chi-tiet__nut form { margin: 0; }  /* form không thêm khoảng cách */
 
+/* P8 sửa: nút sao ở trang chi tiết. Đã đánh dấu thì nền vàng nhạt, khớp nhãn "Đã đánh dấu sao" (màu mới trên nút: cần nhóm đồng ý) */
+.tb-nut-sao { gap: var(--space-2); }
+.tb-nut-sao.is-on { background: var(--tone-amber-bg); color: var(--tone-amber-fg); border-color: var(--tone-amber-dot); }
+.tb-nut-sao.is-on .tb-nut-sao__icon { color: var(--tone-amber-dot); }
+
+
 /* ---------- Khung chuông thả xuống ở header ---------- */
 .tb-khung { width: min(22rem, 92vw); padding: 0; overflow: hidden; }  /* rộng 22rem, không tràn màn hình điện thoại */
 .tb-khung__dau { display: flex; justify-content: space-between; align-items: center; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); }  /* dòng "Thông báo" + số chưa đọc */
@@ -168,8 +197,21 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
 .tb-khung__chu { flex: 1; min-width: 0; display: grid; gap: 2px; }  /* tiêu đề + giờ xếp dọc */
 .tb-khung__tieu-de { font-size: var(--text-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }  /* tiêu đề một dòng */
 .tb-khung__gio { font-size: var(--text-xs); font-weight: var(--fw-regular); }  /* giờ nhỏ */
-.tb-khung__sao { flex: none; color: var(--color-text); }  /* biểu tượng sao (chỉ hiển thị) */
 .tb-khung__rong, .tb-khung__loi { margin: 0; padding: var(--space-5) var(--space-4); text-align: center; font-size: var(--text-sm); }  /* dòng Chưa có thông báo, Lỗi tải */
 .tb-khung__thu-lai { background: none; border: 0; padding: 0; font: inherit; font-weight: var(--fw-heading); text-decoration: underline; cursor: pointer; color: var(--color-text); }  /* nút Thử lại dạng chữ */
 .tb-khung__chan { display: block; padding: var(--space-3) var(--space-4); border-top: 1px solid var(--color-border); text-align: center; font-size: var(--text-sm); font-weight: var(--fw-heading); text-decoration: none; }  /* dòng "Xem tất cả thông báo" */
 .tb-khung__chan:hover { background: var(--color-surface-alt); }  /* rê chuột */
+
+/* P8 sửa: khung chuông, chữ bấm sang chi tiết, ★ là nút riêng bên phải */
+.tb-khung__dong { display: flex; align-items: center; }
+.tb-khung__dong .tb-khung__muc { flex: 1; min-width: 0; }
+.tb-khung__sao-form { margin: 0; padding-right: var(--space-2); }
+
+/* Popup xác nhận (đăng xuất) và hàng nút căn giữa */
+.modal { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 0; width: min(92vw, 24rem); background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-md); }
+.modal::backdrop { background: rgba(26, 26, 26, .45); }
+.modal__body { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-6); text-align: center; }
+.modal__title { margin: 0; font-size: var(--text-xl); }
+.modal__text { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }
+.modal__actions { display: flex; justify-content: center; gap: var(--space-3); margin-top: var(--space-4); }
+.modal__actions .btn { min-width: 7.5rem; }  /* hai nút rộng bằng nhau */
