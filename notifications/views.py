@@ -21,7 +21,8 @@ dang_nhap_bat_buoc = login_required(login_url='login')  # chưa đăng nhập th
 TB_LOI_TAI = 'Không thể tải danh sách thông báo. Vui lòng thử lại.'  # câu cho màn hình Lỗi tải (SC9.1)
 TB_LOI_DANH_DAU = 'Không thể cập nhật trạng thái thông báo. Vui lòng thực hiện lại.'  # câu cho Lỗi đánh dấu (SC9.1, SC9.2)
 TB_LOI_DA_DOC = 'Không thể cập nhật trạng thái Đã đọc cho thông báo này.'  # câu cho Lỗi cập nhật đã đọc (SC9.2)
-
+TB_DA_XOA = 'Đã xóa thông báo.'  # câu báo khi xóa thành công (chỉ hiện khi không dùng JS)
+TB_LOI_XOA = 'Không thể xóa thông báo. Vui lòng thực hiện lại.'  # câu báo khi xóa lỗi
 
 def _dia_chi_giu_trang_thai(duong_dan, tham_so=None):  # thêm ?giu=1 vào địa chỉ trang chi tiết để trang KHÔNG tự đánh dấu Đã đọc
     """Dùng khi quay về trang chi tiết sau khi người dùng chủ động đổi trạng thái (lỗi 1 người kiểm tra nêu)."""  # mô tả hàm
@@ -135,6 +136,24 @@ def doi_dau_sao(request, ma_thong_bao):  # nút ★ và mục "Đánh dấu sao"
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':  # gọi từ khung chuông (chuong.js): không chuyển trang
         return HttpResponse(status=204 if thanh_cong else 500)  # 204 = xong, JS tự tải lại khung
     return _ket_qua_doi_trang_thai(request, thanh_cong, mac_dinh)  # báo lỗi nếu có rồi quay lại
+
+@dang_nhap_bat_buoc  # phải đăng nhập
+@require_POST  # chỉ nhận POST (kèm csrf_token) nên không xóa được bằng cách mở link
+def xoa(request, ma_thong_bao):  # nút "Xóa thông báo" trong menu "…"
+    """UC9.2 bổ sung: xóa một thông báo của người đang đăng nhập."""  # mô tả hàm
+    thong_bao = get_object_or_404(services.thong_bao_cua(request.user), pk=ma_thong_bao)  # thông báo của người khác thì 404
+    thanh_cong = services.xoa_thong_bao(request.user, thong_bao.pk)  # xóa trong DB
+    if _la_ajax(request):  # JS gọi ngầm: không chuyển trang
+        return HttpResponse(status=204 if thanh_cong else 500)  # 204 = xong, 500 = lỗi để JS gửi form kiểu thường
+    mac_dinh = reverse('notifications')  # sau khi xóa thì về trang danh sách
+    dich = _trang_quay_lai(request, mac_dinh)  # trang đang xem (giữ bộ lọc, số trang), chỉ nhận địa chỉ cùng website
+    if dich.startswith(reverse('chi_tiet_thong_bao', args=[thong_bao.pk])):  # địa chỉ quay lại chính là trang chi tiết vừa bị xóa
+        dich = mac_dinh  # đổi về danh sách, tránh gặp lỗi 404
+    if thanh_cong:  # xóa được
+        messages.success(request, TB_DA_XOA)  # hộp xanh "Đã xóa thông báo."
+    else:  # xóa lỗi
+        messages.error(request, TB_LOI_XOA)  # hộp đỏ (đúng màu nhờ MESSAGE_TAGS)
+    return redirect(dich)  # quay về trang đã chọn
 
 
 @never_cache  # luôn lấy bản mới nhất, không dùng bản lưu của trình duyệt
