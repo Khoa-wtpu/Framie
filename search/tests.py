@@ -6,7 +6,7 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.test import TestCase
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 
 from bookings.models import Booking
@@ -116,6 +116,32 @@ class TimKiemTestCase(TestCase):
         self.khong_hien(res, self.cho_duyet, self.tu_choi, self.bi_khoa)
         self.assertContains(res, 'Tìm kiếm Nhiếp ảnh gia')
 
+    def test_nut_bo_loc_nam_trong_o_tim_kiem_ben_phai(self):
+        # v2: một ô viên thuốc duy nhất [kính lúp | ô nhập | nút Bộ lọc | nút Tìm kiếm]; bảng bộ lọc là khối riêng bên dưới
+        html = self.client.get(self.url).content.decode()
+        pill = html[html.index('class="tim__pill"'):html.index('id="bang-bo-loc"')]
+        self.assertIn('name="q"', pill)
+        self.assertLess(pill.index('name="q"'), pill.index('id="nut-bo-loc"'))      # nút Bộ lọc nằm sau ô nhập (bên phải)
+        self.assertLess(pill.index('id="nut-bo-loc"'), pill.index('tim__gui'))
+        self.assertIn('aria-controls="bang-bo-loc"', pill)
+
+    def test_nut_bo_loc_hien_so_nhom_dang_bat(self):
+        res = self.client.get(self.url, {'loai_hinh': self.cuoi.pk})
+        self.assertContains(res, 'class="tim__so-loc">1<')
+        self.assertNotContains(self.client.get(self.url), 'tim__so-loc')
+
+    def test_o_chon_de_trong_tu_trang_chu_khong_bi_bao_loi(self):
+        # Trang chủ gửi ?q=...&loai_hinh=&khu_vuc=&gia_tu=&gia_den= khi các ô lọc để trống: phải tìm bình thường, không báo "không hợp lệ"
+        res = self.client.get(self.url, {'q': 'Khôi', 'loai_hinh': '', 'khu_vuc': '', 'gia_tu': '', 'gia_den': ''})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context['loi'], [])
+        self.assertContains(res, 'Lê Minh Khôi')
+
+    def test_chon_mot_loai_hinh_tu_trang_chu_van_loc_dung(self):
+        res = self.client.get(self.url, {'q': '', 'loai_hinh': self.cuoi.pk, 'khu_vuc': ''})
+        self.assertEqual(res.context['loi'], [])
+        self.assertContains(res, 'Lê Minh Khôi')
+
     def test_ho_so_ve_cho_duyet_thi_bien_mat_khoi_ket_qua(self):
         self.a.MaTaiKhoan.trang_thai_ho_so = TrangThaiHoSo.CHO_DUYET
         self.a.MaTaiKhoan.save()
@@ -129,6 +155,18 @@ class TimKiemTestCase(TestCase):
         self.assertContains(res, 'Chưa có đánh giá')          # B và F
         self.assertContains(res, 'Chưa có gói dịch vụ')       # F chỉ có gói ngừng áp dụng
         self.assertContains(res, 'Lê Minh Khôi')
+
+    def test_ten_nhiep_anh_gia_bam_duoc(self):
+        # Thẻ dẫn tới trang hồ sơ công khai (K9) nếu đã có, chưa có thì dẫn tới trang chọn lịch (UC4.1).
+        dich = ''
+        for ten in ('photographer_detail', 'lich_chon_slot'):
+            try:
+                dich = reverse(ten, args=[self.a.pk])
+                break
+            except NoReverseMatch:
+                continue
+        self.assertTrue(dich, 'Cần có photographer_detail hoặc lich_chon_slot (include bookings.giu_cho trong config/urls.py)')
+        self.assertContains(self.client.get(self.url), f'href="{dich}"')
 
     # ---- UC2.1: từ khóa và ID ----
     def test_tim_theo_id_nhieu_dang(self):

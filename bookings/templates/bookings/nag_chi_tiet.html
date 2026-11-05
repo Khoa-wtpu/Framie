@@ -3,23 +3,14 @@
 {# Kế thừa khung chung của website từ base.html; file này chỉ viết phần nội dung riêng. #}
 {% extends "base.html" %}
 {# Nạp bộ thẻ giao diện 'ui' để dùng thẻ status_badge (nhãn trạng thái có màu). #}
-{% load ui %}
+{% load ui static %}
 
 {# Tiêu đề hiện trên tab trình duyệt, kèm mã Booking. #}
 {% block title %}Booking #{{ booking.pk }}{% endblock %}
 
 {# Chèn thêm phần định dạng (CSS) riêng của trang này. #}
 {% block extra_head %}
-<style>
-  {# Khối thông tin chia 2 cột: cột trái là tên mục (nhãn), cột phải là giá trị. #}
-  .nag-ct__luoi { display: grid; grid-template-columns: max-content 1fr; gap: var(--space-2) var(--space-5); margin: 0; }
-  {# Tên mục: chữ màu nhạt, cỡ nhỏ. #}
-  .nag-ct__luoi dt { color: var(--color-text-muted); font-size: var(--text-sm); }
-  {# Giá trị: chữ dài (concept, yêu cầu riêng) sẽ tự xuống dòng, không làm vỡ khung. #}
-  .nag-ct__luoi dd { margin: 0; overflow-wrap: anywhere; } /* concept / yêu cầu riêng dài không làm vỡ khung */
-  {# Hàng nút bấm: xếp ngang, tự xuống dòng khi màn hình hẹp. #}
-  .nag-ct__nut { display: flex; flex-wrap: wrap; gap: var(--space-3); }
-</style>
+<link rel="stylesheet" href="{% static 'bookings/css/nag_booking.css' %}">
 {% endblock %}
 
 {# Phần nội dung chính của trang. #}
@@ -92,6 +83,24 @@
       {# Nút 'Từ chối Booking' (UC4.5): là đường link mở trang nhập lý do; vẫn dùng được cả khi đã quá giờ chụp. #}
       <a class="btn btn--danger" href="{% url 'tu_choi_booking' ma_booking=booking.pk %}">Từ chối Booking</a>
     </div>
+  </div>
+  {% endif %}
+
+  {# T8: Booking đang 'Chốt Booking' -> Nhiếp ảnh gia bấm 'Đã chụp' sau khi buổi chụp diễn ra. #}
+  {% if dang_chot_booking %}{# chỉ hiện khối này khi Booking đang ở "Chốt Booking" (khóa dang_chot_booking do tiep_nhan.py truyền vào) #}
+  <div class="panel stack">{# khung của khối nút #}
+    {% if da_qua_gio_chup %}{# buổi chụp đã tới giờ (khóa da_qua_gio_chup do tiep_nhan.py truyền vào) #}
+      <p class="muted">Sau khi chụp xong, bấm "Đã chụp". Gói Giới hạn số lượng ảnh: bạn tải ảnh lên để Khách hàng chọn. Gói Hậu kỳ toàn bộ ảnh: Booking sang thẳng "Chờ hậu kỳ".</p>{# lời hướng dẫn 2 nhánh theo loại gói #}
+      <form method="post" action="{% url 'da_chup_booking' ma_booking=booking.pk %}">{# form gửi POST tới địa chỉ da_chup_booking của đúng Booking này #}
+        {% csrf_token %}{# mã chống giả mạo yêu cầu (bắt buộc với form POST của Django) #}
+        <button class="btn btn--primary" type="submit">Đã chụp</button>{# nút "Đã chụp" #}
+      </form>
+    {% else %}{# chưa tới giờ chụp #}
+      {% include "includes/alert.html" with level="info" text="Buổi chụp chưa diễn ra nên chưa thể bấm Đã chụp." %}{# khung thông tin: chưa bấm được #}
+    {% endif %}
+    {# T9 / UC4.6: Nhiếp ảnh gia có thể hủy khi Booking đang "Chốt Booking" (sau khi đã cọc: phải hoàn lại 40% tiền cọc cho Khách). #}
+    <p class="muted">Cần hủy buổi chụp? Nếu hủy sau khi Khách đã đặt cọc, bạn có trách nhiệm hoàn lại 40% tiền cọc ({{ tien_coc }} VNĐ) cho Khách hàng.</p>{# lời nhắc hậu quả khi Nhiếp ảnh gia hủy: phải hoàn lại 40% cọc #}
+    <a class="btn btn--danger" href="{% url 'huy_booking' ma_booking=booking.pk %}">Hủy Booking</a>{# nút đỏ dẫn tới trang nhập lý do + xác nhận hủy (view huy_booking) #}
   </div>
   {% endif %}
 

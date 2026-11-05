@@ -18,12 +18,12 @@ from django.contrib.auth.models import Group
 # ▸ TestCase: lớp nền cho bài test; mỗi test chạy trên một cơ sở dữ liệu tạm, xong là xóa, không ảnh hưởng dữ liệu thật.
 from django.test import TestCase
 # ▸ reverse: đổi tên trang thành địa chỉ URL.
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 
 # ▸ Nạp các hằng số dùng chung: TrangThaiHoSo (Đã duyệt / Chờ duyệt...) và VaiTro (Khách hàng, Nhiếp ảnh gia...).
 from core.constants import TrangThaiHoSo, VaiTro
 # ▸ Nạp các bảng dữ liệu cần dùng. "LoaiHinhChup as LoaiHinhChup_" = đặt tên thay thế có thêm dấu _ để tránh trùng tên với tên khác.
-from profiles.models import LoaiHinhChup as LoaiHinhChup_, NhiepAnhGia, NhiepAnhGia_LoaiHinhChup
+from profiles.models import KhuVuc, LoaiHinhChup as LoaiHinhChup_, NhiepAnhGia, NhiepAnhGia_LoaiHinhChup
 
 # ▸ User = lớp tài khoản người dùng của dự án, dùng để tạo tài khoản mẫu trong test.
 User = get_user_model()
@@ -80,6 +80,18 @@ class TrangChuCoBan(TestCase):
         self.assertIn(f'action="{reverse("search")}"', html)
         # ▸ Ô nhập phải có tên "q" (tham số từ khóa mà trang tìm kiếm đọc).
         self.assertIn('name="q"', html)
+
+    # ▸ Test 3b: hộp tìm kiếm có bộ lọc loại hình + khu vực.
+    def test_o_tim_co_bo_loc(self):
+        lh = LoaiHinhChup_.objects.create(TenLoaiHinh='Cưới')
+        kv = KhuVuc.objects.create(TenKhuVuc='Đà Nẵng')
+        html = self.client.get('/').content.decode()
+        self.assertIn('name="loai_hinh"', html)
+        self.assertIn('name="khu_vuc"', html)
+        self.assertIn('name="gia_tu"', html)
+        self.assertIn('name="gia_den"', html)
+        self.assertIn(f'<option value="{lh.pk}">Cưới</option>', html)
+        self.assertIn(f'<option value="{kv.pk}">Đà Nẵng</option>', html)
 
     # ▸ Test 4: 5 bước đặt lịch hiện đúng thứ tự 1 -> 5.
     def test_cac_buoc_dat_lich_dung_thu_tu(self):
@@ -157,19 +169,28 @@ class NhiepAnhGiaNoiBat(TestCase):
         # ▸ Và vẫn hiện tên nhiếp ảnh gia.
         self.assertContains(res, 'Lê Minh')
 
-    # ▸ Test 10: thẻ chỉ bấm được khi đã có trang hồ sơ.
+    # ▸ Test 10a: chưa có trang hồ sơ (K9) thì thẻ không có link (không phụ thuộc K9 thật).
+    def test_the_khong_bam_duoc_khi_chua_co_trang_ho_so(self):
+        with mock.patch(HAM_NOI_BAT, return_value=[_nag_gia(pk=7)]), \
+                mock.patch('core.views_trang_chu.reverse', side_effect=NoReverseMatch):
+            res = self.client.get('/')
+        self.assertNotContains(res, 'card--link')
+
+    # ▸ Test 10b: có trang hồ sơ thì thẻ trỏ đúng hồ sơ.
     def test_the_bam_duoc_khi_co_trang_ho_so(self):
-        # K9 (photographer_detail) chưa có: thẻ không có link. Khi K9 có thì thẻ trỏ đúng hồ sơ.
-        # ▸ Dựng 1 nhiếp ảnh gia giả có mã 7.
         with mock.patch(HAM_NOI_BAT, return_value=[_nag_gia(pk=7)]):
-            # ▸ Lúc này trang hồ sơ K9 chưa tồn tại => thẻ KHÔNG được có lớp "card--link" (kiểu thẻ bấm được).
-            self.assertNotContains(self.client.get('/'), 'card--link')
-            # ▸ Giả lập "K9 đã làm xong": thay hàm reverse bằng hàm giả. Với tên 'photographer_detail' trả '/nhiep-anh-gia/<mã>/',
-            # ▸ còn các tên khác thì dùng reverse thật như bình thường.
             with mock.patch('core.views_trang_chu.reverse', side_effect=lambda ten, args=None: f'/nhiep-anh-gia/{args[0]}/'
                             if ten == 'photographer_detail' else reverse(ten, args=args)):
-                # ▸ Bây giờ thẻ phải có liên kết trỏ đúng tới hồ sơ số 7.
                 self.assertContains(self.client.get('/'), 'href="/nhiep-anh-gia/7/"')
+
+    # ▸ Test 10c: nhiếp ảnh gia chưa có đánh giá (diem_trung_binh=None) thì không lỗi 500, hiện "Chưa có đánh giá".
+    def test_chua_co_danh_gia_khong_loi(self):
+        nag = {**_nag_gia(), 'diem_trung_binh': None, 'so_danh_gia': 0}
+        with mock.patch(HAM_NOI_BAT, return_value=[nag]):
+            res = self.client.get('/')
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'Chưa có đánh giá')
+        self.assertNotContains(res, '0 đánh giá')
 
 
 # ▸ NHÓM 3: kiểm tra khối "Loại hình chụp".
@@ -222,6 +243,8 @@ class LoiMoiDangKy(TestCase):
         self.assertContains(res, reverse('register'))
         # ▸ Phải có nút "Đăng ký ngay".
         self.assertContains(res, 'Đăng ký ngay')
+        # ▸ Phải có link tới trang đăng nhập.
+        self.assertContains(res, 'href="/dang-nhap/"')
 
     # ▸ Test 15: khách đã đăng nhập thì thấy nút "Tìm nhiếp ảnh gia" thay cho đăng ký.
     def test_da_dang_nhap_thay_nut_tim_nhiep_anh_gia(self):

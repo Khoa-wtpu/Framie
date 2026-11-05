@@ -11,7 +11,7 @@ Models theo Data Dictionary: BOOKING, GIUCHO, LICHSUTRANGTHAIBOOKING, YEUCAUHUY.
 # ===========================================================================
 # PHẦN 1: IMPORT (gọi các công cụ cần dùng)
 # ===========================================================================
-from datetime import timedelta  # timedelta = một khoảng thời gian (ví dụ 5 phút), dùng để cộng vào giờ
+from datetime import datetime, timedelta  # timedelta = một khoảng thời gian (ví dụ 5 phút), dùng để cộng vào giờ; datetime để ghép ngày + giờ của slot
 
 
 from django.conf import settings  # settings = file config/settings.py của project
@@ -51,6 +51,55 @@ NHOM_KHACH_HANG = VaiTro.KHACH_HANG  # tên Group "Khách hàng" để kiểm tr
 
 
 THOI_GIAN_GIU_CHO = timedelta(minutes=5)  # giữ chỗ tối đa 5 phút (quy tắc BR4.1-1)
+
+
+# ---------------------------------------------------------------------------
+# Quy tắc "gói phải vừa khung giờ": buổi chụp bắt đầu ở NgayGioChup và kéo dài ThoiLuongChup phút của gói,
+# nên NgayGioChup + ThoiLuongChup phải <= giờ kết thúc của slot. Form (UC4.2), Booking.clean() và trang chọn gói
+# cùng dùng các hàm dưới đây để không mỗi nơi tính một kiểu.
+# ---------------------------------------------------------------------------
+def so_phut_slot(lich):
+   """Độ dài khung giờ của slot, tính bằng phút (ví dụ 13:00-15:00 -> 120)."""
+   bat_dau = datetime.combine(lich.Ngay, lich.GioBatDau)
+   ket_thuc = datetime.combine(lich.Ngay, lich.GioKetThuc)
+   return int((ket_thuc - bat_dau).total_seconds() // 60)
+
+
+def dinh_dang_thoi_luong(so_phut):
+   """180 -> '3 giờ'; 150 -> '2 giờ 30 phút'; 45 -> '45 phút'."""
+   gio, phut = divmod(int(so_phut), 60)
+   if gio and phut:
+       return f"{gio} giờ {phut} phút"
+   if gio:
+       return f"{gio} giờ"
+   return f"{phut} phút"
+
+
+def gio_chup_muon_nhat(lich, goi):
+   """Thời điểm bắt đầu chụp muộn nhất mà gói còn vừa slot = giờ kết thúc slot - thời lượng gói."""
+   ket_thuc = timezone.make_aware(datetime.combine(lich.Ngay, lich.GioKetThuc))
+   return ket_thuc - timedelta(minutes=goi.ThoiLuongChup)
+
+
+def kiem_tra_goi_vua_slot(lich, goi, ngay_gio_chup=None):
+   """Kiểm tra quy tắc NgayGioChup + ThoiLuongChup <= giờ kết thúc slot.
+   Trả về None nếu hợp lệ, ngược lại trả về (tên field của Booking, câu lỗi):
+     - ('MaGoi', ...)        : cả khung giờ ngắn hơn thời lượng gói (đổi giờ bắt đầu cũng không cứu được);
+     - ('NgayGioChup', ...)  : gói vừa slot nhưng giờ bắt đầu muộn quá (chỉ kiểm tra khi có ngay_gio_chup)."""
+   so_phut = so_phut_slot(lich)
+   if goi.ThoiLuongChup > so_phut:
+       return ("MaGoi",
+               f'Gói "{goi.TenGoi}" cần {dinh_dang_thoi_luong(goi.ThoiLuongChup)}, khung giờ bạn giữ chỉ '
+               f"{dinh_dang_thoi_luong(so_phut)}. Vui lòng chọn gói khác hoặc khung giờ dài hơn.")
+   if ngay_gio_chup is not None:
+       if timezone.is_naive(ngay_gio_chup):
+           ngay_gio_chup = timezone.make_aware(ngay_gio_chup)
+       muon_nhat = gio_chup_muon_nhat(lich, goi)
+       if ngay_gio_chup > muon_nhat:
+           return ("NgayGioChup",
+                   f'Gói "{goi.TenGoi}" kéo dài {dinh_dang_thoi_luong(goi.ThoiLuongChup)}, nên buổi chụp phải '
+                   f"bắt đầu muộn nhất lúc {timezone.localtime(muon_nhat):%H:%M}.")
+   return None
 
 
 
@@ -366,6 +415,17 @@ class Booking(models.Model):  # bảng BOOKING
                and lich.GioBatDau <= thoi_diem.time() <= lich.GioKetThuc  # và giờ nằm trong khoảng của slot
            ):
                errors["NgayGioChup"] = "Ngày giờ chụp phải nằm trong khung giờ của slot."
+
+
+       # 4. Booking MỚI: gói phải vừa khung giờ (NgayGioChup + ThoiLuongChup <= giờ kết thúc slot).
+       #    Chỉ chạy khi tạo mới: Booking cũ vẫn sửa được dù sau này Nhiếp ảnh gia đổi thời lượng gói (giống 2b).
+       #    Đặt ở đây (không chỉ ở form) để Admin và mọi nơi gọi full_clean() cũng bị chặn; _tao_booking của UC4.2
+       #    gọi full_clean() sau khi đã khóa slot và đọc lại gói nên cũng được kiểm tra bằng đúng quy tắc này.
+       if self._state.adding and self.MaGoi_id and self.MaLich_id and "MaGoi" not in errors and "MaLich" not in errors:
+           ngay_gio = None if "NgayGioChup" in errors else self.NgayGioChup   # giờ đã ngoài slot thì khỏi báo thêm lỗi giờ muộn
+           loi = kiem_tra_goi_vua_slot(self.MaLich, self.MaGoi, ngay_gio)
+           if loi:
+               errors[loi[0]] = loi[1]
 
 
        if errors:  # nếu có ít nhất một lỗi

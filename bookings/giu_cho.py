@@ -30,6 +30,8 @@ import logging
 from collections import OrderedDict
 # Import wraps để decorator giữ lại tên và thông tin của view gốc.
 from functools import wraps
+# Import urlencode để ghép ?goi=<mã gói> vào đường dẫn (tự mã hóa ký tự đặc biệt).
+from urllib.parse import urlencode
 
 # Lấy cấu hình Django, ở đây dùng để lấy LOGIN_URL khi cần chuyển người dùng đến trang đăng nhập.
 from django.conf import settings
@@ -55,9 +57,9 @@ from django.views.decorators.http import require_GET, require_POST
 # Lấy thời lượng giữ chỗ và model GiuCho; thời lượng được cấu hình là 5 phút.
 from bookings.models import THOI_GIAN_GIU_CHO, GiuCho   # THOI_GIAN_GIU_CHO = 5 phút (BR4.1-1)
 # Import các hằng số trạng thái và vai trò dùng thống nhất trong toàn dự án.
-from core.constants import TrangThaiGiuCho, TrangThaiHoSo, TrangThaiSlot, VaiTro
+from core.constants import TrangThaiGiuCho, TrangThaiGoi, TrangThaiHoSo, TrangThaiSlot, VaiTro
 # Import model hồ sơ nhiếp ảnh gia để tìm thông tin người cung cấp dịch vụ.
-from profiles.models import NhiepAnhGia
+from profiles.models import GoiDichVu, NhiepAnhGia
 # Import model lịch khả dụng của nhiếp ảnh gia.
 from schedule.models import LichKhaDung
 # Import hàm đổi trạng thái slot và hàm lấy danh sách khung giờ còn trống từ module schedule.
@@ -381,7 +383,19 @@ def hoan_tat_giu_cho(khach_hang, ma_giu_cho):
 # Định nghĩa decorator kiểm tra quyền truy cập của các view chỉ dành cho Khách hàng.
 def khach_hang_required(view):
     # Docstring mô tả: chưa đăng nhập thì chuyển đến trang login; sai vai trò thì trả lỗi 403.
-    """Chỉ cho Khách hàng đã đăng nhập: chưa đăng nhập -> trang đăng nhập (kèm ?next=); sai vai trò -> 403."""
+    """Chỉ cho Khách hàng đã đăng nhập: chưa đăng nhập -> trang đăng nhập (kèm ?next=); sai vai trò -> 403.
+
+    VÌ SAO KHÔNG DÙNG accounts.permissions.chi_khach_hang (đã đối chiếu bằng cách chạy cả hai):
+      - GIỐNG: chưa đăng nhập -> cùng chuyển tới /dang-nhap/?next=<đường dẫn đầy đủ gồm query>; Khách hàng -> vào được;
+        Nhiếp ảnh gia / Quản trị viên / superuser thường -> 403.
+      - KHÁC: cách xác định "là Khách hàng". chi_khach_hang dùng lay_vai_tro() (ưu tiên Quản trị > Nhiếp ảnh gia > Khách hàng,
+        và coi tài khoản CHƯA CÓ NHÓM là Khách hàng). Bản này dùng _la_khach_hang(): phải thuộc Group "Khách hàng" - đúng quy tắc
+        mà GiuCho.clean() và giu_cho_slot() đang áp dụng. Hệ quả:
+            tài khoản chưa có nhóm            -> bản này 403,  chi_khach_hang cho qua
+            thuộc cả Khách hàng và Nhiếp ảnh gia, hoặc superuser + nhóm Khách hàng -> bản này cho qua, chi_khach_hang 403
+      Đổi sang chi_khach_hang thì tài khoản chưa có nhóm vào được trang lịch rồi mới bị từ chối ở bước chọn slot.
+      Test ghim hành vi: test_giu_cho.test_tai_khoan_chua_co_nhom_bi_chan. Muốn thống nhất cả dự án thì cần nhóm thống nhất
+      "chưa có nhóm" là gì (xem lay_vai_tro) trước, rồi mới xóa bản này."""
     # Dùng wraps để giữ metadata của view gốc khi bọc bằng decorator.
     @wraps(view)
     # Định nghĩa hàm wrapper sẽ chạy trước view thật.
@@ -408,8 +422,26 @@ def khach_hang_required(view):
     return wrapper
 
 
+# Định nghĩa hàm kiểm tra "gói chọn sẵn" mà khách mang từ hồ sơ Nhiếp ảnh gia (POST 'goi' hoặc ?goi=).
+def goi_chon_san_hop_le(ma_nhiep_anh_gia, gia_tri):
+    """Trả về GoiDichVu nếu gia_tri là mã của một gói 'Đang áp dụng' thuộc ĐÚNG Nhiếp ảnh gia của slot; ngược lại None.
+    Giá trị đến từ trình duyệt (có thể trống, không phải số, hoặc bị sửa tay) nên luôn kiểm tra lại, không tin mù quáng.
+    Dùng ở chon_slot, man_hinh_giu_cho và gui_booking (UC4.2). Gói có vừa khung giờ hay không do UC4.2 kiểm tra."""
+    # Trống hoặc không phải số nguyên dương hợp lý thì coi như không chọn gói.
+    try:
+        ma_goi = int(str(gia_tri or '').strip())
+    except ValueError:
+        return None
+    # Chặn số quá lớn để database không báo lỗi tràn số.
+    if not 0 < ma_goi < 2 ** 31:
+        return None
+    # Chỉ nhận gói Đang áp dụng của đúng Nhiếp ảnh gia sở hữu slot (gói của người khác hoặc gói đã ngừng/ẩn thì bỏ qua).
+    return (GoiDichVu.objects.select_related('MaLoaiHinh')
+            .filter(pk=ma_goi, MaNhiepAnhGia_id=ma_nhiep_anh_gia, TrangThai=TrangThaiGoi.DANG_AP_DUNG).first())
+
+
 # Định nghĩa hàm tạo URL chuyển sang chức năng gửi Booking của UC4.2.
-def _url_gui_booking(giu_cho):
+def _url_gui_booking(giu_cho, goi=None):
     # Docstring giải thích URL cần có tên gui_booking và nhận mã lượt giữ chỗ.
     """Link sang UC4.2 'Gửi yêu cầu Booking'. Khi bạn viết UC4.2, đặt tên URL đó là 'gui_booking'
     # Nếu chưa có URL UC4.2 thì hàm sẽ trả None để giao diện không tạo liên kết sai.
@@ -417,7 +449,9 @@ def _url_gui_booking(giu_cho):
     # Bắt lỗi nếu Django không tìm thấy URL theo tên.
     try:
         # Tạo URL gui_booking và truyền mã lượt giữ chỗ vào tham số ma_giu_cho.
-        return reverse('gui_booking', kwargs={'ma_giu_cho': giu_cho.pk})
+        url = reverse('gui_booking', kwargs={'ma_giu_cho': giu_cho.pk})
+        # Có gói chọn sẵn (khách bấm "Chọn gói" ở hồ sơ Nhiếp ảnh gia) thì kèm ?goi=<mã gói> để form chọn sẵn gói đó.
+        return f'{url}?{urlencode({"goi": goi.pk})}' if goi is not None else url
     # Bắt trường hợp route gui_booking chưa được khai báo.
     except NoReverseMatch:
         # Trả None để báo rằng hiện chưa có đường dẫn gửi Booking.
@@ -479,6 +513,8 @@ def trang_lich_nhiep_anh_gia(request, ma_nhiep_anh_gia):
         'giu_cho_hien_tai': giu_cho_hien_tai,
         # Truyền số ngày được hiển thị trên trang lịch.
         'so_ngay': SO_NGAY_HIEN_THI_LICH,
+        # Truyền số phút giữ chỗ lấy từ THOI_GIAN_GIU_CHO để câu "giữ chỗ cho bạn N phút" tự đổi theo khi đổi hằng số.
+        'so_phut_giu': THOI_GIAN_GIU_CHO.total_seconds() / 60,
     # Kết thúc dictionary dữ liệu và trả về trang HTML đã render.
     })
 
@@ -490,7 +526,9 @@ def trang_lich_nhiep_anh_gia(request, ma_nhiep_anh_gia):
 # Định nghĩa view xử lý khi khách bấm chọn một slot.
 def chon_slot(request, ma_lich):
     # Docstring mô tả: giữ chỗ thành công thì chuyển khách đến màn hình đếm ngược.
-    """Bước 3: Khách bấm chọn một slot. Thành công -> sang màn hình đếm ngược (bước 6)."""
+    """Bước 3: Khách bấm chọn một slot. Thành công -> sang màn hình đếm ngược (bước 6).
+    Form ở hồ sơ Nhiếp ảnh gia có thể gửi thêm 'goi' (mã gói, có thể trống): chỉ nhận nếu là gói 'Đang áp dụng' của đúng
+    Nhiếp ảnh gia của slot, rồi chuyển tiếp ?goi=<mã> qua màn hình giữ chỗ tới UC4.2 để form chọn sẵn gói. Không có thì như cũ."""
     # Lấy mã nhiếp ảnh gia từ dữ liệu form để biết trang lịch cần quay lại nếu xảy ra lỗi.
     ma_nag = request.POST.get('ma_nhiep_anh_gia')        # form trên trang lịch gửi kèm để biết đường quay lại
     # Bắt lỗi nghiệp vụ trong quá trình giữ slot.
@@ -503,8 +541,11 @@ def chon_slot(request, ma_lich):
         messages.error(request, loi.thong_bao)
         # Chuyển khách quay lại trang lịch của nhiếp ảnh gia.
         return _ve_trang_lich(ma_nag)
-    # Nếu giữ thành công, chuyển đến màn hình giữ chỗ với mã lượt giữ vừa tạo hoặc tìm được.
-    return redirect('man_hinh_giu_cho', ma_giu_cho=giu_cho.pk)
+    # Nhiếp ảnh gia lấy từ chính slot (không tin mã Nhiếp ảnh gia hay mã gói do trình duyệt gửi) để kiểm tra gói chọn sẵn.
+    goi = goi_chon_san_hop_le(giu_cho.MaLich.MaNhiepAnhGia_id, request.POST.get('goi'))
+    # Nếu giữ thành công, chuyển đến màn hình giữ chỗ với mã lượt giữ vừa tạo hoặc tìm được (kèm ?goi= nếu có gói hợp lệ).
+    url = reverse('man_hinh_giu_cho', kwargs={'ma_giu_cho': giu_cho.pk})
+    return redirect(f'{url}?{urlencode({"goi": goi.pk})}' if goi is not None else url)
 
 
 # Áp dụng kiểm tra quyền Khách hàng cho màn hình giữ chỗ.
@@ -529,6 +570,8 @@ def man_hinh_giu_cho(request, ma_giu_cho):
     nag = lich.MaNhiepAnhGia
     # Tính số giây còn lại để truyền sang giao diện.
     con_lai = so_giay_con_lai(giu_cho)
+    # Gói chọn sẵn đi từ chon_slot qua ?goi=; URL do người dùng sửa được nên kiểm tra lại trước khi chuyển tiếp sang UC4.2.
+    goi = goi_chon_san_hop_le(nag.pk, request.GET.get('goi'))
     # Render template màn hình giữ chỗ và truyền dữ liệu cần thiết.
     return render(request, 'bookings/giu_cho.html', {
         # Truyền đối tượng lượt giữ chỗ sang template.
@@ -548,7 +591,7 @@ def man_hinh_giu_cho(request, ma_giu_cho):
         # Cho template biết lượt giữ đã được hoàn tất qua bước gửi Booking hay chưa.
         'da_hoan_tat': giu_cho.TrangThai == TrangThaiGiuCho.DA_HOAN_TAT,      # đã gửi Booking kịp hạn
         # Truyền URL sang chức năng gửi Booking; nếu route chưa có thì giá trị có thể là None.
-        'url_gui_booking': _url_gui_booking(giu_cho),
+        'url_gui_booking': _url_gui_booking(giu_cho, goi),
         # Truyền URL quay lại trang lịch của nhiếp ảnh gia.
         'url_lich': reverse('lich_chon_slot', kwargs={'ma_nhiep_anh_gia': nag.pk}),
         # Truyền URL API để JavaScript hỏi thời gian giữ chỗ còn lại.

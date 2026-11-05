@@ -1,0 +1,52 @@
+/* bookings/static/bookings/css/theo_doi.css - Theo dõi trạng thái Booking (UC4.7).
+   Quy ước nhóm: CSS nằm trong static/ và CHỈ dùng token của static/css/tokens.css (không gõ màu / kích thước cứng).
+   Màu nhãn trạng thái do status_badge lo (core/status_tones.py), file này KHÔNG tô màu trạng thái. */
+
+/* Dòng thời gian: đường kẻ dọc bên trái (độ dày 1px như các bảng trong nag_booking.css), mỗi mốc là một chấm. */
+.td-timeline {
+  list-style: none;                                   /* bỏ số thứ tự 1. 2. 3. mặc định của danh sách */
+  margin: 0;                                          /* bỏ lề ngoài mặc định */
+  padding: 0 0 0 var(--space-5);                      /* chỉ chừa lề trái (cỡ --space-5) để đặt chấm tròn */
+  border-left: 1px solid var(--color-border);         /* đường kẻ dọc bên trái, màu viền chuẩn của nhóm */
+  display: grid;                                      /* xếp các mốc theo lưới 1 cột... */
+  gap: var(--space-4);                                /* ...cách nhau một khoảng --space-4 */
+}
+.td-timeline__muc { position: relative; }             /* mỗi mốc làm "gốc tọa độ" để đặt chấm tròn lên đúng chỗ */
+/* Chấm tròn cỡ --space-3, căn giữa lên đường kẻ: lùi trái đúng bằng lề trong + nửa chấm. */
+.td-timeline__muc::before {
+  content: "";                                        /* tạo một phần tử trang trí (không có chữ) trước mỗi mốc */
+  position: absolute;                                 /* đặt chấm theo tọa độ riêng, không làm xô lệch chữ */
+  top: var(--space-2);                                /* cách mép trên của mốc một đoạn --space-2 */
+  left: calc(-1 * (var(--space-5) + var(--space-3) / 2));  /* lùi sang trái để tâm chấm nằm đúng trên đường kẻ */
+  width: var(--space-3);                              /* chiều rộng chấm */
+  height: var(--space-3);                             /* chiều cao chấm (bằng rộng => hình vuông, bo tròn thành hình tròn) */
+  border-radius: var(--radius-pill);                  /* bo tròn tối đa => hình tròn */
+  background: var(--color-black);                     /* tô chấm màu đen chuẩn của nhóm */
+}
+.td-timeline__dong {
+  display: flex;                                      /* các nhãn trạng thái xếp thành một hàng ngang */
+  flex-wrap: wrap;                                    /* hết chỗ thì tự xuống dòng (màn hình hẹp) */
+  align-items: center;                                /* căn giữa theo chiều dọc */
+  gap: var(--space-2);                                /* khoảng cách giữa các phần tử trong hàng */
+}
+.td-timeline__meta { font-size: var(--text-sm); }     /* dòng "giờ · ai đổi" dùng chữ nhỏ */
+.td-timeline__ly-do {
+  font-size: var(--text-sm);                          /* dòng lý do dùng chữ nhỏ */
+  overflow-wrap: anywhere;                            /* lý do dài / không có dấu cách vẫn tự ngắt, không tràn khung */
+}
+
+/* Danh sách khoản thanh toán: tên khoản bên trái, nhãn trạng thái bên phải, tự xuống dòng khi màn hình hẹp. */
+.td-thanhtoan {
+  list-style: none;                                   /* bỏ dấu chấm đầu dòng mặc định */
+  margin: 0;                                          /* bỏ lề ngoài */
+  padding: 0;                                         /* bỏ lề trong */
+  display: grid;                                      /* các khoản xếp thành lưới 1 cột... */
+  gap: var(--space-3);                                /* ...cách nhau --space-3 */
+}
+.td-thanhtoan li {
+  display: flex;                                      /* mỗi khoản là một hàng ngang */
+  flex-wrap: wrap;                                    /* hẹp thì nhãn tự xuống dòng */
+  justify-content: space-between;                     /* tên khoản dạt trái, nhãn trạng thái dạt phải */
+  align-items: center;                                /* căn giữa theo chiều dọc */
+  gap: var(--space-2);                                /* khoảng cách tối thiểu giữa hai phần */
+}

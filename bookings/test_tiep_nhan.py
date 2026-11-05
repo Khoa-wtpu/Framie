@@ -20,6 +20,9 @@
 from datetime import timedelta
 # count: bộ đếm tự tăng 1, 2, 3... dùng để tạo số điện thoại không bị trùng.
 from itertools import count
+# re: tìm đường link 'sang trang 2' trong HTML. unescape: đổi '&amp;' trong link HTML về '&' để giả lập bấm link.
+import re
+from html import unescape
 # mock: công cụ 'giả lập'; ở đây dùng để giả vờ máy chủ gửi mail bị hỏng.
 from unittest import mock
 
@@ -40,14 +43,18 @@ from django.utils import timezone
 from bookings import giu_cho as uc41
 # File đang được kiểm thử (UC4.3 - UC4.5); gọi tắt là 'uc'.
 from bookings import tiep_nhan as uc
+# services: nơi chứa hàm gửi Email dùng chung (send_mail nằm ở đây nên mock phải trỏ tới module này).
+from bookings import services
 # Hai bảng: Booking và Lịch sử đổi trạng thái Booking.
 from bookings.models import Booking, LichSuTrangThaiBooking
 # Các hằng số trạng thái. Đặt tên ngắn: BK = trạng thái Booking, SL = trạng thái khung giờ (slot).
 from core.constants import (
-    BenThucHien, LoaiHauKy, TrangThaiBooking as BK, TrangThaiGuiEmail, TrangThaiHoSo, TrangThaiSlot as SL, VaiTro,
+    BenThucHien, LoaiHauKy, LoaiThanhToan, TrangThaiBooking as BK, TrangThaiGuiEmail, TrangThaiHoSo, TrangThaiSlot as SL, VaiTro,
 )
 # Bảng thông báo trên web.
 from notifications.models import ThongBao
+# tinh_so_tien: hàm tính tiền cọc/phần còn lại dùng chung với module Thanh toán.
+from payments.models import tinh_so_tien
 # Các bảng: Nhiếp ảnh gia, Gói dịch vụ, Loại hình chụp.
 from profiles.models import GoiDichVu, LoaiHinhChup, NhiepAnhGia
 # LichKhaDung: bảng khung giờ (slot) trong lịch của Nhiếp ảnh gia.
@@ -102,18 +109,19 @@ class TiepNhanBase(TestCase):
         self.client.force_login(self.nag.MaTaiKhoan)
 
     # Hàm tiện ích: tạo một Booking giống như vừa được khách gửi xong (UC4.2): Booking 'Chờ xác nhận', khung giờ 'Đang giữ chỗ'.
-    def tao_booking(self, nag=None, goi=None, gio='09:00', trang_thai=BK.CHO_XAC_NHAN, **kw):
+    def tao_booking(self, nag=None, goi=None, gio='09:00', trang_thai=BK.CHO_XAC_NHAN, ngay=None, **kw):
         """Tạo Booking như sau khi Khách gửi (UC4.2): slot 'Đang giữ chỗ', Booking 'Chờ xác nhận'."""
         nag = nag or self.nag
         goi = goi or (self.goi if nag == self.nag else self.goi_khac)
+        ngay = ngay or self.ngay   # mặc định ngày chụp thử nghiệm của lớp nền
         gio_bd = timezone.datetime.strptime(gio, '%H:%M')
         # Tạo khung giờ dài 2 tiếng, ở trạng thái 'Đang giữ chỗ' (đúng như thật sau khi khách gửi Booking).
-        lich = LichKhaDung.objects.create(MaNhiepAnhGia=nag, Ngay=self.ngay, GioBatDau=gio,
+        lich = LichKhaDung.objects.create(MaNhiepAnhGia=nag, Ngay=ngay, GioBatDau=gio,
                                           GioKetThuc=(gio_bd + timedelta(hours=2)).strftime('%H:%M'),
                                           TrangThai=SL.DANG_GIU)
         # Thông tin mặc định của Booking thử nghiệm (khách, gói, giờ chụp, địa điểm, concept...).
         mac_dinh = dict(MaKhachHang=self.khach, MaNhiepAnhGia=nag, MaGoi=goi, MaLich=lich,
-                        NgayGioChup=timezone.make_aware(timezone.datetime.combine(self.ngay, gio_bd.time())),
+                        NgayGioChup=timezone.make_aware(timezone.datetime.combine(ngay, gio_bd.time())),
                         DiaDiem='Hồ Gươm', SoNguoi=2, Concept='Vintage', YeuCauRieng='Mang phụ kiện',
                         TrangThai=trang_thai)
         # Cho phép từng test ghi đè một vài thông tin (ví dụ đổi trạng thái hoặc giờ chụp).
@@ -166,6 +174,34 @@ class UC43TiepNhan(TiepNhanBase):
         self.assertEqual(list(res.context['page_obj']), [da_chap])
         res = self.client.get(self.url, {'trang_thai': uc.LOC_TAT_CA})
         self.assertCountEqual(list(res.context['page_obj']), [moi, da_chap])
+
+    # Kiểm tra: 11 Booking 'Chờ đặt cọc' (+ 1 'Chờ xác nhận' làm mồi) -> lọc 'Chờ đặt cọc', sắp xếp 'Ngày chụp gần nhất',
+    # sang trang 2 (bằng cách mở ?page=2 VÀ bằng cách bấm đúng đường link phân trang trên trang 1) vẫn giữ bộ lọc + sắp xếp.
+    def test_chuyen_trang_giu_bo_loc_va_sap_xep(self):
+        coc = []
+        for i in range(11):   # mỗi khung giờ dài 2 tiếng, nối tiếp nhau trong ngày: 00:00, 02:00, ... 20:00
+            coc.append(self.tao_booking(gio=f'{i * 2:02d}:00', trang_thai=BK.CHO_DAT_COC,
+                                        HanDatCoc=timezone.now() + timedelta(days=1)))
+        moi = self.tao_booking(gio='09:00', ngay=self.ngay + timedelta(days=1))   # 'Chờ xác nhận' - không được lọt vào kết quả
+        loc = {'trang_thai': BK.CHO_DAT_COC, 'sap_xep': 'chup_gan'}
+
+        # Cách 1: mở thẳng ?page=2 kèm bộ lọc.
+        res = self.client.get(self.url, {**loc, 'page': 2})
+        self.assertEqual(list(res.context['page_obj']), coc[10:])        # còn đúng 1 dòng: Booking chụp xa nhất
+        self.assertNotIn(moi, list(res.context['page_obj']))
+        self.assertEqual(res.context['trang_thai'], BK.CHO_DAT_COC)
+        self.assertEqual(res.context['sap_xep'], 'chup_gan')
+
+        # Cách 2: bấm link 'sang trang 2' do includes/pagination.html sinh ra trên trang 1 -> bộ lọc không được mất.
+        trang1 = self.client.get(self.url, loc)
+        self.assertEqual(list(trang1.context['page_obj']), coc[:10])
+        link = re.search(r'href="([^"]*page=2[^"]*)"', trang1.content.decode())
+        self.assertIsNotNone(link, 'Trang 1 phải có link sang trang 2')
+        trang2 = self.client.get(self.url + unescape(link.group(1)))   # link chỉ có phần '?...', trình duyệt tự ghép vào trang hiện tại
+        self.assertEqual(list(trang2.context['page_obj']), coc[10:])      # nếu link làm rơi bộ lọc, trang 2 sẽ sai
+        self.assertEqual(trang2.context['trang_thai'], BK.CHO_DAT_COC)
+        self.assertEqual(trang2.context['sap_xep'], 'chup_gan')
+
 
     # Kiểm tra: lọc trạng thái khác mà rỗng thì báo 'không khớp bộ lọc', không báo nhầm 'không có yêu cầu mới'.
     def test_loc_ra_rong_khong_hien_cau_yeu_cau_moi(self):
@@ -264,10 +300,25 @@ class UC44ChapNhan(TiepNhanBase):
         self.assertIn('600.000', mail.outbox[0].body)
         self.assertFalse(ThongBao.objects.filter(MaNguoiNhan=self.nag.MaTaiKhoan).exists())
 
+    # Kiểm tra: số tiền cọc trong thông báo web + Email, và trên trang chi tiết, đúng bằng kết quả của tinh_so_tien
+    # (cùng hàm Thanh toán dùng để thu tiền thật) -> không lệch nhau. Dùng giá lẻ 1.234.567 để lộ lỗi làm tròn.
+    def test_so_tien_coc_khop_tinh_so_tien(self):
+        bk = self.tao_booking(TongGiaTri=1234567)
+        bk.refresh_from_db()
+        dung = uc._tien(tinh_so_tien(bk.TongGiaTri, LoaiThanhToan.TIEN_COC))
+        self.assertEqual(dung, '493.827')                                 # 40% của 1.234.567 = 493.826,8 -> làm tròn lên
+        self.assertContains(self.client.get(self.url_chi_tiet(bk)), dung)
+        with self.captureOnCommitCallbacks(execute=True):
+            self.client.post(self.url_chap_nhan(bk))
+        tb = ThongBao.objects.get(MaNguoiNhan=self.khach, MaBooking=bk)
+        self.assertIn(f'{dung} VNĐ', tb.NoiDung)
+        self.assertIn(f'{dung} VNĐ', mail.outbox[0].body)
+
+
     # Kiểm tra: giả vờ gửi mail bị lỗi -> Booking vẫn chấp nhận bình thường, thông báo chỉ bị đánh dấu 'Gửi thất bại'.
     def test_loi_gui_email_khong_lam_hong_viec_chap_nhan(self):
         bk = self.tao_booking()
-        with mock.patch.object(uc, 'send_mail', side_effect=OSError('SMTP down')):
+        with mock.patch.object(services, 'send_mail', side_effect=OSError('SMTP down')):
             with self.captureOnCommitCallbacks(execute=True):
                 self.client.post(self.url_chap_nhan(bk))
         bk.refresh_from_db()

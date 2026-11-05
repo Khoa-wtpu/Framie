@@ -2,10 +2,14 @@
 {# Kế thừa bố cục chung của website, bao gồm phần đầu trang, menu và chân trang. #}
 {% extends "base.html" %}
 {# Nạp các template tag tùy chỉnh của dự án; trang này kế thừa bộ tag dùng chung. #}
-{% load ui %}
+{# static: để nạp bookings.css; ui: các template tag dùng chung của dự án. #}
+{% load static ui %}
 
 {# Đặt tiêu đề trang trên tab trình duyệt, kèm tên nhiếp ảnh gia đang được xem. #}
 {% block title %}Chọn lịch chụp với {{ ten_nag }}{% endblock %}
+
+{# CSS riêng của UC4.1/4.2 nằm trong bookings/static/bookings/css/bookings.css (chỉ dùng token). #}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'bookings/css/bookings.css' %}">{% endblock %}
 
 {# Bắt đầu khối nội dung chính của trang. #}
 {% block content %}
@@ -13,9 +17,9 @@
 <section class="container">
   {# Tiêu đề chính, hiển thị tên nhiếp ảnh gia để khách biết mình đang chọn lịch với ai. #}
   <h1>Chọn lịch chụp với {{ ten_nag }}</h1>
-  {# Thông báo số ngày lịch được hiển thị; nhắc khách rằng sau khi chọn, slot được giữ trong 5 phút. #}
+  {# Thông báo số ngày lịch được hiển thị; nhắc khách rằng sau khi chọn, slot được giữ trong so_phut_giu phút (lấy từ THOI_GIAN_GIU_CHO, không viết cứng). #}
   <p>Các khung giờ còn trống trong {{ so_ngay }} ngày tới. Khi bạn chọn một khung giờ, hệ thống giữ chỗ cho bạn
-     <strong>5 phút</strong> để gửi yêu cầu Booking.</p>
+     <strong>{{ so_phut_giu|floatformat:"-1" }} phút</strong> để gửi yêu cầu Booking.</p>
 
   {# Chỉ hiển thị thông báo này nếu khách hàng hiện đang có một lượt giữ chỗ. #}
   {% if giu_cho_hien_tai %}
@@ -43,8 +47,8 @@
   <div class="panel">
     {# Hiển thị ngày theo định dạng thứ, ngày/tháng/năm. #}
     <h2>{{ ngay|date:"l, d/m/Y" }}</h2>
-    {# Danh sách các slot; CSS bỏ dấu đầu dòng và sắp xếp các slot thành hàng, tự xuống dòng khi thiếu chỗ. #}
-    <ul class="slot-list" style="list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:.75rem">
+    {# Danh sách các slot; .slot-list (bookings.css) bỏ dấu đầu dòng và xếp các slot thành hàng, tự xuống dòng khi thiếu chỗ. #}
+    <ul class="slot-list">
       {# Lặp qua từng khung giờ trống thuộc ngày đang xét. #}
       {% for slot in slots %}
       <li>

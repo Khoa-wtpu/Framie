@@ -1,0 +1,123 @@
+{% extends "base.html" %}{# K7 - UC1.5 Duyệt hồ sơ Nhiếp ảnh gia: danh sách (chỉ Quản trị viên) #}
+{% load static ui %}
+{% block title %}Duyệt hồ sơ Nhiếp ảnh gia{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'profiles/css/duyet_ho_so.css' %}">{% endblock %}
+{% block extra_js %}<script src="{% static 'profiles/js/duyet_ho_so.js' %}" defer></script>{% endblock %}
+{% block content %}
+<div class="container duyet">
+  <h1>Duyệt hồ sơ Nhiếp ảnh gia</h1>
+
+  <nav class="duyet__tabs" aria-label="Lọc theo trạng thái xử lý">
+    <a href="?tab={{ TAB_CHO }}"{% if tab == TAB_CHO %} class="is-active" aria-current="page"{% endif %}>Chờ xử lý ({{ so_cho }})</a>
+    <a href="?tab={{ TAB_DA_XU_LY }}"{% if tab == TAB_DA_XU_LY %} class="is-active" aria-current="page"{% endif %}>Đã xử lý ({{ so_da_xu_ly }})</a>
+  </nav>
+
+  <form class="duyet__form" id="form-duyet" method="get" role="search" aria-label="Tìm kiếm và lọc hồ sơ" novalidate>
+    <input type="hidden" name="tab" value="{{ tab }}">
+    <div class="duyet__tim-kiem">
+      {# Một ô duy nhất: [kính lúp | ô nhập | nút Bộ lọc | nút Tìm kiếm] (cùng kiểu trang Tìm kiếm Nhiếp ảnh gia) #}
+      <div class="duyet__pill">
+        <svg class="duyet__bieu-tuong" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <label class="duyet__o-tim">
+          <span class="sr-only">{{ bo_loc.q.label }}</span>
+          {{ bo_loc.q|add_class:"duyet__input" }}
+        </label>
+        <button class="duyet__nut-loc" id="nut-bo-loc" type="button" aria-expanded="false" aria-controls="bang-bo-loc">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+          <span class="duyet__nhan">Bộ lọc</span>{% if so_bo_loc %}<span class="duyet__so-loc">{{ so_bo_loc }}</span>{% endif %}
+        </button>
+        <button class="duyet__gui" type="submit">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <span class="duyet__nhan">Tìm kiếm</span>
+        </button>
+      </div>
+
+      <div class="duyet__bang" id="bang-bo-loc" role="group" aria-label="Bộ lọc hồ sơ"{% if bo_loc.tu_ngay.errors or bo_loc.den_ngay.errors %} data-mo="1"{% endif %}>
+        <fieldset class="duyet__nhom">
+          <legend>Thời điểm nộp</legend>
+          <div class="duyet__ngay">
+            <label class="sr-only" for="{{ bo_loc.tu_ngay.id_for_label }}">{{ bo_loc.tu_ngay.label }}</label>{{ bo_loc.tu_ngay|add_class:"input" }}
+            <span aria-hidden="true">–</span>
+            <label class="sr-only" for="{{ bo_loc.den_ngay.id_for_label }}">{{ bo_loc.den_ngay.label }}</label>{{ bo_loc.den_ngay|add_class:"input" }}
+          </div>
+          {% for loi in bo_loc.tu_ngay.errors %}<p class="duyet__loi" role="alert">{{ loi }}</p>{% endfor %}
+          {% for loi in bo_loc.den_ngay.errors %}<p class="duyet__loi" role="alert">{{ loi }}</p>{% endfor %}
+        </fieldset>
+        <fieldset class="duyet__nhom">
+          <legend>{{ bo_loc.trang_thai.label }}</legend>
+          <div class="duyet__vien-ds">{% for c in bo_loc.trang_thai %}<label class="duyet__vien">{{ c.tag }}<span>{{ c.choice_label }}</span></label>{% endfor %}</div>
+        </fieldset>
+        <fieldset class="duyet__nhom">
+          <legend>{{ bo_loc.lan_nop.label }}</legend>
+          <div class="duyet__vien-ds">{% for c in bo_loc.lan_nop %}<label class="duyet__vien">{{ c.tag }}<span>{{ c.choice_label }}</span></label>{% endfor %}</div>
+        </fieldset>
+        {% if tab == TAB_DA_XU_LY %}
+        <fieldset class="duyet__nhom">
+          <legend>{{ bo_loc.ket_qua.label }}</legend>
+          <div class="duyet__vien-ds">{% for c in bo_loc.ket_qua %}<label class="duyet__vien">{{ c.tag }}<span>{{ c.choice_label }}</span></label>{% endfor %}</div>
+        </fieldset>
+        {% endif %}
+        <div class="duyet__nut">
+          <a class="btn btn--ghost" href="?tab={{ tab }}{% if bo_loc.q.value %}&amp;q={{ bo_loc.q.value|urlencode }}{% endif %}">Xóa bộ lọc</a>
+          <button class="btn btn--primary" type="submit">Áp dụng</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="duyet__ket-qua-dau">
+      <p class="duyet__dem" role="status">{% if dang_loc %}Tìm thấy {{ so_ket_qua }} hồ sơ.{% else %}{{ so_ket_qua }} hồ sơ{% endif %}</p>
+      <label class="duyet__sap-xep">
+        <span>Sắp xếp</span>
+        <select name="sap_xep" class="input" data-tu-gui>
+          {% for gia_tri, nhan in bo_loc.sap_xep.field.choices %}<option value="{{ gia_tri }}"{% if gia_tri == sap_xep_chon %} selected{% endif %}>{{ nhan }}</option>{% endfor %}
+        </select>
+      </label>
+      <noscript><button class="btn btn--secondary btn--sm" type="submit">Sắp xếp</button></noscript>
+    </div>
+  </form>
+
+  {% if cac_luot %}
+  <div class="duyet__cuon">
+    <table class="duyet__bang-luot">
+      <thead>
+        <tr>
+          <th scope="col">Nhiếp ảnh gia</th>
+          <th scope="col">Lần nộp</th>
+          <th scope="col">Thời điểm nộp</th>
+          {% if tab == TAB_DA_XU_LY %}
+          <th scope="col">Kết quả</th>
+          <th scope="col">Người duyệt</th>
+          <th scope="col">Thời điểm duyệt</th>
+          {% else %}
+          <th scope="col">Trạng thái hồ sơ</th>
+          {% endif %}
+          <th scope="col"><span class="sr-only">Thao tác</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for luot in cac_luot %}
+        {% with user=luot.MaNhiepAnhGia.MaTaiKhoan %}
+        <tr>
+          <th scope="row" class="duyet__cot-nag">{{ user.get_full_name|default:user.email }}<br><span class="muted">{{ user.email }}</span></th>
+          <td>{{ luot.LanNop }}</td>
+          <td>{{ luot.ThoiDiemNop|date:"d/m/Y H:i" }}</td>
+          {% if tab == TAB_DA_XU_LY %}
+          <td>{% status_badge luot.KetQua %}</td>
+          <td>{{ luot.MaQuanTriVien.get_full_name|default:luot.MaQuanTriVien.email }}</td>
+          <td>{{ luot.ThoiDiemDuyet|date:"d/m/Y H:i" }}</td>
+          {% else %}
+          <td>{% status_badge trang_thai_cho %}</td>
+          {% endif %}
+          <td><a class="btn btn--soft btn--sm" href="{% url 'duyet_ho_so_chi_tiet' luot.pk %}">{% if tab == TAB_CHO %}Xem và duyệt{% else %}Xem{% endif %}</a></td>
+        </tr>
+        {% endwith %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "includes/pagination.html" with page_obj=page_obj %}
+  {% else %}
+  <p class="duyet__trong">{% if dang_loc %}Không có hồ sơ nào khớp tìm kiếm và bộ lọc. <a href="?tab={{ tab }}">Xóa tìm kiếm và bộ lọc</a>{% elif tab == TAB_CHO %}Không có hồ sơ nào đang chờ xử lý.{% else %}Chưa có hồ sơ nào được xử lý.{% endif %}</p>
+  {% endif %}
+</div>
+{% endblock %}

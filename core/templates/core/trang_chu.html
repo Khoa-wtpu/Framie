@@ -36,14 +36,35 @@
     {# ▸ Form tìm kiếm nhanh. method="get": từ khóa được gắn lên địa chỉ trang (vd /search/?q=...). #}
     {# ▸ action = gửi sang trang tìm kiếm ({% url 'search' %} tự đổi tên trang "search" thành địa chỉ thật). role="search" báo cho phần mềm đọc màn hình đây là ô tìm kiếm. #}
     <form class="tc-tim" method="get" action="{% url 'search' %}" role="search">
-      {# ▸ Nhãn của ô nhập. Lớp "sr-only" = ẩn trên màn hình nhưng người dùng đọc màn hình vẫn nghe được. for="tc-tu-khoa" gắn nhãn với ô nhập bên dưới. #}
+      {# ▸ Hàng 1: ô từ khóa + nút Tìm kiếm. Hàng 2: bộ lọc Loại hình / Khu vực (feedback: thêm filter vào hộp tìm kiếm). #}
+    {# ▸ Tên tham số (q, loai_hinh, khu_vuc) phải khớp với trang Tìm kiếm; trường để trống thì trang tìm kiếm bỏ qua. #}
+    <div class="tc-tim__hang">
       <label class="sr-only" for="tc-tu-khoa">Từ khóa hoặc ID Nhiếp ảnh gia</label>
-      {# ▸ Ô nhập từ khóa: type="search" (ô tìm kiếm), name="q" (tên tham số gửi đi), maxlength="100" (tối đa 100 ký tự), #}
-      {# ▸ autocomplete="off" (không gợi ý lại từ cũ của trình duyệt), placeholder = chữ mờ hướng dẫn trong ô trống. (Thẻ này viết trên 2 dòng.) #}
       <input class="input tc-tim__o" id="tc-tu-khoa" type="search" name="q" maxlength="100" autocomplete="off"
              placeholder="Tìm theo tên, phong cách, khu vực hoặc ID Nhiếp ảnh gia">
-      {# ▸ Nút "Tìm kiếm": type="submit" = bấm vào thì gửi form đi. "btn--soft btn--lg" = kiểu nút sáng, cỡ lớn. #}
       <button class="btn btn--soft btn--lg" type="submit">Tìm kiếm</button>
+    </div>
+    <div class="tc-tim__loc">
+      {% if loai_hinh_ds %}
+      <label class="sr-only" for="tc-loc-loai-hinh">Loại hình chụp</label>
+      <select class="input tc-tim__chon" id="tc-loc-loai-hinh" name="loai_hinh">
+        <option value="">Loại hình</option>
+        {% for lh in loai_hinh_ds %}<option value="{{ lh.ma }}">{{ lh.ten }}</option>{% endfor %}
+      </select>
+      {% endif %}
+      {% if khu_vuc_ds %}
+      <label class="sr-only" for="tc-loc-khu-vuc">Khu vực</label>
+      <select class="input tc-tim__chon" id="tc-loc-khu-vuc" name="khu_vuc">
+        <option value="">Khu vực</option>
+        {% for kv in khu_vuc_ds %}<option value="{{ kv.ma }}">{{ kv.ten }}</option>{% endfor %}
+      </select>
+      {% endif %}
+      {# ▸ Khoảng giá (đồng): trang Tìm kiếm đọc gia_tu / gia_den. #}
+      <label class="sr-only" for="tc-gia-tu">Giá từ (đồng)</label>
+      <input class="input tc-tim__chon" id="tc-gia-tu" type="number" name="gia_tu" min="0" step="100000" inputmode="numeric" placeholder="Giá từ (đồng)">
+      <label class="sr-only" for="tc-gia-den">Giá đến (đồng)</label>
+      <input class="input tc-tim__chon" id="tc-gia-den" type="number" name="gia_den" min="0" step="100000" inputmode="numeric" placeholder="Giá đến (đồng)">
+    </div>
     {# ▸ Đóng form. #}
     </form>
 
@@ -116,11 +137,13 @@
             </div>
             {# ▸ Dòng điểm đánh giá. #}
             <p class="tc-nag__diem">
-              {# ▸ Ngôi sao ★ (trang trí), điểm trung bình in đậm (vd 4.8), kế bên là số lượt đánh giá trong ngoặc, chữ mờ. #}
+              {# ▸ Có điểm: hiện ★ + điểm + số lượt đánh giá. Chưa có đánh giá: hiện "Chưa có đánh giá" (giống trang tìm kiếm). #}
+            {% if nag.diem %}
               <span aria-hidden="true">★</span> <strong>{{ nag.diem }}</strong>
-              {# ▸ Số lượt đánh giá, ví dụ "(23 đánh giá)". #}
               <span class="muted">({{ nag.so_danh_gia }} đánh giá)</span>
-            {# ▸ Đóng dòng điểm. #}
+            {% else %}
+              <span class="muted">Chưa có đánh giá</span>
+            {% endif %}
             </p>
             {# ▸ Hiện loại hình chụp (vd "Cưới, Chân dung") chỉ khi có dữ liệu. #}
             {% if nag.loai_hinh %}<p class="card__meta">{{ nag.loai_hinh }}</p>{% endif %}
@@ -266,10 +289,10 @@
       <p>Đăng ký tài khoản Khách hàng để giữ chỗ khung giờ và gửi yêu cầu Booking cho nhiếp ảnh gia bạn chọn.</p>
       {# ▸ Hàng chứa 2 nút. #}
       <div class="row tc-moi__nut">
-        {# ▸ Nút chính "Đăng ký ngay": {{ urls.register }} là địa chỉ trang đăng ký do hệ thống cung cấp sẵn. #}
-        <a class="btn btn--soft btn--lg" href="{{ urls.register }}">Đăng ký ngay</a>
+        {# ▸ Nút chính "Đăng ký ngay": {% url 'register' %} là địa chỉ trang đăng ký do hệ thống cung cấp sẵn. #}
+        <a class="btn btn--soft btn--lg" href="{% url 'register' %}">Đăng ký ngay</a>
         {# ▸ Nút phụ cho người đã có tài khoản, dẫn tới trang đăng nhập. #}
-        <a class="btn btn--secondary btn--lg" href="{{ urls.login }}">Tôi đã có tài khoản</a>
+        <a class="btn btn--secondary btn--lg" href="{% url 'login' %}">Tôi đã có tài khoản</a>
       {# ▸ Đóng hàng nút. #}
       </div>
     {# ▸ Kết thúc điều kiện đăng nhập / chưa đăng nhập. #}

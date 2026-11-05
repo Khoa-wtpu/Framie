@@ -1,0 +1,55 @@
+{% extends "base.html" %}{# K9 - UC2.3: chi tiết project trong Portfolio (wireframe SC2.4) #}
+{% load static %}
+{% block title %}{{ project.TenProject }} - {{ ten }}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'profiles/css/ho_so_cong_khai.css' %}">{% endblock %}
+{% block extra_js %}<script src="{% static 'profiles/js/ho_so_cong_khai.js' %}" defer></script>{% endblock %}
+{% block content %}
+<article class="hscc-da">
+  <header class="hscc-da__bia">
+    <img src="{{ project.AnhBia.url }}" alt="Ảnh bìa project {{ project.TenProject }}">
+    <div class="container hscc-da__bia-chu">
+      <a class="hscc-da__quay-lai" href="{{ url_ho_so }}">◂ Quay lại hồ sơ Nhiếp ảnh gia</a>
+      <p class="hscc-da__meta">{{ project.MaLoaiHinh.TenLoaiHinh }}{% if project.NgayChup %} · Ngày chụp: {{ project.NgayChup|date:"d/m/Y" }}{% endif %} · Nhiếp ảnh gia: {{ ten }}</p>
+      <h1 class="hscc-da__ten">{{ project.TenProject }}</h1>
+    </div>
+  </header>
+
+  <div class="container">
+    {% if project.Concept %}
+    <blockquote class="hscc-da__concept"><span class="hscc-da__concept-nhan">Concept</span>{{ project.Concept|linebreaksbr }}</blockquote>
+    {% endif %}
+
+    <h2 class="hscc-da__tieu-de">Hình ảnh <span class="hscc__ghi">({{ so_anh }})</span></h2>
+    {% if cac_anh %}
+    <ul class="hscc-da__anh-ds" data-thu-vien>
+      {% for a in cac_anh %}
+      <li>
+        <a class="hscc-da__anh" href="{{ a.DuongDanHinhAnh.url }}" data-lightbox data-stt="{{ forloop.counter }}" target="_blank" rel="noopener" aria-label="Xem phóng to ảnh {{ forloop.counter }} trên {{ so_anh }}">
+          <img src="{{ a.DuongDanHinhAnh.url }}" alt="Ảnh {{ a.ThuTu }} của project {{ project.TenProject }}" loading="lazy">
+          <span class="hscc-da__so" aria-hidden="true">{{ forloop.counter|stringformat:"02d" }}</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="hscc__trong">Project này chưa có ảnh.</p>{% endif %}
+
+    {% if truoc or sau %}
+    <nav class="hscc-da__dieu-huong" aria-label="Project khác của {{ ten }}">
+      {% if truoc %}<a class="hscc-da__ke" href="{% url 'photographer_project' nag.pk truoc.pk %}"><span class="hscc__ghi">◂ Project trước</span><strong>{{ truoc.TenProject }}</strong></a>{% else %}<span></span>{% endif %}
+      {% if sau %}<a class="hscc-da__ke hscc-da__ke--sau" href="{% url 'photographer_project' nag.pk sau.pk %}"><span class="hscc__ghi">Project sau ▸</span><strong>{{ sau.TenProject }}</strong></a>{% endif %}
+    </nav>
+    {% endif %}
+  </div>
+</article>
+
+{# Khung xem phóng to: JS điền ảnh. Không có JS hoặc <dialog> thì bấm ảnh sẽ mở bản gốc ở tab mới. #}
+<dialog class="hscc-lightbox" id="hscc-lightbox" aria-label="Xem ảnh phóng to">
+  <button class="hscc-lightbox__dong" type="button" data-lb-dong aria-label="Đóng">✕</button>
+  <button class="hscc-lightbox__chuyen hscc-lightbox__chuyen--truoc" type="button" data-lb-truoc aria-label="Ảnh trước">‹</button>
+  <figure class="hscc-lightbox__khung">
+    <img id="hscc-lightbox-anh" alt="">
+    <figcaption id="hscc-lightbox-so" class="hscc-lightbox__so"></figcaption>
+  </figure>
+  <button class="hscc-lightbox__chuyen hscc-lightbox__chuyen--sau" type="button" data-lb-sau aria-label="Ảnh sau">›</button>
+</dialog>
+{% endblock %}

@@ -1,8 +1,9 @@
 # =====================================================================
 # bookings/gui_booking.py  -  UC4.2 Gửi yêu cầu Booking (Tuyền)
 #
-# Yêu cầu: Khách hàng (đã giữ slot ở UC4.1) điền gói dịch vụ (chỉ gói "Đang áp dụng"), loại hình,
-# ngày giờ nằm trong khung giờ đã giữ, địa điểm, số người, concept, yêu cầu riêng.
+# Yêu cầu: Khách hàng (đã giữ slot ở UC4.1) điền gói dịch vụ (chỉ gói "Đang áp dụng", nhóm theo loại hình của gói),
+# ngày giờ chụp nằm trong khung giờ đã giữ và gói phải vừa khung giờ đó (giờ chụp + thời lượng gói <= giờ kết thúc slot),
+# địa điểm, số người, concept, yêu cầu riêng. Không có ô "Loại hình" riêng: loại hình là của gói (BOOKING không có cột này).
 #   - Quá 5 phút        -> "Slot đã hết thời gian giữ chỗ, vui lòng chọn lại" (kết thúc UC, làm lại UC4.1).
 #   - Thông tin hợp lệ  -> tạo Booking "Chờ xác nhận", TongGiaTri = giá gói,
 #                          lượt giữ chỗ -> "Đã hoàn tất Booking", thông báo cho Nhiếp ảnh gia (web + Email)
@@ -28,11 +29,12 @@
 # ---------------------------------------------------------------------
 import logging
 from datetime import datetime
+from itertools import groupby
 
 from django import forms
+from django.forms.models import ModelChoiceIterator
 from django.contrib import messages
 from django.core.exceptions import ValidationError
-from django.core.mail import send_mail
 from django.db import DatabaseError, IntegrityError, transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import NoReverseMatch, path, reverse
@@ -40,6 +42,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from bookings.giu_cho import (   # dùng lại phần của UC4.1 để hai UC nhất quán
+    goi_chon_san_hop_le,         # kiểm tra mã gói chọn sẵn (?goi=) đúng là gói Đang áp dụng của Nhiếp ảnh gia
     TB_HET_HAN,                  # câu báo hết hạn của UC4.1 (hàm hoan_tat_giu_cho ném ra), UC4.2 đổi sang câu riêng bên dưới
     TB_LOI_HE_THONG,
     GiuChoLoi,
@@ -48,24 +51,28 @@ from bookings.giu_cho import (   # dùng lại phần của UC4.1 để hai UC n
     khach_hang_required,
     so_giay_con_lai,
 )
+from bookings.services import gui_email_sau_commit   # gửi Email sau commit + ghi TrangThaiGuiEmail (dùng chung)
 from bookings.models import (
     THOI_GIAN_GIU_CHO,
     TRANG_THAI_HET_HIEU_LUC,
     Booking,
     GiuCho,
     LichSuTrangThaiBooking,
+    dinh_dang_thoi_luong,        # 180 -> '3 giờ'
+    gio_chup_muon_nhat,
+    kiem_tra_goi_vua_slot,       # quy tắc "gói phải vừa khung giờ", dùng chung với Booking.clean()
+    so_phut_slot,
 )
 from core.constants import (
     BenThucHien,
+    LoaiHauKy,
     TrangThaiBooking,
     TrangThaiGiuCho,
     TrangThaiGoi,
-    TrangThaiGuiEmail,
     TrangThaiSlot,
 )
-from notifications.models import ThongBao
 from notifications.services import gui_thong_bao
-from profiles.models import GoiDichVu, LoaiHinhChup
+from profiles.models import GoiDichVu
 from schedule.models import LichKhaDung
 
 logger = logging.getLogger(__name__)
@@ -103,35 +110,91 @@ class GuiBookingLoi(Exception):
 # ---------------------------------------------------------------------
 # PHẦN 2: FORM NHẬP THÔNG TIN BUỔI CHỤP
 # ---------------------------------------------------------------------
+def _tien(so):
+    return f'{int(so):,}'.replace(',', '.')
+
+
+def _hau_ky_hien_thi(goi):
+    """'Hậu kỳ toàn bộ ảnh' hoặc 'Hậu kỳ giới hạn 50 ảnh' (chữ gốc của LoaiHauKy.GIOI_HAN không nhắc tới số ảnh)."""
+    if goi.LoaiHauKy == LoaiHauKy.GIOI_HAN and goi.SoAnhHauKyToiDa:
+        return f'Hậu kỳ giới hạn {goi.SoAnhHauKyToiDa} ảnh'
+    return goi.LoaiHauKy
+
+
+def _ly_do_khoa(goi, lich):
+    """'cần 3 giờ, khung giờ bạn giữ chỉ 2 giờ' nếu gói dài hơn CẢ khung giờ đang giữ (không chọn được); không thì ''."""
+    if lich is None or goi.ThoiLuongChup <= so_phut_slot(lich):
+        return ''
+    return (f'cần {dinh_dang_thoi_luong(goi.ThoiLuongChup)}, '
+            f'khung giờ bạn giữ chỉ {dinh_dang_thoi_luong(so_phut_slot(lich))}')
+
+
+class GoiTheoLoaiHinhIterator(ModelChoiceIterator):
+    """Xếp các gói thành từng nhóm (<optgroup>) theo loại hình. Queryset phải đã sắp theo tên loại hình."""
+
+    def __iter__(self):
+        if self.field.empty_label is not None:
+            yield ('', self.field.empty_label)
+        for _ma_loai_hinh, ds in groupby(self.queryset, key=lambda g: g.MaLoaiHinh_id):
+            ds = list(ds)
+            yield (ds[0].MaLoaiHinh.TenLoaiHinh, [self.choice(goi) for goi in ds])
+
+
 class GoiSelect(forms.Select):
-    """Ô chọn gói: mỗi <option> kèm data-loai-hinh để JS lọc gói theo loại hình đã chọn."""
+    """Ô chọn gói: mỗi <option> kèm data-* để gui_booking.js hiện khung chi tiết và khóa gói quá dài.
+    data-khoa chỉ có khi gói dài hơn khung giờ đang giữ (giá trị là lý do); phía server cũng gắn disabled
+    để không có JS vẫn không chọn nhầm được. self.lich do GoiChoiceField.dat_slot() gán."""
+    lich = None
 
     def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
         option = super().create_option(name, value, label, selected, index, subindex=subindex, attrs=attrs)
         goi = getattr(value, 'instance', None)          # value là ModelChoiceIteratorValue, .instance = gói
         if goi is not None:
-            option['attrs']['data-loai-hinh'] = goi.MaLoaiHinh_id
+            option['attrs'].update({
+                'data-ten': goi.TenGoi,
+                'data-loai-hinh': goi.MaLoaiHinh.TenLoaiHinh,
+                'data-gia': _tien(goi.Gia),
+                'data-thoi-luong': dinh_dang_thoi_luong(goi.ThoiLuongChup),
+                'data-hau-ky': _hau_ky_hien_thi(goi),
+                'data-mo-ta': goi.MoTa or '',
+            })
+            ly_do = _ly_do_khoa(goi, self.lich)
+            if ly_do:
+                option['attrs']['data-khoa'] = ly_do
+                option['attrs']['disabled'] = True
+            elif self.lich is not None:                 # gói vừa slot: cho biết giờ bắt đầu muộn nhất
+                option['attrs']['data-gio-muon-nhat'] = f'{timezone.localtime(gio_chup_muon_nhat(self.lich, goi)):%H:%M}'
         return option
 
 
 class GoiChoiceField(forms.ModelChoiceField):
+    iterator = GoiTheoLoaiHinhIterator   # nhóm theo loại hình
+    lich = None
+
+    def dat_slot(self, lich):
+        """Cho field và widget biết slot đang giữ để đánh dấu khóa các gói quá dài."""
+        self.lich = lich
+        self.widget.lich = lich
+
     def label_from_instance(self, goi):
-        gia = f'{int(goi.Gia):,}'.replace(',', '.')
-        return f'{goi.TenGoi} - {gia} VNĐ'
+        """Tên - Giá - Thời lượng - Hậu kỳ; gói bị khóa thêm 🔒 và lý do."""
+        nhan = (f'{goi.TenGoi} - {_tien(goi.Gia)} VNĐ - {dinh_dang_thoi_luong(goi.ThoiLuongChup)} '
+                f'- {_hau_ky_hien_thi(goi)}')
+        ly_do = _ly_do_khoa(goi, self.lich)
+        return f'🔒 {nhan} — {ly_do}' if ly_do else nhan
 
 
 class GuiBookingForm(forms.Form):
     """Bước 2 + 4: Khách nhập thông tin buổi chụp; form kiểm tra đầy đủ và hợp lệ.
-    Tạo form: GuiBookingForm(du_lieu, lich=slot_dang_giu)."""
+    Tạo form: GuiBookingForm(du_lieu, lich=slot_dang_giu). Không có ô "Loại hình": loại hình là của gói."""
 
     DINH_DANG_NGAY_GIO = ['%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M', '%d/%m/%Y %H:%M']
 
-    loai_hinh = forms.ModelChoiceField(
-        queryset=LoaiHinhChup.objects.none(), label='Loại hình chụp', empty_label='-- Chọn loại hình --',
-        error_messages={'required': 'Vui lòng chọn loại hình chụp.'})
     goi = GoiChoiceField(
         queryset=GoiDichVu.objects.none(), label='Gói dịch vụ', empty_label='-- Chọn gói dịch vụ --',
-        widget=GoiSelect, error_messages={'required': 'Vui lòng chọn gói dịch vụ.'})
+        widget=GoiSelect, error_messages={'required': 'Vui lòng chọn gói dịch vụ.'},
+        help_text='Chỉ hiện các gói Nhiếp ảnh gia đang áp dụng, nhóm theo loại hình chụp. '
+                  'Gói có 🔒 dài hơn khung giờ bạn đang giữ nên không chọn được.')
     ngay_gio_chup = forms.DateTimeField(
         label='Ngày giờ chụp', input_formats=DINH_DANG_NGAY_GIO,
         widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
@@ -139,8 +202,9 @@ class GuiBookingForm(forms.Form):
                         'invalid': 'Ngày giờ chụp không hợp lệ.'})
     dia_diem = forms.CharField(
         max_length=255, label='Địa điểm', error_messages={'required': 'Vui lòng nhập địa điểm chụp.'})
+    # BOOKING bắt buộc SoNguoi >= 1 (ck_booking_songuoi) nên không để trống được: mặc định 1.
     so_nguoi = forms.IntegerField(
-        min_value=1, label='Số người',
+        min_value=1, initial=1, label='Số người xuất hiện trong ảnh', help_text='Chụp sản phẩm: để 1.',
         error_messages={'required': 'Vui lòng nhập số người.', 'invalid': 'Số người phải là số nguyên.',
                         'min_value': 'Số người phải từ 1 trở lên.'})
     concept = forms.CharField(
@@ -152,14 +216,12 @@ class GuiBookingForm(forms.Form):
     def __init__(self, *args, lich, **kwargs):
         super().__init__(*args, **kwargs)
         self.lich = lich
-        # Chỉ gói "Đang áp dụng" của đúng Nhiếp ảnh gia sở hữu slot (BR của UC1.4).
-        ds_goi = (GoiDichVu.objects
-                  .filter(MaNhiepAnhGia_id=lich.MaNhiepAnhGia_id, TrangThai=TrangThaiGoi.DANG_AP_DUNG)
-                  .select_related('MaLoaiHinh').order_by('MaLoaiHinh__TenLoaiHinh', 'Gia'))
-        self.fields['goi'].queryset = ds_goi
-        self.fields['loai_hinh'].queryset = (LoaiHinhChup.objects
-                                             .filter(pk__in=ds_goi.values('MaLoaiHinh'))
-                                             .order_by('TenLoaiHinh'))
+        # Chỉ gói "Đang áp dụng" của đúng Nhiếp ảnh gia sở hữu slot (BR của UC1.4). Sắp theo tên loại hình để nhóm optgroup.
+        self.fields['goi'].queryset = (GoiDichVu.objects
+                                       .filter(MaNhiepAnhGia_id=lich.MaNhiepAnhGia_id, TrangThai=TrangThaiGoi.DANG_AP_DUNG)
+                                       .select_related('MaLoaiHinh')
+                                       .order_by('MaLoaiHinh__TenLoaiHinh', 'Gia', 'MaGoi'))
+        self.fields['goi'].dat_slot(lich)
         # Gợi ý cho trình duyệt: chỉ cho chọn giờ trong khung giờ của slot; mặc định là giờ bắt đầu slot.
         dang_html = '%Y-%m-%dT%H:%M'
         bat_dau = timezone.make_aware(datetime.combine(lich.Ngay, lich.GioBatDau))
@@ -168,7 +230,8 @@ class GuiBookingForm(forms.Form):
         self.fields['ngay_gio_chup'].widget.attrs.update(
             {'min': bat_dau.strftime(dang_html), 'max': ket_thuc.strftime(dang_html)})
         self.fields['ngay_gio_chup'].help_text = (
-            f'Chọn trong khung giờ đã giữ: {lich.Ngay:%d/%m/%Y} {lich.GioBatDau:%H:%M}–{lich.GioKetThuc:%H:%M}.')
+            f'Chọn trong khung giờ đã giữ: {lich.Ngay:%d/%m/%Y} {lich.GioBatDau:%H:%M}–{lich.GioKetThuc:%H:%M}. '
+            f'Buổi chụp (theo thời lượng gói) phải kết thúc trước giờ kết thúc khung giờ này.')
 
     def clean_ngay_gio_chup(self):
         gia_tri = self.cleaned_data['ngay_gio_chup']
@@ -185,10 +248,14 @@ class GuiBookingForm(forms.Form):
 
     def clean(self):
         du_lieu = super().clean()
-        loai_hinh, goi = du_lieu.get('loai_hinh'), du_lieu.get('goi')
-        # "loại hình" không có cột riêng trong BOOKING: nó là loại hình của gói, nên phải khớp với gói đã chọn.
-        if loai_hinh and goi and goi.MaLoaiHinh_id != loai_hinh.pk:
-            self.add_error('goi', 'Gói dịch vụ không thuộc loại hình chụp đã chọn.')
+        goi, gio_chup = du_lieu.get('goi'), du_lieu.get('ngay_gio_chup')
+        if goi:
+            # Quy tắc: giờ chụp + thời lượng gói <= giờ kết thúc slot. Gói dài hơn cả khung giờ -> lỗi ở ô 'goi';
+            # gói vừa khung giờ nhưng bắt đầu muộn quá -> lỗi ở ô 'ngay_gio_chup' (nói rõ giờ muộn nhất).
+            # gio_chup là None khi ô giờ đã lỗi: lúc đó chỉ so gói với khung giờ, không báo thêm lỗi giờ muộn.
+            loi = kiem_tra_goi_vua_slot(self.lich, goi, gio_chup)
+            if loi:
+                self.add_error(TEN_FIELD_FORM[loi[0]], loi[1])
         return du_lieu
 
 
@@ -206,28 +273,6 @@ def _gom_loi(loi_validation):
     return {'__all__': ' '.join(loi_validation.messages)}
 
 
-def _tien(so):
-    return f'{int(so):,}'.replace(',', '.')
-
-
-def _gui_email_nhiep_anh_gia(thong_bao, nguoi_nhan, tieu_de, noi_dung):
-    """Bước 7: tự động gửi Email cho Nhiếp ảnh gia. Chạy SAU KHI Booking đã lưu xong (transaction.on_commit);
-    lỗi gửi mail chỉ được ghi log + đánh dấu 'Gửi thất bại', không làm hỏng Booking đã tạo."""
-    try:
-        if not nguoi_nhan.email:
-            raise ValueError('Nhiếp ảnh gia chưa có email')
-        send_mail(tieu_de, noi_dung, None, [nguoi_nhan.email], fail_silently=False)   # None = DEFAULT_FROM_EMAIL
-        ket_qua = TrangThaiGuiEmail.THANH_CONG
-    except Exception:  # noqa: BLE001  # SMTP/DNS/... lỗi gì cũng không được làm sập request
-        logger.exception('gui_yeu_cau_booking: gửi email thất bại (%s)', tieu_de)
-        ket_qua = TrangThaiGuiEmail.THAT_BAI
-    if thong_bao is not None:   # ghi kết quả gửi email vào thông báo web tương ứng
-        try:
-            ThongBao.objects.filter(pk=thong_bao.pk).update(TrangThaiGuiEmail=ket_qua)
-        except DatabaseError:
-            logger.exception('gui_yeu_cau_booking: không ghi được TrangThaiGuiEmail')
-
-
 def _gui_thong_bao_booking_moi(booking, lich, goi, khach_hang):
     """Bước 6-7 + hậu điều kiện: thông báo web cho Nhiếp ảnh gia, Email cho Nhiếp ảnh gia,
     thông báo web xác nhận đã gửi cho Khách hàng. gui_thong_bao (của Phanh) tự nuốt lỗi nên không phá Booking."""
@@ -240,7 +285,7 @@ def _gui_thong_bao_booking_moi(booking, lich, goi, khach_hang):
     noi_dung_nag = (f'{_ten_hien_thi(khach_hang)} vừa gửi yêu cầu Booking #{booking.pk}: {chi_tiet}. '
                     f'Vui lòng xem và xác nhận yêu cầu.')
     tb_nag = gui_thong_bao(nag_user, tieu_de_nag, noi_dung_nag, booking=booking)             # bước 6 (web)
-    transaction.on_commit(lambda: _gui_email_nhiep_anh_gia(tb_nag, nag_user, tieu_de_nag, noi_dung_nag))   # bước 7 (Email)
+    gui_email_sau_commit(tb_nag, nag_user, tieu_de_nag, noi_dung_nag)                       # bước 7 (Email, gửi sau commit)
 
     gui_thong_bao(khach_hang, TB_DA_GUI,                                                      # hậu điều kiện: báo Khách hàng
                   f'Yêu cầu Booking #{booking.pk} với {_ten_hien_thi(nag_user)} ({chi_tiet}) đã được gửi. '
@@ -281,7 +326,9 @@ def _tao_booking(khach_hang, giu_cho, ma_goi, ngay_gio_chup, dia_diem, so_nguoi,
     )
     try:
         # clean() của Booking kiểm tra: khách thuộc nhóm Khách hàng, gói/slot thuộc đúng Nhiếp ảnh gia,
-        # gói "Đang áp dụng", giờ chụp nằm trong slot (đúng ghi chú trong bookings/models.py: phải gọi full_clean()).
+        # gói "Đang áp dụng", giờ chụp nằm trong slot, VÀ gói vừa khung giờ (giờ chụp + thời lượng gói <= giờ kết thúc slot)
+        # (đúng ghi chú trong bookings/models.py: phải gọi full_clean()). Gói đã được đọc lại + khóa ở trên nên nếu Nhiếp ảnh gia
+        # vừa đổi thời lượng gói sau khi khách mở form, quy tắc vẫn chạy trên thời lượng MỚI NHẤT và lỗi về đúng ô nhập.
         booking.full_clean()
     except ValidationError as loi:
         loi_truong = _gom_loi(loi)
@@ -380,6 +427,20 @@ def _dua_loi_vao_form(form, loi):
         form.add_error(None, loi.thong_bao)
 
 
+def _initial_goi_chon_san(request, nag, lich):
+    """Gói chọn sẵn từ ?goi=<mã> (khách bấm 'Chọn gói' ở hồ sơ Nhiếp ảnh gia). Trả về initial cho form ({} nếu không có).
+    Chỉ nhận gói 'Đang áp dụng' của đúng Nhiếp ảnh gia; gói dài hơn khung giờ đang giữ thì KHÔNG chọn sẵn (ô đó bị khóa)
+    và báo cho khách biết lý do để họ chọn gói khác hoặc đổi khung giờ."""
+    goi = goi_chon_san_hop_le(nag.pk, request.GET.get('goi'))
+    if goi is None:
+        return {}
+    ly_do = _ly_do_khoa(goi, lich)
+    if ly_do:
+        messages.warning(request, f'Gói "{goi.TenGoi}" {ly_do}. Vui lòng chọn gói khác hoặc chọn lại khung giờ.')
+        return {}
+    return {'goi': goi.pk}
+
+
 @khach_hang_required
 @require_http_methods(['GET', 'POST'])
 def gui_booking(request, ma_giu_cho):
@@ -417,12 +478,13 @@ def gui_booking(request, ma_giu_cho):
                 messages.success(request, TB_DA_GUI)          # bước 8
                 return _trang_sau_khi_gui(booking, giu_cho)
     else:
-        form = GuiBookingForm(lich=lich)
+        form = GuiBookingForm(lich=lich, initial=_initial_goi_chon_san(request, nag, lich))
 
     return render(request, 'bookings/gui_booking.html', {
         'form': form,
         'giu_cho': giu_cho,
         'lich': lich,
+        'thoi_luong_slot': dinh_dang_thoi_luong(so_phut_slot(lich)),     # ví dụ '2 giờ', hiện ở đầu form
         'ten_nag': _ten_hien_thi(nag.MaTaiKhoan),
         'con_lai_giay': so_giay_con_lai(giu_cho),
         'tong_giay': int(THOI_GIAN_GIU_CHO.total_seconds()),

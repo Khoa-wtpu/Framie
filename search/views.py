@@ -9,11 +9,14 @@ from search.services import (SAP_XEP, SAP_XEP_MAC_DINH, SO_MOI_TRANG, dinh_dang_
 
 
 def _duong_dan_ho_so(ma):
-    # Trang hồ sơ công khai là K9 (name='photographer_detail'). Chưa có thì thẻ chưa bấm được, không báo lỗi.
-    try:
-        return reverse('photographer_detail', args=[ma])
-    except NoReverseMatch:
-        return ''
+    # Trang hồ sơ công khai là K9 (name='photographer_detail'). Khi K9 chưa có thì thẻ dẫn thẳng tới trang chọn lịch
+    # của nhiếp ảnh gia (UC4.1, name='lich_chon_slot'), để Khách vẫn bấm được và đặt lịch. Cả hai chưa có thì thẻ chưa bấm được.
+    for ten in ('photographer_detail', 'lich_chon_slot'):
+        try:
+            return reverse(ten, args=[ma])
+        except NoReverseMatch:
+            continue
+    return ''
 
 
 def _the(nag):
@@ -36,7 +39,10 @@ def _the(nag):
 
 
 def tim_kiem(request):
-    form = TimKiemForm(request.GET)          # luôn gắn dữ liệu từ URL; URL trống thì mọi ô rỗng và vẫn hợp lệ
+    du_lieu = request.GET.copy()             # bản sao có thể sửa của dữ liệu trên URL
+    for ten in ('loai_hinh', 'phong_cach', 'khu_vuc'):   # trang chủ gửi ô chọn để trống thành ?loai_hinh=  -> bỏ giá trị rỗng, kẻo bị báo "không hợp lệ"
+        du_lieu.setlist(ten, [v for v in du_lieu.getlist(ten) if v.strip()])
+    form = TimKiemForm(du_lieu)              # luôn gắn dữ liệu từ URL; URL trống thì mọi ô rỗng và vẫn hợp lệ
     sap_xep = request.GET.get('sap_xep')
     ngu_canh = {'form': form, 'loi': [], 'trang': None, 'cac_the': [], 'tong': 0,
                 'co_tu_khoa': False, 'so_bo_loc': 0,

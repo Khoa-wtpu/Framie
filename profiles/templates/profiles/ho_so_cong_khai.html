@@ -1,0 +1,180 @@
+{% extends "base.html" %}{# K9 - UC2.3 Hồ sơ Nhiếp ảnh gia (wireframe SC2.3) #}
+{% load static ui chat_tags %}
+{% block title %}{{ ten }} - Nhiếp ảnh gia{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'schedule/css/lich.css' %}"><link rel="stylesheet" href="{% static 'profiles/css/ho_so_cong_khai.css' %}">{% endblock %}
+{% block extra_js %}<script src="{% static 'profiles/js/ho_so_cong_khai.js' %}" defer></script>{% endblock %}
+{% block content %}
+<div class="container hscc">
+  <p class="hscc__quay-lai"><a href="{% url 'search' %}">◂ Quay lại tìm kiếm</a></p>
+
+  {# ---------- Đầu trang ---------- #}
+  <header class="hscc__dau">
+    <div class="hscc__anh">
+      {% if nag.AnhDaiDien %}<img src="{{ nag.AnhDaiDien.url }}" alt="Ảnh đại diện của {{ ten }}">{% else %}<span aria-hidden="true">{{ ten|slice:":1" }}</span>{% endif %}
+    </div>
+    <div class="hscc__thong-tin">
+      <h1 class="hscc__ten">{{ ten }}</h1>
+      <p class="hscc__ma">ID: {{ ma }}</p>
+      <p class="hscc__diem">{% if diem %}<span class="hscc__sao" aria-hidden="true">★</span> <strong>{{ diem }}</strong> ({{ so_dg }} đánh giá){% else %}Chưa có đánh giá{% endif %}</p>
+    </div>
+    {% if vai_tro != 'khac' %}
+    <div class="hscc__hanh-dong">
+      {% nut_nhan_tin nag.pk %}
+      {% if co_goi %}<a class="btn btn--primary" href="#{{ mo_ta_lich }}">Đặt lịch</a>{% endif %}
+    </div>
+    {% endif %}
+  </header>
+
+  {# ---------- Thanh mục (neo tới từng vùng của trang) ---------- #}
+  <nav class="hscc__tabs" aria-label="Các mục trong hồ sơ">
+    <a href="#gioi-thieu">Giới thiệu</a>
+    <a href="#goi-dich-vu">Gói dịch vụ</a>
+    <a href="#portfolio">Portfolio</a>
+    <a href="#{{ mo_ta_lich }}">Lịch khả dụng</a>
+    <a href="#danh-gia">Đánh giá</a>
+  </nav>
+
+  {# ---------- Giới thiệu ---------- #}
+  <section class="hscc__muc" id="gioi-thieu" aria-labelledby="tieu-de-gioi-thieu">
+    <h2 id="tieu-de-gioi-thieu">Giới thiệu</h2>
+    <div class="hscc__gioi-thieu-muc">
+    <div>
+      <div class="hscc__van-ban">{{ nag.GioiThieu|linebreaks }}</div>
+    </div>
+    <dl class="hscc__thong-so">
+      <div class="hscc__dong">
+        <dt>Loại hình chụp</dt>
+        <dd>{% for m in nag.loai_hinh_chup.all %}<span class="hscc__chip hscc__chip--loai">{{ m.TenLoaiHinh }}</span>{% empty %}<span class="hscc__ghi">Chưa cập nhật</span>{% endfor %}</dd>
+      </div>
+      <div class="hscc__dong">
+        <dt>Phong cách</dt>
+        <dd>{% for m in nag.phong_cach.all %}<span class="hscc__chip hscc__chip--cach">{{ m.TenPhongCach }}</span>{% empty %}<span class="hscc__ghi">Chưa cập nhật</span>{% endfor %}</dd>
+      </div>
+      <div class="hscc__dong">
+        <dt>Khu vực nhận chụp</dt>
+        <dd>{% for m in nag.khu_vuc.all %}<span class="hscc__chip hscc__chip--vuc">{{ m.TenKhuVuc }}</span>{% empty %}<span class="hscc__ghi">Chưa cập nhật</span>{% endfor %}</dd>
+      </div>
+    </dl>
+    </div>
+  </section>
+
+  {# ---------- Gói dịch vụ ---------- #}
+  <section class="hscc__muc" id="goi-dich-vu" aria-labelledby="tieu-de-goi">
+    <h2 id="tieu-de-goi">Gói dịch vụ</h2>
+    {% if cac_goi %}
+    <ul class="hscc__luoi hscc__luoi--goi">
+      {% for g in cac_goi %}
+      <li class="hscc__goi{% if not g.ap_dung %} is-ngung{% endif %}{% if g.dang_chon %} is-chon{% endif %}">
+        <div class="hscc__goi-dau">
+          <h3 class="hscc__goi-ten">{{ g.ten }}</h3>
+          {% if not g.ap_dung %}<span class="hscc__nhan">{{ g.trang_thai }}</span>{% endif %}
+        </div>
+        <p class="hscc__goi-gia">{{ g.gia }}</p>
+        <dl class="hscc__goi-ct">
+          <div><dt>Loại hình</dt><dd>{{ g.loai_hinh }}</dd></div>
+          <div><dt>Thời lượng</dt><dd>{{ g.thoi_luong }}</dd></div>
+          <div><dt>Hậu kỳ</dt><dd>{{ g.hau_ky }}</dd></div>
+        </dl>
+        {% if g.mo_ta %}<p class="hscc__goi-mo-ta">{{ g.mo_ta|linebreaksbr }}</p>{% endif %}
+        {% if g.ap_dung %}
+          {% if g.dang_chon %}<a class="btn btn--primary btn--block" href="{{ url_bo_chon_goi }}" aria-pressed="true">Đã chọn ✓ (bấm để bỏ chọn)</a>
+          {% else %}<a class="btn btn--secondary btn--block" href="{{ g.url_chon }}">Chọn gói</a>{% endif %}
+        {% else %}<span class="btn btn--secondary btn--block is-disabled" aria-disabled="true">Chọn gói</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="hscc__trong">Nhiếp ảnh gia chưa có gói dịch vụ.</p>{% endif %}
+  </section>
+
+  {# ---------- Portfolio ---------- #}
+  <section class="hscc__muc" id="portfolio" aria-labelledby="tieu-de-portfolio">
+    <h2 id="tieu-de-portfolio">Portfolio</h2>
+    {% if projects %}
+    <ul class="hscc__luoi hscc__luoi--project{% if projects|length >= 3 %} hscc__luoi--noi-bat{% endif %}">
+      {% for p in projects %}
+      <li>
+        <a class="hscc__tac-pham" href="{% url 'photographer_project' nag.pk p.pk %}">
+          <img src="{{ p.AnhBia.url }}" alt="Ảnh bìa project {{ p.TenProject }}" loading="lazy">
+          <span class="hscc__tac-pham-chu">
+            <span class="hscc__tac-pham-meta">{{ p.MaLoaiHinh.TenLoaiHinh }}{% if p.NgayChup %} · {{ p.NgayChup|date:"d/m/Y" }}{% endif %}</span>
+            <span class="hscc__tac-pham-ten">{{ p.TenProject }}</span>
+            <span class="hscc__tac-pham-xem">{{ p.so_anh }} ảnh · Xem project →</span>
+          </span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="hscc__trong">Nhiếp ảnh gia chưa đăng project nào.</p>{% endif %}
+  </section>
+
+  {# ---------- Lịch khả dụng ---------- #}
+  <section class="hscc__muc" id="{{ mo_ta_lich }}" aria-labelledby="tieu-de-lich">
+    <h2 id="tieu-de-lich">Lịch khả dụng</h2>
+    {% if goi_chon %}
+    <p class="hscc__dang-chon" role="status">Đang xem lịch cho <strong>{{ goi_chon.TenGoi }}</strong> (cần {{ thoi_luong_goi_chon }}). Khung giờ ngắn hơn thời lượng này sẽ bị khóa. <a href="{{ url_bo_chon_goi }}">Bỏ chọn gói</a></p>
+    {% elif co_goi %}
+    <p class="hscc__ghi">Mẹo: bấm “Chọn gói” ở phần Gói dịch vụ để lịch chỉ cho chọn những khung giờ đủ dài cho gói đó.</p>
+    {% endif %}
+    {# Bố cục dùng chung với màn Quản lý lịch của Nhiếp ảnh gia (schedule/css/lich.css): thẻ theo ngày, viền trái theo màu trạng thái #}
+    <div class="lich__thanh hscc__lich-thanh">
+      <ul class="lich__chu-thich" aria-label="Chú thích trạng thái">
+        {% for tt in chu_thich %}<li>{% status_badge tt %}</li>{% endfor %}
+      </ul>
+      <div class="lich__dieu-huong">
+        {% if url_tuan_truoc %}<a class="btn btn--secondary btn--sm" href="{{ url_tuan_truoc }}">◀ Tuần trước</a>{% else %}<span class="btn btn--secondary btn--sm is-disabled" aria-disabled="true">◀ Tuần trước</span>{% endif %}
+        <strong class="lich__nhan" role="status">{{ nhan_tuan }}</strong>
+        {% if url_tuan_sau %}<a class="btn btn--secondary btn--sm" href="{{ url_tuan_sau }}">Tuần sau ▶</a>{% else %}<span class="btn btn--secondary btn--sm is-disabled" aria-disabled="true">Tuần sau ▶</span>{% endif %}
+        <a class="lich__hom-nay" href="{{ url_tuan_nay }}">Hôm nay</a>
+      </div>
+    </div>
+    {% if vai_tro == 'khac' %}<p class="hscc__ghi">Chỉ tài khoản Khách hàng mới đặt được lịch.</p>{% endif %}
+    <div class="lich__tuan hscc__lich">
+      {% for ngay in cac_ngay %}
+      <section class="lich-ngay{% if ngay.la_hom_nay %} is-hom-nay{% endif %}" aria-label="{{ ngay.nhan }}">
+        <h3 class="lich-ngay__ten">{{ ngay.nhan }}{% if ngay.la_hom_nay %} <span class="lich-ngay__nhan-hom-nay">Hôm nay</span>{% endif %}</h3>
+        <ul class="lich-ngay__ds">
+          {% for s in ngay.cac_slot %}
+          <li class="lich-slot lich-slot--{{ s.mau }}{% if s.ngan %} is-qua{% endif %}">
+            <span class="lich-slot__gio">{{ s.gio }}</span>
+            {% status_badge s.lich.TrangThai %}
+            {% if s.ngan %}
+            <span class="lich-slot__ghi" title="Ngắn hơn thời lượng của gói đã chọn">Quá ngắn cho gói</span>
+            {% elif s.chon_duoc and vai_tro == 'khach_hang' and co_chon_slot %}
+            <form class="hscc__slot-form" method="post" action="{% url 'chon_slot' s.lich.pk %}">
+              {% csrf_token %}
+              <input type="hidden" name="ma_nhiep_anh_gia" value="{{ nag.pk }}">
+              {% if ma_goi_chon %}<input type="hidden" name="goi" value="{{ ma_goi_chon }}">{% endif %}
+              <button class="btn btn--secondary btn--sm" type="submit">Chọn giờ này</button>
+            </form>
+            {% elif s.chon_duoc and vai_tro == 'khach' %}
+            <a class="btn btn--secondary btn--sm" href="{{ url_dang_nhap }}">Chọn giờ này</a>
+            {% endif %}
+          </li>
+          {% empty %}
+          <li class="lich-ngay__trong">Chưa có khung giờ</li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endfor %}
+    </div>
+    <p class="hscc__ghi">Chọn một khung giờ trống để giữ chỗ 5 phút, sau đó điền thông tin buổi chụp.{% if vai_tro == 'khach' %} Bạn cần đăng nhập để đặt lịch.{% endif %}</p>
+  </section>
+
+  {# ---------- Đánh giá ---------- #}
+  <hr class="hscc__ke-ngan">
+  <section class="hscc__muc" id="danh-gia" aria-labelledby="tieu-de-danh-gia">
+    <h2 id="tieu-de-danh-gia">Đánh giá</h2>
+    {% if cac_danh_gia %}
+    <ul class="hscc__ds-dg">
+      {% for dg in cac_danh_gia %}
+      <li class="hscc__dg">
+        <div class="hscc__dg-dau"><strong>{{ dg.ten }}</strong><span class="hscc__dg-diem"><span class="hscc__sao" role="img" aria-label="{{ dg.diem }} trên 5 sao">{{ dg.sao }}</span> <span class="hscc__ghi">{{ dg.ngay|date:"d/m/Y" }}</span></span></div>
+        {% if dg.nhan_xet %}<p class="hscc__dg-nhan-xet">{{ dg.nhan_xet|linebreaksbr }}</p>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% if so_dg > so_danh_gia_hien %}<p class="hscc__ghi">Đang hiện {{ so_danh_gia_hien }} đánh giá mới nhất trong tổng số {{ so_dg }}.</p>{% endif %}
+    {% else %}<p class="hscc__trong">Chưa có đánh giá nào.</p>{% endif %}
+  </section>
+</div>
+{% endblock %}

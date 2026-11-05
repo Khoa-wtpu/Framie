@@ -1,0 +1,141 @@
+{% extends "base.html" %}{# B9: Trang tổng quan sau đăng nhập. Chỉ gom đường dẫn và số liệu từ module khác (xem core/views_tong_quan.py). #}
+{% load static ui %}
+{% block title %}Tổng quan{% endblock %}
+{% block body_class %}tong-quan{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/tong_quan.css' %}">{% endblock %}
+{% block content %}
+<div class="container tq">
+  <header class="tq-dau">
+    <h1>Xin chào, {{ display_name }}</h1>
+    <p class="muted">{% if la_nhiep_anh_gia %}Tổng quan công việc của bạn trên FRAMIE.{% else %}Theo dõi Booking và thông báo của bạn trên FRAMIE.{% endif %}</p>
+  </header>
+
+{% if not la_nhiep_anh_gia %}
+{# ================= KHÁCH HÀNG ================= #}
+  <ul class="tq-so">
+    <li class="tq-so__o"><span class="tq-so__gia-tri">{{ khach.so_dang_xu_ly }}</span><span class="tq-so__nhan">Booking đang xử lý</span></li>
+    <li class="tq-so__o"><span class="tq-so__gia-tri">{{ khach.so_thong_bao }}</span><span class="tq-so__nhan">Thông báo chưa đọc</span></li>
+  </ul>
+
+  <div class="tq-luoi">
+    <section class="panel tq-khoi" aria-labelledby="tq-bk-tieu-de">
+      <header class="tq-khoi__dau">
+        <h2 id="tq-bk-tieu-de">Booking đang xử lý</h2>
+        {% if khach.url_booking_cua_toi %}<a class="tq-xem-tat-ca" href="{{ khach.url_booking_cua_toi }}">Xem tất cả</a>{% endif %}
+      </header>
+      {% if khach.dang_xu_ly %}
+      <ul class="tq-ds">
+        {% for b in khach.dang_xu_ly %}
+        <li class="tq-dong">
+          <div class="tq-dong__chinh">
+            <p class="tq-dong__tieu-de">{% if b.href %}<a href="{{ b.href }}">{{ b.goi }}</a>{% else %}{{ b.goi }}{% endif %}</p>
+            <p class="tq-dong__phu">Nhiếp ảnh gia {{ b.ben_kia }} · {{ b.gio_chup|date:"H:i d/m/Y" }}</p>
+          </div>
+          {% status_badge b.trang_thai %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="tq-rong">Bạn chưa có Booking nào đang xử lý.</p>
+      {% if khach.url_tim_kiem %}<a class="btn btn--primary btn--sm" href="{{ khach.url_tim_kiem }}">Tìm nhiếp ảnh gia</a>{% endif %}
+      {% endif %}
+    </section>
+
+    <section class="panel tq-khoi" aria-labelledby="tq-tb-tieu-de">
+      <header class="tq-khoi__dau">
+        <h2 id="tq-tb-tieu-de">Thông báo mới</h2>
+        {% if khach.url_thong_bao %}<a class="tq-xem-tat-ca" href="{{ khach.url_thong_bao }}">Xem tất cả</a>{% endif %}
+      </header>
+      {% if khach.thong_bao %}
+      <ul class="tq-ds">
+        {% for t in khach.thong_bao %}
+        <li class="tq-dong">
+          <div class="tq-dong__chinh">
+            <p class="tq-dong__tieu-de">{% if t.href %}<a href="{{ t.href }}">{{ t.tieu_de }}</a>{% else %}{{ t.tieu_de }}{% endif %}</p>
+            <p class="tq-dong__phu">{{ t.noi_dung|truncatechars:90 }}</p>
+          </div>
+          <time class="tq-dong__gio muted" datetime="{{ t.ngay_tao|date:'c' }}">{{ t.ngay_tao|date:"d/m H:i" }}</time>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="tq-rong">Không có thông báo mới.</p>
+      {% endif %}
+    </section>
+  </div>
+
+{% else %}
+{# ================= NHIẾP ẢNH GIA ================= #}
+  {% if nag.da_duyet %}
+  <ul class="tq-so">
+    <li class="tq-so__o"><span class="tq-so__gia-tri">{{ nag.so_yeu_cau_moi }}</span><span class="tq-so__nhan">Yêu cầu Booking mới</span></li>
+    <li class="tq-so__o"><span class="tq-so__gia-tri">{{ nag.so_lich_sap_toi }}</span><span class="tq-so__nhan">Buổi chụp sắp tới</span></li>
+    <li class="tq-so__o"><span class="tq-so__gia-tri">{{ nag.so_khung_gio_trong }}</span><span class="tq-so__nhan">Khung giờ trống trong {{ nag.so_ngay_khung_gio }} ngày tới</span></li>
+  </ul>
+  {% endif %}
+
+  <div class="tq-luoi">
+    <section class="panel tq-khoi" aria-labelledby="tq-hs-tieu-de">
+      <header class="tq-khoi__dau">
+        <h2 id="tq-hs-tieu-de">Tình trạng hồ sơ</h2>
+        {% status_badge nag.trang_thai_ho_so %}
+      </header>
+      {% if nag.da_duyet %}
+      <p>Hồ sơ của bạn đã được duyệt và đang hiển thị công khai. Bạn có thể nhận Booking từ Khách hàng.</p>
+      {% elif nag.da_tu_choi %}
+      <p>Hồ sơ của bạn chưa được duyệt.{% if nag.phan_hoi %} Lý do: <strong>{{ nag.phan_hoi }}</strong>{% endif %}</p>
+      {% else %}
+      <p>Hồ sơ đang chờ Quản trị viên duyệt. Bạn sẽ nhận được thông báo khi có kết quả.</p>
+      {% endif %}
+      {% if nag.url_ho_so %}<a class="btn btn--secondary btn--sm" href="{{ nag.url_ho_so }}">{% if nag.da_duyet %}Xem hồ sơ{% else %}Cập nhật hồ sơ{% endif %}</a>{% endif %}
+    </section>
+
+    {% if nag.da_duyet %}
+    <section class="panel tq-khoi" aria-labelledby="tq-yc-tieu-de">
+      <header class="tq-khoi__dau">
+        <h2 id="tq-yc-tieu-de">Yêu cầu Booking mới</h2>
+        {% if nag.url_quan_ly_booking %}<a class="tq-xem-tat-ca" href="{{ nag.url_quan_ly_booking }}">Xem tất cả</a>{% endif %}
+      </header>
+      {% if nag.yeu_cau_moi %}
+      <ul class="tq-ds">
+        {% for b in nag.yeu_cau_moi %}
+        <li class="tq-dong">
+          <div class="tq-dong__chinh">
+            <p class="tq-dong__tieu-de">{% if b.href %}<a href="{{ b.href }}">{{ b.goi }}</a>{% else %}{{ b.goi }}{% endif %}</p>
+            <p class="tq-dong__phu">Khách hàng {{ b.ben_kia }} · {{ b.gio_chup|date:"H:i d/m/Y" }}</p>
+          </div>
+          {% status_badge b.trang_thai %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="tq-rong">Không có yêu cầu Booking mới.</p>
+      {% endif %}
+    </section>
+
+    <section class="panel tq-khoi" aria-labelledby="tq-lich-tieu-de">
+      <header class="tq-khoi__dau">
+        <h2 id="tq-lich-tieu-de">Lịch sắp tới</h2>
+        {% if nag.url_lich %}<a class="tq-xem-tat-ca" href="{{ nag.url_lich }}">Xem lịch</a>{% endif %}
+      </header>
+      {% if nag.lich_sap_toi %}
+      <ul class="tq-ds">
+        {% for b in nag.lich_sap_toi %}
+        <li class="tq-dong">
+          <div class="tq-dong__chinh">
+            <p class="tq-dong__tieu-de">{% if b.href %}<a href="{{ b.href }}">{{ b.goi }}</a>{% else %}{{ b.goi }}{% endif %}</p>
+            <p class="tq-dong__phu">Khách hàng {{ b.ben_kia }} · {{ b.gio_chup|date:"H:i d/m/Y" }}</p>
+          </div>
+          {% status_badge b.trang_thai %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="tq-rong">Chưa có buổi chụp nào sắp tới.</p>
+      {% endif %}
+    </section>
+    {% endif %}
+  </div>
+{% endif %}
+</div>
+{% endblock %}
