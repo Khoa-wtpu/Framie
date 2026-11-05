@@ -6,7 +6,7 @@ from django.urls import include, path
 urlpatterns = [
 
     path('admin/', admin.site.urls),              # /admin dẫn tới trang quản trị
-
+    # ---- Phần của Tuền ----
     path('bookings/', include('bookings.giu_cho')),
     path('bookings/', include('bookings.gui_booking')),
     path('bookings/', include('bookings.tiep_nhan')),   # UC4.3-4.5 (đã có file, trước đây chưa nối)
@@ -33,3 +33,7 @@ urlpatterns = [
 # Khi triển khai thật (DEBUG = False) đoạn này tự tắt, máy chủ thật sẽ phát file.
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# B10
+handler403 = 'core.views_trang_loi.loi_403'
+handler404 = 'core.views_trang_loi.loi_404'
+handler500 = 'core.views_trang_loi.loi_500'

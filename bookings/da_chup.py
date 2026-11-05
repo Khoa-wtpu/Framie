@@ -52,18 +52,18 @@ LY_DO_BO_QUA_CHON_ANH = 'Gói Hậu kỳ toàn bộ ảnh: bỏ qua bước Khá
 # ---------------------------------------------------------------------
 # PHẦN 3: HÀM NGHIỆP VỤ (SERVICE)
 # ---------------------------------------------------------------------
-def da_den_gio_chup(booking):
+def da_den_gio_chup(booking):  # buổi chụp đã diễn ra chưa (nút hiện và việc bấm đều dùng hàm này)
     """Buổi chụp đã diễn ra chưa? Tính từ NgayGioChup (giờ bắt đầu buổi chụp). Muốn đổi sang 'hết khung giờ của slot'
     thì chỉ sửa đúng hàm này (view và template đều gọi qua đây)."""
     return booking.NgayGioChup <= timezone.now()  # True nếu giờ chụp <= bây giờ (đã tới hoặc đã qua)
 
 
-def co_the_bam_da_chup(booking):
+def co_the_bam_da_chup(booking):  # nút Đã chụp có bấm được không
     """Nút 'Đã chụp' có được hiện / có bấm được không: đang 'Chốt Booking' VÀ buổi chụp đã diễn ra."""
     return booking.TrangThai == TrangThaiBooking.CHOT_BOOKING and da_den_gio_chup(booking)  # phải thỏa CẢ HAI điều kiện
 
 
-def danh_dau_da_chup(nag_user, ma_booking):
+def danh_dau_da_chup(nag_user, ma_booking):  # service: đánh dấu Đã chụp, đổi trạng thái qua hàm chung
     """Nhiếp ảnh gia bấm 'Đã chụp'. Trả về Booking đã cập nhật.
       - Gói 'Giới hạn số lượng ảnh': Chốt Booking -> Đã chụp (dừng, chờ tải ảnh).
       - Gói 'Hậu kỳ toàn bộ ảnh'  : Chốt Booking -> Đã chụp -> Chờ hậu kỳ (2 dòng Lịch sử, cùng một transaction).
@@ -96,7 +96,7 @@ def danh_dau_da_chup(nag_user, ma_booking):
 # ---------------------------------------------------------------------
 @chi_nhiep_anh_gia_da_duyet  # chỉ Nhiếp ảnh gia đã duyệt
 @require_POST          # chỉ nhận POST + CSRF: không thể "Đã chụp" chỉ bằng cách mở một đường link
-def da_chup(request, ma_booking):
+def da_chup(request, ma_booking):  # view: nhận POST từ nút Đã chụp
     """Nút 'Đã chụp' trên trang chi tiết Booking của Nhiếp ảnh gia."""
     try:  # thử thực hiện
         booking = danh_dau_da_chup(request.user, ma_booking)  # gọi service ở trên

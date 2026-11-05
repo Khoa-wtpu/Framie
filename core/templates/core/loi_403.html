@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Không có quyền truy cập{% endblock %}
+{% block content %}
+<div class="container" style="max-width:40rem;text-align:center;padding-block:var(--space-8)">
+  <p class="muted" style="font-size:var(--text-3xl);font-weight:var(--fw-heading);margin:0">403</p>
+  <h1>Bạn không có quyền truy cập</h1>
+  <p class="muted">Tài khoản của bạn không được phép xem trang này. Nếu nghĩ đây là nhầm lẫn, hãy đăng nhập đúng tài khoản hoặc quay về trang chủ.</p>
+  <p style="margin-top:var(--space-5)"><a class="btn btn--primary" href="{% url 'home' %}">Về trang chủ</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Giới thiệu{% endblock %}
+{% block content %}
+<div class="container" style="max-width:48rem">
+  <h1>Giới thiệu FRAMIE</h1>
+  <p>FRAMIE là nền tảng kết nối Khách hàng với Nhiếp ảnh gia: từ tìm kiếm, xem Portfolio, đặt lịch chụp đến nhận ảnh, mọi bước nằm trong một nơi.</p>
+
+  <h2>FRAMIE giúp được gì?</h2>
+  <p><strong>Khách hàng</strong> tìm nhiếp ảnh gia theo loại hình, phong cách, khu vực; chọn gói dịch vụ và khung giờ trống; gửi Booking và theo dõi trạng thái.</p>
+  <p><strong>Nhiếp ảnh gia</strong> xây dựng hồ sơ và Portfolio, quản lý gói dịch vụ, lịch trống và các Booking nhận được; giao ảnh cho khách sau buổi chụp.</p>
+
+  <h2>FRAMIE không giữ tiền của bạn</h2>
+  <p>FRAMIE chỉ là nền tảng kết nối và quản lý lịch hẹn. <strong>FRAMIE không giữ, không trung gian và không xử lý tiền.</strong> Khách hàng chuyển khoản trực tiếp cho Nhiếp ảnh gia theo thông tin ngân hàng và mã QR trên hồ sơ của họ, sau đó tải minh chứng lên hệ thống để hai bên đối chiếu.</p>
+
+  <p style="margin-top:var(--space-5)">
+    <a class="btn btn--primary" href="{% url 'home' %}">Về trang chủ</a>
+    <a class="btn btn--ghost" href="{% url 'terms' %}">Điều khoản sử dụng</a>
+  </p>
+</div>
+{% endblock %}

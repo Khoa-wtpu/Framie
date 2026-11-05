@@ -3,8 +3,10 @@
 # Chạy:  python manage.py test bookings.test_theo_doi
 # Mỗi hàm test_... là MỘT tình huống; test chạy trên cơ sở dữ liệu tạm, không đụng dữ liệu thật.
 # =====================================================================
+from unittest import mock  # mock: giả lập tạm một hàm trong lúc test
+
 from django.test import override_settings  # cho phép đổi cài đặt chỉ trong lúc chạy test
-from django.urls import reverse  # từ TÊN url suy ra địa chỉ thật
+from django.urls import NoReverseMatch, reverse  # NoReverseMatch: lỗi khi tên url chưa tồn tại; reverse: từ TÊN url suy ra địa chỉ thật
 from django.utils import timezone  # lấy giờ hiện tại có múi giờ
 
 from bookings import test_tiep_nhan as nen             # dùng lại dữ liệu mẫu của UC4.3 (khách, Nhiếp ảnh gia, gói, tao_booking)
@@ -186,3 +188,87 @@ class UC47NhanVaMau(TheoDoiBase):  # nhóm test: nhãn và màu trạng thái th
         ct = self.client.get(reverse('chi_tiet_booking', kwargs={'ma_booking': bk.pk}))  # trang chi tiết
         for res in (ds, ct):  # kiểm tra cả hai trang
             self.assertContains(res, f'badge badge--{tone}')  # cả hai đều dùng đúng class màu đó
+
+
+@override_settings(PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])  # băm mật khẩu nhanh cho test
+class UC47NutBanGiaoAnh(TheoDoiBase):  # nhóm test: nút dẫn sang các trang xử lý ảnh của Nguyên (N4-N6)
+    NHAN_CHON_ANH = 'Chọn ảnh cần hậu kỳ'  # chữ trên nút của Khách hàng
+    NHAN_TAI_ANH = 'Tải ảnh / Bắt đầu hậu kỳ'  # chữ trên nút của Nhiếp ảnh gia
+
+    def mo_chi_tiet(self, user, bk):  # hàm trợ giúp: đăng nhập rồi mở trang chi tiết Booking
+        self.dang_nhap(user)  # đăng nhập bằng tài khoản truyền vào
+        ten_url = 'admin_booking_detail' if user == self.admin else 'chi_tiet_booking'  # Quản trị viên có trang chi tiết riêng
+        return self.client.get(reverse(ten_url, kwargs={'ma_booking': bk.pk}))  # mở chi tiết
+
+    def url_chon_anh(self, bk):  # địa chỉ trang Khách chọn ảnh (N6)
+        return reverse('chon_anh_hau_ky', kwargs={'ma_booking': bk.pk})
+
+    def url_tai_anh(self, bk):  # địa chỉ trang Nhiếp ảnh gia tải ảnh / hậu kỳ (N4, N5)
+        return reverse('tai_anh_len', kwargs={'ma_booking': bk.pk})
+
+    # ---- Khách hàng
+    def test_khach_thay_nut_chon_anh_khi_cho_khach_lua_chon_anh(self):  # tình huống: Khách phải chọn ảnh
+        bk = self.tao_booking(trang_thai=BK.CHO_KH_CHON_ANH)  # Booking "Chờ Khách hàng lựa chọn ảnh"
+        res = self.mo_chi_tiet(self.khach, bk)  # Khách mở chi tiết
+        self.assertEqual(res.context['url_chon_anh'], self.url_chon_anh(bk))  # view đưa đúng địa chỉ vào context
+        self.assertContains(res, self.NHAN_CHON_ANH)  # có chữ trên nút
+        self.assertContains(res, f'href="{self.url_chon_anh(bk)}"')  # nút trỏ đúng tới chon_anh_hau_ky
+        self.assertNotContains(res, self.NHAN_TAI_ANH)  # Khách không thấy nút của Nhiếp ảnh gia
+
+    def test_khach_khong_thay_nut_chon_anh_o_trang_thai_khac(self):  # tình huống: chưa tới / đã qua bước chọn ảnh
+        for trang_thai in (BK.CHOT_BOOKING, BK.DA_CHUP, BK.CHO_HAU_KY, BK.DANG_HAU_KY, BK.CHO_KH_KIEM_TRA):  # các trạng thái không phải "Chờ Khách hàng lựa chọn ảnh"
+            with self.subTest(trang_thai=trang_thai):  # báo lỗi riêng cho từng trạng thái
+                bk = self.tao_booking(trang_thai=trang_thai, gio={BK.CHOT_BOOKING: '07:00', BK.DA_CHUP: '09:00', BK.CHO_HAU_KY: '11:00',
+                                                                  BK.DANG_HAU_KY: '13:00', BK.CHO_KH_KIEM_TRA: '15:00'}[trang_thai])  # mỗi Booking một khung giờ riêng để không trùng slot
+                res = self.mo_chi_tiet(self.khach, bk)  # Khách mở chi tiết
+                self.assertIsNone(res.context['url_chon_anh'])  # không có địa chỉ
+                self.assertNotContains(res, self.NHAN_CHON_ANH)  # không có nút
+
+    # ---- Nhiếp ảnh gia
+    def test_nag_thay_nut_tai_anh_khi_da_chup_cho_hau_ky_hoac_dang_hau_ky(self):  # tình huống: Nhiếp ảnh gia còn việc với ảnh
+        gio = {BK.DA_CHUP: '07:00', BK.CHO_HAU_KY: '10:00', BK.DANG_HAU_KY: '13:00'}  # mỗi Booking một khung giờ riêng
+        for trang_thai in uc.TRANG_THAI_NAG_XU_LY_ANH:  # "Đã chụp", "Chờ hậu kỳ", "Đang hậu kỳ"
+            with self.subTest(trang_thai=trang_thai):  # báo lỗi riêng cho từng trạng thái
+                bk = self.tao_booking(trang_thai=trang_thai, gio=gio[trang_thai])  # Booking ở trạng thái đang thử
+                res = self.mo_chi_tiet(self.nag.MaTaiKhoan, bk)  # Nhiếp ảnh gia mở chi tiết
+                self.assertEqual(res.context['url_tai_anh'], self.url_tai_anh(bk))  # view đưa đúng địa chỉ vào context
+                self.assertContains(res, self.NHAN_TAI_ANH)  # có chữ trên nút
+                self.assertContains(res, f'href="{self.url_tai_anh(bk)}"')  # nút trỏ đúng tới tai_anh_len
+                self.assertNotContains(res, self.NHAN_CHON_ANH)  # Nhiếp ảnh gia không thấy nút của Khách
+
+    def test_nag_khong_thay_nut_tai_anh_o_trang_thai_khac(self):  # tình huống: chưa chụp xong / đã giao ảnh cho Khách
+        gio = {BK.CHOT_BOOKING: '07:00', BK.CHO_KH_CHON_ANH: '10:00', BK.CHO_KH_KIEM_TRA: '13:00', BK.HOAN_THANH: '16:00'}  # mỗi Booking một khung giờ riêng
+        for trang_thai, g in gio.items():  # các trạng thái không thuộc nhóm của Nhiếp ảnh gia
+            with self.subTest(trang_thai=trang_thai):  # báo lỗi riêng cho từng trạng thái
+                bk = self.tao_booking(trang_thai=trang_thai, gio=g)  # Booking ở trạng thái đang thử
+                res = self.mo_chi_tiet(self.nag.MaTaiKhoan, bk)  # Nhiếp ảnh gia mở chi tiết
+                self.assertIsNone(res.context['url_tai_anh'])  # không có địa chỉ
+                self.assertNotContains(res, self.NHAN_TAI_ANH)  # không có nút
+
+    # ---- Quản trị viên
+    def test_quan_tri_khong_thay_ca_hai_nut(self):  # tình huống: Quản trị viên chỉ tra cứu, không xử lý ảnh
+        for trang_thai, g in ((BK.CHO_KH_CHON_ANH, '07:00'), (BK.DA_CHUP, '10:00')):  # một trạng thái của mỗi bên
+            with self.subTest(trang_thai=trang_thai):  # báo lỗi riêng cho từng trạng thái
+                bk = self.tao_booking(trang_thai=trang_thai, gio=g)  # Booking ở trạng thái đang thử
+                res = self.mo_chi_tiet(self.admin, bk)  # Quản trị viên mở chi tiết
+                self.assertNotContains(res, self.NHAN_CHON_ANH)  # không có nút chọn ảnh
+                self.assertNotContains(res, self.NHAN_TAI_ANH)  # không có nút tải ảnh
+
+    # ---- Trang của Nguyên chưa có trên máy
+    def test_ten_url_chua_ton_tai_thi_an_nut_khong_bao_loi(self):  # tình huống: chưa merge N4-N6
+        khach_bk = self.tao_booking(trang_thai=BK.CHO_KH_CHON_ANH, gio='07:00')  # Booking cần Khách chọn ảnh
+        nag_bk = self.tao_booking(trang_thai=BK.DA_CHUP, gio='10:00')  # Booking cần Nhiếp ảnh gia tải ảnh
+        goc = reverse  # giữ hàm reverse thật để các tên url khác vẫn chạy bình thường
+
+        def reverse_thieu_trang_cua_nguyen(ten, *a, **kw):  # giả lập: hai tên url của Nguyên chưa tồn tại
+            if ten in ('chon_anh_hau_ky', 'tai_anh_len'):  # đúng hai tên url cần thử
+                raise NoReverseMatch(ten)  # báo "không có tên url này"
+            return goc(ten, *a, **kw)  # tên khác: chạy như thường
+
+        with mock.patch.object(uc, 'reverse', side_effect=reverse_thieu_trang_cua_nguyen):  # thay reverse trong theo_doi.py bằng bản giả lập
+            res_khach = self.mo_chi_tiet(self.khach, khach_bk)  # Khách mở chi tiết
+            res_nag = self.mo_chi_tiet(self.nag.MaTaiKhoan, nag_bk)  # Nhiếp ảnh gia mở chi tiết
+        self.assertEqual(res_khach.status_code, 200)  # trang vẫn mở được (không lỗi 500)
+        self.assertEqual(res_nag.status_code, 200)  # trang vẫn mở được
+        self.assertNotContains(res_khach, self.NHAN_CHON_ANH)  # nút bị ẩn
+        self.assertNotContains(res_nag, self.NHAN_TAI_ANH)  # nút bị ẩn
