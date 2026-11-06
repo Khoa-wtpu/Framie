@@ -191,6 +191,7 @@ def photographer_detail(request, ma_nhiep_anh_gia):
         'projects': list(projects),
         'cac_danh_gia': _danh_gia_moi_nhat(nag),
         'so_danh_gia_hien': SO_DANH_GIA_HIEN,
+        'url_tat_ca_danh_gia': _url_co_the('photographer_reviews', ma_nag=nag.pk),
         # --- lịch khả dụng ---
         'cac_ngay': _lich_tuan(nag, dau_tuan, bg, goi_chon),
         'nhan_tuan': f'Tuần {dau_tuan:%d/%m} – {dau_tuan + timedelta(days=6):%d/%m/%Y}',

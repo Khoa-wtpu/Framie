@@ -173,7 +173,7 @@
       </li>
       {% endfor %}
     </ul>
-    {% if so_dg > so_danh_gia_hien %}<p class="hscc__ghi">Đang hiện {{ so_danh_gia_hien }} đánh giá mới nhất trong tổng số {{ so_dg }}.</p>{% endif %}
+    {% if so_dg > so_danh_gia_hien %}<p class="hscc__ghi">Đang hiện {{ so_danh_gia_hien }} đánh giá mới nhất trong tổng số {{ so_dg }}.{% if url_tat_ca_danh_gia %} <a href="{{ url_tat_ca_danh_gia }}">Xem tất cả đánh giá</a>{% endif %}</p>{% endif %}
     {% else %}<p class="hscc__trong">Chưa có đánh giá nào.</p>{% endif %}
   </section>
 </div>
