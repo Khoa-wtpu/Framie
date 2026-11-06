@@ -1,7 +1,9 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Giới thiệu{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'core/css/trang_tinh.css' %}">{% endblock %}
 {% block content %}
-<div class="container" style="max-width:48rem">
+<div class="container tt-hop tt-hop--rong">
   <h1>Giới thiệu FRAMIE</h1>
   <p>FRAMIE là nền tảng kết nối Khách hàng với Nhiếp ảnh gia: từ tìm kiếm, xem Portfolio, đặt lịch chụp đến nhận ảnh, mọi bước nằm trong một nơi.</p>
 
@@ -12,7 +14,7 @@
   <h2>FRAMIE không giữ tiền của bạn</h2>
   <p>FRAMIE chỉ là nền tảng kết nối và quản lý lịch hẹn. <strong>FRAMIE không giữ, không trung gian và không xử lý tiền.</strong> Khách hàng chuyển khoản trực tiếp cho Nhiếp ảnh gia theo thông tin ngân hàng và mã QR trên hồ sơ của họ, sau đó tải minh chứng lên hệ thống để hai bên đối chiếu.</p>
 
-  <p style="margin-top:var(--space-5)">
+  <p class="tt-nut">
     <a class="btn btn--primary" href="{% url 'home' %}">Về trang chủ</a>
     <a class="btn btn--ghost" href="{% url 'terms' %}">Điều khoản sử dụng</a>
   </p>

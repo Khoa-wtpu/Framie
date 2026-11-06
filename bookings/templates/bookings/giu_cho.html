@@ -38,7 +38,7 @@
       <progress class="giu-cho__thanh" id="dem-nguoc-thanh" max="{{ tong_giay }}" value="{{ con_lai_giay }}"></progress>{# thanh tiến trình: tối đa = tổng thời gian giữ, giá trị = số giây còn lại #}
     </div>
     <p class="ct__ghi-chu">Hãy gửi yêu cầu Booking trong thời gian còn lại. Hết giờ, khung giờ sẽ được trả về lịch trống.</p>{# hướng dẫn khách #}
-    <div class="ct__nut" style="justify-content:center">{# hàng nút căn giữa #}
+    <div class="ct__nut ct__nut--giua">{# hàng nút căn giữa #}
       {% if url_gui_booking %}{# chỉ hiện nếu view đã tạo được URL sang UC4.2 #}
         <a class="btn btn--primary" href="{{ url_gui_booking }}">Tiếp tục gửi yêu cầu Booking</a>{# chuyển sang trang gửi yêu cầu, kèm mã lượt giữ chỗ #}
       {% endif %}

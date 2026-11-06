@@ -19,15 +19,15 @@
   </header>
 
   <section class="ct__the ct__dem">{# thẻ khung giờ đang giữ + đếm ngược #}
-    <h2 class="ct__the-tieu-de" style="text-align:left">Khung giờ đang giữ</h2>
-    <dl class="ct__ds" style="text-align:left">
+    <h2 class="ct__the-tieu-de ct__canh-trai">Khung giờ đang giữ</h2>
+    <dl class="ct__ds ct__canh-trai">
       <div class="ct__dong"><dt>Nhiếp ảnh gia</dt><dd>{{ ten_nag }}</dd></div>{# tên nhiếp ảnh gia do view truyền sang #}
       <div class="ct__dong"><dt>Khung giờ</dt><dd>{{ lich.Ngay|date:"l, d/m/Y" }}, {{ lich.GioBatDau|time:"H:i" }}–{{ lich.GioKetThuc|time:"H:i" }}, {{ thoi_luong_slot }}</dd></div>{# thứ, ngày, giờ + độ dài khung giờ (để khách biết gói nào còn vừa) #}
     </dl>
-    <div id="dem-nguoc" role="timer" aria-label="Thời gian giữ chỗ còn lại"
+    <div id="dem-nguoc" class="ct__dem-khung" role="timer" aria-label="Thời gian giữ chỗ còn lại"
          data-con-lai="{{ con_lai_giay }}" data-url="{{ url_trang_thai }}"
-         data-an="form-gui-booking" data-hien="khoi-het-han" style="margin-top: var(--space-4)">{# khu vực đồng hồ đếm ngược #}
-      <span class="ct__o-nhan" style="display:block">Thời gian giữ chỗ còn lại</span>{# nhãn nhỏ phía trên số đếm #}
+         data-an="form-gui-booking" data-hien="khoi-het-han">{# khu vực đồng hồ đếm ngược #}
+      <span class="ct__o-nhan ct__o-nhan--khoi">Thời gian giữ chỗ còn lại</span>{# nhãn nhỏ phía trên số đếm #}
       <span class="gui-booking__dem" id="dem-nguoc-so">--:--</span>{# JavaScript cập nhật số phút:giây #}
       <progress class="gui-booking__thanh" id="dem-nguoc-thanh" max="{{ tong_giay }}" value="{{ con_lai_giay }}"></progress>{# thanh tiến trình thời gian còn lại #}
     </div>

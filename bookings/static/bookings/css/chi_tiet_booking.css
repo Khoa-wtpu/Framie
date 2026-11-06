@@ -107,6 +107,7 @@
 
 /* ---------- Thẻ hộp lưu ý (lời nhắc hậu quả) ---------- */
 .ct__luu-y { margin: 0 0 var(--space-4); padding: var(--space-4); border: 1px dashed var(--color-border); border-radius: var(--radius-md); color: var(--color-text-muted); font-size: var(--text-sm); }  /* khung nét đứt, chữ xám nhỏ: nhắc nhẹ, không gây rối */
+.ct__luu-y--huy { margin-top: var(--space-5); }  /* T9: khoảng cách phía trên lời nhắc hậu quả khi hủy (thay cho style trong thẻ HTML) */
 
 /* ---------- Bộ đếm ngược giữ chỗ ---------- */
 .ct__dem { text-align: center; }                                        /* nội dung bộ đếm căn giữa thẻ */
@@ -123,3 +124,10 @@
 .ct__ngay-cot .ct__o-phu { margin-top: var(--space-1); }                /* dòng thứ/tháng sát số ngày */
 .ct__slot-ds { flex: 1; min-width: 14rem; display: flex; flex-wrap: wrap; gap: var(--space-3); list-style: none; margin: 0; padding: 0; }  /* các khung giờ xếp ngang, tự xuống dòng */
 .ct__slot-ds form { margin: 0; }                                        /* form của từng slot không thêm lề */
+
+/* ---- Lớp bổ trợ thay cho style trong thẻ HTML (quy ước nhóm: không dùng thuộc tính style) ---- */
+.ct__nut--giua { justify-content: center; }                      /* hàng nút căn giữa (trang giữ chỗ) */
+.ct__canh-trai { text-align: left; }                              /* căn trái tiêu đề / danh sách trong thẻ căn giữa (trang gửi Booking) */
+.ct__dem-khung { margin-top: var(--space-4); }                    /* khoảng cách phía trên khu đồng hồ đếm ngược */
+.ct__o-nhan--khoi { display: block; }                             /* nhãn nhỏ chiếm cả dòng, số đếm nằm dòng dưới */
+.ct__o-phu--khong-le { margin: 0; }                               /* dòng phụ không lề (gợi ý khi chưa có lịch trống) */

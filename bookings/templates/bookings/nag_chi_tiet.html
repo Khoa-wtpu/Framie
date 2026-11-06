@@ -105,7 +105,7 @@
           {% include "includes/alert.html" with level="info" text="Buổi chụp chưa diễn ra nên chưa thể bấm Đã chụp." %}
         {% endif %}
         {# T9 / UC4.6: Nhiếp ảnh gia có thể hủy khi Booking đang "Chốt Booking". #}
-        <p class="ct__luu-y" style="margin-top: var(--space-5)">Cần hủy buổi chụp? Nếu hủy sau khi Khách đã đặt cọc, bạn có trách nhiệm hoàn lại 40% tiền cọc ({{ tien_coc }} VNĐ) cho Khách hàng.</p>{# nhắc hậu quả khi hủy #}
+        <p class="ct__luu-y ct__luu-y--huy">Cần hủy buổi chụp? Nếu hủy sau khi Khách đã đặt cọc, bạn có trách nhiệm hoàn lại 40% tiền cọc ({{ tien_coc }} VNĐ) cho Khách hàng.</p>{# nhắc hậu quả khi hủy #}
         <a class="btn btn--danger" href="{% url 'huy_booking' ma_booking=booking.pk %}">Hủy Booking</a>{# nút đỏ dẫn tới trang nhập lý do + xác nhận hủy #}
       </section>
       {% endif %}
