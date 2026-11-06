@@ -1,12 +1,11 @@
 # =====================================================================
 # accounts/views_quan_tri.py  -  B7: trang tổng quan khu Quản trị; P7: quản lý tài khoản và vai trò
 # =====================================================================
-from urllib.parse import urlencode  # ghép bộ lọc thành chuỗi ?q=...&vai_tro=... cho link chuyển trang
-
 from django.contrib import messages  # thông báo ngắn hiện ở đầu trang (includes/messages.html)
 from django.contrib.auth import get_user_model  # lấy class User của dự án
 from django.core.paginator import Paginator  # chia danh sách thành nhiều trang
 from django.shortcuts import get_object_or_404, redirect, render  # tìm 1 dòng hoặc báo 404; chuyển trang; hiện template
+from urllib.parse import urlencode  # ghép tham số lọc thành chuỗi sau dấu ? của link
 from django.urls import reverse  # đổi tên URL thành đường dẫn
 from django.utils.http import url_has_allowed_host_and_scheme  # kiểm tra đường dẫn quay lại có an toàn không
 from django.views.decorators.http import require_POST  # chỉ nhận phương thức POST (GET trả lỗi 405)
@@ -27,9 +26,26 @@ def tong_quan(request):  # trang tổng quan /quan-tri/
     boi_canh = {  # dữ liệu gửi sang template
         'thong_ke': thong_ke_tong_quan(),  # các con số
         'url_duyet_ho_so': resolve('admin_profile_review'),  # link nút "Duyệt hồ sơ" (có thể là "#")
+        'url_tai_khoan': reverse('admin_accounts'),  # link nút "Xem tài khoản" ở thẻ Tổng tài khoản
         'url_booking': resolve('admin_bookings'),  # link nút "Xem Booking" (có thể là "#")
     }  # hết dict
     return render(request, 'accounts/quan_tri/tong_quan.html', boi_canh)  # hiện trang
+
+
+def _nut_loc(tim, vai_tro, trang_thai):  # P7: tạo link cho các nút lọc; mỗi nút đổi MỘT bộ lọc và giữ nguyên các bộ lọc còn lại
+    def url(**doi):  # ghép link từ bộ lọc hiện tại, có thể ghi đè một vài giá trị
+        tham_so = {'q': tim, 'vai_tro': vai_tro, 'trang_thai': trang_thai}  # bộ lọc hiện tại (không giữ số trang: đổi lọc thì về trang 1)
+        tham_so.update(doi)  # áp giá trị mới của nút
+        co_gia_tri = {k: v for k, v in tham_so.items() if v}  # bỏ tham số rỗng cho link gọn
+        return reverse('admin_accounts') + ('?' + urlencode(co_gia_tri) if co_gia_tri else '')  # không còn tham số nào thì chỉ còn đường dẫn
+    nut_vai_tro = [{'nhan': 'Tất cả', 'url': url(vai_tro=''), 'dang_chon': not vai_tro}]  # nút bỏ lọc vai trò
+    for vt in (VaiTro.KHACH_HANG, VaiTro.NHIEP_ANH_GIA, VaiTro.QUAN_TRI_VIEN):  # 3 vai trò, chọn một
+        nut_vai_tro.append({'nhan': vt, 'url': url(vai_tro=vt), 'dang_chon': vt == vai_tro})  # bấm để lọc vai trò này
+    nut_trang_thai = []  # nút lọc trạng thái
+    for gia_tri, nhan in (('hoat_dong', 'Hoạt động'), ('bi_khoa', 'Đã khóa')):  # hai trạng thái, bấm lần nữa để bỏ chọn
+        dang_chon = trang_thai == gia_tri  # nút này đang được chọn
+        nut_trang_thai.append({'nhan': nhan, 'url': url(trang_thai='' if dang_chon else gia_tri), 'dang_chon': dang_chon})  # đang chọn thì link bỏ lọc
+    return nut_vai_tro, nut_trang_thai  # trả về hai nhóm nút
 
 
 @chi_quan_tri_vien  # chỉ Quản trị viên xem được danh sách tài khoản
@@ -38,15 +54,15 @@ def danh_sach_tai_khoan(request):  # P7: trang /quan-tri/tai-khoan/
     vai_tro = request.GET.get('vai_tro', '')  # bộ lọc vai trò ('' = tất cả)
     trang_thai = request.GET.get('trang_thai', '')  # bộ lọc trạng thái ('' = tất cả)
     ds = ql.danh_sach_tai_khoan(tim, vai_tro, trang_thai)  # QuerySet đã lọc
-    trang = Paginator(ds, SO_DONG_MOI_TRANG).get_page(request.GET.get('trang'))  # trang hiện tại; get_page tự xử lý số trang sai
-    boc_loc = {k: v for k, v in (('q', tim), ('vai_tro', vai_tro), ('trang_thai', trang_thai)) if v}  # chỉ giữ bộ lọc có giá trị
+    page_obj = Paginator(ds, SO_DONG_MOI_TRANG).get_page(request.GET.get('page'))  # trang hiện tại; tên page_obj và tham số page khớp includes/pagination.html; get_page tự xử lý số trang sai
+    nut_vai_tro, nut_trang_thai = _nut_loc(tim, vai_tro, trang_thai)  # các nút lọc kèm link và trạng thái đang chọn
     boi_canh = {  # dữ liệu gửi sang template
-        'hang': [ql.mo_ta_tai_khoan(request.user, u) for u in trang],  # mỗi tài khoản kèm thông tin được phép làm gì
-        'trang': trang,  # đối tượng trang (có has_next, number...)
+        'hang': [ql.mo_ta_tai_khoan(request.user, u) for u in page_obj],  # mỗi tài khoản kèm thông tin được phép làm gì
+        'page_obj': page_obj,  # đối tượng trang, includes/pagination.html đọc biến này để vẽ thanh chuyển trang
         'tim': tim, 'vai_tro_loc': vai_tro, 'trang_thai_loc': trang_thai,  # giữ lại giá trị trên các ô lọc
-        'query_loc': urlencode(boc_loc),  # chuỗi bộ lọc nối vào link Trang trước / Trang sau
         'cac_vai_tro': (VaiTro.KHACH_HANG, VaiTro.NHIEP_ANH_GIA, VaiTro.QUAN_TRI_VIEN),  # lựa chọn của ô lọc vai trò
         'vai_tro_cho_doi': ql.VAI_TRO_CHO_DOI,  # lựa chọn của ô đổi vai trò từng dòng
+        'nut_vai_tro': nut_vai_tro, 'nut_trang_thai': nut_trang_thai,  # nhóm nút lọc vai trò và nhóm nút lọc trạng thái
         'quay_lai': request.get_full_path(),  # sau khi đổi/khóa thì quay lại đúng trang và bộ lọc này
     }  # hết dict
     return render(request, 'accounts/quan_tri/tai_khoan.html', boi_canh)  # hiện trang
@@ -76,7 +92,11 @@ def doi_vai_tro(request, pk):  # P7: đổi vai trò của tài khoản có khó
 @require_POST  # lớp 2: chỉ nhận POST
 def khoa_mo_tai_khoan(request, pk):  # P7: khóa hoặc mở tài khoản có khóa chính pk
     user = get_object_or_404(User, pk=pk)  # không có thì 404
-    khoa = request.POST.get('hanh_dong') == 'khoa'  # form gửi hanh_dong=khoa hoặc hanh_dong=mo
+    hanh_dong = request.POST.get('hanh_dong', '')  # form gửi hanh_dong=khoa hoặc hanh_dong=mo
+    if hanh_dong not in ('khoa', 'mo'):  # thiếu, rỗng, gõ sai hoặc form bị sửa: không đoán là mở khóa
+        messages.error(request, 'Thao tác không hợp lệ.')  # báo lỗi
+        return redirect(_trang_quay_lai(request))  # quay lại, không gọi hàm nghiệp vụ
+    khoa = hanh_dong == 'khoa'  # đến đây chắc chắn là khoa hoặc mo
     try:  # bọc lại để bắt lỗi nghiệp vụ
         ql.khoa_mo_tai_khoan(request.user, user, khoa)  # gọi luật nghiệp vụ
     except ql.LoiQuanLyTaiKhoan as loi:  # sai luật

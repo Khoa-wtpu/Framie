@@ -36,6 +36,12 @@
        <input type="hidden" name="gia_tri" value="{% if tb|co_sao %}khong{% else %}co{% endif %}">
        <button class="dropdown__item tb-menu-btn" type="submit">{% if tb|co_sao %}Bỏ đánh dấu sao{% else %}Đánh dấu sao{% endif %}</button>
      </form>
-   </div>
- </div>
+    {# Mục 3: xóa thông báo. data-tb-xoa: thong_bao.js hiện hộp xác nhận trước khi gửi #}
+    <form method="post" action="{% url 'xoa_thong_bao' tb.MaThongBao %}" data-tb-form data-tb-xoa>
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ quay_lai }}">
+      <button class="dropdown__item dropdown__item--danger tb-menu-btn" type="submit">Xóa thông báo</button>
+    </form>
+  </div>{# đóng .dropdown__menu #}
+</div>{# đóng .dropdown tb-dong__menu #}
 </li>

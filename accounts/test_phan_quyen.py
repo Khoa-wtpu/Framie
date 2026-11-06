@@ -2,6 +2,10 @@
 # accounts/test_phan_quyen.py  -  P7: kiểm thử quản lý tài khoản và vai trò
 # Chạy:  python manage.py test accounts.test_phan_quyen
 # =====================================================================
+import html  # đổi &amp; trong link HTML về &
+import re  # tìm link chuyển trang trong HTML
+from urllib.parse import parse_qs, urljoin, urlsplit  # ghép đường dẫn trang với phần ?... của link; đọc các tham số trong link nút lọc
+
 from django.test import TestCase  # mỗi test chạy trên database tạm
 from django.urls import reverse  # đổi tên URL thành đường dẫn
 
@@ -80,6 +84,36 @@ class DanhSachTaiKhoanTests(NenTest):  # quyền xem và bộ lọc của trang 
         r = self.client.get(self.url_ds, {'trang_thai': 'bi_khoa'})  # chỉ xem tài khoản bị khóa
         self.assertContains(r, 'khach@example.com')  # có người bị khóa
         self.assertNotContains(r, 'nag@example.com')  # người đang hoạt động không hiện
+
+    def test_phan_trang_trang_2_va_giu_bo_loc(self):  # feedback P7-2: dùng phân trang chung, link chuyển trang giữ ô tìm kiếm
+        for i in range(25):  # 25 tài khoản cùng chứa chữ locmau, nhiều hơn 20 dòng của một trang
+            tao_tai_khoan(f'Khách Locmau {i:02d}', f'locmau{i:02d}@example.com', f'09100000{i:02d}', MAT_KHAU)  # email và số điện thoại không trùng nhau
+        r1 = self.client.get(self.url_ds, {'q': 'locmau'})  # trang 1 khi đang lọc theo locmau
+        self.assertEqual(len(r1.context['hang']), 20)  # trang 1 đủ 20 dòng
+        href = re.search(r'href="([^"]*page=2[^"]*)"', r1.content.decode()).group(1)  # link sang trang 2 do includes/pagination.html in ra
+        url2 = urljoin(self.url_ds, html.unescape(href))  # href chỉ gồm phần sau dấu ?, nên ghép với đường dẫn trang; unescape đổi &amp; thành &
+        self.assertIn('q=locmau', url2)  # bộ lọc còn nguyên trong link
+        r2 = self.client.get(url2)  # bấm link sang trang 2
+        email_trang_2 = {h['user'].email for h in r2.context['hang']}  # email các dòng ở trang 2
+        self.assertEqual(email_trang_2, {f'locmau{i:02d}@example.com' for i in range(5)})  # danh sách xếp mới nhất lên đầu nên trang 2 là 5 người tạo đầu tiên
+
+    def test_nut_loc_ket_hop_vai_tro_va_trang_thai(self):  # P7: hai nhóm nút lọc kết hợp được, mỗi nút chỉ đổi bộ lọc của nhóm mình
+        def nut(r, nhom, nhan):  # tìm một nút trong context theo nhóm và chữ trên nút
+            return next(n for n in r.context[nhom] if n['nhan'] == nhan)  # trả về dict của nút
+        def tham_so(n):  # các tham số trong link của nút
+            return parse_qs(urlsplit(n['url']).query)  # dict tên tham số -> danh sách giá trị
+        r = self.client.get(self.url_ds, {'q': 'khach', 'vai_tro': VaiTro.KHACH_HANG})  # đang lọc theo từ khóa và vai trò
+        khoa = nut(r, 'nut_trang_thai', 'Đã khóa')  # nút Đã khóa
+        self.assertFalse(khoa['dang_chon'])  # chưa được chọn
+        self.assertEqual(tham_so(khoa), {'q': ['khach'], 'vai_tro': [VaiTro.KHACH_HANG], 'trang_thai': ['bi_khoa']})  # giữ từ khóa và vai trò, thêm trạng thái
+        r = self.client.get(khoa['url'])  # bấm nút Đã khóa
+        khoa = nut(r, 'nut_trang_thai', 'Đã khóa')  # nút Đã khóa sau khi bấm
+        self.assertTrue(khoa['dang_chon'])  # nút đang được chọn
+        self.assertNotIn('trang_thai', tham_so(khoa))  # bấm lần nữa là bỏ chọn trạng thái
+        self.assertEqual(tham_so(khoa)['vai_tro'], [VaiTro.KHACH_HANG])  # vai trò vẫn còn
+        tat_ca = nut(r, 'nut_vai_tro', 'Tất cả')  # nút Tất cả của nhóm vai trò
+        self.assertNotIn('vai_tro', tham_so(tat_ca))  # bỏ lọc vai trò
+        self.assertEqual(tham_so(tat_ca)['trang_thai'], ['bi_khoa'])  # nhưng giữ lọc trạng thái
 
 
 class DoiVaiTroTests(NenTest):  # luật đổi vai trò
@@ -184,3 +218,16 @@ class KhoaMoTaiKhoanTests(NenTest):  # luật khóa và mở tài khoản
         self.assertRedirects(r, '/quan-tri/tai-khoan/?q=khach')  # quay lại đúng bộ lọc
         r = self.client.post(self.url_toggle(self.khach), {'hanh_dong': 'mo', 'quay_lai': 'https://evil.example.com/'})  # đường dẫn ra trang lạ
         self.assertRedirects(r, self.url_ds)  # bị bỏ qua, về danh sách
+
+    def test_hanh_dong_khong_hop_le_khong_mo_khoa(self):  # feedback P7-1: POST thiếu hoặc sai hanh_dong không được hiểu là mở khóa
+        self.khach.is_active = False  # khóa sẵn Khách hàng
+        self.khach.save()  # lưu
+        for du_lieu in ({'hanh_dong': ''}, {'hanh_dong': 'abc'}, {}):  # rỗng, giá trị lạ, không gửi gì
+            with self.subTest(du_lieu=du_lieu):  # báo riêng từng ca
+                r = self.client.post(self.url_toggle(self.khach), du_lieu, follow=True)  # gửi POST
+                self.assertContains(r, 'Thao tác không hợp lệ')  # hiện câu báo lỗi
+                self.assertFalse(User.objects.get(pk=self.khach.pk).is_active)  # tài khoản vẫn bị khóa
+
+    def test_quan_tri_vien_khoa_duoc_quan_tri_vien_thuong_khac(self):  # hành vi có chủ ý đã được Khoa xác nhận
+        self.client.post(self.url_toggle(self.admin2), {'hanh_dong': 'khoa'})  # Quản trị viên thường khóa Quản trị viên thường khác
+        self.assertFalse(User.objects.get(pk=self.admin2.pk).is_active)  # tài khoản kia đã bị khóa

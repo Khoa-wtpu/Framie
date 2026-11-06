@@ -193,22 +193,72 @@
 .admin-section__link { /* nút Xem tất cả Booking dưới lưới thẻ */
   margin-top: var(--space-5); /* cách lưới thẻ bên trên */
 }
-/* ---- P7: trang Tài khoản và phân quyền (chỉ dùng biến trong tokens.css) ---- */
-.admin-filter { /* hàng ô tìm kiếm + bộ lọc */
+/* ---- P7: trang Tài khoản và vai trò (chỉ dùng biến trong tokens.css) ---- */
+.admin-page:has(.tk-cuon) { /* chỉ khung của trang Tài khoản: chừa khoảng trống trên và dưới giống trang Duyệt hồ sơ (.duyet) */
+  padding-block: var(--space-6); /* 2rem trên và dưới */
+}
+.admin-content__head:has(.tk-tieu-de) { /* đầu trang Tài khoản: chừa khoảng thoáng giữa tiêu đề và hàng lọc như mockup */
+  margin-bottom: var(--space-6); /* 2rem */
+}
+.tk-tieu-de { /* tiêu đề hai dòng cỡ lớn; chữ gradient lấy từ h1 nên dòng dưới tự nhạt dần */
+  display: block; /* thành khối riêng để dòng chữ không chịu line-height 1.35 của h1 */
+  font-size: clamp(var(--text-3xl), 7vw, 4.5rem); /* to nhất 72px như mockup, màn hình nhỏ thì thu lại nhưng không dưới 44px */
+  line-height: 1.15; /* hai dòng sát nhau như mockup */
+  padding-block: .06em; /* chừa chỗ cho dấu tiếng Việt, không bị cắt (chữ gradient cắt theo khung) */
+  letter-spacing: -.04em; /* chữ sát nhau cho gọn ở cỡ lớn */
+}
+.tk-thanh { /* hàng lọc: ô tìm kiếm + hai nhóm nút lọc */
   display: flex; /* xếp ngang */
   flex-wrap: wrap; /* màn hình hẹp thì xuống hàng */
-  gap: var(--space-3); /* khoảng cách giữa các ô */
-  margin-bottom: var(--space-4); /* cách bảng bên dưới */
+  align-items: center; /* canh giữa theo chiều dọc */
+  gap: var(--space-3); /* khoảng cách giữa các khối */
+  margin-bottom: var(--space-5); /* cách bảng bên dưới */
 }
-.admin-filter .input { /* ô nhập và ô chọn trong hàng lọc */
-  width: auto; /* không kéo dài hết hàng */
-  min-width: 18rem; /* đủ rộng để hiện hết chữ gợi ý */
+.tk-tim { /* form chứa ô tìm kiếm */
+  flex: 1 1 20rem; /* chiếm hết chỗ trống; không đủ 20rem thì các nút lọc xuống hàng, không làm chữ gợi ý bị cắt */
+  margin: 0; /* bỏ khoảng mặc định của form */
 }
-.admin-table-wrap { /* khung bọc bảng */
+.tk-tim .input { /* ô tìm kiếm */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu như các nút */
+  padding-inline: var(--space-5); /* chữ cách mép trái cho thoáng */
+}
+.tk-chips { /* một nhóm nút lọc */
+  display: flex; /* xếp ngang */
+  flex-wrap: wrap; /* hẹp thì xuống hàng */
+  gap: var(--space-2); /* khoảng cách giữa các nút */
+}
+.tk-chips--tt { /* nhóm trạng thái: có đường kẻ đứng ngăn với nhóm vai trò */
+  padding-left: var(--space-3); /* cách đường kẻ */
+  border-left: 1px solid var(--color-border); /* đường kẻ đứng */
+}
+.tk-chip { /* một nút lọc (là link GET, không phải nút gửi form) */
+  display: inline-flex; /* chữ canh giữa */
+  align-items: center; /* canh giữa theo chiều dọc */
+  min-height: 2.75rem; /* cao bằng ô tìm kiếm */
+  padding: var(--space-2) var(--space-4); /* đệm trong, gọn để 6 nút vẫn nằm cùng hàng với ô tìm kiếm */
+  border: 1px solid var(--color-border-hover); /* viền mảnh */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu */
+  color: var(--color-text); /* chữ theo chế độ sáng/tối */
+  font-size: var(--text-sm); /* chữ nhỏ vừa */
+  font-weight: var(--fw-heading); /* chữ đậm */
+  text-decoration: none; /* bỏ gạch chân của link */
+  white-space: nowrap; /* chữ luôn một dòng */
+  transition: background .15s, color .15s, border-color .15s; /* đổi màu mượt khi rê chuột */
+}
+.tk-chip:hover { /* rê chuột vào */
+  background: var(--color-surface-alt); /* nền nhạt */
+}
+.tk-chip.is-active { /* nút lọc đang chọn: cùng kiểu với mục đang chọn ở menu trên cùng */
+  background: var(--btn-primary-bg); /* nền gradient đậm */
+  color: var(--color-white); /* chữ ngược màu nền */
+  border-color: transparent; /* bỏ viền */
+}
+.tk-cuon { /* khung bọc bảng: viền và bo góc giống .duyet__cuon của trang Duyệt hồ sơ */
   overflow-x: auto; /* bảng rộng hơn khung thì cuộn ngang, không làm tràn trang */
-  padding: 0; /* bảng sát mép khung */
+  border: 1px solid var(--color-border); /* viền mảnh */
+  border-radius: var(--radius-lg); /* bo góc lớn */
 }
-.admin-table { /* bảng tài khoản */
+.admin-table { /* bảng dùng chung trong khu Quản trị */
   width: 100%; /* rộng hết khung */
   border-collapse: collapse; /* viền các ô liền nhau */
   font-size: var(--text-sm); /* chữ nhỏ vừa cho bảng */
@@ -233,12 +283,95 @@
   margin-right: var(--space-3); /* cách form kế bên */
   align-items: center; /* canh giữa theo chiều dọc */
 }
-.admin-inline-form .input { /* ô chọn vai trò trong dòng */
-  width: auto; /* vừa chữ */
+.tk-bang { /* bảng riêng của trang Tài khoản */
+  min-width: 52rem; /* hẹp hơn thì khung bọc cuộn ngang, không bóp méo cột */
 }
-.admin-pager { /* thanh Trang trước / Trang sau */
+.tk-bang th, .tk-bang td { /* mọi ô: canh trái như mockup */
+  padding: var(--space-4) var(--space-5); /* đệm rộng cho thoáng */
+  text-align: left; /* canh trái */
+}
+.tk-bang th { /* ô tiêu đề: chữ nhỏ viết hoa như mockup, mỗi cột một nền gradient như trang Duyệt hồ sơ */
+  background: var(--gradient-white-gray); /* gradient trắng-xám (chế độ Đen: xám đậm dần) */
+  color: var(--color-text-muted); /* chữ phụ */
+  font-size: var(--text-xs); /* chữ nhỏ */
+  letter-spacing: .1em; /* giãn chữ */
+  text-transform: uppercase; /* viết hoa */
+  white-space: nowrap; /* tên cột luôn một dòng */
+}
+.tk-bang tbody tr:hover { /* rê chuột vào dòng */
+  background: var(--color-surface-alt); /* nền nhạt */
+}
+.tk-bang tbody tr:last-child td { /* dòng cuối */
+  border-bottom: 0; /* bỏ đường kẻ vì khung đã có viền */
+}
+.tk-nguoi { /* ô họ tên: ảnh tròn + chữ */
   display: flex; /* xếp ngang */
-  gap: var(--space-3); /* khoảng cách */
   align-items: center; /* canh giữa theo chiều dọc */
-  margin-top: var(--space-4); /* cách bảng bên trên */
+  gap: var(--space-3); /* khoảng cách ảnh và chữ */
+  min-width: 0; /* cho phép chữ dài bị cắt thay vì làm tràn ô */
+}
+.tk-nguoi__av { /* ảnh đại diện tròn chứa chữ cái */
+  flex: none; /* không bị bóp méo */
+  display: grid; /* canh giữa chữ */
+  place-items: center; /* canh giữa hai chiều */
+  width: 2.75rem; /* rộng 44px */
+  height: 2.75rem; /* cao 44px */
+  border-radius: 50%; /* hình tròn */
+  background: var(--btn-primary-bg); /* gradient đậm, cùng kiểu nút chính */
+  color: var(--color-white); /* chữ ngược màu nền */
+  font-size: var(--text-xs); /* chữ nhỏ */
+  font-weight: var(--fw-heading); /* chữ đậm */
+}
+.tk-nguoi__chu { /* khối tên + email */
+  min-width: 0; /* cho phép email dài bị cắt */
+}
+.tk-nguoi__ten { /* họ tên */
+  display: block; /* chiếm một dòng */
+  font-weight: var(--fw-heading); /* chữ đậm */
+  line-height: var(--leading-tight); /* dòng sát để tên và email gần nhau */
+}
+.tk-nguoi__email { /* email dưới tên */
+  display: block; /* chiếm một dòng */
+  max-width: 18rem; /* email dài hơn thì cắt */
+  overflow: hidden; /* ẩn phần thừa */
+  text-overflow: ellipsis; /* hiện dấu ba chấm */
+  white-space: nowrap; /* không xuống dòng */
+  color: var(--color-text-muted); /* chữ phụ */
+  font-size: var(--text-xs); /* chữ nhỏ */
+}
+.tk-vai-tro { /* ô vai trò */
+  font-weight: var(--fw-heading); /* chữ đậm */
+  white-space: nowrap; /* luôn một dòng, không còn bị xuống dòng như "Nhiếp ảnh / gia" */
+}
+.tk-trang-thai { /* trạng thái dạng chấm màu + chữ (theo mockup) */
+  display: inline-flex; /* chấm và chữ nằm ngang */
+  align-items: center; /* canh giữa theo chiều dọc */
+  gap: var(--space-2); /* khoảng cách chấm và chữ */
+  font-weight: var(--fw-heading); /* chữ đậm */
+  white-space: nowrap; /* luôn một dòng */
+}
+.tk-trang-thai::before { /* chấm màu */
+  content: ""; /* phần tử rỗng */
+  width: .5rem; /* rộng 8px */
+  height: .5rem; /* cao 8px */
+  border-radius: 50%; /* hình tròn */
+  background: var(--tone-gray-dot); /* màu mặc định */
+}
+.tk-trang-thai--hoat-dong::before { /* đang hoạt động: chấm xanh lá, cùng màu tông với nhãn xanh lá của nhóm */
+  background: var(--tone-green-dot); /* xanh lá */
+}
+.tk-trang-thai--khoa::before { /* đã khóa: chấm đỏ */
+  background: var(--tone-red-dot); /* đỏ */
+}
+.tk-bang th:last-child, .tk-bang .admin-table__actions { /* cột nút */
+  text-align: center; /* canh giữa cột */
+}
+.tk-bang .admin-inline-form { /* form khóa/mở trong dòng */
+  margin-right: 0; /* sát mép phải ô */
+}
+.tk-nut { /* nút Khóa / Mở khóa */
+  min-width: 7.5rem; /* hai nút rộng bằng nhau để cột nút thẳng hàng (chỉ đặt độ rộng, kiểu nút vẫn lấy từ btn--*) */
+}
+.tk-trong { /* dòng báo không có tài khoản nào khớp bộ lọc */
+  color: var(--color-text-muted); /* chữ phụ */
 }
