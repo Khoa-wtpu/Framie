@@ -1,118 +1,80 @@
-{# UC4.3: Danh sách yêu cầu Booking của Nhiếp ảnh gia (lọc / sắp xếp theo trạng thái, thời gian). File này được sử dụng bởi bookings/tiep_nhan.py (view danh_sach_yeu_cau) #}
+{# UC4.3: Danh sách yêu cầu Booking của Nhiếp ảnh gia (lọc / sắp xếp theo trạng thái, thời gian). Dùng bởi bookings/tiep_nhan.py (view danh_sach_yeu_cau) #}
+{# GIAO DIỆN: cùng phong cách trang Duyệt hồ sơ (tiêu đề → hàng lọc → bảng bo góc → phân trang). CSS: bookings/css/admin_booking_list.css (class "abk"). #}
 
-{# Kế thừa khung chung của website (đầu trang, menu, chân trang) từ base.html; file này chỉ viết phần nội dung riêng của trang. #}
-{% extends "base.html" %}
-{% load ui static %} {# status_badge: nhãn màu theo trạng thái #}
+{% extends "base.html" %}{# kế thừa khung chung (đầu trang, menu, chân trang) #}
+{% load ui static %}{# status_badge: nhãn màu theo trạng thái; static: gọi CSS/JS #}
 
-{# Tiêu đề hiện trên tab của trình duyệt. #}
-{% block title %}Quản lý Booking{% endblock %}
+{% block title %}Quản lý Booking{% endblock %}{# chữ trên tab trình duyệt #}
 
-{# Chèn thêm phần định dạng (CSS) riêng của trang này vào phần đầu trang. #}
-{% block extra_head %}
-<link rel="stylesheet" href="{% static 'bookings/css/nag_booking.css' %}">
-{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'bookings/css/admin_booking_list.css' %}">{% endblock %}{# nạp CSS dùng chung cho các trang danh sách #}
+{% block extra_js %}<script src="{% static 'bookings/js/admin_booking_list.js' %}" defer></script>{% endblock %}{# JS: đổi ô chọn là tự tìm lại #}
 
-{# Phần nội dung chính của trang. #}
-{% block content %}
-{# Khung nằm giữa trang; các khối bên trong xếp dọc, cách đều nhau. #}
-<section class="container stack">
+{% block content %}{# nội dung chính #}
+<div class="container abk">{# khung giữa trang #}
+  <h1>Quản lý Booking</h1>{# tiêu đề trang #}
 
-  {# Tiêu đề lớn của trang. #}
-  <h1>Quản lý Booking</h1>
-
-  {# Chỉ hiện dòng nhắc khi có ít nhất 1 yêu cầu đang chờ xác nhận (số lượng khác 0). #}
-  {% if so_cho_xac_nhan %}
-    <div class="alert alert--info" role="status"><div class="alert__body"><span class="alert__text">Có <strong>{{ so_cho_xac_nhan }}</strong> yêu cầu Booking đang chờ bạn xác nhận.</span></div></div>
+  {% if so_cho_xac_nhan %}{# chỉ hiện dòng nhắc khi có ít nhất 1 yêu cầu đang chờ xác nhận #}
+    <div class="alert alert--info" role="status"><div class="alert__body"><span class="alert__text">Có <strong>{{ so_cho_xac_nhan }}</strong> yêu cầu Booking đang chờ bạn xác nhận.</span></div></div>{# khung thông tin xanh #}
   {% endif %}
 
   {# Luồng 2a: lọc theo trạng thái, sắp xếp theo thời gian. Gửi bằng GET để giữ được bộ lọc khi chuyển trang. #}
-  {# Biểu mẫu lọc và sắp xếp. method=get: lựa chọn được gửi lên thanh địa chỉ, nên khi chuyển trang vẫn giữ nguyên bộ lọc. #}
-  <form class="panel nag-ds__loc" method="get">
-    <div class="field">
-      <label class="field__label" for="loc-trang-thai">Trạng thái</label>
-      {# Ô chọn 'Trạng thái'. #}
-      <select class="input" id="loc-trang-thai" name="trang_thai">
-        {# Lặp qua từng lựa chọn để tạo các dòng trong ô chọn. #}
-        {% for gia_tri, nhan in lua_chon_trang_thai %}
-          {# Một dòng lựa chọn; dòng trùng bộ lọc hiện tại được đánh dấu 'selected' (đang chọn). #}
-          <option value="{{ gia_tri }}"{% if gia_tri == trang_thai %} selected{% endif %}>{{ nhan }}</option>
-        {% endfor %}
-      </select>
+  <form class="abk__form" method="get">{# form lọc; method=get => lựa chọn nằm trên thanh địa chỉ nên chuyển trang vẫn giữ #}
+    <div class="abk__ket-qua-dau">{# hàng kết quả: số lượng bên trái, hai ô lọc bên phải #}
+      <p class="abk__dem" role="status">{{ page_obj.paginator.count }} Booking</p>{# tổng số Booking khớp bộ lọc #}
+      <label class="abk__sap-xep">{# nhãn + ô chọn "Trạng thái" #}
+        <span>Trạng thái</span>
+        <select class="input" id="loc-trang-thai" name="trang_thai" data-tu-gui>{# chọn xong tự gửi form #}
+          {% for gia_tri, nhan in lua_chon_trang_thai %}{# lặp qua từng lựa chọn #}
+            <option value="{{ gia_tri }}"{% if gia_tri == trang_thai %} selected{% endif %}>{{ nhan }}</option>{# dòng trùng bộ lọc hiện tại được đánh dấu selected #}
+          {% endfor %}
+        </select>
+      </label>
+      <label class="abk__sap-xep">{# nhãn + ô chọn "Sắp xếp" #}
+        <span>Sắp xếp</span>
+        <select class="input" id="loc-sap-xep" name="sap_xep" data-tu-gui>
+          {% for gia_tri, nhan in lua_chon_sap_xep %}
+            <option value="{{ gia_tri }}"{% if gia_tri == sap_xep %} selected{% endif %}>{{ nhan }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <noscript><button class="btn btn--secondary btn--sm" type="submit">Áp dụng</button></noscript>{# tắt JavaScript thì có nút bấm thay thế #}
     </div>
-    <div class="field">
-      <label class="field__label" for="loc-sap-xep">Sắp xếp theo thời gian</label>
-      {# Ô chọn 'Sắp xếp theo thời gian' (cách hoạt động giống ô trên). #}
-      <select class="input" id="loc-sap-xep" name="sap_xep">
-        {% for gia_tri, nhan in lua_chon_sap_xep %}
-          <option value="{{ gia_tri }}"{% if gia_tri == sap_xep %} selected{% endif %}>{{ nhan }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    {# Nút bấm để áp dụng bộ lọc. #}
-    <button class="btn btn--primary" type="submit">Áp dụng</button>
   </form>
 
-  {# Nếu trang hiện tại có dữ liệu thì hiện bảng; nếu không thì hiện thông báo trống ở nhánh 'else' phía dưới. #}
-  {% if page_obj.object_list %}
-  <div class="panel nag-ds__cuon">
-    {# Bảng danh sách Booking. #}
-    <table class="nag-ds__bang">
-      {# Hàng tiêu đề các cột. #}
+  {% if page_obj.object_list %}{# trang hiện tại có dữ liệu thì hiện bảng; không thì hiện thông báo trống ở nhánh else #}
+  <div class="abk__cuon">{# khung bảng bo góc, quá rộng thì cuộn ngang #}
+    <table class="abk__bang-luot">{# bảng danh sách yêu cầu Booking #}
       <thead>
         <tr>
           <th scope="col">Mã</th>
           <th scope="col">Khách hàng</th>
           <th scope="col">Gói dịch vụ</th>
           <th scope="col">Ngày giờ chụp</th>
-          <th scope="col">Địa điểm</th>
           <th scope="col">Gửi lúc</th>
           <th scope="col">Trạng thái</th>
-          {# Cột cuối không hiện chữ; chữ 'Thao tác' chỉ dành cho trình đọc màn hình của người khiếm thị. #}
-          <th scope="col"><span class="sr-only">Thao tác</span></th>
+          <th scope="col"><span class="sr-only">Thao tác</span></th>{# cột nút; chữ chỉ dành cho trình đọc màn hình #}
         </tr>
       </thead>
-      {# Phần thân bảng: mỗi Booking một dòng. #}
       <tbody>
-        {# Lặp qua từng Booking của trang hiện tại (bk là một Booking). #}
-        {% for bk in page_obj %}
+        {% for bk in page_obj %}{# mỗi vòng lặp = một Booking #}
         <tr>
-          {# Mã Booking. #}
-          <td>#{{ bk.pk }}</td>
-          {# Tên khách (nếu không có họ tên thì dùng tên đăng nhập). #}
-          <td>{{ bk.MaKhachHang.get_full_name|default:bk.MaKhachHang.username }}</td>
-          {# Tên gói dịch vụ; bên dưới là loại hình chụp (chữ nhạt). #}
-          <td>{{ bk.MaGoi.TenGoi }}<br><span class="muted">{{ bk.MaGoi.MaLoaiHinh.TenLoaiHinh }}</span></td>
-          {# Ngày giờ chụp, dạng 'giờ:phút ngày/tháng/năm'. #}
-          <td>{{ bk.NgayGioChup|date:"H:i d/m/Y" }}</td>
-          {# Địa điểm chụp. #}
-          <td>{{ bk.DiaDiem }}</td>
-          {# Thời điểm khách gửi yêu cầu. #}
-          <td>{{ bk.NgayTao|date:"H:i d/m/Y" }}</td>
-          {# Trạng thái hiển thị dạng nhãn có màu. #}
-          <td>{% status_badge bk.TrangThai %}</td>
-          {# Nút dẫn tới trang chi tiết của Booking này. #}
-          <td><a class="btn btn--sm btn--soft" href="{% url 'chi_tiet_booking' ma_booking=bk.pk %}">Xem chi tiết</a></td>
+          <th scope="row" class="abk__ma">#{{ bk.pk }}</th>{# mã Booking #}
+          <td>{{ bk.MaKhachHang.get_full_name|default:bk.MaKhachHang.username }}</td>{# tên khách (không có họ tên thì dùng tên đăng nhập) #}
+          <td>{{ bk.MaGoi.TenGoi }}<span class="abk__phu">{{ bk.MaGoi.MaLoaiHinh.TenLoaiHinh }}</span></td>{# tên gói + loại hình chụp (chữ nhỏ, mờ) #}
+          <td><span class="abk__gio">{{ bk.NgayGioChup|date:"d/m/Y H:i" }}</span><span class="abk__phu abk__cat" title="{{ bk.DiaDiem }}">{{ bk.DiaDiem }}</span></td>{# ngày giờ chụp + địa điểm #}
+          <td class="abk__gio">{{ bk.NgayTao|date:"d/m/Y H:i" }}</td>{# thời điểm khách gửi yêu cầu #}
+          <td>{% status_badge bk.TrangThai %}</td>{# trạng thái dạng nhãn có màu #}
+          <td><a class="btn btn--sm btn--soft" href="{% url 'chi_tiet_yeu_cau_booking' ma_booking=bk.pk %}">Xem chi tiết</a></td>{# nút dẫn tới trang chi tiết #}
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
-  {# Thanh chuyển trang (Trước / Sau / số trang). #}
-  {% include "includes/pagination.html" with page_obj=page_obj %}
+  {% include "includes/pagination.html" with page_obj=page_obj %}{# thanh chuyển trang #}
 
-  {# Trường hợp không có Booking nào để hiển thị. #}
-  {% else %}
+  {% else %}{# không có Booking nào để hiển thị #}
     {# Ngoại lệ 2b: không có Booking "Chờ xác nhận" nào. Lọc trạng thái khác mà rỗng thì báo theo bộ lọc. #}
-    <div class="panel">
-      {# Đang xem mặc định 'Chờ xác nhận' -> hiện câu 'Không có yêu cầu Booking mới'. #}
-      {% if dang_xem_yeu_cau_moi %}
-        <p><strong>{{ TB_KHONG_CO_YEU_CAU }}</strong></p>
-      {# Đang lọc theo trạng thái khác -> hiện câu 'Không có Booking nào khớp bộ lọc'. #}
-      {% else %}
-        <p><strong>Không có Booking nào khớp bộ lọc.</strong></p>
-      {% endif %}
-    </div>
+    <p class="abk__trong">{% if dang_xem_yeu_cau_moi %}{{ TB_KHONG_CO_YEU_CAU }}{% else %}Không có Booking nào khớp bộ lọc.{% endif %}</p>{# khung nét đứt báo trống #}
   {% endif %}
-
-</section>
+</div>
 {% endblock %}

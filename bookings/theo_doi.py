@@ -20,7 +20,7 @@
 #
 # File gồm 4 phần (giống bookings/tiep_nhan.py):
 #   PHẦN 1. Import, hằng số
-#   PHẦN 2. (không cần form - bộ lọc đọc trực tiếp từ thanh địa chỉ)
+#   PHẦN 2. (Khách / Nhiếp ảnh gia: không cần form - đọc thẳng từ thanh địa chỉ; Quản trị viên: BoLocBookingQuanTriForm)
 #   PHẦN 3. Hàm nghiệp vụ (service)
 #   PHẦN 4. View và urlpatterns  (nối vào config/urls.py bằng include('bookings.theo_doi'))
 #
@@ -35,18 +35,17 @@
 # ---------------------------------------------------------------------
 # Thư viện ghi log: ghi cảnh báo kỹ thuật cho lập trình viên (người dùng không thấy).
 import logging  # nạp thư viện ghi log có sẵn của Python
-import hashlib
-import json
+
+from django import forms  # form đọc và kiểm tra bộ lọc trên thanh địa chỉ (trang Tất cả Booking của Quản trị viên)
 
 # Q: ghép nhiều điều kiện tìm kiếm bằng "HOẶC" (ô tìm kiếm của Quản trị viên).
 from django.db.models import Q  # Q: công cụ ghép điều kiện lọc bằng "HOẶC" / "VÀ"
 # Paginator: chia danh sách dài thành từng trang 10 dòng.
 from django.core.paginator import Paginator  # Paginator: cắt danh sách dài thành nhiều trang
 # get_object_or_404: lấy một dòng dữ liệu, không có thì trả trang 404. render: dựng trang HTML.
-from django.shortcuts import get_object_or_404, render
-from django.http import JsonResponse  # lấy 1 dòng dữ liệu (không có -> 404) / dựng trang HTML
+from django.shortcuts import get_object_or_404, render  # lấy 1 dòng dữ liệu (không có -> 404) / dựng trang HTML
 # path: khai báo đường dẫn. reverse: từ tên URL suy ra địa chỉ.
-from django.urls import path, reverse  # path: khai báo địa chỉ; reverse: từ TÊN url suy ra địa chỉ thật
+from django.urls import NoReverseMatch, path, reverse  # path: khai báo địa chỉ; reverse: từ TÊN url suy ra địa chỉ thật; NoReverseMatch: lỗi khi tên url chưa tồn tại
 # Chỉ cho phép mở trang bằng GET (xem), không nhận POST.
 from django.views.decorators.http import require_GET  # nhãn: chỉ cho mở trang bằng GET (xem), chặn POST
 
@@ -55,12 +54,10 @@ from django.views.decorators.http import require_GET  # nhãn: chỉ cho mở tr
 from accounts.permissions import lay_vai_tro, vai_tro_required  # biết vai trò người đăng nhập / nhãn chặn sai vai trò
 from bookings.huy_booking import co_the_huy, co_the_xac_nhan_hoan_tien, lay_yeu_cau_huy  # T9: nút Hủy + khối thông tin hủy
 from bookings.models import Booking  # bảng Booking trong cơ sở dữ liệu
-from bookings.da_chup import co_the_bam_da_chup
 # Hằng số tên trạng thái / vai trò dùng chung của nhóm (không tự gõ chữ tiếng Việt).
 from core.constants import LoaiThanhToan, TrangThaiBooking, TrangThaiThanhToan, VaiTro  # tên các trạng thái/vai trò dùng chung
 # tinh_so_tien: quy tắc chia 40% / 60% DUY NHẤT của dự án (cùng hàm Thanh toán dùng để thu tiền thật).
-from payments.models import tinh_so_tien
-from delivery.models import Anh  # hàm chia tiền cọc 40% / còn lại 60% của nhóm
+from payments.models import tinh_so_tien  # hàm chia tiền cọc 40% / còn lại 60% của nhóm
 
 logger = logging.getLogger(__name__)  # tạo "cây bút ghi log" mang tên file này
 
@@ -73,6 +70,13 @@ LOC_TAT_CA = 'tat_ca'  # chữ quy ước cho lựa chọn "Tất cả trạng t
 
 # Số dòng trên mỗi trang danh sách.
 SO_DONG_MOI_TRANG = 10  # mỗi trang danh sách hiện tối đa 10 Booking
+
+# Tab nhóm trạng thái ở đầu trang danh sách (giống tab "Chờ xử lý / Đã xử lý" của trang Duyệt hồ sơ).
+TAB_TAT_CA = 'tat_ca'  # tab "Tất cả": không lọc theo nhóm
+TAB_DANG_XU_LY = 'dang_xu_ly'  # tab "Đang xử lý": Booking chưa kết thúc
+TAB_KET_THUC = 'ket_thuc'  # tab "Đã kết thúc": Booking đã xong hoặc không còn tiếp tục
+TRANG_THAI_KET_THUC = (TrangThaiBooking.HOAN_THANH, TrangThaiBooking.DA_TU_CHOI,  # 4 trạng thái kết thúc:
+                       TrangThaiBooking.HET_THOI_HAN_DAT_COC, TrangThaiBooking.DA_HUY)  # hoàn thành + 3 trạng thái không thành công
 
 # Nhóm trạng thái dùng cho việc soát khớp với dữ liệu thanh toán (BR4.7-2).
 # Từ "Chốt Booking" trở đi (cho tới "Hoàn thành") là các trạng thái mà cọc 40% PHẢI đã được xác nhận.
@@ -88,20 +92,35 @@ TRANG_THAI_CHUA_CO_COC = {  # tập hợp các trạng thái mà cọc CHƯA Đ�
 }
 
 
+# Trạng thái mà Nhiếp ảnh gia còn việc với ảnh (module Bàn giao ảnh của Nguyên): tải ảnh gốc / bắt đầu hậu kỳ / đang hậu kỳ.
+TRANG_THAI_NAG_XU_LY_ANH = (TrangThaiBooking.DA_CHUP, TrangThaiBooking.CHO_HAU_KY, TrangThaiBooking.DANG_HAU_KY)  # 3 trạng thái hiện nút "Tải ảnh / Bắt đầu hậu kỳ"
+# Trạng thái mà Khách hàng phải chọn ảnh cần hậu kỳ.
+TRANG_THAI_KHACH_CHON_ANH = (TrangThaiBooking.CHO_KH_CHON_ANH,)  # chỉ "Chờ Khách hàng lựa chọn ảnh" hiện nút "Chọn ảnh cần hậu kỳ"
+
+
 # ---------------------------------------------------------------------
 # PHẦN 3: HÀM NGHIỆP VỤ (SERVICE)
 # ---------------------------------------------------------------------
-def _ten_hien_thi(user):
+def _url_neu_co(ten_url, ma_booking):  # đổi tên url của module khác thành địa chỉ; chưa có thì trả None
+    """Tên URL -> địa chỉ trang của module khác (delivery, của Nguyên). Trang đó chưa có trên máy này (chưa merge)
+    thì trả None để template ẩn nút, không báo lỗi - cùng cách với hàm _url ở core/views_tong_quan.py (B9)."""
+    try:  # thử suy ra địa chỉ
+        return reverse(ten_url, kwargs={'ma_booking': ma_booking})  # có tên url -> trả địa chỉ thật
+    except NoReverseMatch:  # tên url chưa tồn tại
+        return None  # None: template không hiện nút
+
+
+def _ten_hien_thi(user):  # tên hiển thị của một người
     """Họ tên đầy đủ; rỗng thì lấy tên đăng nhập."""
     return user.get_full_name() or user.username  # có họ tên thì dùng, trống thì lấy tên đăng nhập
 
 
-def _tien(so):
+def _tien(so):  # định dạng tiền kiểu Việt Nam
     """Định dạng tiền kiểu Việt Nam: 1500000 -> '1.500.000'."""
     return f'{int(so):,}'.replace(',', '.')  # int(): bỏ phần lẻ; :, thêm dấu phẩy ngăn nghìn; replace: đổi phẩy thành chấm
 
 
-def booking_cua_nguoi_dung(user, vai_tro):
+def booking_cua_nguoi_dung(user, vai_tro):  # cửa ngõ lấy Booking đúng phạm vi của người dùng
     """HÀM 'CỬA NGÕ' LẤY DỮ LIỆU của UC4.7 - mọi truy vấn của file này đều đi qua đây nên không thể xem lọt
     Booking của người khác (BR4.7-1).
       Khách hàng     -> chỉ Booking do chính mình đặt.
@@ -120,12 +139,12 @@ def booking_cua_nguoi_dung(user, vai_tro):
     return goc.select_related('MaKhachHang', 'MaGoi__MaLoaiHinh', 'MaLich', 'MaNhiepAnhGia__MaTaiKhoan')  # nạp kèm các bảng liên quan trong 1 lần truy vấn
 
 
-def chuan_hoa_trang_thai(trang_thai):
+def chuan_hoa_trang_thai(trang_thai):  # làm sạch giá trị lọc trạng thái
     """Giá trị lạ trên URL (gõ tay) -> quay về 'tất cả', không gây lỗi."""
     return trang_thai if trang_thai in TrangThaiBooking.ALL else LOC_TAT_CA  # hợp lệ thì giữ, lạ thì coi như "tất cả"
 
 
-def lay_danh_sach_booking(user, vai_tro, trang_thai=LOC_TAT_CA, tu_khoa=''):
+def lay_danh_sach_booking(user, vai_tro, trang_thai=LOC_TAT_CA, tu_khoa=''):  # danh sách Booking đã lọc, mới nhất lên đầu
     """UC4.7 bước 2 và luồng 2a: danh sách Booking của người dùng, lọc theo trạng thái, mới nhất lên đầu.
     tu_khoa (chỉ Quản trị viên dùng): mã Booking hoặc tên / email / tên đăng nhập của Khách hay Nhiếp ảnh gia."""
     ds = booking_cua_nguoi_dung(user, vai_tro)  # bước 1: lấy đúng phạm vi Booking của người này (BR4.7-1)
@@ -147,12 +166,65 @@ def lay_danh_sach_booking(user, vai_tro, trang_thai=LOC_TAT_CA, tu_khoa=''):
     return ds.order_by('-NgayTao', '-MaBooking')  # dấu '-' = giảm dần: Booking mới nhất lên đầu
 
 
-def lay_chi_tiet_booking(user, vai_tro, ma_booking):
+class BoLocBookingQuanTriForm(forms.Form):  # bộ lọc của trang "Tất cả Booking" (cùng kiểu BoLocDuyetForm của trang Duyệt hồ sơ)
+    """Tìm kiếm và bộ lọc của danh sách Booking phía Quản trị viên (GET). Mỗi nhóm lọc chọn được nhiều mục:
+    trong một nhóm là 'hoặc', giữa các nhóm là 'và'. Giá trị sai/lạ trên URL bị bỏ qua chứ không gây lỗi trang."""
+
+    q = forms.CharField(label='Từ khóa (mã Booking, tên hoặc email)', required=False, max_length=100,  # ô tìm kiếm
+                        widget=forms.TextInput(attrs={'placeholder': 'Tìm theo mã Booking, tên hoặc email',
+                                                      'autocomplete': 'off', 'type': 'search'}))
+    tu_ngay = forms.DateField(label='Gửi từ ngày', required=False,  # lọc theo ngày Khách gửi yêu cầu
+                              widget=forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+                              error_messages={'invalid': 'Ngày bắt đầu không hợp lệ.'})
+    den_ngay = forms.DateField(label='Gửi đến ngày', required=False,
+                               widget=forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+                               error_messages={'invalid': 'Ngày kết thúc không hợp lệ.'})
+    trang_thai = forms.MultipleChoiceField(label='Trạng thái Booking', required=False,  # chọn nhiều trạng thái cùng lúc
+                                           widget=forms.CheckboxSelectMultiple, choices=TrangThaiBooking.CHOICES)
+    sap_xep = forms.ChoiceField(label='Sắp xếp', required=False,
+                                choices=[('moi', 'Mới nhất trước'), ('cu', 'Cũ nhất trước')])
+
+    def clean(self):  # kiểm tra chéo giữa các ô
+        du_lieu = super().clean()
+        tu, den = du_lieu.get('tu_ngay'), du_lieu.get('den_ngay')
+        if tu and den and tu > den:  # ngày kết thúc đứng trước ngày bắt đầu
+            self.add_error('den_ngay', 'Ngày kết thúc phải sau hoặc cùng ngày bắt đầu.')  # den_ngay bị bỏ, chỉ lọc từ ngày bắt đầu
+        return du_lieu
+
+
+def so_bo_loc_quan_tri(du_lieu):  # số mục lọc đang dùng (hiện trên nút "Bộ lọc")
+    """Mỗi trạng thái được tích tính 1, khoảng ngày tính 1. Từ khóa và sắp xếp không tính."""
+    return len(du_lieu.get('trang_thai') or []) + (1 if (du_lieu.get('tu_ngay') or du_lieu.get('den_ngay')) else 0)
+
+
+def loc_booking_quan_tri(ds, du_lieu):  # áp tìm kiếm + bộ lọc (cleaned_data) lên danh sách Booking
+    """Tìm kiếm: mỗi từ khóa (cách nhau bằng dấu cách) phải khớp mã Booking, hoặc họ / tên / email / tên đăng nhập
+    của Khách hàng hay Nhiếp ảnh gia - nên gõ 'Lê Khôi' vẫn tìm được. Lọc ngày theo NgayTao (lúc Khách gửi yêu cầu)."""
+    for tu in (du_lieu.get('q') or '').split():  # tách từ khóa, từng từ đều phải khớp
+        dieu_kien = Q()  # điều kiện rỗng, cộng dần các điều kiện "HOẶC"
+        for tien_to in ('MaKhachHang', 'MaNhiepAnhGia__MaTaiKhoan'):  # tìm ở cả hai phía
+            for cot in ('username', 'email', 'first_name', 'last_name'):
+                dieu_kien |= Q(**{f'{tien_to}__{cot}__icontains': tu})
+        if tu.lstrip('#').isdigit():  # '7' hoặc '#7' -> tìm theo mã Booking
+            dieu_kien |= Q(pk=int(tu.lstrip('#')))
+        ds = ds.filter(dieu_kien)
+    if du_lieu.get('tu_ngay'):
+        ds = ds.filter(NgayTao__date__gte=du_lieu['tu_ngay'])
+    if du_lieu.get('den_ngay'):
+        ds = ds.filter(NgayTao__date__lte=du_lieu['den_ngay'])
+    if du_lieu.get('trang_thai'):
+        ds = ds.filter(TrangThai__in=du_lieu['trang_thai'])
+    if du_lieu.get('sap_xep') == 'cu':  # cũ nhất trước
+        return ds.order_by('NgayTao', 'MaBooking')
+    return ds.order_by('-NgayTao', '-MaBooking')  # mặc định: mới nhất trước
+
+
+def lay_chi_tiet_booking(user, vai_tro, ma_booking):  # một Booking của người dùng; của người khác -> 404
     """UC4.7 bước 3-4: một Booking của người dùng. Của người khác hoặc không tồn tại -> Http404 (BR4.7-1)."""
     return get_object_or_404(booking_cua_nguoi_dung(user, vai_tro), pk=ma_booking)  # tìm trong phạm vi của người này; không có -> 404
 
 
-def lay_thanh_toan(booking):
+def lay_thanh_toan(booking):  # các khoản thanh toán của Booking, cọc trước còn lại sau
     """Các khoản thanh toán của Booking (cọc 40% trước, phần còn lại 60% sau) để hiện cạnh trạng thái (BR4.7-2)."""
     thu_tu = {LoaiThanhToan.TIEN_COC: 0, LoaiThanhToan.PHAN_CON_LAI: 1}  # bảng thứ tự: cọc trước (0), còn lại sau (1)
     cac_khoan = list(booking.thanh_toans.all())  # lấy mọi khoản thanh toán của Booking này thành danh sách
@@ -160,7 +232,7 @@ def lay_thanh_toan(booking):
     return cac_khoan  # trả danh sách đã sắp
 
 
-def doi_chieu_thanh_toan(booking):
+def doi_chieu_thanh_toan(booking):  # soát trạng thái Booking có lệch dữ liệu thanh toán không
     """BR4.7-2: soát xem trạng thái Booking có KHỚP dữ liệu thanh toán không.
     Trả về danh sách câu mô tả chỗ lệch (rỗng = khớp). Chỉ đọc, không sửa gì: sửa là việc của người gọi
     chuyen_trang_thai_booking (Nguyên - Thanh toán). Lệch là dấu hiệu có ai đó đổi trạng thái / thanh toán
@@ -191,12 +263,21 @@ chi_khach_va_nag = vai_tro_required(VaiTro.KHACH_HANG, VaiTro.NHIEP_ANH_GIA)  # 
 chi_quan_tri = vai_tro_required(VaiTro.QUAN_TRI_VIEN)  # nhãn: chỉ Quản trị viên vào được
 
 
-def _trang_danh_sach(request, ten_url_chi_tiet, tieu_de, co_tim_kiem):
+def _trang_danh_sach(request, ten_url_chi_tiet, tieu_de, co_tim_kiem):  # phần chung của hai trang danh sách
     """Phần chung của hai trang danh sách (Khách / Nhiếp ảnh gia và Quản trị viên)."""
     vai_tro = lay_vai_tro(request.user)  # biết người đang xem là ai
     trang_thai = chuan_hoa_trang_thai(request.GET.get('trang_thai', LOC_TAT_CA))  # đọc ô lọc trên thanh địa chỉ (?trang_thai=...), làm sạch
     tu_khoa = (request.GET.get('q', '') or '').strip() if co_tim_kiem else ''  # đọc ô tìm kiếm (?q=...) nếu trang này có tìm kiếm, không thì rỗng
     ds = lay_danh_sach_booking(request.user, vai_tro, trang_thai, tu_khoa)  # gọi service lấy danh sách đã lọc
+    tab = request.GET.get('tab', TAB_TAT_CA)  # đọc tab đang chọn (?tab=...)
+    if tab not in (TAB_TAT_CA, TAB_DANG_XU_LY, TAB_KET_THUC):  # giá trị lạ gõ tay trên thanh địa chỉ...
+        tab = TAB_TAT_CA  # ...thì coi như "Tất cả", không gây lỗi
+    so_tat_ca = ds.count()  # số Booking khớp bộ lọc (trước khi cắt theo tab) -> số trên tab "Tất cả"
+    so_ket_thuc = ds.filter(TrangThai__in=TRANG_THAI_KET_THUC).count()  # số Booking đã kết thúc -> số trên tab "Đã kết thúc"
+    if tab == TAB_KET_THUC:  # đang ở tab "Đã kết thúc"...
+        ds = ds.filter(TrangThai__in=TRANG_THAI_KET_THUC)  # ...chỉ giữ Booking ở 4 trạng thái kết thúc
+    elif tab == TAB_DANG_XU_LY:  # đang ở tab "Đang xử lý"...
+        ds = ds.exclude(TrangThai__in=TRANG_THAI_KET_THUC)  # ...loại bỏ Booking đã kết thúc
     trang = Paginator(ds, SO_DONG_MOI_TRANG).get_page(request.GET.get('page'))  # cắt thành trang 10 dòng, lấy trang số ?page=...
     # Người dùng này có Booking nào không (KHÔNG tính bộ lọc)? Để phân biệt "chưa có Booking nào" với "lọc ra rỗng".
     co_booking = booking_cua_nguoi_dung(request.user, vai_tro).exists()  # True/False: có ít nhất 1 Booking trong phạm vi
@@ -204,6 +285,9 @@ def _trang_danh_sach(request, ten_url_chi_tiet, tieu_de, co_tim_kiem):
         'tieu_de': tieu_de,  # tiêu đề trang
         'vai_tro': vai_tro,  # vai trò người xem
         'page_obj': trang,  # trang Booking hiện tại (template duyệt qua để vẽ từng dòng)
+        'tab': tab,  # tab đang chọn (để template đánh dấu tab sáng lên)
+        'TAB_TAT_CA': TAB_TAT_CA, 'TAB_DANG_XU_LY': TAB_DANG_XU_LY, 'TAB_KET_THUC': TAB_KET_THUC,  # tên 3 tab để template dựng link ?tab=...
+        'so_tat_ca': so_tat_ca, 'so_dang_xu_ly': so_tat_ca - so_ket_thuc, 'so_ket_thuc': so_ket_thuc,  # số hiện trong ngoặc trên mỗi tab
         'trang_thai': trang_thai,  # trạng thái đang lọc (để ô chọn giữ nguyên lựa chọn)
         'tu_khoa': tu_khoa,  # từ khóa đang tìm (để ô tìm giữ nguyên chữ đã gõ)
         'co_tim_kiem': co_tim_kiem,  # có hiện ô tìm kiếm không
@@ -218,7 +302,43 @@ def _trang_danh_sach(request, ten_url_chi_tiet, tieu_de, co_tim_kiem):
     })
 
 
-def _trang_chi_tiet(request, ma_booking, ten_url_danh_sach):
+def _trang_danh_sach_quan_tri(request):  # trang "Tất cả Booking": bố cục giống trang Duyệt hồ sơ Nhiếp ảnh gia
+    """Danh sách Booking của Quản trị viên: tab (Tất cả / Đang xử lý / Đã kết thúc) + ô tìm kiếm viên thuốc
+    + bảng bộ lọc nổi + sắp xếp + bảng kết quả. Số trên tab là tổng, không phụ thuộc tìm kiếm / bộ lọc."""
+    vai_tro = lay_vai_tro(request.user)  # = Quản trị viên (nhãn chi_quan_tri đã chặn người khác)
+    tab = request.GET.get('tab', TAB_TAT_CA)  # đọc tab đang chọn (?tab=...)
+    if tab not in (TAB_TAT_CA, TAB_DANG_XU_LY, TAB_KET_THUC):  # giá trị lạ gõ tay -> coi như "Tất cả"
+        tab = TAB_TAT_CA
+    goc = booking_cua_nguoi_dung(request.user, vai_tro)  # mọi Booking (cửa ngõ chung của UC4.7)
+    so_tat_ca = goc.count()  # số trên các tab: tổng, không phụ thuộc bộ lọc
+    so_ket_thuc = goc.filter(TrangThai__in=TRANG_THAI_KET_THUC).count()
+    bo_loc = BoLocBookingQuanTriForm(request.GET)  # đọc bộ lọc từ thanh địa chỉ
+    bo_loc.is_valid()  # ô sai bị bỏ khỏi cleaned_data -> coi như không lọc
+    du_lieu = bo_loc.cleaned_data
+    ds = goc
+    if tab == TAB_KET_THUC:  # tab "Đã kết thúc": chỉ 4 trạng thái kết thúc
+        ds = ds.filter(TrangThai__in=TRANG_THAI_KET_THUC)
+    elif tab == TAB_DANG_XU_LY:  # tab "Đang xử lý": loại các trạng thái kết thúc
+        ds = ds.exclude(TrangThai__in=TRANG_THAI_KET_THUC)
+    ds = loc_booking_quan_tri(ds, du_lieu)  # áp tìm kiếm + bộ lọc + sắp xếp
+    so_bo_loc = so_bo_loc_quan_tri(du_lieu)
+    trang = Paginator(ds, SO_DONG_MOI_TRANG).get_page(request.GET.get('page'))  # page sai -> về trang hợp lệ
+    return render(request, 'bookings/admin_booking_list.html', {
+        'tieu_de': 'Tất cả Booking',
+        'page_obj': trang,  # trang Booking hiện tại
+        'tab': tab,
+        'TAB_TAT_CA': TAB_TAT_CA, 'TAB_DANG_XU_LY': TAB_DANG_XU_LY, 'TAB_KET_THUC': TAB_KET_THUC,
+        'so_tat_ca': so_tat_ca, 'so_dang_xu_ly': so_tat_ca - so_ket_thuc, 'so_ket_thuc': so_ket_thuc,
+        'bo_loc': bo_loc, 'so_bo_loc': so_bo_loc,
+        'dang_loc': bool(so_bo_loc or du_lieu.get('q')),  # có tìm kiếm hoặc bộ lọc (sắp xếp thì không tính)
+        'sap_xep_chon': du_lieu.get('sap_xep') or 'moi',
+        'so_ket_qua': trang.paginator.count,
+        'co_booking': so_tat_ca > 0,  # hệ thống có Booking nào không (phân biệt "chưa có" với "lọc ra rỗng")
+        'TB_CHUA_CO_BOOKING': TB_CHUA_CO_BOOKING, 'TB_KHONG_KHOP_BO_LOC': TB_KHONG_KHOP_BO_LOC,
+    })
+
+
+def _trang_chi_tiet(request, ma_booking, ten_url_danh_sach):  # phần chung của hai trang chi tiết
     """Phần chung của hai trang chi tiết."""
     vai_tro = lay_vai_tro(request.user)  # biết người đang xem là ai
     booking = lay_chi_tiet_booking(request.user, vai_tro, ma_booking)   # lấy Booking; của người khác -> 404 (BR4.7-1)
@@ -243,123 +363,56 @@ def _trang_chi_tiet(request, ma_booking, ten_url_danh_sach):
         'tien_con_lai': _tien(tinh_so_tien(booking.TongGiaTri, LoaiThanhToan.PHAN_CON_LAI)),  # số tiền còn lại 60%
         'lich_su': booking.lich_su_trang_thai.all(),                     # lịch sử đổi trạng thái, đã sắp từ cũ đến mới (Meta.ordering)
         'thanh_toan': lay_thanh_toan(booking),  # các khoản thanh toán của Booking
-        'co_the_xac_nhan_coc': booking.thanh_toans.filter(
-            LoaiThanhToan=LoaiThanhToan.TIEN_COC,
-            TrangThai=TrangThaiThanhToan.CHO_XAC_NHAN_COC
-        ).exists(),
-        'co_the_xac_nhan_con_lai': booking.thanh_toans.filter(
-            LoaiThanhToan=LoaiThanhToan.PHAN_CON_LAI,
-            TrangThai=TrangThaiThanhToan.CHO_XAC_NHAN_60
-        ).exists(),
-        'co_the_bam_da_chup': co_the_bam_da_chup(booking),
-        'da_gui_minh_chung': booking.thanh_toans.filter(  # Khách đã gửi minh chứng, đang chờ NAG xử lý (NAG chưa yêu cầu bổ sung)
-            TrangThai__in=[TrangThaiThanhToan.CHO_XAC_NHAN_COC, TrangThaiThanhToan.CHO_XAC_NHAN_60],
-            minh_chungs__isnull=False,
-        ).filter(Q(LyDoTuChoi__isnull=True) | Q(LyDoTuChoi='')).exists() if la_khach else False,  # có yêu cầu bổ sung -> False -> hiện lại nút
-        'chu_ky_booking': _chu_ky_booking(booking) if vai_tro in (VaiTro.KHACH_HANG, VaiTro.NHIEP_ANH_GIA) else '',
-        'url_kiem_tra_cap_nhat': reverse('kiem_tra_cap_nhat_booking', kwargs={'ma_booking': booking.pk})
-            if vai_tro in (VaiTro.KHACH_HANG, VaiTro.NHIEP_ANH_GIA) else '',
-
         'canh_bao': canh_bao,  # cảnh báo lệch (chỉ Quản trị viên có nội dung)
         'co_the_huy': (la_khach or la_nag) and co_the_huy(booking),  # T9: hiện nút "Hủy Booking" (Quản trị viên không hủy)
         'yeu_cau_huy': yeu_cau_huy,  # T9: khối "Thông tin hủy" (bên hủy, lý do, xử lý tiền cọc, hoàn tiền)
         'co_the_xac_nhan_hoan_tien': la_khach and co_the_xac_nhan_hoan_tien(yeu_cau_huy),  # T9: nút "Tôi đã nhận lại tiền cọc"
-        'url_danh_sach': reverse('manage_bookings' if vai_tro == VaiTro.NHIEP_ANH_GIA else ten_url_danh_sach),  # địa chỉ của nút "Quay lại danh sách"
-        # URL Use Case được giữ nguyên; trang chi tiết trung tâm điều phối tới đúng module.
-        'url_chap_nhan': reverse('chap_nhan_booking', kwargs={'ma_booking': booking.pk}) if la_nag else None,
-        'url_tu_choi': reverse('tu_choi_booking', kwargs={'ma_booking': booking.pk}) if la_nag else None,
-        'url_da_chup': reverse('da_chup_booking', kwargs={'ma_booking': booking.pk}) if la_nag else None,
-        'url_tai_anh': reverse('tai_anh_len', kwargs={'ma_booking': booking.pk}) if la_nag else None,
-        'url_xac_nhan_coc': reverse('xac_nhan_thanh_toan_coc', kwargs={'ma_booking': booking.pk}) if la_nag else None,
-        'url_xac_nhan_con_lai': reverse('xac_nhan_thanh_toan_con_lai', kwargs={'ma_booking': booking.pk}) if la_nag else None,
-        'url_minh_chung': reverse('tai_len_minh_chung', kwargs={'ma_booking': booking.pk}) if la_khach else None,
-        'url_chon_anh': reverse('chon_anh_hau_ky', kwargs={'ma_booking': booking.pk}) if la_khach else None,
-        'url_chinh_sua': reverse('yeu_cau_chinh_sua', kwargs={'ma_booking': booking.pk}) if la_khach else None,
-        'url_ban_giao': reverse('xac_nhan_ban_giao', kwargs={'ma_booking': booking.pk}) if la_khach else None,
-        'url_tai_anh_hoan_chinh': reverse('tai_anh_hoan_chinh', kwargs={'ma_booking': booking.pk}) if la_khach else None,
-        'url_danh_gia': reverse('danh_gia_booking', kwargs={'ma_booking': booking.pk}) if la_khach else None,
-        'url_bat_dau_hau_ky': reverse('bat_dau_hau_ky', kwargs={'ma_booking': booking.pk}) if la_nag else None,
+        'url_danh_sach': reverse(ten_url_danh_sach),  # địa chỉ của nút "Quay lại danh sách"
+        # Nhiếp ảnh gia còn việc phải làm với Booking này ("Chờ xác nhận" / "Chốt Booking") -> link tới màn xử lý của T5/T8.
+        'url_xu_ly': (reverse('chi_tiet_yeu_cau_booking', kwargs={'ma_booking': booking.pk})  # địa chỉ màn xử lý của Nhiếp ảnh gia...
+                      if la_nag and booking.TrangThai in (TrangThaiBooking.CHO_XAC_NHAN,  # ...chỉ khi là Nhiếp ảnh gia VÀ Booking đang ở
+                                                          TrangThaiBooking.CHOT_BOOKING) else None),  # "Chờ xác nhận"/"Chốt Booking"; không thì None
+        # Khách hàng khi Booking "Chờ Khách hàng lựa chọn ảnh" -> nút tới trang chọn ảnh (N6). Quản trị viên và Nhiếp ảnh gia không có nút này.
+        'url_chon_anh': (_url_neu_co('chon_anh_hau_ky', booking.pk)  # địa chỉ trang chọn ảnh cần hậu kỳ (tên url của Nguyên)...
+                         if la_khach and booking.TrangThai in TRANG_THAI_KHACH_CHON_ANH else None),  # ...chỉ khi là Khách VÀ đúng trạng thái; không thì None
+        # Nhiếp ảnh gia khi Booking "Đã chụp" / "Chờ hậu kỳ" / "Đang hậu kỳ" -> nút tới trang tải ảnh / hậu kỳ (N4, N5). Khách và Quản trị viên không có nút này.
+        'url_tai_anh': (_url_neu_co('tai_anh_len', booking.pk)  # địa chỉ trang tải ảnh / hậu kỳ (tên url của Nguyên)...
+                        if la_nag and booking.TrangThai in TRANG_THAI_NAG_XU_LY_ANH else None),  # ...chỉ khi là Nhiếp ảnh gia VÀ đúng trạng thái; không thì None
     })
 
 
 @chi_khach_va_nag  # nhãn: chặn người sai vai trò (chưa đăng nhập -> trang đăng nhập; sai vai trò -> 403)
 @require_GET  # nhãn: chỉ nhận yêu cầu xem (GET)
-def danh_sach_cua_toi(request):
+def danh_sach_cua_toi(request):  # view: Booking của tôi (Khách / Nhiếp ảnh gia)
     """UC4.7 bước 1-2 và luồng 2a: "Booking của tôi" của Khách hàng / Nhiếp ảnh gia."""
     return _trang_danh_sach(request, 'chi_tiet_booking', 'Booking của tôi', co_tim_kiem=False)  # không có ô tìm kiếm; link chi tiết = chi_tiet_booking
 
 
 @chi_khach_va_nag  # chặn sai vai trò
 @require_GET  # chỉ GET
-def chi_tiet_cua_toi(request, ma_booking):
+def chi_tiet_cua_toi(request, ma_booking):  # view: chi tiết Booking của tôi
     """UC4.7 bước 3-4: chi tiết + lịch sử đổi trạng thái. Booking của người khác -> 404."""
     return _trang_chi_tiet(request, ma_booking, 'my_bookings')  # nút quay lại trỏ về "Booking của tôi"
 
 
 @chi_quan_tri  # chỉ Quản trị viên
 @require_GET  # chỉ GET
-def danh_sach_quan_tri(request):
+def danh_sach_quan_tri(request):  # view: Quản trị viên xem tất cả Booking
     """Quản trị viên tra cứu tất cả Booking (lọc theo trạng thái + tìm theo mã / tên / email)."""
-    return _trang_danh_sach(request, 'admin_booking_detail', 'Tất cả Booking', co_tim_kiem=True)  # có ô tìm kiếm; link chi tiết dành cho Quản trị
+    return _trang_danh_sach_quan_tri(request)  # trang riêng của Quản trị viên (bố cục giống Duyệt hồ sơ)
 
 
 @chi_quan_tri  # chỉ Quản trị viên
 @require_GET  # chỉ GET
-def chi_tiet_quan_tri(request, ma_booking):
+def chi_tiet_quan_tri(request, ma_booking):  # view: Quản trị viên xem chi tiết một Booking
     """Quản trị viên xem chi tiết một Booking bất kỳ (kèm cảnh báo nếu lệch dữ liệu thanh toán)."""
     return _trang_chi_tiet(request, ma_booking, 'admin_bookings')  # nút quay lại trỏ về danh sách của Quản trị
 
 
-
-
-@chi_khach_va_nag
-@require_GET
-def chi_tiet_booking_chung(request, ma_booking):
-    """Một URL chi tiết dùng chung; quyền xem được giới hạn theo vai trò."""
-    vai_tro = lay_vai_tro(request.user)
-    ten_url_danh_sach = 'manage_bookings' if vai_tro == VaiTro.NHIEP_ANH_GIA else 'my_bookings'
-    return _trang_chi_tiet(request, ma_booking, ten_url_danh_sach)
-
-
-def _chu_ky_booking(booking):
-    """Chữ ký chỉ đọc để phát hiện thay đổi Booking, thanh toán/minh chứng và ảnh."""
-    cac_khoan = []
-    for khoan in booking.thanh_toans.all().order_by('MaThanhToan'):
-        cac_khoan.append({
-            'id': khoan.pk,
-            'loai': khoan.LoaiThanhToan,
-            'trang_thai': khoan.TrangThai,
-            'minh_chung': khoan.minh_chungs.count(),
-            'ngay_xac_nhan': khoan.NgayXacNhan.isoformat() if khoan.NgayXacNhan else None,
-        })
-    ds_anh = list(Anh.objects.filter(MaBooking=booking).order_by('MaAnh').values_list(
-        'MaAnh', 'LoaiAnh', 'TrangThaiLuuTru', 'PhienBanAnh', 'DuocChonHauKy', 'NgayTaiLen'
-    ))
-    du_lieu = {
-        'trang_thai_booking': booking.TrangThai,
-        'ngay_cap_nhat': booking.NgayCapNhat.isoformat() if booking.NgayCapNhat else None,
-        'thanh_toan': cac_khoan,
-        'anh': [[str(v) for v in dong] for dong in ds_anh],
-    }
-    return hashlib.sha256(json.dumps(du_lieu, ensure_ascii=False, sort_keys=True).encode('utf-8')).hexdigest()
-
-
-@chi_khach_va_nag
-@require_GET
-def kiem_tra_cap_nhat_booking(request, ma_booking):
-    """API chỉ đọc; chỉ người tham gia Booking mới được kiểm tra trạng thái."""
-    vai_tro = lay_vai_tro(request.user)
-    booking = lay_chi_tiet_booking(request.user, vai_tro, ma_booking)
-    return JsonResponse({'signature': _chu_ky_booking(booking), 'trang_thai': booking.TrangThai})
-
-
 # URL  (trong config/urls.py thêm:  path('bookings/', include('bookings.theo_doi')),)
-urlpatterns = [
-    path('cua-toi/', danh_sach_cua_toi, name='my_bookings'),
-    path('<int:ma_booking>/', chi_tiet_booking_chung, name='chi_tiet_booking'),
-    path('<int:ma_booking>/kiem-tra-cap-nhat/', kiem_tra_cap_nhat_booking, name='kiem_tra_cap_nhat_booking'),
-    # Giữ URL cũ để bookmark/liên kết cũ không bị hỏng.
-    path('cua-toi/<int:ma_booking>/', chi_tiet_cua_toi, name='chi_tiet_booking_cu'),
-    path('quan-tri/', danh_sach_quan_tri, name='admin_bookings'),
-    path('quan-tri/<int:ma_booking>/', chi_tiet_quan_tri, name='admin_booking_detail'),
+urlpatterns = [  # danh sách địa chỉ của file này
+    path('cua-toi/', danh_sach_cua_toi, name='my_bookings'),  # /bookings/cua-toi/ -> danh sách "Booking của tôi"
+    path('cua-toi/<int:ma_booking>/', chi_tiet_cua_toi, name='chi_tiet_booking'),  # /bookings/cua-toi/7/ -> chi tiết Booking số 7
+    path('quan-tri/', danh_sach_quan_tri, name='admin_bookings'),  # /bookings/quan-tri/ -> Quản trị viên xem tất cả
+    path('quan-tri/<int:ma_booking>/', chi_tiet_quan_tri, name='admin_booking_detail'),  # /bookings/quan-tri/7/ -> Quản trị xem chi tiết
 ]
