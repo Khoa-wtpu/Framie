@@ -3,50 +3,99 @@
 {% block title %}Tải ảnh hoàn chỉnh{% endblock %}
 {% block content %}
 <div class="container stack tahc">
-  <header>
-    <h1>Tải ảnh hoàn chỉnh</h1>
-    <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>
-  </header>
+
+  <a class="tahc__back" href="{% url 'chi_tiet_booking' ma_booking=booking.pk %}">← Quay lại Booking #{{ booking.pk }}</a>
 
   {% if ly_do %}{# chưa hoàn thành / hết hạn lưu trữ (4a) / chưa có ảnh #}
+    <header>
+      <h1>Tải ảnh hoàn chỉnh</h1>
+      <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>
+    </header>
     {% include "includes/alert.html" with level="warning" text=ly_do %}
   {% else %}
-    <section class="panel stack">
-      <p>Đây là ảnh <strong>hoàn chỉnh</strong>, độ phân giải đầy đủ và không có watermark.
-        Bạn có thể tải đến hết <strong>{{ han_tai|date:"d/m/Y H:i" }}</strong>; sau thời điểm này ảnh sẽ bị xóa khỏi hệ thống và không thể tải nữa.</p>
-      <p class="muted">Nếu lần tải bị lỗi, bạn chỉ cần bấm tải lại.</p>
+
+    {# ===== Thẻ chào mừng: ảnh đã sẵn sàng ===== #}
+    <section class="tahc__hero">
+      <div class="tahc__hero-top">
+        <div>
+          <p class="tahc__hero-kicker">Booking #{{ booking.pk }} · {{ booking.MaGoi.TenGoi }}</p>
+          <h1 class="tahc__hero-title">Ảnh của bạn đã sẵn sàng</h1>
+        </div>
+        <span class="tahc__hero-badge">{% status_badge booking.TrangThai %}</span>
+      </div>
+      <div class="tahc__stats">
+        <div class="tahc__stat">
+          <span>Số ảnh</span>
+          <strong>{{ anhs|length }}</strong>
+        </div>
+        <div class="tahc__stat">
+          <span>Chất lượng</span>
+          <strong>Đầy đủ, không watermark</strong>
+        </div>
+        <div class="tahc__stat">
+          <span>Hạn tải</span>
+          <strong>{{ han_tai|date:"d/m/Y H:i" }}</strong>
+        </div>
+        <div class="tahc__stat tahc__stat--count">
+          <span>Thời gian còn lại</span>
+          <strong id="tahc-dem-nguoc" data-han="{{ han_tai|date:'c' }}">—</strong>
+        </div>
+      </div>
     </section>
 
-    <form method="post" class="panel stack" id="form-tai-anh">
+    <div class="tahc__note">
+      <span class="tahc__note-icon">!</span>
+      <p>Sau hạn tải, ảnh sẽ bị xóa khỏi hệ thống và không thể tải lại. Nếu lần tải bị lỗi, bạn chỉ cần bấm tải lại.</p>
+    </div>
+
+    {# ===== Danh sách ảnh ===== #}
+    <form method="post" id="form-tai-anh">
       {% csrf_token %}
-      <h2>Ảnh hoàn chỉnh ({{ anhs|length }})</h2>
-      <label class="tahc__chon-het"><input type="checkbox" id="chon-het"> Chọn tất cả</label>
-      <ul class="tahc__ds">
-        {% for a in anhs %}
-          <li class="tahc__dong">
-            <label class="tahc__ten"><input type="checkbox" name="anh" value="{{ a.pk }}"> {{ a.TenAnh }}</label>
-            <span class="muted">{{ a.DinhDangAnh }} · {{ a.KichThuocAnh|filesizeformat }}</span>
-            <button class="btn btn--secondary" type="submit" name="tai_mot" value="{{ a.pk }}">Tải</button>
-          </li>
-        {% endfor %}
-      </ul>
-      <div class="tahc__nut">
-        <button class="btn btn--primary" type="submit" name="tai_chon" value="1">Tải ảnh đã chọn</button>
-        <button class="btn btn--secondary" type="submit" name="tai_tat_ca" value="1">Tải tất cả ({{ anhs|length }} ảnh)</button>
+      <section class="tahc__card">
+        <div class="tahc__card-top">
+          <h2>Ảnh hoàn chỉnh ({{ anhs|length }})</h2>
+          <label class="tahc__chon-het"><input type="checkbox" id="chon-het"> Chọn tất cả</label>
+        </div>
+
+        <ul class="tahc__luoi">
+          {% for a in anhs %}
+            <li class="tahc__anh">
+              <label class="tahc__anh-chon">
+                <input type="checkbox" name="anh" value="{{ a.pk }}">
+                <span class="tahc__loai">{{ a.DinhDangAnh }}</span>
+                <span class="tahc__anh-info">
+                  <strong title="{{ a.TenAnh }}">{{ a.TenAnh }}</strong>
+                  <small>{{ a.KichThuocAnh|filesizeformat }}</small>
+                </span>
+              </label>
+              <button class="btn btn--secondary tahc__tai" type="submit" name="tai_mot" value="{{ a.pk }}">↓ Tải</button>
+            </li>
+          {% endfor %}
+        </ul>
+
+        <p class="tahc__goi-y">Tải nhiều ảnh cùng lúc sẽ nhận một tệp .zip.</p>
+      </section>
+
+      {# ===== Thanh thao tác dính đáy ===== #}
+      <div class="tahc__bar">
+        <span class="tahc__bar-dem"><strong id="tahc-da-chon">0</strong> / {{ anhs|length }} ảnh đã chọn</span>
+        <div class="tahc__nut">
+          <button class="btn btn--primary" type="submit" name="tai_chon" value="1" id="nut-tai-chon">Tải ảnh đã chọn</button>
+          <button class="btn btn--secondary" type="submit" name="tai_tat_ca" value="1">Tải tất cả ({{ anhs|length }} ảnh)</button>
+        </div>
       </div>
-      <p class="muted">Tải nhiều ảnh cùng lúc sẽ nhận một tệp .zip.</p>
     </form>
   {% endif %}
 
   {% if lich_su %}{# lịch sử tải: giữ lại cả sau khi ảnh bị xóa #}
-    <section class="panel stack">
+    <section class="tahc__card">
       <h2>Lịch sử tải gần đây</h2>
-      <ul class="tahc__ds">
+      <ul class="tahc__ls">
         {% for ls in lich_su %}
-          <li class="tahc__dong">
-            <span>{{ ls.ThoiDiemTaiAnh|date:"d/m/Y H:i" }}</span>
-            <span>{{ ls.MaAnh.TenAnh }}</span>
-            <span class="{% if ls.KetQuaTaiAnh == 'Tải ảnh thành công' %}tahc__ok{% else %}tahc__loi{% endif %}">{{ ls.KetQuaTaiAnh }}</span>
+          <li class="tahc__ls-dong">
+            <span class="tahc__ls-gio">{{ ls.ThoiDiemTaiAnh|date:"d/m/Y H:i" }}</span>
+            <span class="tahc__ls-ten">{{ ls.MaAnh.TenAnh }}</span>
+            <span class="tahc__pill {% if ls.KetQuaTaiAnh == 'Tải ảnh thành công' %}tahc__ok{% else %}tahc__loi{% endif %}">{{ ls.KetQuaTaiAnh }}</span>
           </li>
         {% endfor %}
       </ul>

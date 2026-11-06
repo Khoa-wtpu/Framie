@@ -21,13 +21,13 @@ def xac_nhan_thanh_toan_con_lai(request, nag, ma_booking):     # trang UC5.7
             if hanh_dong == 'xac_nhan':                        # bước 4 (và luồng 1b)
                 services.xac_nhan_thanh_toan_con_lai(booking.pk, request.user)   # bước 5-7
                 messages.success(request, 'Đã xác nhận thanh toán phần còn lại. Booking đã hoàn thành.')
-                return redirect('xac_nhan_thanh_toan_con_lai', ma_booking=booking.pk)   # tránh gửi lại khi F5
+                return redirect('chi_tiet_booking', ma_booking=booking.pk)   # tránh gửi lại khi F5
             elif hanh_dong == 'bo_sung':                       # nhánh 4a
                 form = YeuCauBoSungForm(request.POST)
                 if form.is_valid():
                     services.yeu_cau_bo_sung_con_lai(booking.pk, request.user, form.cleaned_data['ly_do'])
                     messages.success(request, 'Đã gửi yêu cầu bổ sung minh chứng cho Khách hàng.')
-                    return redirect('xac_nhan_thanh_toan_con_lai', ma_booking=booking.pk)
+                    return redirect('chi_tiet_booking', ma_booking=booking.pk)
             else:
                 messages.error(request, 'Thao tác không hợp lệ.')
         except services.LoiXacNhanConLai as loi:               # lỗi nghiệp vụ hoặc lỗi hệ thống (5a, 6a)
