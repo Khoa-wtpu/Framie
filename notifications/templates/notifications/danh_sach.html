@@ -41,7 +41,11 @@
      <p class="muted">Các thông báo về Booking, thanh toán và ảnh của bạn sẽ hiển thị tại đây.</p>
    </div>
  {% else %}
-   <h2 class="tb-nhom-tieu-de">{{ ten_nhom }} ({{ so_trong_nhom }})</h2>
+    {# Hàng tiêu đề nhóm: tên nhóm bên trái, lời nhắc ghim sao bên phải (nhóm "Đã đánh dấu sao" thì không cần vì dòng nào cũng có sao) #}
+  <div class="tb-nhom-dau">
+    <h2 class="tb-nhom-tieu-de">{{ ten_nhom }} ({{ so_trong_nhom }})</h2>
+    {% if loc != 'sao' %}<p class="tb-meo"><span class="tb-meo__sao" aria-hidden="true">★</span> Thông báo có sao sẽ lên đầu danh sách</p>{% endif %}
+  </div>
    {% if page_obj.object_list %}
      <ul class="tb-ds">
        {% for tb in page_obj %}{% include "notifications/_dong_thong_bao.html" with tb=tb quay_lai=quay_lai %}{% endfor %}
@@ -58,6 +62,17 @@
    {% endif %}
  {% endif %}
 </div>
+{# Hộp xác nhận xóa thông báo: dùng lại kiểu .modal của popup đăng xuất, nằm NGOÀI data-tb-vung #}
+<dialog class="modal" data-xoa-hop aria-labelledby="tb-xoa-tieu-de">
+  <div class="modal__body">
+    <h2 class="modal__title" id="tb-xoa-tieu-de">Xóa thông báo</h2>
+    <p class="modal__text">Bạn có chắc muốn xóa thông báo này không? Thông báo sẽ bị xóa vĩnh viễn và không thể khôi phục.</p>
+    <div class="modal__actions">
+      <button class="btn btn--secondary" type="button" data-xoa-huy>Hủy</button>
+      <button class="btn btn--danger" type="button" data-xoa-dong-y>Xác nhận xóa</button>
+    </div>
+  </div>
+</dialog>
 {# P8: bấm sao / đã đọc không tải lại cả trang (nằm NGOÀI vùng data-tb-vung để không bị thay mất) #}
 <script src="{% static 'notifications/thong_bao.js' %}" defer></script>
 {% endblock %}

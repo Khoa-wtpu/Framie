@@ -1,0 +1,15 @@
+{# MỘT bong bóng tin nhắn, dùng chung cho trang (vòng for) và JSON polling. Cần biến: tin, nguoi_xem_id, doi_phuong. chat.js đọc data-nguoi/data-ngay/data-ts để nhóm tin và chèn dòng ngày. #}
+{% if tin.MaNguoiGui_id == nguoi_xem_id %}
+<article class="tn tn--cua-toi" data-id="{{ tin.pk }}" data-nguoi="toi" data-ngay="{{ tin.ThoiGianGui|date:'Y-m-d' }}" data-ts="{{ tin.ThoiGianGui|date:'U' }}">
+  <p class="tn__noi-dung">{{ tin.NoiDung|linebreaksbr }}</p>{# linebreaksbr tự escape HTML trước, chống XSS #}
+  <time class="tn__gio" datetime="{{ tin.ThoiGianGui|date:'c' }}" title="{{ tin.ThoiGianGui|date:'d/m/Y H:i:s' }}">{{ tin.ThoiGianGui|date:"H:i" }}</time>{# ngày đã có dòng phân cách nên chỉ hiện giờ #}
+</article>
+{% else %}
+<article class="tn tn--doi-phuong" data-id="{{ tin.pk }}" data-nguoi="doi" data-ngay="{{ tin.ThoiGianGui|date:'Y-m-d' }}" data-ts="{{ tin.ThoiGianGui|date:'U' }}">
+  <span class="avatar tn__avatar" aria-hidden="true">{% if doi_phuong.anh %}<img src="{{ doi_phuong.anh }}" alt="">{% else %}{{ doi_phuong.chu_cai }}{% endif %}</span>
+  <div class="tn__cot">
+    <p class="tn__noi-dung">{{ tin.NoiDung|linebreaksbr }}</p>
+    <time class="tn__gio" datetime="{{ tin.ThoiGianGui|date:'c' }}" title="{{ tin.ThoiGianGui|date:'d/m/Y H:i:s' }}">{{ tin.ThoiGianGui|date:"H:i" }}</time>
+  </div>
+</article>
+{% endif %}

@@ -464,11 +464,11 @@ def chap_nhan(request, ma_booking):
         # ...lỗi khác (đã xử lý rồi, quá giờ chụp...) -> hiện dòng báo lỗi màu đỏ...
         messages.error(request, loi.thong_bao)
         # ...rồi quay lại trang chi tiết.
-        return redirect('chi_tiet_yeu_cau_booking', ma_booking=ma_booking)
+        return redirect('chi_tiet_booking', ma_booking=ma_booking)
     # Thành công -> hiện dòng báo màu xanh...
     messages.success(request, TB_DA_CHAP_NHAN)
     # ...rồi đưa về danh sách Quản lý Booking.
-    return redirect('manage_bookings')
+    return redirect('chi_tiet_booking', ma_booking=ma_booking)
 
 
 # Trang từ chối: chỉ Nhiếp ảnh gia đã duyệt.
@@ -488,7 +488,7 @@ def tu_choi(request, ma_booking):
     # Booking đã được xử lý rồi -> báo lỗi và quay lại trang chi tiết, không mở form.
     if booking.TrangThai != TrangThaiBooking.CHO_XAC_NHAN:
         messages.error(request, TB_KHONG_CON_CHO_XAC_NHAN)
-        return redirect('chi_tiet_yeu_cau_booking', ma_booking=booking.pk)
+        return redirect('chi_tiet_booking', ma_booking=booking.pk)
 
     # POST = người dùng vừa bấm 'Xác nhận từ chối'.
     if request.method == 'POST':
@@ -512,7 +512,7 @@ def tu_choi(request, ma_booking):
                 # Hiện dòng báo màu xanh...
                 messages.success(request, TB_DA_TU_CHOI)
                 # ...rồi đưa về danh sách.
-                return redirect('manage_bookings')
+                return redirect('chi_tiet_booking', ma_booking=ma_booking)
         # form không hợp lệ (ví dụ 4a: chưa nhập lý do) -> hiện lại form kèm lỗi, UC tiếp tục từ bước 4
     # Không phải POST (tức là GET) = người dùng mới mở trang: hiện form trống để nhập lý do (UC4.5 bước 3).
     else:

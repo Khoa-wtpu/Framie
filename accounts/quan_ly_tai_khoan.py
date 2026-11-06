@@ -52,6 +52,14 @@ def danh_sach_tai_khoan(tim='', vai_tro='', trang_thai=''):  # trả QuerySet t�
     return ds.distinct()  # distinct: một người không xuất hiện hai lần do ghép bảng nhóm
 
 
+def _chu_cai_dau(user):  # hai chữ cái đầu cho ảnh đại diện tròn ở trang danh sách
+    ten = (user.get_full_name() or user.email or '?').strip()  # ưu tiên họ tên, không có thì lấy email
+    tu = ten.split()  # tách thành các từ
+    if len(tu) >= 2:  # có từ hai chữ trở lên: chữ đầu của từ đầu và từ cuối (PTG Loan -> PL)
+        return (tu[0][0] + tu[-1][0]).upper()  # ghép rồi viết hoa
+    return ten[:2].upper()  # chỉ một từ: lấy 2 ký tự đầu (helia457 -> HE)
+
+
 def mo_ta_tai_khoan(nguoi_thuc_hien, user):  # cho template biết dòng này được phép làm gì
     la_toi = user.pk == nguoi_thuc_hien.pk  # chính Quản trị viên đang đăng nhập
     vai_tro = vai_tro_cua(user)  # vai trò hiện tại
@@ -60,6 +68,7 @@ def mo_ta_tai_khoan(nguoi_thuc_hien, user):  # cho template biết dòng này đ
         'user': user,  # chính tài khoản
         'vai_tro': vai_tro,  # vai trò hiện tại
         'la_toi': la_toi,  # có phải mình không
+        'chu_cai_dau': _chu_cai_dau(user),  # chữ cái trong ảnh đại diện tròn
         'he_thong': user.is_superuser,  # có phải superuser không
         'doi_duoc_vai_tro': thao_tac_duoc and vai_tro != VaiTro.NHIEP_ANH_GIA,  # Nhiếp ảnh gia không đổi vai trò ở đây
         'khoa_duoc': thao_tac_duoc,  # có hiện nút Khóa/Mở không

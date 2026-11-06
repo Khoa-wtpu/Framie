@@ -1,0 +1,50 @@
+{# chat/templates/chat/_danh_sach_cuoc.html - cột trái "Tin nhắn". Dùng chung hộp thư, chi tiết, lỗi khởi tạo. Cần biến: cac_cuoc, loi, la_khach, ma_dang_mo (0 nếu chưa mở cuộc nào) #}
+{% load chat_tags %}
+<aside class="chat-cot chat-cot--ds" aria-label="Danh sách cuộc trò chuyện">
+  <div class="chat-cot__dau">
+    <h2 class="chat-cot__tieu-de">Tin nhắn</h2>
+    <a class="chat-cot__xem-het" href="{% url 'inbox' %}">Xem tất cả ›</a>{# đúng wireframe #}
+  </div>
+  <div class="chat-tim">
+    <svg class="chat-tim__icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <label class="sr-only" for="chat-tim-cuoc">Tìm cuộc trò chuyện</label>
+    <input id="chat-tim-cuoc" class="input chat-tim__o" type="search" placeholder="Tìm cuộc trò chuyện" autocomplete="off" data-chat-tim>{# chat.js lọc theo tên #}
+  </div>
+  {% if loi %}<div class="chat-cot__loi">{% include "includes/alert.html" with level="danger" text=loi %}</div>{% endif %}{# không tải được danh sách #}
+  {% if cac_cuoc %}
+  <ul class="hop-thu" data-chat-ds>
+    {% for c in cac_cuoc %}
+    <li data-ten="{{ c.ten|lower }}">
+      <a class="hop-thu__muc{% if c.ma == ma_dang_mo %} is-active{% endif %}" href="{% url 'chi_tiet_cuoc_tro_chuyen' c.ma %}"{% if c.ma == ma_dang_mo %} aria-current="page"{% endif %}>
+        <span class="avatar chat__avatar" aria-hidden="true">{% if c.anh %}<img src="{{ c.anh }}" alt="">{% else %}{{ c.chu_cai }}{% endif %}</span>
+        <span class="hop-thu__chu">
+          <span class="hop-thu__hang">
+            <span class="hop-thu__ten">{{ c.ten }}</span>
+            <time class="hop-thu__gio" datetime="{{ c.luc|date:'c' }}" title="{{ c.luc|date:'H:i d/m/Y' }}">{{ c.luc|gio_ds }}</time>{# 12:30 / Hôm qua / Thứ Hai / dd/mm/yyyy #}
+          </span>
+          <span class="hop-thu__xem-truoc">{% if c.noi_dung %}{% if c.cua_toi %}Bạn: {% endif %}{{ c.noi_dung|truncatechars:60 }}{% else %}Chưa có tin nhắn{% endif %}</span>
+        </span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="chat__trong" data-chat-ds-trong hidden>Không tìm thấy cuộc trò chuyện phù hợp.</p>{# trường hợp 18 #}
+  {% elif not loi %}
+  {% if la_khach %}
+  {% if hien_o_giua %}{# hien_o_giua=1 chỉ truyền từ hop_thu.html: ở hộp thư, tiêu đề + nút Tìm kiếm của Khách hàng nằm ở cột phải, cột trái chỉ có câu mô tả ngắn #}
+  <div class="chat-cot__rong">
+    <p class="chat__trong">Bạn chưa nhắn tin cho nhiếp ảnh gia nào.</p>
+  </div>
+  {% else %}
+  <div class="chat-cot__rong">{# trường hợp 6: các trang khác (vd. lỗi khởi tạo) vẫn hiện câu hướng dẫn ở cột trái #}
+    <p class="chat__trong">Bạn chưa có cuộc trò chuyện nào. Hãy tìm nhiếp ảnh gia để bắt đầu.</p>
+    {% url 'search' as url_tim %}{% if url_tim %}<a class="btn btn--secondary btn--sm" href="{{ url_tim }}">Tìm kiếm</a>{% endif %}{# url name 'search' của Khoa; chưa có thì không hiện nút #}
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="chat-cot__rong">{# trường hợp 6: Nhiếp ảnh gia, không có nút #}
+    <p class="chat__trong">Chưa có khách hàng nào nhắn tin cho bạn.</p>
+  </div>
+  {% endif %}
+  {% endif %}
+</aside>

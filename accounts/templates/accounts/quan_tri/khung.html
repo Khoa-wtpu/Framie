@@ -10,6 +10,7 @@
 <div class="container admin-page">{# khung một cột: điều hướng đã có ở thanh menu trên cùng (header) nên không cần menu bên trái #}
   <section class="admin-content">{# vùng nội dung #}
     <header class="admin-content__head">{# đầu trang #}
+      {% block admin_eyebrow %}{% endblock %}{# dòng nhỏ phía trên tiêu đề, trang con muốn thì ghi đè (mặc định trống nên các trang khác không đổi) #}
       <h1 class="admin-content__title">{% block admin_tieu_de %}Quản trị{% endblock %}</h1>{# tiêu đề trang, con ghi đè; nên dùng đúng tên mục trên header #}
     </header>{# hết đầu trang #}
     {% block admin_noi_dung %}{% endblock %}{# nội dung riêng của từng trang quản trị, con ghi đè #}

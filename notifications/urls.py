@@ -9,4 +9,5 @@ urlpatterns = [  # bảng chỉ đường của app thông báo (không dùng ap
     path('thong-bao/<int:ma_thong_bao>/', views.chi_tiet, name='chi_tiet_thong_bao'),  # SC9.2: chi tiết một thông báo
     path('thong-bao/<int:ma_thong_bao>/doc/', views.doi_trang_thai_doc, name='doi_trang_thai_doc'),  # POST: đổi Đã đọc / Chưa đọc
     path('thong-bao/<int:ma_thong_bao>/sao/', views.doi_dau_sao, name='doi_dau_sao'),  # POST: gắn hoặc bỏ sao
+    path('thong-bao/<int:ma_thong_bao>/xoa/', views.xoa, name='xoa_thong_bao'),  # POST: xóa một thông báo
 ]  # hết bảng chỉ đường

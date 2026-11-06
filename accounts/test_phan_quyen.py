@@ -4,7 +4,7 @@
 # =====================================================================
 import html  # đổi &amp; trong link HTML về &
 import re  # tìm link chuyển trang trong HTML
-from urllib.parse import urljoin  # ghép đường dẫn trang với phần ?... của link
+from urllib.parse import parse_qs, urljoin, urlsplit  # ghép đường dẫn trang với phần ?... của link; đọc các tham số trong link nút lọc
 
 from django.test import TestCase  # mỗi test chạy trên database tạm
 from django.urls import reverse  # đổi tên URL thành đường dẫn
@@ -96,6 +96,24 @@ class DanhSachTaiKhoanTests(NenTest):  # quyền xem và bộ lọc của trang 
         r2 = self.client.get(url2)  # bấm link sang trang 2
         email_trang_2 = {h['user'].email for h in r2.context['hang']}  # email các dòng ở trang 2
         self.assertEqual(email_trang_2, {f'locmau{i:02d}@example.com' for i in range(5)})  # danh sách xếp mới nhất lên đầu nên trang 2 là 5 người tạo đầu tiên
+
+    def test_nut_loc_ket_hop_vai_tro_va_trang_thai(self):  # P7: hai nhóm nút lọc kết hợp được, mỗi nút chỉ đổi bộ lọc của nhóm mình
+        def nut(r, nhom, nhan):  # tìm một nút trong context theo nhóm và chữ trên nút
+            return next(n for n in r.context[nhom] if n['nhan'] == nhan)  # trả về dict của nút
+        def tham_so(n):  # các tham số trong link của nút
+            return parse_qs(urlsplit(n['url']).query)  # dict tên tham số -> danh sách giá trị
+        r = self.client.get(self.url_ds, {'q': 'khach', 'vai_tro': VaiTro.KHACH_HANG})  # đang lọc theo từ khóa và vai trò
+        khoa = nut(r, 'nut_trang_thai', 'Đã khóa')  # nút Đã khóa
+        self.assertFalse(khoa['dang_chon'])  # chưa được chọn
+        self.assertEqual(tham_so(khoa), {'q': ['khach'], 'vai_tro': [VaiTro.KHACH_HANG], 'trang_thai': ['bi_khoa']})  # giữ từ khóa và vai trò, thêm trạng thái
+        r = self.client.get(khoa['url'])  # bấm nút Đã khóa
+        khoa = nut(r, 'nut_trang_thai', 'Đã khóa')  # nút Đã khóa sau khi bấm
+        self.assertTrue(khoa['dang_chon'])  # nút đang được chọn
+        self.assertNotIn('trang_thai', tham_so(khoa))  # bấm lần nữa là bỏ chọn trạng thái
+        self.assertEqual(tham_so(khoa)['vai_tro'], [VaiTro.KHACH_HANG])  # vai trò vẫn còn
+        tat_ca = nut(r, 'nut_vai_tro', 'Tất cả')  # nút Tất cả của nhóm vai trò
+        self.assertNotIn('vai_tro', tham_so(tat_ca))  # bỏ lọc vai trò
+        self.assertEqual(tham_so(tat_ca)['trang_thai'], ['bi_khoa'])  # nhưng giữ lọc trạng thái
 
 
 class DoiVaiTroTests(NenTest):  # luật đổi vai trò
