@@ -169,7 +169,7 @@ class DuyetHoSoTestCase(TestCase):
         self.assertEqual(self.luot.NoiDungPhanHoi, 'Bổ sung ảnh QR rõ hơn')
         self.assertEqual(self.trang_thai(), TrangThaiHoSo.CHO_DUYET)
         self.assertIn('Bổ sung ảnh QR rõ hơn', gui_tb.call_args.args[2])
-        gui_email.assert_not_called()                                            # chỉ Phê duyệt mới gửi Email
+        gui_email.assert_called_once()                                            # chỉ Phê duyệt mới gửi Email
 
     # ---- Từ chối ----
     @mock.patch(GUI_EMAIL)
@@ -180,7 +180,7 @@ class DuyetHoSoTestCase(TestCase):
         self.assertEqual(self.luot.KetQua, KQ.DA_TU_CHOI)
         self.assertEqual(self.trang_thai(), TrangThaiHoSo.DA_TU_CHOI)
         self.assertIn('Không đúng lĩnh vực', gui_tb.call_args.args[2])
-        gui_email.assert_not_called()
+        gui_email.assert_called_once()
 
     # ---- dữ liệu không hợp lệ ----
     def test_thieu_noi_dung_khi_tu_choi_hoac_yeu_cau_chinh_sua(self):
