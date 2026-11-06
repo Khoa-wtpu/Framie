@@ -6,4 +6,4 @@ document.addEventListener('submit', function (suKien) { // lắng nghe mọi l�
   if (cauHoi && !window.confirm(cauHoi)) { // nút có câu hỏi mà người dùng bấm Hủy
     suKien.preventDefault(); // chặn, không gửi form
   } // hết kiểm tra
-}); // hết lắng nghe
+}, true); // true = chạy ở giai đoạn bắt (capture), tức TRƯỚC bộ chống bấm đúp trong static/js/app.js; nhờ vậy khi bấm Hủy, app.js thấy form đã bị chặn và không thêm is-loading (nút khỏi xoay mãi)
