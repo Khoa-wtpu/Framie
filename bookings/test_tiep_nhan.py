@@ -148,22 +148,25 @@ class UC43TiepNhan(TiepNhanBase):
     # Địa chỉ trang Quản lý Booking.
     url = property(lambda self: reverse('manage_bookings'))
 
-    # Kiểm tra: danh sách mặc định chỉ có Booking 'Chờ xác nhận' của chính mình; Booking đã chấp nhận hoặc của Nhiếp ảnh gia khác thì không hiện.
-    def test_chi_thay_booking_cho_xac_nhan_cua_chinh_minh(self):          # Basic Flow bước 2 + BR4.3-1
+    # Kiểm tra: danh sách MẶC ĐỊNH là 'Tất cả trạng thái' (có cả Booking đã chấp nhận) nhưng chỉ của chính mình;
+    # Booking của Nhiếp ảnh gia khác thì không hiện. Lọc riêng 'Chờ xác nhận' thì chỉ còn yêu cầu mới.
+    def test_mac_dinh_tat_ca_trang_thai_cua_chinh_minh(self):             # Basic Flow bước 2 + BR4.3-1
         cua_minh = self.tao_booking(gio='09:00')
         da_chap = self.tao_booking(gio='13:00', trang_thai=BK.CHO_DAT_COC)
         cua_nguoi_khac = self.tao_booking(nag=self.nag_khac, gio='09:00')
         res = self.client.get(self.url)
         self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.context['trang_thai'], uc.LOC_TAT_CA)        # ô chọn trạng thái đang ở "Tất cả trạng thái"
         ds = list(res.context['page_obj'])
-        self.assertEqual(ds, [cua_minh])                                  # mặc định chỉ "Chờ xác nhận"
-        self.assertNotIn(da_chap, ds)
+        self.assertCountEqual(ds, [cua_minh, da_chap])                    # mặc định thấy mọi trạng thái của mình
         self.assertNotIn(cua_nguoi_khac, ds)                              # không thấy Booking của người khác
         self.assertContains(res, 'Nguyễn An')                             # tên khách (họ + tên đệm trước)
+        moi = self.client.get(self.url, {'trang_thai': BK.CHO_XAC_NHAN})  # chọn riêng "Chờ xác nhận"
+        self.assertEqual(list(moi.context['page_obj']), [cua_minh])
 
-    # Kiểm tra: chưa có yêu cầu nào thì hiện câu 'Không có yêu cầu Booking mới'.
+    # Kiểm tra: lọc riêng 'Chờ xác nhận' mà chưa có yêu cầu nào thì hiện câu 'Không có yêu cầu Booking mới'.
     def test_khong_co_booking_moi(self):                                  # ngoại lệ 2b
-        res = self.client.get(self.url)
+        res = self.client.get(self.url, {'trang_thai': BK.CHO_XAC_NHAN})
         self.assertContains(res, uc.TB_KHONG_CO_YEU_CAU)
 
     # Kiểm tra: lọc theo từng trạng thái và lọc 'Tất cả trạng thái' đều cho kết quả đúng.
@@ -352,28 +355,42 @@ class UC44ChapNhan(TiepNhanBase):
         self.assertEqual(LichSuTrangThaiBooking.objects.filter(MaBooking=bk).count(), 1)
         self.assertEqual(len(mail.outbox), 1)
 
-    # Kiểm tra: Booking đã quá giờ chụp -> ẩn nút Chấp nhận, gõ tay lệnh chấp nhận cũng bị chặn, không đổi gì.
+    # Kiểm tra: hàm chấp nhận từ chối Booking đã quá giờ chụp, không đổi gì.
+    # (Gọi thẳng hàm nghiệp vụ: nếu mở trang web thì middleware đã tự hủy Booking quá giờ từ trước, xem test bên dưới.)
     def test_khong_chap_nhan_booking_da_qua_gio_chup(self):
         bk = self.tao_booking()
         # Dời giờ chụp về quá khứ (đúng thứ tự DB: NgayTao phải trước NgayGioChup).
         Booking.objects.filter(pk=bk.pk).update(NgayTao=timezone.now() - timedelta(days=2),
                                                 NgayGioChup=timezone.now() - timedelta(hours=1))
-        res = self.client.get(self.url_chi_tiet(bk))
-        self.assertNotContains(res, 'Chấp nhận Booking')                  # ẩn nút Chấp nhận
-        self.assertContains(res, 'Từ chối Booking')                       # vẫn từ chối được
-        res = self.client.post(self.url_chap_nhan(bk), follow=True)       # gõ tay POST cũng bị chặn
-        self.assertContains(res, uc.TB_QUA_GIO_CHUP)
+        with self.assertRaisesMessage(uc.XuLyBookingLoi, uc.TB_QUA_GIO_CHUP):
+            uc.chap_nhan_booking(self.nag.MaTaiKhoan, bk.pk)
         bk.refresh_from_db()
         self.assertEqual(bk.TrangThai, BK.CHO_XAC_NHAN)
         self.assertFalse(ThongBao.objects.exists())
         self.assertFalse(LichSuTrangThaiBooking.objects.filter(MaBooking=bk).exists())
 
-    # Kiểm tra: Booking quá giờ chụp vẫn TỪ CHỐI được và khung giờ được trả về trống.
+    # Kiểm tra: Nhiếp ảnh gia mở trang web mà có Booking 'Chờ xác nhận' đã quá giờ chụp -> hệ thống TỰ HỦY (không bắt từ chối).
+    def test_mo_trang_thi_booking_qua_gio_chup_tu_huy(self):
+        bk = self.tao_booking()
+        Booking.objects.filter(pk=bk.pk).update(NgayTao=timezone.now() - timedelta(days=2),
+                                                NgayGioChup=timezone.now() - timedelta(hours=1))
+        res = self.client.get(self.url_chi_tiet(bk))                      # middleware chạy trước khi dựng trang
+        self.assertNotContains(res, 'Chấp nhận Booking')                  # không còn nút xử lý
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, BK.DA_HUY)                         # đã tự hủy
+        bk.MaLich.refresh_from_db()
+        self.assertEqual(bk.MaLich.TrangThai, SL.TRONG)                   # slot được trả lại
+        ls = LichSuTrangThaiBooking.objects.get(MaBooking=bk)
+        self.assertEqual((ls.TrangThaiCu, ls.TrangThaiMoi, ls.BenThucHien),
+                         (BK.CHO_XAC_NHAN, BK.DA_HUY, BenThucHien.HE_THONG))
+
+    # Kiểm tra: hàm từ chối KHÔNG kiểm tra giờ chụp nên Booking quá giờ vẫn từ chối được và khung giờ được trả về trống.
+    # (Gọi thẳng hàm nghiệp vụ, vì nếu mở trang web thì middleware đã tự hủy Booking quá giờ trước đó.)
     def test_van_tu_choi_duoc_booking_da_qua_gio_chup(self):
         bk = self.tao_booking()
         Booking.objects.filter(pk=bk.pk).update(NgayTao=timezone.now() - timedelta(days=2),
                                                 NgayGioChup=timezone.now() - timedelta(hours=1))
-        self.client.post(self.url_tu_choi(bk), {'ly_do': 'Đã quá giờ chụp'})
+        uc.tu_choi_booking(self.nag.MaTaiKhoan, bk.pk, 'Đã quá giờ chụp')
         bk.refresh_from_db()
         self.assertEqual(bk.TrangThai, BK.DA_TU_CHOI)
         bk.MaLich.refresh_from_db()
