@@ -1,0 +1,65 @@
+{# ===== admin_booking_list.html : trang "Tất cả Booking" của Quản trị viên ===== #}
+{# Bố cục: tiêu đề → thẻ bộ lọc → danh sách thẻ (mỗi booking 1 thẻ), cùng phong cách trang Duyệt hồ sơ #}
+{# BIẾN CẦN TỪ view: bookings (danh sách), trang_thai_choices (các lựa chọn lọc), trang_thai_chon, q #}
+{% extends "base.html" %}{# kế thừa khung chung; KHÔNG tự viết thêm header ở đây nữa để tránh bị lặp 2 thanh trên cùng #}
+{% load static %}{# bật thẻ {% static %} #}
+
+{% block extra_head %}{# vùng <head> mở rộng #}
+<link rel="stylesheet" href="{% static 'bookings/css/booking.css' %}">{# nạp CSS dùng chung #}
+{% endblock %}
+
+{% block content %}{# vùng nội dung giữa trang #}
+<div class="bk-page">{# khung giữa trang #}
+  <h1 class="bk-title">Tất cả Booking</h1>{# tiêu đề trang #}
+
+  <form method="get" class="bk-card bk-filter">{# thẻ bộ lọc, gửi bằng GET để link lọc chia sẻ được #}
+    <div class="bk-field">{# ô lọc trạng thái #}
+      <label for="trang_thai">Trạng thái</label>{# nhãn gắn với ô chọn bên dưới #}
+      <select id="trang_thai" name="trang_thai">{# danh sách thả xuống #}
+        <option value="">Tất cả trạng thái</option>{# lựa chọn mặc định: không lọc #}
+        {% for ma, ten in trang_thai_choices %}{# lặp qua từng trạng thái (mã, tên) #}
+          <option value="{{ ma }}" {% if ma == trang_thai_chon %}selected{% endif %}>{{ ten }}</option>{# chọn sẵn mục đang lọc #}
+        {% endfor %}
+      </select>
+    </div>
+    <div class="bk-field">{# ô tìm kiếm #}
+      <label for="q">Tìm kiếm</label>{# nhãn #}
+      <input id="q" type="text" name="q" value="{{ q }}" placeholder="Mã Booking, tên khách hoặc nhiếp ảnh gia">{# giữ lại từ khóa đã nhập; placeholder viết đủ để không bị cắt chữ #}
+    </div>
+    <button type="submit" class="bk-btn">Áp dụng</button>{# nút gửi bộ lọc #}
+  </form>
+
+  <div class="bk-list">{# vùng danh sách #}
+    {% for booking in bookings %}{# mỗi vòng lặp = 1 thẻ booking #}
+    <article class="bk-item">{# thẻ booking, chia 6 cột theo CSS #}
+      <div class="bk-item__id">#{{ booking.id }}</div>{# cột 1: mã #}
+
+      <div>{# cột 2: khách hàng #}
+        <span class="bk-item__label">Khách hàng</span>{# nhãn nhỏ #}
+        <span class="bk-item__value">{{ booking.khach_hang.get_full_name }}</span>{# tên khách #}
+      </div>
+
+      <div>{# cột 3: nhiếp ảnh gia và gói #}
+        <span class="bk-item__label">Nhiếp ảnh gia</span>{# nhãn nhỏ #}
+        <span class="bk-item__value">{{ booking.nhiep_anh_gia }}</span>{# tên nhiếp ảnh gia #}
+        <span class="bk-item__sub">{{ booking.goi_dich_vu }}</span>{# gói dịch vụ, chữ phụ #}
+      </div>
+
+      <div>{# cột 4: lịch chụp #}
+        <span class="bk-item__label">Lịch chụp</span>{# nhãn nhỏ #}
+        <span class="bk-item__value">{{ booking.ngay_gio_chup|date:"H:i d/m/Y" }}</span>{# giờ và ngày chụp #}
+        <span class="bk-item__sub">{{ booking.dia_diem }}</span>{# địa điểm, chữ phụ #}
+      </div>
+
+      <div>{# cột 5: trạng thái #}
+        <span class="bk-badge bk-badge--{{ booking.trang_thai }}">{{ booking.get_trang_thai_display }}</span>{# nhãn màu theo trạng thái #}
+      </div>
+
+      <a class="bk-btn" href="{% url 'bookings:admin_chi_tiet' booking.id %}">Xem chi tiết</a>{# cột 6: nút (đổi tên url cho khớp urls.py) #}
+    </article>
+    {% empty %}{# chạy khi danh sách rỗng #}
+    <div class="bk-card bk-empty">Không có Booking nào phù hợp.</div>{# thông báo rỗng #}
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

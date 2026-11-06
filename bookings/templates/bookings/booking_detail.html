@@ -1,0 +1,67 @@
+{# ===== booking_detail.html : trang chi tiết 1 Booking (Khách hàng) ===== #}
+{# BẢNG ĐỐI CHIẾU TÊN BIẾN: nếu model của bạn đặt tên khác thì chỉ cần đổi trong dấu {{ }} bên dưới #}
+{# booking.id | booking.trang_thai | booking.nhiep_anh_gia | booking.loai_hinh | booking.goi_dich_vu #}
+{# booking.ngay_gio_chup | booking.dia_diem | booking.so_nguoi | booking.concept | booking.yeu_cau_rieng #}
+{# booking.tong_gia_tri | booking.ngay_tao #}
+{% extends "base.html" %}{# kế thừa khung chung (header, footer) của FRAMIE #}
+{% load static %}{# bật thẻ {% static %} để nạp file CSS #}
+
+{% block extra_head %}{# vùng <head> mở rộng trong base.html (đổi tên block nếu base của bạn gọi khác) #}
+<link rel="stylesheet" href="{% static 'bookings/css/booking.css' %}">{# nạp file CSS ở trên #}
+{% endblock %}
+
+{% block content %}{# vùng nội dung giữa trang trong base.html #}
+<div class="bk-page">{# khung giữa trang #}
+
+  <a class="bk-back" href="{% url 'bookings:danh_sach' %}">← Quay lại danh sách Booking</a>{# link về danh sách (đổi tên url cho khớp urls.py) #}
+
+  <h1 class="bk-title">{# tiêu đề gồm mã booking và nhãn trạng thái #}
+    Booking #{{ booking.id }}{# in mã booking #}
+    <span class="bk-badge bk-badge--{{ booking.trang_thai }}">{# nhãn trạng thái; class cuối quyết định màu #}
+      {{ booking.get_trang_thai_display }}{# in tên trạng thái tiếng Việt (CHỮ NÀY trước đây bị thiếu nên nhãn trống) #}
+    </span>
+  </h1>
+
+  <div class="bk-grid">{# lưới 2 cột chứa các thẻ #}
+
+    <section class="bk-card">{# THẺ 1: người thực hiện và dịch vụ #}
+      <h2 class="bk-card__title">Dịch vụ</h2>{# tiêu đề thẻ #}
+      <dl>{# danh sách nhãn–giá trị #}
+        <div class="bk-row"><dt>Nhiếp ảnh gia</dt><dd>{{ booking.nhiep_anh_gia }}</dd></div>{# tên nhiếp ảnh gia #}
+        <div class="bk-row"><dt>Loại hình chụp</dt><dd>{{ booking.loai_hinh }}</dd></div>{# loại hình: sản phẩm, cưới... #}
+        <div class="bk-row"><dt>Gói dịch vụ</dt><dd>{{ booking.goi_dich_vu }}</dd></div>{# tên gói đã chọn #}
+      </dl>
+    </section>
+
+    <section class="bk-card">{# THẺ 2: thời gian và địa điểm #}
+      <h2 class="bk-card__title">Lịch chụp</h2>{# tiêu đề thẻ #}
+      <dl>
+        <div class="bk-row"><dt>Ngày giờ chụp</dt><dd>{{ booking.ngay_gio_chup|date:"l, d/m/Y H:i" }}</dd></div>{# định dạng: Thứ 2, 02/11/2026 16:00 #}
+        <div class="bk-row"><dt>Địa điểm</dt><dd>{{ booking.dia_diem }}</dd></div>{# nơi chụp #}
+        <div class="bk-row"><dt>Số người</dt><dd>{{ booking.so_nguoi }}</dd></div>{# số người tham gia #}
+      </dl>
+    </section>
+
+    <section class="bk-card">{# THẺ 3: mong muốn của khách #}
+      <h2 class="bk-card__title">Yêu cầu của bạn</h2>{# tiêu đề thẻ #}
+      <dl>
+        <div class="bk-row"><dt>Concept</dt><dd>{{ booking.concept|default:"—" }}</dd></div>{# nếu để trống thì hiện dấu — #}
+        <div class="bk-row"><dt>Yêu cầu riêng</dt><dd>{{ booking.yeu_cau_rieng|default:"—" }}</dd></div>{# như trên #}
+      </dl>
+    </section>
+
+    <section class="bk-card">{# THẺ 4: thời điểm gửi #}
+      <h2 class="bk-card__title">Thông tin gửi</h2>{# tiêu đề thẻ #}
+      <dl>
+        <div class="bk-row"><dt>Gửi lúc</dt><dd>{{ booking.ngay_tao|date:"H:i d/m/Y" }}</dd></div>{# giờ tạo booking #}
+      </dl>
+    </section>
+
+    <section class="bk-card bk-card--full">{# THẺ 5: tổng tiền, chiếm cả hàng #}
+      <h2 class="bk-card__title">Tổng giá trị</h2>{# tiêu đề thẻ #}
+      <div class="bk-total">{{ booking.tong_gia_tri|floatformat:"0g" }} VNĐ</div>{# số tiền có dấu chấm ngăn cách nghìn #}
+    </section>
+
+  </div>
+</div>
+{% endblock %}
