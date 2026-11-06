@@ -4,6 +4,11 @@
 # Yêu cầu: Khách hàng (đã giữ slot ở UC4.1) điền gói dịch vụ (chỉ gói "Đang áp dụng", nhóm theo loại hình của gói),
 # ngày giờ chụp nằm trong khung giờ đã giữ và gói phải vừa khung giờ đó (giờ chụp + thời lượng gói <= giờ kết thúc slot),
 # địa điểm, số người, concept, yêu cầu riêng. Không có ô "Loại hình" riêng: loại hình là của gói (BOOKING không có cột này).
+#   - Địa điểm : CHỌN 1 khu vực (bắt buộc, trong các KhuVuc Nhiếp ảnh gia đã chọn ở hồ sơ) + ô "Địa chỉ cụ thể" (không bắt buộc).
+#   - Concept  : CHỌN 1 phong cách (bắt buộc, trong các PhongCach Nhiếp ảnh gia đã chọn ở hồ sơ) + ô "Mô tả concept" (không bắt buộc).
+#   BOOKING vẫn chỉ có 2 cột chữ DiaDiem / Concept (không đổi CSDL) nên khi lưu ta GHÉP chữ:
+#       DiaDiem = "<Khu vực>"  hoặc  "<Khu vực> - <Địa chỉ cụ thể>"
+#       Concept = "<Phong cách>" hoặc "<Phong cách> - <Mô tả concept>"
 #   - Quá 5 phút        -> "Slot đã hết thời gian giữ chỗ, vui lòng chọn lại" (kết thúc UC, làm lại UC4.1).
 #   - Thông tin hợp lệ  -> tạo Booking "Chờ xác nhận", TongGiaTri = giá gói,
 #                          lượt giữ chỗ -> "Đã hoàn tất Booking", thông báo cho Nhiếp ảnh gia (web + Email)
@@ -72,7 +77,7 @@ from core.constants import (
     TrangThaiSlot,
 )
 from notifications.services import gui_thong_bao
-from profiles.models import GoiDichVu
+from profiles.models import GoiDichVu, KhuVuc, PhongCach
 from schedule.models import LichKhaDung
 
 logger = logging.getLogger(__name__)
@@ -87,9 +92,9 @@ TB_SLOT_DA_CO_BOOKING = 'Slot này đã gắn với một Booking đang có hi�
 TEN_FIELD_FORM = {
     'MaGoi': 'goi',
     'NgayGioChup': 'ngay_gio_chup',
-    'DiaDiem': 'dia_diem',
+    'DiaDiem': 'khu_vuc',
     'SoNguoi': 'so_nguoi',
-    'Concept': 'concept',
+    'Concept': 'phong_cach',
     'YeuCauRieng': 'yeu_cau_rieng',
 }
 
@@ -184,6 +189,20 @@ class GoiChoiceField(forms.ModelChoiceField):
         return f'🔒 {nhan} — {ly_do}' if ly_do else nhan
 
 
+# Độ dài tối đa của 2 ô nhập tự do, tính sao cho chuỗi sau khi GHÉP không vượt cột của BOOKING:
+#   DiaDiem VARCHAR(255): tên khu vực tối đa 100 + " - " (3) + địa chỉ 150  = 253 <= 255
+#   Concept VARCHAR(500): tên phong cách tối đa 100 + " - " (3) + mô tả 390 = 493 <= 500
+MAX_DIA_CHI_CU_THE = 150
+MAX_MO_TA_CONCEPT = 390
+
+
+def ghep_chu(ten_muc_da_chon, ghi_chu_them):
+    """Ghép mục đã chọn với ô nhập thêm: 'Hải Châu' + '12 Nguyễn Văn Linh' -> 'Hải Châu - 12 Nguyễn Văn Linh'.
+    Ô nhập thêm để trống thì chỉ còn tên mục đã chọn."""
+    ghi_chu_them = (ghi_chu_them or '').strip()
+    return f'{ten_muc_da_chon} - {ghi_chu_them}' if ghi_chu_them else str(ten_muc_da_chon)
+
+
 class GuiBookingForm(forms.Form):
     """Bước 2 + 4: Khách nhập thông tin buổi chụp; form kiểm tra đầy đủ và hợp lệ.
     Tạo form: GuiBookingForm(du_lieu, lich=slot_dang_giu). Không có ô "Loại hình": loại hình là của gói."""
@@ -200,16 +219,29 @@ class GuiBookingForm(forms.Form):
         widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
         error_messages={'required': 'Vui lòng chọn ngày giờ chụp.',
                         'invalid': 'Ngày giờ chụp không hợp lệ.'})
-    dia_diem = forms.CharField(
-        max_length=255, label='Địa điểm', error_messages={'required': 'Vui lòng nhập địa điểm chụp.'})
+    # Địa điểm = chọn khu vực (bắt buộc) + địa chỉ cụ thể (không bắt buộc). queryset được gán lại trong __init__.
+    khu_vuc = forms.ModelChoiceField(
+        queryset=KhuVuc.objects.none(), label='Địa điểm chụp', empty_label='-- Chọn khu vực --',
+        error_messages={'required': 'Vui lòng chọn địa điểm chụp.',
+                        'invalid_choice': 'Khu vực này không thuộc khu vực Nhiếp ảnh gia nhận chụp.'},
+        help_text='Các khu vực Nhiếp ảnh gia nhận chụp.')
+    dia_chi_cu_the = forms.CharField(
+        max_length=MAX_DIA_CHI_CU_THE, required=False, label='Địa chỉ cụ thể',
+        help_text='Không bắt buộc. Ví dụ: tên quán, số nhà, đường.')
     # BOOKING bắt buộc SoNguoi >= 1 (ck_booking_songuoi) nên không để trống được: mặc định 1.
     so_nguoi = forms.IntegerField(
         min_value=1, initial=1, label='Số người xuất hiện trong ảnh', help_text='Chụp sản phẩm: để 1.',
         error_messages={'required': 'Vui lòng nhập số người.', 'invalid': 'Số người phải là số nguyên.',
                         'min_value': 'Số người phải từ 1 trở lên.'})
-    concept = forms.CharField(
-        max_length=500, label='Concept', widget=forms.Textarea(attrs={'rows': 3}),
-        error_messages={'required': 'Vui lòng nhập concept buổi chụp.'})
+    # Concept = chọn phong cách (bắt buộc) + mô tả concept (không bắt buộc). queryset được gán lại trong __init__.
+    phong_cach = forms.ModelChoiceField(
+        queryset=PhongCach.objects.none(), label='Concept', empty_label='-- Chọn concept --',
+        error_messages={'required': 'Vui lòng chọn concept buổi chụp.',
+                        'invalid_choice': 'Concept này không thuộc phong cách Nhiếp ảnh gia theo đuổi.'},
+        help_text='Các phong cách Nhiếp ảnh gia theo đuổi.')
+    mo_ta_concept = forms.CharField(
+        max_length=MAX_MO_TA_CONCEPT, required=False, label='Mô tả concept', widget=forms.Textarea(attrs={'rows': 3}),
+        help_text='Không bắt buộc. Mô tả những gì bạn mong muốn (tông màu, trang phục, ý tưởng...).')
     yeu_cau_rieng = forms.CharField(
         max_length=1000, required=False, label='Yêu cầu riêng', widget=forms.Textarea(attrs={'rows': 3}))
 
@@ -222,6 +254,9 @@ class GuiBookingForm(forms.Form):
                                        .select_related('MaLoaiHinh')
                                        .order_by('MaLoaiHinh__TenLoaiHinh', 'Gia', 'MaGoi'))
         self.fields['goi'].dat_slot(lich)
+        # Khu vực và phong cách: chỉ những mục Nhiếp ảnh gia sở hữu slot đã chọn ở hồ sơ (related_name='nhiep_anh_gia').
+        self.fields['khu_vuc'].queryset = KhuVuc.objects.filter(nhiep_anh_gia__pk=lich.MaNhiepAnhGia_id)
+        self.fields['phong_cach'].queryset = PhongCach.objects.filter(nhiep_anh_gia__pk=lich.MaNhiepAnhGia_id)
         # Gợi ý cho trình duyệt: chỉ cho chọn giờ trong khung giờ của slot; mặc định là giờ bắt đầu slot.
         dang_html = '%Y-%m-%dT%H:%M'
         bat_dau = timezone.make_aware(datetime.combine(lich.Ngay, lich.GioBatDau))
@@ -465,10 +500,13 @@ def gui_booking(request, ma_giu_cho):
         form = GuiBookingForm(request.POST, lich=lich)
         if form.is_valid():
             du_lieu = form.cleaned_data
+            # Ghép khu vực + địa chỉ cụ thể -> DiaDiem; phong cách + mô tả -> Concept (xem đầu file).
+            dia_diem = ghep_chu(du_lieu['khu_vuc'].TenKhuVuc, du_lieu['dia_chi_cu_the'])
+            concept = ghep_chu(du_lieu['phong_cach'].TenPhongCach, du_lieu['mo_ta_concept'])
             try:
                 booking = gui_yeu_cau_booking(
                     request.user, giu_cho.pk, du_lieu['goi'].pk, du_lieu['ngay_gio_chup'],
-                    du_lieu['dia_diem'], du_lieu['so_nguoi'], du_lieu['concept'], du_lieu['yeu_cau_rieng'])
+                    dia_diem, du_lieu['so_nguoi'], concept, du_lieu['yeu_cau_rieng'])
             except GuiBookingLoi as loi:
                 if loi.het_han:                               # 4a: kết thúc UC, Khách làm lại UC4.1
                     messages.error(request, loi.thong_bao)
