@@ -43,7 +43,7 @@ def tai_anh_len(request, nag, ma_booking):
                     messages.success(request, f'Đã tải {ket_qua["so_anh"]} ảnh. Booking chuyển sang "{ket_qua["trang_thai_moi"]}".')
                 else:
                     messages.success(request, f'Đã tải {ket_qua["so_anh"]} ảnh hậu kỳ. Còn {ket_qua["con_thieu"]} ảnh cần tải.')
-                url = reverse('tai_anh_len', args=[booking.pk])
+                url = reverse('chi_tiet_booking', args=[booking.pk]) if ket_qua['trang_thai_moi'] else reverse('tai_anh_len', args=[booking.pk])
                 return JsonResponse({'ok': True, 'url': url}) if la_ajax else redirect(url)
         if la_ajax:                                            # trả lỗi cho JavaScript hiển thị
             loi = [str(e) for ds in form.errors.values() for e in ds]
@@ -51,7 +51,8 @@ def tai_anh_len(request, nag, ma_booking):
 
     booking.refresh_from_db()                                  # đọc lại trạng thái mới nhất
     giai_doan = services.xac_dinh_giai_doan(booking)
-    cho_hau_ky = list(services.anh_can_hau_ky(booking)) if giai_doan and giai_doan['loai'] == LoaiAnh.DA_HAU_KY else []
+    cho_hau_ky = (sorted(services.anh_can_hau_ky(booking), key=lambda a: services._khoa_sap_xep(a.TenAnh))
+                  if giai_doan and giai_doan['loai'] == LoaiAnh.DA_HAU_KY else [])   # xếp "tự nhiên" giống cách ghép ảnh khi tải lên
     page_obj = Paginator(
         Anh.objects.filter(MaBooking=booking, TrangThaiLuuTru=LuuTruAnh.CON_LUU).order_by('TenAnh'), 24
     ).get_page(request.GET.get('page'))
@@ -60,7 +61,8 @@ def tai_anh_len(request, nag, ma_booking):
                    if cho_bat_dau and booking.MaGoi.LoaiHauKy == LoaiHauKy.GIOI_HAN else [])   # N6: danh sách ảnh Khách đã chọn (chỉ gói giới hạn)
     yeu_cau_moi = (YeuCauChinhSua.objects.filter(MaBooking=booking).order_by('-SoLanYeuCau').first()   # N7: yêu cầu chỉnh sửa gần nhất của Khách
                    if booking.TrangThai == TrangThaiBooking.DANG_HAU_KY else None)   # N7: chỉ hiện khi đang hậu kỳ
-    yeu_cau_anhs = (list(YeuCauChinhSua_Anh.objects.filter(MaYeuCauChinhSua=yeu_cau_moi).select_related('MaAnh').order_by('MaAnh__TenAnh'))
+    yeu_cau_anhs = (sorted(YeuCauChinhSua_Anh.objects.filter(MaYeuCauChinhSua=yeu_cau_moi).select_related('MaAnh'),   # N7: lấy các ảnh Khách yêu cầu sửa
+                           key=lambda ct: services._khoa_sap_xep(ct.MaAnh.TenAnh))   # N7: xếp "tự nhiên" giống hệt cách ghép ảnh khi tải lên
                     if yeu_cau_moi else [])   # N7: nội dung cần sửa của từng ảnh để Nhiếp ảnh gia đọc
     return render(request, 'delivery/tai_anh_len.html', {
         'booking': booking, 'giai_doan': giai_doan, 'form': form,
@@ -136,11 +138,11 @@ def chon_anh_hau_ky(request, ma_booking):                      # trang UC5.4
                 else:                                          # đã đủ số lượng: gửi luôn
                     services.gui_danh_sach_hau_ky(booking.pk, request.user)   # bước 6
                     messages.success(request, f'Đã gửi danh sách {so_chon} ảnh cho Nhiếp ảnh gia để hậu kỳ.')  # báo đã gửi danh sách cho Nhiếp ảnh gia
-                    return redirect('chon_anh_hau_ky', ma_booking=booking.pk)  # chuyển về trang chọn ảnh để tránh gửi lại khi F5
+                    return redirect('chi_tiet_booking', ma_booking=booking.pk)  # đã gửi lựa chọn, quay về chi tiết Booking
             elif hanh_dong == 'gui_xac_nhan':                  # luồng 4a-2: Khách chọn "Không, gửi danh sách ảnh đã chọn"
                 kq = services.gui_danh_sach_hau_ky(booking.pk, request.user)   # gửi danh sách đã lưu
                 messages.success(request, f'Đã gửi danh sách {kq["so_anh"]} ảnh cho Nhiếp ảnh gia để hậu kỳ.')  # báo đã gửi danh sách cho Nhiếp ảnh gia
-                return redirect('chon_anh_hau_ky', ma_booking=booking.pk)  # chuyển về trang chọn ảnh để tránh gửi lại khi F5
+                return redirect('chi_tiet_booking', ma_booking=booking.pk)  # đã gửi lựa chọn, quay về chi tiết Booking
             else:                                              # nút lạ
                 messages.error(request, 'Thao tác không hợp lệ.')  # báo thao tác lạ
         except services.LoiChonAnh as loi:                     # lỗi nghiệp vụ: vượt giới hạn (4b), lỗi lưu (6a)...
@@ -168,7 +170,7 @@ def bat_dau_hau_ky(request, nag, ma_booking):                  # Nhiếp ảnh g
         messages.success(request, 'Đã bắt đầu hậu kỳ. Booking chuyển sang "Đang hậu kỳ", hạn 3 ngày.')  # báo đã bắt đầu hậu kỳ
     except services.LoiBatDauHauKy as loi:                     # sai trạng thái...
         messages.error(request, str(loi))                      # hiện lỗi
-    return redirect('tai_anh_len', ma_booking=booking.pk)      # quay lại trang tải ảnh của Booking
+    return redirect('chi_tiet_booking', ma_booking=booking.pk)  # hậu kỳ bắt đầu: quay về chi tiết Booking
 
 
 # =====================================================================
@@ -193,7 +195,7 @@ def yeu_cau_chinh_sua(request, ma_booking):                    # trang UC5.5
             if not kq['da_bao_nag']:                           # ngoại lệ 6a: yêu cầu đã lưu nhưng thông báo bị lỗi
                 messages.warning(request, 'Yêu cầu đã được lưu nhưng hệ thống chưa gửi được thông báo đến Nhiếp ảnh gia. '  # báo yêu cầu đã lưu nhưng thông báo bị lỗi
                                           'Hệ thống đã ghi nhận để xử lý lại.')   # báo cho Khách biết
-            return redirect('yeu_cau_chinh_sua', ma_booking=booking.pk)   # tránh gửi lại khi F5
+            return redirect('chi_tiet_booking', ma_booking=booking.pk)   # đã gửi yêu cầu chỉnh sửa
         except services.LoiYeuCauChinhSua as loi:              # lỗi nghiệp vụ: 2a, 4a, 4b, 5a
             messages.error(request, str(loi))                  # hiện lỗi cho Khách (giữ nguyên dữ liệu đã nhập)
 
@@ -232,7 +234,7 @@ def xac_nhan_ban_giao(request, ma_booking):                    # trang UC5.6
                 kq = services.xac_nhan_hoan_tat_ban_giao(booking.pk, request.user)   # bước 5-7: tạo Bàn giao, khoản 60%, đổi trạng thái, thông báo
                 messages.success(request, f'Đã xác nhận hoàn tất bàn giao. Vui lòng thanh toán {services.dinh_dang_tien(kq["so_tien"])} '  # báo thành công kèm số tiền
                                           f'(phần còn lại) trước {timezone.localtime(kq["han"]).strftime("%d/%m/%Y %H:%M")}.')   # báo thành công kèm số tiền và hạn
-                return redirect('xac_nhan_ban_giao', ma_booking=booking.pk)   # tránh gửi lại khi F5
+                return redirect('chi_tiet_booking', ma_booking=booking.pk)   # đã xác nhận bàn giao
             else:                                              # nút lạ
                 messages.error(request, 'Thao tác không hợp lệ.')   # báo thao tác lạ
         except services.LoiBanGiao as loi:                     # lỗi nghiệp vụ: 5a, 6a, sai trạng thái...

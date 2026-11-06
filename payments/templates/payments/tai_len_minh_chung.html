@@ -1,8 +1,42 @@
 {% extends "base.html" %}{# N2 - UC5.1: Khách hàng tải lên minh chứng thanh toán #}
 {% load ui %}
 {% block title %}Tải lên minh chứng thanh toán{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Chia ô thành 2 cột: trái = thông tin/nút, phải = ảnh */
+  .mc-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 280px); gap: var(--space-6); align-items: start; }
+  .mc-split__info > * { margin: 0; }
+  .mc-split__info > * + * { margin-top: var(--space-3); }
+  .mc-split__side { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); text-align: center; }
+  .mc-qr { width: 100%; max-width: 240px; height: auto; background: #fff; border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+
+  /* Khung xem trước ảnh minh chứng */
+  .mc-preview { width: 100%; min-height: 220px; display: flex; align-items: center; justify-content: center; padding: var(--space-3); border: 1px dashed var(--color-border); border-radius: var(--radius-md); background: #fafafa; }
+  .mc-preview img { max-width: 100%; max-height: 320px; object-fit: contain; border-radius: var(--radius-sm); }
+
+  /* Danh sách minh chứng đã gửi: chữ bên trái, ảnh bên phải */
+  .mc-item { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 200px); gap: var(--space-5); align-items: start; padding-top: var(--space-4); border-top: 1px solid var(--color-border); }
+  .mc-item:first-of-type { border-top: 0; padding-top: 0; }
+  .mc-item__info > * { margin: 0; }
+  .mc-item__info > * + * { margin-top: var(--space-2); }
+  .mc-item__thumb img { width: 100%; height: auto; max-height: 260px; object-fit: contain; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: #fafafa; }
+
+  /* Ô thông báo "đang chờ NAG xác nhận" (thay cho ô tải ảnh sau khi đã gửi) */
+  .mc-wait { display: flex; align-items: center; gap: var(--space-4); }
+  .mc-wait__icon { flex: none; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: var(--tone-amber-bg, #fff6dd); color: var(--tone-amber-fg, #8a5a00); font-size: var(--text-lg); }
+  .mc-wait h2 { margin: 0 0 var(--space-1); font-size: var(--text-lg); }
+  .mc-wait p { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+
+  @media (max-width: 720px) {
+    .mc-split, .mc-item { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container stack">
+  {% include "includes/quay_lai_booking.html" with booking=booking %}{# nút quay lại Booking (Khách hàng) #}
   <header>
     <h1>Tải lên minh chứng thanh toán</h1>
     <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>
@@ -11,42 +45,107 @@
   {% if not khoan %}
     {% include "includes/alert.html" with level="info" text="Booking này hiện chưa đến giai đoạn thanh toán." %}
   {% else %}
-    <section class="panel stack">
+
+    {# ===== Ô thông tin chuyển khoản: trái = tài khoản NAG, phải = mã QR ===== #}
+    <section class="panel">
       <h2>{{ khoan.loai }}</h2>
-      <p>Số tiền cần chuyển: <strong>{{ khoan.so_tien|floatformat:"0g" }} đ</strong></p>
-      {% if khoan.han %}<p class="muted">Hạn thanh toán: {{ khoan.han|date:"d/m/Y H:i" }}</p>{% endif %}
-      <p>Ngân hàng: <strong>{{ nag.NganHang }}</strong></p>
-      <p>Số tài khoản: <strong>{{ nag.SoTaiKhoan }}</strong></p>
-      <p>Chủ tài khoản: <strong>{{ nag.ChuTaiKhoan }}</strong></p>
-      {% if nag.AnhMaQR %}<p><img src="{{ nag.AnhMaQR.url }}" alt="Mã QR nhận tiền" width="220"></p>{% endif %}
+      <div class="mc-split">
+        <div class="mc-split__info">
+          <p>Số tiền cần chuyển: <strong>{{ khoan.so_tien|floatformat:"0g" }} đ</strong></p>
+          {% if khoan.han %}<p class="muted">Hạn thanh toán: {{ khoan.han|date:"d/m/Y H:i" }}</p>{% endif %}
+          <p>Ngân hàng: <strong>{{ nag.NganHang }}</strong></p>
+          <p>Số tài khoản: <strong>{{ nag.SoTaiKhoan }}</strong></p>
+          <p>Chủ tài khoản: <strong>{{ nag.ChuTaiKhoan }}</strong></p>
+        </div>
+        <div class="mc-split__side">
+          {% if nag.AnhMaQR %}
+            <img class="mc-qr" src="{{ nag.AnhMaQR.url }}" alt="Mã QR nhận tiền">
+            <span class="muted">Quét mã QR để chuyển khoản</span>
+          {% else %}
+            <span class="muted">Nhiếp ảnh gia chưa cung cấp mã QR.</span>
+          {% endif %}
+        </div>
+      </div>
     </section>
 
     {% if thanh_toan and thanh_toan.LyDoTuChoi %}
       {% include "includes/alert.html" with level="warning" title="Nhiếp ảnh gia yêu cầu bổ sung minh chứng" text=thanh_toan.LyDoTuChoi %}
     {% endif %}
 
+    {# ===== Ô tải minh chứng: chỉ hiện khi khách CHƯA gửi, hoặc NAG đã yêu cầu bổ sung ===== #}
     {% if khong_gui_duoc %}
       {% include "includes/alert.html" with level="warning" text=khong_gui_duoc %}
+    {% elif thanh_toan and minh_chungs and not thanh_toan.LyDoTuChoi %}
+      {# Đã gửi xong, đang chờ NAG: không hiện ô tải ảnh nữa #}
+      <section class="panel mc-wait">
+        <div class="mc-wait__icon">⏳</div>
+        <div>
+          <h2>Đã gửi minh chứng</h2>
+          <p>Đang chờ Nhiếp ảnh gia kiểm tra và xác nhận. Nếu minh chứng chưa hợp lệ, bạn sẽ nhận được yêu cầu bổ sung tại đây.</p>
+        </div>
+      </section>
     {% else %}
-      <form method="post" enctype="multipart/form-data" class="panel stack" novalidate>
+      <form method="post" enctype="multipart/form-data" class="panel" novalidate>
         {% csrf_token %}
-        {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}
-        {% include "includes/form_field.html" with field=form.tep %}
-        <button class="btn btn--primary" type="submit">Gửi minh chứng</button>
+        <div class="mc-split">
+          <div class="mc-split__info">
+            {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}
+            {% include "includes/form_field.html" with field=form.tep %}
+            <button class="btn btn--primary" type="submit">Gửi minh chứng</button>
+          </div>
+          <div class="mc-split__side">
+            <div class="mc-preview" id="mc-preview">
+              <span class="muted" id="mc-preview-empty">Ảnh bạn chọn sẽ hiển thị ở đây</span>
+            </div>
+          </div>
+        </div>
       </form>
     {% endif %}
 
+    {# ===== Minh chứng đã gửi: chữ bên trái, ảnh bên phải ===== #}
     {% if minh_chungs %}
       <section class="panel stack">
         <h2>Minh chứng đã gửi</h2>
         {% if thanh_toan %}<p>Trạng thái khoản thanh toán: {% status_badge thanh_toan.TrangThai %}</p>{% endif %}
-        <ul>
-          {% for mc in minh_chungs %}
-            <li>{{ mc.NgayTaiLen|date:"d/m/Y H:i" }} · <a href="{% url 'xem_minh_chung' mc.pk %}" target="_blank" rel="noopener">{{ mc.TenTep }}</a> ({{ mc.DinhDangTep }})</li>
-          {% endfor %}
-        </ul>
+        {% for mc in minh_chungs %}
+          <div class="mc-item">
+            <div class="mc-item__info">
+              <p><strong>{{ mc.TenTep }}</strong> ({{ mc.DinhDangTep }})</p>
+              <p class="muted">Gửi lúc {{ mc.NgayTaiLen|date:"d/m/Y H:i" }}</p>
+              <p><a href="{% url 'xem_minh_chung' mc.pk %}" target="_blank" rel="noopener">Mở ảnh kích thước đầy đủ</a></p>
+            </div>
+            <a class="mc-item__thumb" href="{% url 'xem_minh_chung' mc.pk %}" target="_blank" rel="noopener">
+              <img src="{% url 'xem_minh_chung' mc.pk %}" alt="Minh chứng gửi lúc {{ mc.NgayTaiLen|date:'d/m/Y H:i' }}">
+            </a>
+          </div>
+        {% endfor %}
       </section>
     {% endif %}
   {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Hiện ảnh xem trước ngay khi khách chọn tệp (chưa cần gửi lên server)
+  (function () {
+    var input = document.getElementById('{{ form.tep.id_for_label }}');
+    var box = document.getElementById('mc-preview');
+    if (!input || !box) return;
+    var emptyHtml = box.innerHTML;
+    var url = null;
+
+    input.addEventListener('change', function () {
+      if (url) { URL.revokeObjectURL(url); url = null; }
+      var file = input.files && input.files[0];
+      if (!file || !file.type.startsWith('image/')) { box.innerHTML = emptyHtml; return; }
+      url = URL.createObjectURL(file);
+      box.innerHTML = '';
+      var img = document.createElement('img');
+      img.src = url;
+      img.alt = 'Ảnh minh chứng đã chọn';
+      box.appendChild(img);
+    });
+  })();
+</script>
 {% endblock %}

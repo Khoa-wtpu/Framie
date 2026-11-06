@@ -70,9 +70,9 @@ class TrangThaiGiuCho:
 
 class TrangThaiThanhToan:
     # Trạng thái của MỘT khoản thanh toán (cọc 40% hoặc phần còn lại 60%).
-    CHO_XAC_NHAN_COC = 'Chờ xác nhận thanh toán cọc (40%)'  # Khách đã tải minh chứng cọc
+    CHO_XAC_NHAN_COC = 'Chờ xác nhận thanh toán cọc'  # Khách đã tải minh chứng cọc
     DA_DAT_COC = 'Đã đặt cọc'                               # Nhiếp ảnh gia xác nhận cọc
-    CHO_XAC_NHAN_60 = 'Chờ xác nhận thanh toán (60%)'        # khoản còn lại, chờ xác nhận
+    CHO_XAC_NHAN_60 = 'Chờ xác nhận thanh toán'        # khoản còn lại, chờ xác nhận
     QUA_HAN = 'Quá hạn thanh toán'                          # quá 2 ngày chưa trả 60%
     DA_THANH_TOAN = 'Đã thanh toán'                         # đã nhận đủ 60%
     CHOICES = _choices([CHO_XAC_NHAN_COC, DA_DAT_COC, CHO_XAC_NHAN_60,

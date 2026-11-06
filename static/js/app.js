@@ -33,6 +33,7 @@
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDropdowns(); });
   // Chống bấm đúp nút gửi form: lần gửi đầu thêm is-loading cho nút, các lần bấm sau bị chặn.
   document.addEventListener('submit', function (e) {
+    if (e.defaultPrevented) return;   // trang tự xử lý gửi form bằng JavaScript (AJAX) thì để trang đó tự quản nút, không thêm is-loading
     var form = e.target;
     if (form.dataset.submitting === 'true') {   // đã gửi rồi -> chặn gửi lần nữa
       e.preventDefault();

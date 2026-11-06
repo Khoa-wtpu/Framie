@@ -1,0 +1,64 @@
+/* Quy tắc giao diện cho: .tai-anh__luoi */
+.tai-anh__luoi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+/* Quy tắc giao diện cho: .tai-anh__the */
+.tai-anh__the {
+  width: 140px;
+  margin: 0;
+}
+/* Quy tắc giao diện cho: .tai-anh__the img */
+.tai-anh__the img {
+  display: block;
+  width: 140px;
+  height: 95px;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+/* Quy tắc giao diện cho: .tai-anh__chu-thich */
+.tai-anh__chu-thich {
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+}
+/* Quy tắc giao diện cho: .tai-anh__tien-trinh */
+.tai-anh__tien-trinh {
+  display: block;
+  width: 100%;
+}
+/* Quy tắc giao diện cho: .tai-anh__tien-trinh[hidden] */
+.tai-anh__tien-trinh[hidden] {
+  display: none;
+}
+
+/* Danh sách lỗi trong hộp đỏ (tai_anh.js hiện khi server trả nhiều lỗi) */
+.tai-anh__ds-loi {
+  margin: 0;
+  padding-left: var(--space-5);
+}
+/* Khung "Khách hàng yêu cầu chỉnh sửa": mỗi ảnh một dòng, ảnh bên trái, nội dung bên phải */
+.tai-anh__yc-ds {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.tai-anh__yc-dong {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+.tai-anh__yc-anh {
+  display: block;
+  width: 180px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+.tai-anh__yc-noidung {
+  flex: 1;
+  min-width: 200px;
+}

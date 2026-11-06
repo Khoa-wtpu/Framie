@@ -91,7 +91,7 @@
           {# Trạng thái hiển thị dạng nhãn có màu. #}
           <td>{% status_badge bk.TrangThai %}</td>
           {# Nút dẫn tới trang chi tiết của Booking này. #}
-          <td><a class="btn btn--sm btn--soft" href="{% url 'chi_tiet_yeu_cau_booking' ma_booking=bk.pk %}">Xem chi tiết</a></td>
+          <td><a class="btn btn--sm btn--soft" href="{% url 'chi_tiet_booking' ma_booking=bk.pk %}">Xem chi tiết</a></td>
         </tr>
         {% endfor %}
       </tbody>

@@ -33,6 +33,87 @@
     <p><a class="btn btn--danger" href="{% url 'huy_booking' ma_booking=booking.pk %}">Hủy Booking</a></p>{# nút đỏ dẫn tới trang nhập lý do + xác nhận hủy #}
   {% endif %}{# hết khối điều kiện #}
 
+  {# Các thao tác được hiển thị theo vai trò và trạng thái; Service/Database vẫn quyết định nghiệp vụ. #}
+  {% if not la_quan_tri %}
+  <div class="panel stack">
+    <h2>Thao tác tiếp theo</h2>
+    {% if la_nag %}
+      {% if booking.TrangThai == "Chờ xác nhận" %}
+        <form method="post" action="{{ url_chap_nhan }}">{% csrf_token %}
+          <button class="btn btn--primary" type="submit">Chấp nhận Booking</button>
+        </form>
+        <a class="btn btn--danger" href="{{ url_tu_choi }}">Từ chối Booking</a>
+      {% elif booking.TrangThai == "Chờ đặt cọc" %}
+        {% if co_the_xac_nhan_coc %}
+          <a class="btn btn--primary" href="{{ url_xac_nhan_coc }}">Kiểm tra minh chứng / xác nhận cọc</a>
+        {% else %}
+          <p class="muted">Đang chờ khách hàng gửi minh chứng thanh toán cọc.</p>
+        {% endif %}
+      {% elif booking.TrangThai == "Chốt Booking" %}
+        {% if co_the_bam_da_chup %}
+          <form method="post" action="{{ url_da_chup }}">{% csrf_token %}
+            <button class="btn btn--primary" type="submit">Xác nhận đã chụp</button>
+          </form>
+        {% else %}
+          <p class="muted">Nút xác nhận đã chụp sẽ khả dụng khi đến thời gian chụp đã đặt.</p>
+        {% endif %}
+      {% elif booking.TrangThai == "Đã chụp" %}
+        <a class="btn btn--primary" href="{{ url_tai_anh }}">Tải ảnh gốc</a>
+      {% elif booking.TrangThai == "Chờ Khách hàng lựa chọn ảnh" %}
+        <p class="muted">Đang chờ khách hàng lựa chọn ảnh.</p>
+      {% elif booking.TrangThai == "Chờ hậu kỳ" %}
+        <form method="post" action="{{ url_bat_dau_hau_ky }}">{% csrf_token %}
+          <button class="btn btn--primary" type="submit">Bắt đầu hậu kỳ</button>
+        </form>
+      {% elif booking.TrangThai == "Đang hậu kỳ" %}
+        <a class="btn btn--primary" href="{{ url_tai_anh }}">Tiếp tục hậu kỳ / tải ảnh đã chỉnh sửa</a>
+      {% elif booking.TrangThai == "Chờ Khách hàng kiểm tra" %}
+        <p class="muted">Đang chờ khách hàng kiểm tra ảnh và phản hồi.</p>
+      {% elif booking.TrangThai == "Chờ xác nhận thanh toán" %}
+        {% if co_the_xac_nhan_con_lai %}
+          <a class="btn btn--primary" href="{{ url_xac_nhan_con_lai }}">Xác nhận thanh toán phần còn lại</a>
+        {% else %}
+          <p class="muted">Đang chờ khách hàng gửi minh chứng thanh toán phần còn lại.</p>
+        {% endif %}
+      {% elif booking.TrangThai == "Hoàn thành" %}
+        <p class="muted">Booking đã hoàn thành.</p>
+      {% endif %}
+    {% elif la_khach %}
+      {% if booking.TrangThai == "Chờ xác nhận" %}
+        <p class="muted">Đang chờ nhiếp ảnh gia xác nhận yêu cầu.</p>
+      {% elif booking.TrangThai == "Chờ đặt cọc" %}
+        {% if da_gui_minh_chung %}
+          <p class="muted">Bạn đã gửi minh chứng thanh toán cọc. Vui lòng chờ Nhiếp ảnh gia xác nhận.</p>
+        {% else %}
+          <a class="btn btn--primary" href="{{ url_minh_chung }}">Gửi minh chứng thanh toán cọc</a>
+        {% endif %}
+      {% elif booking.TrangThai == "Chốt Booking" %}
+        <p class="muted">Booking đã được chốt. Vui lòng tham gia buổi chụp theo lịch đã thống nhất.</p>
+      {% elif booking.TrangThai == "Đã chụp" %}
+        <p class="muted">Buổi chụp đã hoàn tất. Đang chờ nhiếp ảnh gia tải ảnh.</p>
+      {% elif booking.TrangThai == "Chờ Khách hàng lựa chọn ảnh" %}
+        <a class="btn btn--primary" href="{{ url_chon_anh }}">Chọn ảnh cần hậu kỳ</a>
+      {% elif booking.TrangThai == "Chờ hậu kỳ" %}
+        <p class="muted">Nhiếp ảnh gia đang chuẩn bị hậu kỳ ảnh.</p>
+      {% elif booking.TrangThai == "Đang hậu kỳ" %}
+        <p class="muted">Nhiếp ảnh gia đang hậu kỳ ảnh.</p>
+      {% elif booking.TrangThai == "Chờ Khách hàng kiểm tra" %}
+        <a class="btn btn--primary" href="{{ url_ban_giao }}">Kiểm tra ảnh / xác nhận bàn giao</a>
+        <a class="btn btn--soft" href="{{ url_chinh_sua }}">Yêu cầu chỉnh sửa ảnh</a>
+      {% elif booking.TrangThai == "Chờ xác nhận thanh toán" %}
+        {% if da_gui_minh_chung %}
+          <p class="muted">Bạn đã gửi minh chứng thanh toán phần còn lại. Vui lòng chờ Nhiếp ảnh gia xác nhận.</p>
+        {% else %}
+          <a class="btn btn--primary" href="{{ url_minh_chung }}">Gửi minh chứng thanh toán phần còn lại</a>
+        {% endif %}
+      {% elif booking.TrangThai == "Hoàn thành" %}
+        <a class="btn btn--primary" href="{{ url_tai_anh_hoan_chinh }}">Tải ảnh hoàn chỉnh</a>
+        <a class="btn btn--soft" href="{{ url_danh_gia }}">Đánh giá dịch vụ</a>
+      {% endif %}
+    {% endif %}
+  </div>
+  {% endif %}
+
   <div class="panel">{# khung thông tin Booking #}
     <dl class="nag-ct__luoi">{# danh sách "tên - giá trị" dạng lưới #}
       {% if not la_khach %}<dt>Khách hàng</dt><dd>{{ ten_khach }}</dd>{% endif %}{# Khách không cần xem dòng này #}
@@ -119,4 +200,39 @@
   </div>
 
 </section>
+{% endblock %}
+
+{% block extra_js %}
+{% if not la_quan_tri and url_kiem_tra_cap_nhat %}
+<script>
+(() => {
+  const statusUrl = "{{ url_kiem_tra_cap_nhat|escapejs }}";
+  let currentSignature = "{{ chu_ky_booking|escapejs }}";
+  let checking = false;
+
+  const checkBooking = async () => {
+    if (checking || document.visibilityState !== "visible") return;
+    checking = true;
+    try {
+      const response = await fetch(statusUrl, {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+        cache: "no-store",
+        credentials: "same-origin"
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.signature && data.signature !== currentSignature) {
+        window.location.reload();
+      }
+    } catch (error) {
+      // Lỗi mạng tạm thời: giữ nguyên trang và thử lại ở chu kỳ kế tiếp.
+    } finally {
+      checking = false;
+    }
+  };
+
+  window.setInterval(checkBooking, 8000);
+})();
+</script>
+{% endif %}
 {% endblock %}

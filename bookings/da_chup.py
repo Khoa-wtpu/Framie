@@ -104,12 +104,12 @@ def da_chup(request, ma_booking):
         if loi.khong_tim_thay:  # lỗi kiểu "Booking này không phải của bạn / không tồn tại"
             raise Http404(loi.thong_bao)  # trả trang 404, không tiết lộ Booking có tồn tại
         messages.error(request, loi.thong_bao)  # lỗi khác: hiện thông báo đỏ
-        return redirect('chi_tiet_yeu_cau_booking', ma_booking=ma_booking)  # quay lại trang chi tiết
+        return redirect('chi_tiet_booking', ma_booking=ma_booking)  # quay lại trang chi tiết Booking chung
     if booking.TrangThai == TrangThaiBooking.CHO_HAU_KY:  # Booking đã nhảy sang "Chờ hậu kỳ" (gói Hậu kỳ toàn bộ)
         messages.success(request, TB_DA_CHUP_TOAN_BO)  # thông báo xanh tương ứng
     else:  # còn lại: gói Giới hạn, dừng ở "Đã chụp"
         messages.success(request, TB_DA_CHUP_GIOI_HAN)  # thông báo xanh: nhớ tải ảnh lên
-    return redirect('chi_tiet_yeu_cau_booking', ma_booking=ma_booking)  # quay lại trang chi tiết (tránh gửi lại form khi F5)
+    return redirect('chi_tiet_booking', ma_booking=ma_booking)  # quay lại trang chi tiết Booking chung (tránh gửi lại form khi F5)
 
 
 # URL  (trong config/urls.py thêm:  path('bookings/', include('bookings.da_chup')),)

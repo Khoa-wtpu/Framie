@@ -1,0 +1,6 @@
+{% load buoc_ke %}{% comment %}
+  Nút quay lại Booking ở đầu mỗi trang xử lý (btn btn--ghost btn--sm).
+  Khách hàng:    include "includes/quay_lai_booking.html" with booking=booking
+  Nhiếp ảnh gia: include "includes/quay_lai_booking.html" with booking=booking la_nag=True
+  Đích quay lại do core/buoc_ke.url_booking quyết định theo vai trò.
+{% endcomment %}<div><a class="btn btn--ghost btn--sm" href="{% url_quay_lai_booking booking la_nag %}">‹ Quay lại Booking #{{ booking.pk }}</a></div>
