@@ -1,105 +1,56 @@
+{# UC4.2: Trang điền thông tin buổi chụp và gửi yêu cầu Booking. Dùng bởi bookings/gui_booking.py #}
+{# GIAO DIỆN: trang hẹp dạng form, thẻ gradient + viền mảnh giống trang chi tiết. CSS: bookings/css/chi_tiet_booking.css (class "ct") + bookings.css. #}
+{# QUAN TRỌNG: id dem-nguoc*, khoi-het-han, form-gui-booking, nut-gui, goi-chi-tiet và thuộc tính data-* được dem_nguoc.js / gui_booking.js đọc: KHÔNG đổi. #}
+{% extends "base.html" %}{# kế thừa khung chung #}
+{% load static ui %}{# static: nạp CSS/JS; ui: các thành phần giao diện tùy chỉnh #}
 
-{# UC4.2: Trang điền thông tin buổi chụp và gửi yêu cầu Booking.
-   File này được sử dụng bởi bookings/gui_booking.py #}
-
-{% extends "base.html" %} {# Kế thừa giao diện chung từ base.html #}
-{% load static ui %} {# static: nạp CSS/JS của app; ui: các thành phần giao diện tùy chỉnh #}
-
-{% block title %}Gửi yêu cầu Booking{% endblock %} {# Thiết lập tiêu đề trang trên trình duyệt #}
-
-{# CSS riêng (.gui-booking__dem, .gui-booking__thanh, .bookings__cach-tren) nằm trong bookings/static/bookings/css/bookings.css #}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'bookings/css/bookings.css' %}">{% endblock %}
+{% block title %}Gửi yêu cầu Booking{% endblock %}{# chữ trên tab trình duyệt #}
+{% block extra_head %}{# nạp 2 file CSS #}
+<link rel="stylesheet" href="{% static 'bookings/css/bookings.css' %}">{# .gui-booking__dem, .goi-chi-tiet (khung chi tiết gói) #}
+<link rel="stylesheet" href="{% static 'bookings/css/chi_tiet_booking.css' %}">{# giao diện thẻ dùng chung #}
+{% endblock %}
 
 {% block content %}
-<section class="container"> {# Tạo khu vực chứa toàn bộ nội dung chính của trang #}
+<div class="container ct ct--hep">{# khung hẹp giữa trang #}
 
-  <h1>Gửi yêu cầu Booking</h1> {# Tiêu đề chính của trang #}
+  <header>
+    <p class="ct__nhan-nho">Bước cuối cùng</p>{# dòng nhỏ viết hoa #}
+    <h1>Gửi yêu cầu Booking</h1>{# tiêu đề #}
+  </header>
 
-  <div class="panel"> {# Tạo khung hiển thị thông tin lịch chụp đã chọn #}
-
-    {# Hiển thị tên nhiếp ảnh gia được truyền từ View sang Template #}
-    <p>Nhiếp ảnh gia: <strong>{{ ten_nag }}</strong></p>
-
-    {# Hiển thị ngày, khung giờ đã được giữ chỗ và độ dài khung giờ (để khách biết gói nào còn vừa) #}
-    {# date:"l, d/m/Y": hiển thị thứ, ngày/tháng/năm #}
-    {# time:"H:i": hiển thị giờ và phút theo định dạng 24 giờ #}
-    {# thoi_luong_slot: độ dài khung giờ do view tính, ví dụ "2 giờ" #}
-    <p>
-      Khung giờ đang giữ:
-      <strong>
-        {{ lich.Ngay|date:"l, d/m/Y" }},
-        {{ lich.GioBatDau|time:"H:i" }}–{{ lich.GioKetThuc|time:"H:i" }}, {{ thoi_luong_slot }}
-      </strong>
-    </p>
-
-    {# Khu vực hiển thị đồng hồ đếm ngược thời gian giữ chỗ #}
-    <div id="dem-nguoc"
-         role="timer"
-         aria-label="Thời gian giữ chỗ còn lại"
-         data-con-lai="{{ con_lai_giay }}"
-         data-url="{{ url_trang_thai }}"
-         data-an="form-gui-booking"
-         data-hien="khoi-het-han">
-
-      {# Hiển thị số phút và giây còn lại, giá trị ban đầu là --:-- #}
-      Thời gian giữ chỗ còn lại:
-      <span class="gui-booking__dem" id="dem-nguoc-so">--:--</span>
-
-      {# Tạo thanh tiến trình thể hiện thời gian giữ chỗ còn lại #}
-      {# max: tổng thời gian giữ chỗ; value: số giây còn lại #}
-      <progress class="gui-booking__thanh"
-                id="dem-nguoc-thanh"
-                max="{{ tong_giay }}"
-                value="{{ con_lai_giay }}">
-      </progress>
+  <section class="ct__the ct__dem">{# thẻ khung giờ đang giữ + đếm ngược #}
+    <h2 class="ct__the-tieu-de" style="text-align:left">Khung giờ đang giữ</h2>
+    <dl class="ct__ds" style="text-align:left">
+      <div class="ct__dong"><dt>Nhiếp ảnh gia</dt><dd>{{ ten_nag }}</dd></div>{# tên nhiếp ảnh gia do view truyền sang #}
+      <div class="ct__dong"><dt>Khung giờ</dt><dd>{{ lich.Ngay|date:"l, d/m/Y" }}, {{ lich.GioBatDau|time:"H:i" }}–{{ lich.GioKetThuc|time:"H:i" }}, {{ thoi_luong_slot }}</dd></div>{# thứ, ngày, giờ + độ dài khung giờ (để khách biết gói nào còn vừa) #}
+    </dl>
+    <div id="dem-nguoc" role="timer" aria-label="Thời gian giữ chỗ còn lại"
+         data-con-lai="{{ con_lai_giay }}" data-url="{{ url_trang_thai }}"
+         data-an="form-gui-booking" data-hien="khoi-het-han" style="margin-top: var(--space-4)">{# khu vực đồng hồ đếm ngược #}
+      <span class="ct__o-nhan" style="display:block">Thời gian giữ chỗ còn lại</span>{# nhãn nhỏ phía trên số đếm #}
+      <span class="gui-booking__dem" id="dem-nguoc-so">--:--</span>{# JavaScript cập nhật số phút:giây #}
+      <progress class="gui-booking__thanh" id="dem-nguoc-thanh" max="{{ tong_giay }}" value="{{ con_lai_giay }}"></progress>{# thanh tiến trình thời gian còn lại #}
     </div>
-  </div>
+  </section>
 
   {# --- Hết thời gian giữ chỗ (ngoại lệ 4a, hiện khi bộ đếm về 0) --- #}
-
-  {# Khối thông báo hết hạn, ban đầu được ẩn bằng thuộc tính hidden #}
-  <div id="khoi-het-han"
-       class="alert alert--warning"
-       role="alert"
-       hidden>
-
+  <div id="khoi-het-han" class="alert alert--warning" role="alert" hidden>{# ban đầu bị ẩn #}
     <div class="alert__body">
-
-      {# Hiển thị thông báo hết thời gian giữ chỗ được truyền từ View #}
-      <strong class="alert__title">{{ TB_SLOT_HET_HAN_GIU }}</strong>
-
-      {# Cung cấp đường dẫn để người dùng quay lại chọn khung giờ khác #}
-      <span class="alert__text">
-        <a href="{{ url_lich }}">Chọn lại khung giờ</a>.
-      </span>
-
+      <strong class="alert__title">{{ TB_SLOT_HET_HAN_GIU }}</strong>{# thông báo hết hạn từ view #}
+      <span class="alert__text"><a href="{{ url_lich }}">Chọn lại khung giờ</a>.</span>{# link quay lại chọn khung giờ khác #}
     </div>
   </div>
 
   {# Form nhập thông tin buổi chụp và gửi yêu cầu Booking #}
-  <form id="form-gui-booking"
-        class="panel"
-        method="post"
-        novalidate>
-
-    {% csrf_token %} {# Tạo mã CSRF để bảo vệ form khỏi các yêu cầu giả mạo #}
-
-    {# Kiểm tra xem form có lỗi chung không gắn với một trường cụ thể hay không #}
-    {% if form.non_field_errors %}
-
-      {# Duyệt qua từng lỗi chung và hiển thị thông báo lỗi tương ứng #}
-      {% for loi in form.non_field_errors %}
-
-        {# Gọi template alert.html để hiển thị lỗi với mức cảnh báo danger #}
-        {% include "includes/alert.html" with level="danger" text=loi %}
-
-      {% endfor %}
-    {% endif %}
+  <form id="form-gui-booking" class="ct__the" method="post" novalidate>{# form POST #}
+    <h2 class="ct__the-tieu-de">Thông tin buổi chụp</h2>{# tiêu đề thẻ form #}
+    {% csrf_token %}{# mã CSRF chống giả mạo yêu cầu #}
+    {% for loi in form.non_field_errors %}{# lỗi chung không gắn với ô nào #}
+      {% include "includes/alert.html" with level="danger" text=loi %}{# hộp cảnh báo đỏ #}
+    {% endfor %}
 
     {# Không có ô "Loại hình chụp" riêng: loại hình là của gói nên các gói được nhóm theo loại hình ngay trong ô bên dưới #}
-
-    {# Hiển thị trường lựa chọn gói dịch vụ (nhóm theo loại hình, mỗi gói ghi giá, thời lượng, hậu kỳ) #}
-    {% include "includes/form_field.html" with field=form.goi %}
+    {% include "includes/form_field.html" with field=form.goi %}{# chọn gói dịch vụ (nhóm theo loại hình, ghi giá, thời lượng, hậu kỳ) #}
 
     {# Khung chi tiết của gói đang chọn; gui_booking.js điền nội dung (textContent) và bỏ thuộc tính hidden khi khách chọn gói #}
     <div id="goi-chi-tiet" class="goi-chi-tiet" aria-live="polite" hidden>
@@ -113,42 +64,21 @@
       </ul>
     </div>
 
-    {# Hiển thị trường lựa chọn ngày và giờ chụp #}
-    {% include "includes/form_field.html" with field=form.ngay_gio_chup %}
+    {% include "includes/form_field.html" with field=form.ngay_gio_chup %}{# ngày và giờ chụp #}
+    {% include "includes/form_field.html" with field=form.dia_diem %}{# địa điểm chụp #}
+    {% include "includes/form_field.html" with field=form.so_nguoi %}{# số người tham gia #}
+    {% include "includes/form_field.html" with field=form.concept %}{# concept chụp ảnh #}
+    {% include "includes/form_field.html" with field=form.yeu_cau_rieng %}{# yêu cầu riêng của khách #}
 
-    {# Hiển thị trường nhập địa điểm chụp #}
-    {% include "includes/form_field.html" with field=form.dia_diem %}
-
-    {# Hiển thị trường nhập số lượng người tham gia buổi chụp #}
-    {% include "includes/form_field.html" with field=form.so_nguoi %}
-
-    {# Hiển thị trường nhập hoặc lựa chọn concept chụp ảnh #}
-    {% include "includes/form_field.html" with field=form.concept %}
-
-    {# Hiển thị trường nhập các yêu cầu riêng của khách hàng #}
-    {% include "includes/form_field.html" with field=form.yeu_cau_rieng %}
-
-    <p class="bookings__cach-tren">
-
-      {# Nút gửi dữ liệu form lên máy chủ bằng phương thức POST #}
-      <button id="nut-gui"
-              class="btn btn--primary"
-              type="submit">
-        Gửi yêu cầu Booking
-      </button>
-
-      {# Đường dẫn cho phép khách hàng quay lại trang lịch để chọn khung giờ khác #}
-      <a class="btn btn--ghost" href="{{ url_lich }}">
-        Chọn khung giờ khác
-      </a>
-
-    </p>
+    <div class="ct__nut">{# hàng nút #}
+      <button id="nut-gui" class="btn btn--primary" type="submit">Gửi yêu cầu Booking</button>{# gửi dữ liệu form lên máy chủ bằng POST #}
+      <a class="btn btn--ghost" href="{{ url_lich }}">Chọn khung giờ khác</a>{# quay lại trang lịch #}
+    </div>
   </form>
-
-</section>
+</div>
 {% endblock %}
 
-{# Hai script dùng chung / riêng của UC4.2 (đều trong bookings/static/bookings/js/): #}
+{# Hai script của UC4.2 (đều trong bookings/static/bookings/js/): #}
 {# dem_nguoc.js  - đồng hồ đếm ngược, đọc data-con-lai / data-url / data-an / data-hien của #dem-nguoc #}
 {# gui_booking.js - khung chi tiết của gói đang chọn + khóa các gói dài hơn khung giờ đang giữ #}
 {% block extra_js %}

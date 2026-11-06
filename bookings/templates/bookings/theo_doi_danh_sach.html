@@ -1,82 +1,65 @@
-{# UC4.7: danh sách Booking (Khách hàng / Nhiếp ảnh gia: "Booking của tôi"; Quản trị viên: tất cả Booking). File này được sử dụng bởi bookings/theo_doi.py (view _trang_danh_sach). Bố cục theo trang Duyệt hồ sơ: ô tìm kiếm viên thuốc → hàng kết quả → bảng bo góc. #}
+{# UC4.7: danh sách Booking của Khách hàng / Nhiếp ảnh gia ("Booking của tôi"). Dùng bởi bookings/theo_doi.py (view _trang_danh_sach). #}
+{# GIAO DIỆN: cùng phong cách trang Duyệt hồ sơ và trang Tất cả Booking của Quản trị viên (tab → hàng kết quả → bảng bo góc → phân trang). #}
+{# CSS dùng chung: bookings/css/admin_booking_list.css (class bắt đầu bằng "abk"). Dữ liệu và tên biến KHÔNG đổi so với bản cũ. #}
 
-{% extends "base.html" %}{# dùng khung trang chung (đầu trang, menu, chân trang) của dự án #}
-{# status_badge: nhãn + màu trạng thái THỐNG NHẤT toàn hệ thống (core/status_tones.py). Không tự tô màu ở đây. #}
-{% load ui static %}{# nạp bộ thẻ ui (có status_badge) và static (để gọi file CSS) #}
+{% extends "base.html" %}{# dùng khung trang chung (đầu trang, menu, chân trang) #}
+{% load ui static %}{# ui: thẻ status_badge (nhãn trạng thái có màu thống nhất); static: gọi CSS/JS #}
 
 {% block title %}{{ tieu_de }}{% endblock %}{# chữ hiện trên tab trình duyệt #}
 
-{% block extra_head %}{# chèn thêm vào phần <head> của trang #}
-<link rel="stylesheet" href="{% static 'bookings/css/theo_doi.css' %}">{# CSS của trang này (các class bắt đầu bằng td-) #}
-{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'bookings/css/admin_booking_list.css' %}">{% endblock %}{# nạp CSS dùng chung cho các trang danh sách #}
+{% block extra_js %}<script src="{% static 'bookings/js/admin_booking_list.js' %}" defer></script>{% endblock %}{# JS: đổi ô chọn là tự tìm lại (select có thuộc tính data-tu-gui) #}
 
-{% block content %}{# phần nội dung chính của trang #}
-<section class="container stack">{# khung nội dung, các khối bên trong xếp dọc cách đều #}
+{% block content %}{# nội dung chính #}
+<div class="container abk">{# khung giữa trang #}
+  <h1>{{ tieu_de }}</h1>{# tiêu đề: "Booking của tôi" #}
 
-  <h1>{{ tieu_de }}</h1>{# tiêu đề: "Booking của tôi" hoặc "Tất cả Booking" #}
+  <nav class="abk__tabs" aria-label="Lọc theo nhóm trạng thái">{# hàng tab: Tất cả / Đang xử lý / Đã kết thúc, kèm số lượng #}
+    <a href="?tab={{ TAB_TAT_CA }}{% if trang_thai != 'tat_ca' %}&amp;trang_thai={{ trang_thai|urlencode }}{% endif %}"{% if tab == TAB_TAT_CA %} class="is-active" aria-current="page"{% endif %}>Tất cả ({{ so_tat_ca }})</a>{# link giữ nguyên ô lọc trạng thái đang chọn #}
+    <a href="?tab={{ TAB_DANG_XU_LY }}{% if trang_thai != 'tat_ca' %}&amp;trang_thai={{ trang_thai|urlencode }}{% endif %}"{% if tab == TAB_DANG_XU_LY %} class="is-active" aria-current="page"{% endif %}>Đang xử lý ({{ so_dang_xu_ly }})</a>
+    <a href="?tab={{ TAB_KET_THUC }}{% if trang_thai != 'tat_ca' %}&amp;trang_thai={{ trang_thai|urlencode }}{% endif %}"{% if tab == TAB_KET_THUC %} class="is-active" aria-current="page"{% endif %}>Đã kết thúc ({{ so_ket_thuc }})</a>
+  </nav>
 
-  {# Luồng 2a: tìm kiếm + lọc theo trạng thái. Gửi bằng GET để giữ bộ lọc khi chuyển trang. #}
-  <form class="td-form" method="get" role="search">{# form; method=get => điều kiện lọc hiện trên thanh địa chỉ #}
-
-    {% if co_tim_kiem %}{# chỉ Quản trị viên có ô tìm kiếm #}
-    <div class="td-pill">{# ô tìm kiếm hình viên thuốc: [kính lúp | ô nhập | nút] #}
-      <svg class="td-pill__icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>{# biểu tượng kính lúp #}
-      <label class="td-pill__nhap">{# nhãn bao ô nhập #}
-        <span class="sr-only">Tìm kiếm Booking</span>{# chữ chỉ dành cho trình đọc màn hình #}
-        <input class="td-pill__input" name="q" type="search" value="{{ tu_khoa }}" placeholder="Tìm theo mã Booking, tên hoặc email">{# ô gõ từ khóa; giữ lại chữ đã gõ #}
-      </label>
-      <button class="btn btn--primary btn--sm" type="submit">Tìm kiếm</button>{# nút gửi form #}
-    </div>
-    {% endif %}
-
-    <div class="td-hang-kq">{# hàng kết quả: số lượng bên trái, ô lọc bên phải #}
-      <p class="td-dem" role="status">{{ page_obj.paginator.count }} Booking</p>{# tổng số Booking khớp bộ lọc (tất cả các trang) #}
-      <label class="td-loc-tt">{# nhãn + ô chọn trạng thái #}
+  <form class="abk__form" method="get">{# form lọc; method=get => điều kiện lọc hiện trên thanh địa chỉ, chuyển trang vẫn giữ #}
+    <input type="hidden" name="tab" value="{{ tab }}">{# giữ tab đang chọn khi đổi ô lọc #}
+    <div class="abk__ket-qua-dau">{# hàng kết quả: số lượng bên trái, ô lọc bên phải #}
+      <p class="abk__dem" role="status">{{ page_obj.paginator.count }} Booking</p>{# tổng số Booking khớp bộ lọc (tất cả các trang) #}
+      <label class="abk__sap-xep">{# nhãn + ô chọn trạng thái #}
         <span>Trạng thái</span>{# chữ nhãn #}
-        <select class="input" name="trang_thai" onchange="this.form.submit()">{# ô chọn; chọn xong tự gửi form, khỏi bấm nút #}
-          {% for gia_tri, nhan in lua_chon_trang_thai %}{# lặp qua từng lựa chọn (Tất cả + 13 trạng thái) #}
-            <option value="{{ gia_tri }}"{% if gia_tri == trang_thai %} selected{% endif %}>{{ nhan }}</option>{# một lựa chọn; đang lọc cái nào thì đánh dấu selected #}
+        <select name="trang_thai" class="input" data-tu-gui>{# chọn xong tự gửi form nhờ admin_booking_list.js #}
+          {% for gia_tri, nhan in lua_chon_trang_thai %}{# lặp qua "Tất cả" + 13 trạng thái #}
+            <option value="{{ gia_tri }}"{% if gia_tri == trang_thai %} selected{% endif %}>{{ nhan }}</option>{# đang lọc cái nào thì đánh dấu selected #}
           {% endfor %}
         </select>
-        <noscript><button class="btn btn--secondary btn--sm" type="submit">Áp dụng</button></noscript>{# trình duyệt tắt JavaScript thì có nút bấm thay thế #}
       </label>
+      <noscript><button class="btn btn--secondary btn--sm" type="submit">Áp dụng</button></noscript>{# trình duyệt tắt JavaScript thì có nút bấm thay thế #}
     </div>
   </form>
 
-  {% if page_obj.object_list %}{# nếu trang hiện tại có ít nhất 1 Booking #}
-  <div class="td-cuon">{# khung bảng: có viền bo góc, cuộn ngang được khi màn hình hẹp #}
-    <table class="td-bang">{# bảng danh sách: gọn 6-7 cột, mỗi ô gộp 2 dòng (chính + phụ) cho dễ quét mắt #}
-      <thead>{# hàng tiêu đề cột #}
+  {% if page_obj.object_list %}{# trang hiện tại có ít nhất 1 Booking #}
+  <div class="abk__cuon">{# khung bảng: viền bo góc, cuộn ngang được khi màn hình hẹp #}
+    <table class="abk__bang-luot">{# bảng danh sách #}
+      <thead>
         <tr>
-          <th scope="col">Mã</th>{# cột mã Booking #}
-          {# Khách hàng xem tên Nhiếp ảnh gia; Nhiếp ảnh gia xem tên Khách hàng; Quản trị viên xem cả hai. #}
-          {% if not la_khach %}<th scope="col">Khách hàng</th>{% endif %}{# Khách không cần cột "Khách hàng" (chính là mình) #}
-          {% if not la_nag %}<th scope="col">Nhiếp ảnh gia</th>{% endif %}{# Nhiếp ảnh gia không cần cột "Nhiếp ảnh gia" #}
-          <th scope="col">Dịch vụ</th>{# cột gói (dòng chính) + loại hình (dòng phụ) #}
-          <th scope="col">Lịch chụp</th>{# cột ngày giờ (dòng chính) + địa điểm (dòng phụ) #}
-          <th scope="col">Trạng thái</th>{# cột nhãn trạng thái #}
+          <th scope="col">Mã</th>{# mã Booking #}
+          {% if not la_khach %}<th scope="col">Khách hàng</th>{% endif %}{# Khách không cần cột này (chính là mình) #}
+          {% if not la_nag %}<th scope="col">Nhiếp ảnh gia</th>{% endif %}{# Nhiếp ảnh gia không cần cột này #}
+          <th scope="col">Dịch vụ</th>{# gói (dòng chính) + loại hình (dòng phụ) #}
+          <th scope="col">Lịch chụp</th>{# ngày giờ (dòng chính) + địa điểm (dòng phụ) #}
+          <th scope="col">Trạng thái</th>{# nhãn trạng thái #}
           <th scope="col"><span class="sr-only">Thao tác</span></th>{# cột nút; chữ chỉ dành cho trình đọc màn hình #}
         </tr>
       </thead>
-      <tbody>{# phần thân bảng #}
-        {% for bk in page_obj %}{# lặp qua từng Booking của trang này #}
-        <tr>{# một hàng = một Booking #}
-          <td class="td-ma">#{{ bk.pk }}</td>{# mã Booking, ví dụ #7 #}
+      <tbody>
+        {% for bk in page_obj %}{# mỗi vòng lặp = một Booking #}
+        <tr>
+          <th scope="row" class="abk__ma">#{{ bk.pk }}</th>{# mã Booking #}
           {% if not la_khach %}<td>{{ bk.MaKhachHang.get_full_name|default:bk.MaKhachHang.username }}</td>{% endif %}{# tên Khách; thiếu họ tên thì lấy tên đăng nhập #}
           {% if not la_nag %}<td>{{ bk.MaNhiepAnhGia.MaTaiKhoan.get_full_name|default:bk.MaNhiepAnhGia.MaTaiKhoan.username }}</td>{% endif %}{# tên Nhiếp ảnh gia #}
-          <td>
-            <span class="td-chinh">{{ bk.MaGoi.TenGoi }}</span>{# tên gói (dòng chính) #}
-            <span class="td-phu">{{ bk.MaGoi.MaLoaiHinh.TenLoaiHinh }}</span>{# loại hình chụp (dòng phụ, chữ mờ) #}
-          </td>
-          <td>
-            <span class="td-chinh td-gio">{{ bk.NgayGioChup|date:"d/m/Y · H:i" }}</span>{# ngày giờ chụp, ví dụ 25/12/2026 · 09:00 #}
-            <span class="td-phu td-cat" title="{{ bk.DiaDiem }}">{{ bk.DiaDiem }}</span>{# địa điểm (dòng phụ); dài thì cắt "..." và rê chuột xem đủ #}
-          </td>
+          <td>{{ bk.MaGoi.TenGoi }}<span class="abk__phu">{{ bk.MaGoi.MaLoaiHinh.TenLoaiHinh }}</span></td>{# tên gói + loại hình (chữ nhỏ, mờ) #}
+          <td><span class="abk__gio">{{ bk.NgayGioChup|date:"d/m/Y H:i" }}</span><span class="abk__phu abk__cat" title="{{ bk.DiaDiem }}">{{ bk.DiaDiem }}</span></td>{# ngày giờ chụp + địa điểm (dài thì cắt "...") #}
           <td>{% status_badge bk.TrangThai %}</td>{# nhãn trạng thái có màu thống nhất toàn hệ thống #}
-          <td class="td-nut">
-            {# ten_url_chi_tiet = 'chi_tiet_booking' (Khách / Nhiếp ảnh gia) hoặc 'admin_booking_detail' (Quản trị viên). #}
-            <a class="btn btn--sm btn--soft" href="{% if la_quan_tri %}{% url 'admin_booking_detail' ma_booking=bk.pk %}{% else %}{% url 'chi_tiet_booking' ma_booking=bk.pk %}{% endif %}">Xem chi tiết</a>{# nút dẫn tới trang chi tiết; Quản trị dùng địa chỉ riêng #}
-          </td>
+          <td><a class="btn btn--soft btn--sm" href="{% if la_quan_tri %}{% url 'admin_booking_detail' ma_booking=bk.pk %}{% else %}{% url 'chi_tiet_booking' ma_booking=bk.pk %}{% endif %}">Xem chi tiết</a></td>{# nút dẫn tới trang chi tiết #}
         </tr>
         {% endfor %}
       </tbody>
@@ -85,15 +68,8 @@
   {% include "includes/pagination.html" with page_obj=page_obj %}{# thanh chuyển trang (trước / sau / số trang) #}
 
   {% else %}{# trang không có Booking nào #}
-    <div class="panel">
-      {# Ngoại lệ 1a: chưa có Booking nào -> "Chưa có Booking nào". Có Booking nhưng lọc ra rỗng -> báo theo bộ lọc. #}
-      {% if co_booking %}{# người dùng CÓ Booking, chỉ là bộ lọc không khớp #}
-        <p><strong>{{ TB_KHONG_KHOP_BO_LOC }}</strong></p>{# in câu "Không có Booking nào khớp bộ lọc." #}
-      {% else %}{# người dùng chưa có Booking nào cả #}
-        <p><strong>{{ TB_CHUA_CO_BOOKING }}</strong></p>{# in câu "Chưa có Booking nào" #}
-      {% endif %}
-    </div>
+  {# Ngoại lệ 1a: chưa có Booking nào -> "Chưa có Booking nào". Có Booking nhưng lọc ra rỗng -> báo theo bộ lọc. #}
+  <p class="abk__trong">{% if co_booking %}{{ TB_KHONG_KHOP_BO_LOC }}{% else %}{{ TB_CHUA_CO_BOOKING }}{% endif %}</p>{# khung nét đứt báo trống #}
   {% endif %}
-
-</section>
+</div>
 {% endblock %}

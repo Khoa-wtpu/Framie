@@ -39,7 +39,7 @@
        <script src="{% static 'notifications/chuong.js' %}" defer></script>
        <div class="dropdown" data-dropdown>
          <button class="account-btn" type="button" aria-haspopup="true" aria-expanded="false" data-dropdown-toggle>
-           <span class="avatar" aria-hidden="true">{{ display_initial }}</span>
+           <span class="avatar" aria-hidden="true">{% if display_avatar_url %}<img src="{{ display_avatar_url }}" alt="">{% else %}{{ display_initial }}{% endif %}</span>{# NAG có AnhDaiDien thì hiện ảnh, không thì chữ cái đầu (display_avatar_url do core/context_processors.py cấp) #}
            <span class="account-btn__text"><span class="account-btn__name">{{ display_name }}</span><span class="account-btn__role">{{ role }}</span></span>
          </button>
          <div class="dropdown__menu" data-dropdown-menu hidden>
