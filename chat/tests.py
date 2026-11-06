@@ -89,9 +89,11 @@ class KhoiTaoCuocTroChuyenTests(TestCase):
         self.assertTrue(r['Location'].startswith('/dang-nhap/?next='))  # kèm next để quay lại
         self.assertEqual(CuocTroChuyen.objects.count(), 0)
 
-    def test_nhiep_anh_gia_bi_chan_403(self):  # chỉ Khách hàng
+    # test_nhiep_anh_gia_bi_chan_403
+    def test_nhiep_anh_gia_bi_chan_dua_ve_hop_thu(self):
         self.client.force_login(self.nag.MaTaiKhoan)
-        self.assertEqual(self.client.post(self.url).status_code, 403)
+        r = self.client.post(self.url)
+        self.assertRedirects(r, reverse('inbox'), fetch_redirect_response=False)
         self.assertEqual(CuocTroChuyen.objects.count(), 0)
 
     def test_quan_tri_vien_bi_chan_403(self):  # Quản trị viên cũng không được
@@ -135,11 +137,12 @@ class KhoiTaoCuocTroChuyenTests(TestCase):
         self.client.force_login(self.khach)
         for loi in (DatabaseError('hỏng'), ValidationError('sai')):
             with mock.patch('chat.views.services.mo_hoac_tao_cuoc_tro_chuyen', side_effect=loi):
-                r = self.client.post(self.url)  # không follow: view giả của urlconf thử không có context
-            self.assertEqual(r.status_code, 302)  # chuyển về hồ sơ, không phải trang 500
-            self.assertIn('Không thể khởi tạo cuộc trò chuyện. Vui lòng thực hiện lại.',
-                          [str(m) for m in get_messages(r.wsgi_request)])  # đọc thông báo đã đặt trong request
+                r = self.client.post(self.url)  # không follow
+            self.assertEqual(r.status_code, 500)  # view giờ render màn hình "Lỗi khởi tạo" theo wireframe
+            self.assertContains(r, 'Không thể khởi tạo cuộc trò chuyện', status_code=500)  # tiêu đề lỗi
         self.assertEqual(CuocTroChuyen.objects.count(), 0)
+
+
 
 
 @override_settings(ROOT_URLCONF=CO_UC82, LOGIN_URL='login')

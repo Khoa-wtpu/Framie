@@ -1,29 +1,33 @@
-{% extends "base.html" %}{# kế thừa khung chung #}
-{% load static %}
+{% extends "base.html" %}{# kế thừa khung chung: header, menu, footer #}
+{% load static %}{# để dùng {% static %} #}
 {% block title %}Tin nhắn{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'chat/css/chat.css' %}">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'chat/css/chat.css' %}">{% endblock %}{# CSS riêng của chat #}
 {% block content %}
-<div class="container chat-trang">
-  <h1>Tin nhắn</h1>
-  {% if loi %}{% include "includes/alert.html" with level="danger" text=loi %}{% endif %}{# không tải được danh sách #}
-  {% if cac_cuoc %}
-  <ul class="hop-thu">
-    {% for c in cac_cuoc %}
-    <li>
-      <a class="hop-thu__muc" href="{% url 'chi_tiet_cuoc_tro_chuyen' c.ma %}">
-        <span class="avatar chat__avatar" aria-hidden="true">{% if c.anh %}<img src="{{ c.anh }}" alt="">{% else %}{{ c.chu_cai }}{% endif %}</span>
-        <span class="hop-thu__chu">
-          <span class="hop-thu__ten">{{ c.ten }}</span>
-          <span class="hop-thu__xem-truoc">{% if c.noi_dung %}{% if c.cua_toi %}Bạn: {% endif %}{{ c.noi_dung|truncatechars:70 }}{% else %}Chưa có tin nhắn{% endif %}</span>{# xem trước tin cuối, cắt 70 ký tự #}
-        </span>
-        <time class="hop-thu__gio" datetime="{{ c.luc|date:'c' }}">{{ c.luc|date:'H:i d/m/Y' }}</time>
-      </a>
-    </li>
-    {% endfor %}
-  </ul>
-  {% elif not loi %}
-  <p class="chat__trong">{% if la_khach %}Bạn chưa có cuộc trò chuyện nào. Mở hồ sơ một Nhiếp ảnh gia và bấm Nhắn tin để bắt đầu.{% else %}Chưa có Khách hàng nào nhắn tin cho bạn.{% endif %}</p>
-  {% if la_khach %}{% url 'search' as url_tim %}{% if url_tim %}<a class="btn btn--primary" href="{{ url_tim }}">Tìm Nhiếp ảnh gia</a>{% endif %}{% endif %}{# url name 'search' của Khoa; chưa có thì không hiện nút #}
-  {% endif %}
+<div class="container chat-trang chat-trang--hop-thu{% if not cac_cuoc and not loi %} chat-trang--hop-thu-rong{% endif %}">{# dùng đúng .container chung nên thẳng hàng với logo và các trang khác #}
+  <h1 class="sr-only">Tin nhắn</h1>{# tiêu đề trang, ẩn vì cột trái đã có chữ "Tin nhắn" như wireframe #}
+  <div class="chat-luoi">{# lưới cột #}
+    {% include "chat/_danh_sach_cuoc.html" with ma_dang_mo=0 hien_o_giua=1 %}{# cột trái, chưa mở cuộc nào #}
+    <section class="chat-cot chat-cot--giua chat-cot--chua-chon" aria-label="Cuộc trò chuyện">{# cột giữa: chưa chọn cuộc nào #}
+      {% if not cac_cuoc and not loi %}{# trường hợp 6 (chưa có cuộc nào): khối trống nằm ở cột phải, thay cho "Chọn một cuộc trò chuyện" #}
+      <div class="chat__trong-lon{% if not la_khach %} chat__trong-lon--nang{% endif %}">{# --nang: Nhiếp ảnh gia không có nút nên nhích khối lên cho cân với Khách hàng #}
+        <span class="chat__icon-tron" aria-hidden="true"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.7A8 8 0 1 1 21 12z"/></svg></span>
+        <h2 class="chat__trong-lon-tieu-de">Chưa có cuộc trò chuyện nào</h2>
+        {% if la_khach %}
+        <p class="chat__trong-lon-mo-ta">Hãy tìm nhiếp ảnh gia để bắt đầu.</p>
+        {% url 'search' as url_tim %}{% if url_tim %}<div class="chat__trong-lon-nut"><a class="btn btn--secondary" href="{{ url_tim }}">Tìm kiếm</a></div>{% endif %}{# url name 'search' của Khoa; chưa có thì không hiện nút #}
+        {% else %}
+        <p class="chat__trong-lon-mo-ta">Khi có khách hàng nhắn tin, cuộc trò chuyện sẽ hiển thị tại đây.</p>{# Nhiếp ảnh gia: không có nút #}
+        {% endif %}
+      </div>
+      {% else %}
+      <div class="chat__trong-lon">{# khối trống ở giữa #}
+        <span class="chat__icon-tron" aria-hidden="true"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.7A8 8 0 1 1 21 12z"/></svg></span>{# biểu tượng khung chat #}
+        <h2 class="chat__trong-lon-tieu-de">Chọn một cuộc trò chuyện</h2>
+        <p class="chat__trong-lon-mo-ta">Chọn một cuộc trò chuyện ở danh sách bên trái để xem tin nhắn.</p>
+      </div>
+      {% endif %}
+    </section>
+  </div>
 </div>
 {% endblock %}
+{% block extra_js %}<script src="{% static 'chat/js/chat.js' %}" defer></script>{% endblock %}{# chat.js dùng cho ô tìm cuộc trò chuyện #}

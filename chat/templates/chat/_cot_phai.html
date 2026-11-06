@@ -1,0 +1,17 @@
+{# Cột phải: thông tin đối phương. Cần biến: doi_phuong (ten, anh, chu_cai, ho_so, vai_tro). Nhiếp ảnh gia xem Khách hàng thì ho_so rỗng nên KHÔNG có nút "Xem hồ sơ" (trường hợp 19). #}
+<aside class="chat-cot chat-cot--phai" aria-label="Thông tin {{ doi_phuong.ten }}">
+  <div class="chat-ho-so">
+    <span class="avatar chat-ho-so__anh" aria-hidden="true">{% if doi_phuong.anh %}<img src="{{ doi_phuong.anh }}" alt="">{% else %}{{ doi_phuong.chu_cai }}{% endif %}</span>
+    <p class="chat-ho-so__ten">{{ doi_phuong.ten }}</p>
+    <p class="chat__vai-tro">{{ doi_phuong.vai_tro }}</p>{# nhãn lấy từ services, không gõ cứng #}
+    {% if doi_phuong.ho_so %}<a class="btn btn--secondary btn--sm" href="{{ doi_phuong.ho_so }}">Xem hồ sơ</a>{% endif %}
+  </div>
+  <div class="chat-muc">
+    <h2 class="chat-muc__tieu-de">Booking liên quan</h2>
+    <div class="chat-muc__rong"><strong>Chưa có Booking</strong><span>Booking sẽ hiển thị tại đây sau khi được tạo.</span></div>{# giữ chỗ, chờ module Booking #}
+  </div>
+  <div class="chat-muc">
+    <h2 class="chat-muc__tieu-de">File phương tiện</h2>
+    <div class="chat-muc__rong"><strong>Chưa có File phương tiện</strong><span>File phương tiện sẽ hiển thị tại đây sau khi được tạo.</span></div>
+  </div>
+</aside>

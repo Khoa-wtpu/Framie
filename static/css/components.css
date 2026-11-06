@@ -9,6 +9,11 @@
 .btn--soft { background: var(--btn-primary-bg); color: var(--color-white); border-color: transparent; }
 .btn--soft:hover { background: var(--btn-primary-bg-hover); box-shadow: var(--shadow-md); border-color: transparent; transform: translateY(-2px); }
 .btn--soft:active { box-shadow: var(--shadow-sm); transform: translateY(0); }
+/* Nút xám gradient: chữ luôn nằm trên 1 hàng (cột bảng hẹp không làm chữ bị xuống dòng); bản nhỏ trong bảng có viền mảnh + bóng nhẹ cho nổi hơn */
+.btn--soft { white-space: nowrap; flex: none; }
+.btn--soft.btn--sm { padding: var(--space-2) var(--space-5); border-color: var(--color-border); box-shadow: var(--shadow-sm); }
+.btn--soft.btn--sm:hover { border-color: var(--color-border); }
+.btn--danger { background: var(--danger-fg); color: var(--color-white); }
 .btn--danger { background: var(--danger-solid-bg); color: var(--on-danger); }
 .btn--danger:hover { filter: brightness(.9); }
 .btn--sm { min-height: 2.25rem; padding: var(--space-2) var(--space-4); }
@@ -106,7 +111,7 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
 .role-switch { margin: var(--space-2) 0 var(--space-4); } /* khoảng cách trên và dưới khối chọn vai trò */
 .role-switch__label { margin: 0 0 var(--space-2); } /* dòng chữ sát nút bên dưới */
 .role-switch__list { display: flex; flex-wrap: wrap; gap: var(--space-2); } /* 2 nút cạnh nhau, xuống hàng nếu màn hình hẹp */
-.role-switch .btn[aria-current="page"] { background: var(--color-gray-soft); border-color: var(--color-gray); color: var(--color-text); } /* nút đang chọn: nền xám nhạt nên chữ phải dùng màu chữ thường */ /* nút của trang đang mở: nền xám nhạt, viền xám (chỉ dùng token có sẵn) */
+.role-switch .btn[aria-current="page"] { background: var(--color-gray-soft); border-color: var(--color-gray); } /* nút của trang đang mở: nền xám nhạt, viền xám (chỉ dùng token có sẵn) */
 .auth-switch-note { margin-top: var(--space-3); } /* dòng "Đã có tài khoản? Đăng nhập" dưới form đăng ký */
 
 
@@ -220,8 +225,10 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
 .tb-nhom-dau { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-1) var(--space-4); margin-bottom: var(--space-4); }  /* tiêu đề bên trái, lời nhắc bên phải cùng hàng, hẹp thì xuống dòng */
 .tb-nhom-dau .tb-nhom-tieu-de { margin: 0; }  /* bỏ khoảng cách dưới riêng của tiêu đề, hàng bao ngoài đã lo */
 
+
 .tb-nhom-dau .tb-meo { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }  /* chữ nhỏ, màu nhạt, tự đặt màu nên không phụ thuộc class muted */
 .tb-nhom-dau .tb-meo__sao { color: var(--tone-amber-dot); }  /* ngôi sao vàng giống nút ★ trong danh sách (luật dài hơn nên không bị ghi đè) */
+
 
 /* ---------- Hiệu ứng LÓE SÁNG khi rê chuột: dùng chung cho mọi nút và hộp ----------
    Tự áp dụng cho .btn và .card. Hộp khác (ô, thẻ riêng của từng trang) chỉ cần thêm class "loe-sang". */
@@ -237,11 +244,3 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
   .btn, .card, .loe-sang { transition: none; }
   .btn:hover, .card:hover, .loe-sang:hover { transform: none; }
 }
-
-/* ---------- Sửa lỗi bổ sung (v6) ---------- */
-/* Nền gradient phủ hết viên thuốc: mặc định gradient chỉ phủ phần trong viền nên hở 1px viền trong suốt */
-html .btn { background-origin: border-box; }
-/* Popup xác nhận: nút phụ (Đăng xuất) viền mảnh, nút nổi bật (Hủy) là gradient */
-.modal__actions .btn--ghost { border-color: var(--color-border); color: var(--color-text); }
-/* Quản trị - Tổng quan: khung và các ô "Booking theo trạng thái" nền trơn, không gradient */
-.admin-section.panel, .admin-section .panel, .admin-nhom { background: var(--surface-solid); }
