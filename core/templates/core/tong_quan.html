@@ -1,137 +1,137 @@
 {% extends "base.html" %}{# B9: Trang tổng quan sau đăng nhập. Chỉ gom đường dẫn và số liệu từ module khác (xem core/views_tong_quan.py). #}
-{% load static ui %}
-{% block title %}Tổng quan{% endblock %}
-{% block body_class %}tong-quan{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'css/tong_quan.css' %}">{% endblock %}
-{% block content %}
-<div class="container tq">
-  <header class="tq-dau">
-    <h1>Xin chào, {{ display_name }}</h1>
-    <p class="muted">{% if la_nhiep_anh_gia %}Tổng quan công việc của bạn trên FRAMIE.{% else %}Theo dõi Booking và thông báo của bạn trên FRAMIE.{% endif %}</p>
+{% load static ui %}{# nạp static (gọi CSS) và ui (thẻ status_badge: nhãn trạng thái có màu thống nhất) #}
+{% block title %}Tổng quan{% endblock %}{# chữ trên tab trình duyệt #}
+{% block body_class %}tong-quan{% endblock %}{# gắn class "tong-quan" vào <body> để CSS nhận ra trang này #}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/tong_quan.css' %}">{% endblock %}{# nạp CSS riêng của trang (static/css/tong_quan.css) #}
+{% block content %}{# nội dung chính #}
+<div class="container tq">{# khung nội dung của trang #}
+  <header class="tq-dau">{# phần đầu trang: lời chào #}
+    <h1>Xin chào, {{ display_name }}</h1>{# tên người dùng (biến display_name do context processor của dự án cấp) #}
+    <p class="muted">{% if la_nhiep_anh_gia %}Tổng quan công việc của bạn trên FRAMIE.{% else %}Theo dõi Booking và thông báo của bạn trên FRAMIE.{% endif %}</p>{# câu mô tả theo vai trò #}
   </header>
 
-{% if not la_nhiep_anh_gia %}
-{# ================= KHÁCH HÀNG ================= #}
-  <ul class="tq-so">
-    <li class="tq-so__o"><span class="tq-so__gia-tri">{{ khach.so_dang_xu_ly }}</span><span class="tq-so__nhan">Booking đang xử lý</span></li>
-    <li class="tq-so__o"><span class="tq-so__gia-tri">{{ khach.so_thong_bao }}</span><span class="tq-so__nhan">Thông báo chưa đọc</span></li>
+{% if not la_nhiep_anh_gia %}{# ====== NHÁNH KHÁCH HÀNG ====== #}
+  <ul class="tq-so">{# hàng ô số liệu (2 ô) #}
+    <li class="tq-so__o"><span class="tq-so__gia-tri">{{ khach.so_dang_xu_ly }}</span><span class="tq-so__nhan">Booking đang xử lý</span></li>{# ô 1: số Booking đang xử lý #}
+    <li class="tq-so__o"><span class="tq-so__gia-tri">{{ khach.so_thong_bao }}</span><span class="tq-so__nhan">Thông báo chưa đọc</span></li>{# ô 2: số thông báo chưa đọc #}
   </ul>
 
-  <div class="tq-luoi">
-    <section class="panel tq-khoi" aria-labelledby="tq-bk-tieu-de">
-      <header class="tq-khoi__dau">
-        <h2 id="tq-bk-tieu-de">Booking đang xử lý</h2>
-        {% if khach.url_booking_cua_toi %}<a class="tq-xem-tat-ca" href="{{ khach.url_booking_cua_toi }}">Xem tất cả</a>{% endif %}
+  <div class="tq-luoi">{# lưới chứa các khối #}
+    <section class="panel tq-khoi" aria-labelledby="tq-bk-tieu-de">{# khối "Booking đang xử lý" #}
+      <header class="tq-khoi__dau">{# đầu khối: tiêu đề + link #}
+        <h2 id="tq-bk-tieu-de">Booking đang xử lý</h2>{# tiêu đề khối #}
+        {% if khach.url_booking_cua_toi %}<a class="tq-xem-tat-ca" href="{{ khach.url_booking_cua_toi }}">Xem tất cả</a>{% endif %}{# link chỉ hiện khi trang "Booking của tôi" có (không có thì ẩn, không báo lỗi) #}
       </header>
-      {% if khach.dang_xu_ly %}
-      <ul class="tq-ds">
-        {% for b in khach.dang_xu_ly %}
-        <li class="tq-dong">
-          <div class="tq-dong__chinh">
-            <p class="tq-dong__tieu-de">{% if b.href %}<a href="{{ b.href }}">{{ b.goi }}</a>{% else %}{{ b.goi }}{% endif %}</p>
-            <p class="tq-dong__phu">Nhiếp ảnh gia {{ b.ben_kia }} · {{ b.gio_chup|date:"H:i d/m/Y" }}</p>
+      {% if khach.dang_xu_ly %}{# có ít nhất 1 Booking đang xử lý #}
+      <ul class="tq-ds">{# danh sách các dòng #}
+        {% for b in khach.dang_xu_ly %}{# lặp qua từng Booking (tối đa 5) #}
+        <li class="tq-dong">{# một dòng Booking #}
+          <div class="tq-dong__chinh">{# phần chữ bên trái #}
+            <p class="tq-dong__tieu-de">{% if b.href %}<a href="{{ b.href }}">{{ b.goi }}</a>{% else %}{{ b.goi }}{% endif %}</p>{# tên gói; có link chi tiết thì bấm được, chưa có thì chỉ hiện chữ #}
+            <p class="tq-dong__phu">Nhiếp ảnh gia {{ b.ben_kia }} · {{ b.gio_chup|date:"H:i d/m/Y" }}</p>{# tên Nhiếp ảnh gia + giờ chụp #}
           </div>
-          {% status_badge b.trang_thai %}
+          {% status_badge b.trang_thai %}{# nhãn trạng thái có màu thống nhất toàn dự án #}
         </li>
         {% endfor %}
       </ul>
-      {% else %}
-      <p class="tq-rong">Bạn chưa có Booking nào đang xử lý.</p>
-      {% if khach.url_tim_kiem %}<a class="btn btn--primary btn--sm" href="{{ khach.url_tim_kiem }}">Tìm nhiếp ảnh gia</a>{% endif %}
+      {% else %}{# chưa có Booking nào đang xử lý #}
+      <p class="tq-rong">Bạn chưa có Booking nào đang xử lý.</p>{# câu báo trống #}
+      {% if khach.url_tim_kiem %}<a class="btn btn--primary btn--sm" href="{{ khach.url_tim_kiem }}">Tìm nhiếp ảnh gia</a>{% endif %}{# nút gợi ý đi tìm Nhiếp ảnh gia (ẩn nếu trang Tìm kiếm chưa có) #}
       {% endif %}
     </section>
 
-    <section class="panel tq-khoi" aria-labelledby="tq-tb-tieu-de">
+    <section class="panel tq-khoi" aria-labelledby="tq-tb-tieu-de">{# khối "Thông báo mới" #}
       <header class="tq-khoi__dau">
-        <h2 id="tq-tb-tieu-de">Thông báo mới</h2>
-        {% if khach.url_thong_bao %}<a class="tq-xem-tat-ca" href="{{ khach.url_thong_bao }}">Xem tất cả</a>{% endif %}
+        <h2 id="tq-tb-tieu-de">Thông báo mới</h2>{# tiêu đề khối #}
+        {% if khach.url_thong_bao %}<a class="tq-xem-tat-ca" href="{{ khach.url_thong_bao }}">Xem tất cả</a>{% endif %}{# link tới trang thông báo (ẩn nếu chưa có) #}
       </header>
-      {% if khach.thong_bao %}
+      {% if khach.thong_bao %}{# có thông báo chưa đọc #}
       <ul class="tq-ds">
-        {% for t in khach.thong_bao %}
+        {% for t in khach.thong_bao %}{# lặp qua từng thông báo (tối đa 5, mới nhất trước) #}
         <li class="tq-dong">
           <div class="tq-dong__chinh">
-            <p class="tq-dong__tieu-de">{% if t.href %}<a href="{{ t.href }}">{{ t.tieu_de }}</a>{% else %}{{ t.tieu_de }}{% endif %}</p>
-            <p class="tq-dong__phu">{{ t.noi_dung|truncatechars:90 }}</p>
+            <p class="tq-dong__tieu-de">{% if t.href %}<a href="{{ t.href }}">{{ t.tieu_de }}</a>{% else %}{{ t.tieu_de }}{% endif %}</p>{# tiêu đề; có gắn Booking thì bấm sang Booking đó #}
+            <p class="tq-dong__phu">{{ t.noi_dung|truncatechars:90 }}</p>{# nội dung cắt gọn tối đa 90 ký tự #}
           </div>
-          <time class="tq-dong__gio muted" datetime="{{ t.ngay_tao|date:'c' }}">{{ t.ngay_tao|date:"d/m H:i" }}</time>
+          <time class="tq-dong__gio muted" datetime="{{ t.ngay_tao|date:'c' }}">{{ t.ngay_tao|date:"d/m H:i" }}</time>{# giờ tạo: datetime= cho máy đọc, chữ bên trong cho người đọc #}
         </li>
         {% endfor %}
       </ul>
-      {% else %}
-      <p class="tq-rong">Không có thông báo mới.</p>
+      {% else %}{# không có thông báo chưa đọc #}
+      <p class="tq-rong">Không có thông báo mới.</p>{# câu báo trống #}
       {% endif %}
     </section>
   </div>
 
-{% else %}
-{# ================= NHIẾP ẢNH GIA ================= #}
-  {% if nag.da_duyet %}
-  <ul class="tq-so">
-    <li class="tq-so__o"><span class="tq-so__gia-tri">{{ nag.so_yeu_cau_moi }}</span><span class="tq-so__nhan">Yêu cầu Booking mới</span></li>
-    <li class="tq-so__o"><span class="tq-so__gia-tri">{{ nag.so_lich_sap_toi }}</span><span class="tq-so__nhan">Buổi chụp sắp tới</span></li>
-    <li class="tq-so__o"><span class="tq-so__gia-tri">{{ nag.so_khung_gio_trong }}</span><span class="tq-so__nhan">Khung giờ trống trong {{ nag.so_ngay_khung_gio }} ngày tới</span></li>
+{% else %}{# ====== NHÁNH NHIẾP ẢNH GIA ====== #}
+  {% if nag.da_duyet %}{# chỉ hồ sơ ĐÃ DUYỆT mới thấy số liệu Booking #}
+  <ul class="tq-so">{# hàng ô số liệu (3 ô) #}
+    <li class="tq-so__o"><span class="tq-so__gia-tri">{{ nag.so_yeu_cau_moi }}</span><span class="tq-so__nhan">Yêu cầu Booking mới</span></li>{# ô 1: yêu cầu đang chờ xác nhận #}
+    <li class="tq-so__o"><span class="tq-so__gia-tri">{{ nag.so_lich_sap_toi }}</span><span class="tq-so__nhan">Buổi chụp sắp tới</span></li>{# ô 2: buổi chụp đã chốt, chưa tới giờ #}
+    <li class="tq-so__o"><span class="tq-so__gia-tri">{{ nag.so_khung_gio_trong }}</span><span class="tq-so__nhan">Khung giờ trống trong {{ nag.so_ngay_khung_gio }} ngày tới</span></li>{# ô 3: khung giờ còn trống #}
   </ul>
   {% endif %}
 
   <div class="tq-luoi">
-    <section class="panel tq-khoi" aria-labelledby="tq-hs-tieu-de">
+    <section class="panel tq-khoi" aria-labelledby="tq-hs-tieu-de">{# khối "Tình trạng hồ sơ" (ai cũng thấy) #}
       <header class="tq-khoi__dau">
-        <h2 id="tq-hs-tieu-de">Tình trạng hồ sơ</h2>
-        {% status_badge nag.trang_thai_ho_so %}
+        <h2 id="tq-hs-tieu-de">Tình trạng hồ sơ</h2>{# tiêu đề khối #}
+        {% status_badge nag.trang_thai_ho_so %}{# nhãn trạng thái hồ sơ (Chờ duyệt / Đã duyệt / Đã từ chối) #}
       </header>
-      {% if nag.da_duyet %}
-      <p>Hồ sơ của bạn đã được duyệt và đang hiển thị công khai. Bạn có thể nhận Booking từ Khách hàng.</p>
-      {% elif nag.da_tu_choi %}
-      <p>Hồ sơ của bạn chưa được duyệt.{% if nag.phan_hoi %} Lý do: <strong>{{ nag.phan_hoi }}</strong>{% endif %}</p>
-      {% else %}
-      <p>Hồ sơ đang chờ Quản trị viên duyệt. Bạn sẽ nhận được thông báo khi có kết quả.</p>
+      {% if nag.da_duyet %}{# nhánh 1: đã duyệt #}
+      <p>Hồ sơ của bạn đã được duyệt và đang hiển thị công khai. Bạn có thể nhận Booking từ Khách hàng.</p>{# câu thông báo đã duyệt #}
+      {% elif nag.da_tu_choi %}{# nhánh 2: đã từ chối #}
+      <p>Hồ sơ của bạn chưa được duyệt.{% if nag.phan_hoi %} Lý do: <strong>{{ nag.phan_hoi }}</strong>{% endif %}</p>{# câu thông báo + lý do của lượt duyệt mới nhất (nếu có) #}
+      {% elif nag.can_chinh_sua %}{# nhánh 3: Quản trị viên yêu cầu chỉnh sửa (hồ sơ vẫn ghi "Chờ duyệt") #}
+      <p>Quản trị viên yêu cầu chỉnh sửa hồ sơ{% if nag.phan_hoi %}: <strong>{{ nag.phan_hoi }}</strong>{% endif %}</p>{# báo cần sửa gì; KHÔNG hiện câu "đang chờ duyệt" #}
+      {% else %}{# nhánh 4: đang chờ Quản trị viên duyệt (nộp lần đầu hoặc vừa nộp lại) #}
+      <p>Hồ sơ đang chờ Quản trị viên duyệt. Bạn sẽ nhận được thông báo khi có kết quả.</p>{# câu báo đang chờ #}
       {% endif %}
-      {% if nag.url_ho_so %}<a class="btn btn--secondary btn--sm" href="{{ nag.url_ho_so }}">{% if nag.da_duyet %}Xem hồ sơ{% else %}Cập nhật hồ sơ{% endif %}</a>{% endif %}
+      {% if nag.url_ho_so %}<a class="btn btn--secondary btn--sm" href="{{ nag.url_ho_so }}">{% if nag.da_duyet %}Xem hồ sơ{% else %}Cập nhật hồ sơ{% endif %}</a>{% endif %}{# nút: đã duyệt thì "Xem hồ sơ", chưa duyệt thì "Cập nhật hồ sơ"; ẩn nếu trang hồ sơ chưa có #}
     </section>
 
-    {% if nag.da_duyet %}
-    <section class="panel tq-khoi" aria-labelledby="tq-yc-tieu-de">
+    {% if nag.da_duyet %}{# hai khối dưới chỉ hiện khi hồ sơ đã duyệt #}
+    <section class="panel tq-khoi" aria-labelledby="tq-yc-tieu-de">{# khối "Yêu cầu Booking mới" #}
       <header class="tq-khoi__dau">
-        <h2 id="tq-yc-tieu-de">Yêu cầu Booking mới</h2>
-        {% if nag.url_quan_ly_booking %}<a class="tq-xem-tat-ca" href="{{ nag.url_quan_ly_booking }}">Xem tất cả</a>{% endif %}
+        <h2 id="tq-yc-tieu-de">Yêu cầu Booking mới</h2>{# tiêu đề khối #}
+        {% if nag.url_quan_ly_booking %}<a class="tq-xem-tat-ca" href="{{ nag.url_quan_ly_booking }}">Xem tất cả</a>{% endif %}{# link tới trang quản lý Booking (ẩn nếu chưa có) #}
       </header>
-      {% if nag.yeu_cau_moi %}
+      {% if nag.yeu_cau_moi %}{# có yêu cầu đang chờ #}
       <ul class="tq-ds">
-        {% for b in nag.yeu_cau_moi %}
+        {% for b in nag.yeu_cau_moi %}{# lặp qua từng yêu cầu (tối đa 5) #}
         <li class="tq-dong">
           <div class="tq-dong__chinh">
-            <p class="tq-dong__tieu-de">{% if b.href %}<a href="{{ b.href }}">{{ b.goi }}</a>{% else %}{{ b.goi }}{% endif %}</p>
-            <p class="tq-dong__phu">Khách hàng {{ b.ben_kia }} · {{ b.gio_chup|date:"H:i d/m/Y" }}</p>
+            <p class="tq-dong__tieu-de">{% if b.href %}<a href="{{ b.href }}">{{ b.goi }}</a>{% else %}{{ b.goi }}{% endif %}</p>{# tên gói, link sang màn xử lý của T5 #}
+            <p class="tq-dong__phu">Khách hàng {{ b.ben_kia }} · {{ b.gio_chup|date:"H:i d/m/Y" }}</p>{# tên Khách + giờ chụp #}
           </div>
-          {% status_badge b.trang_thai %}
+          {% status_badge b.trang_thai %}{# nhãn trạng thái #}
         </li>
         {% endfor %}
       </ul>
       {% else %}
-      <p class="tq-rong">Không có yêu cầu Booking mới.</p>
+      <p class="tq-rong">Không có yêu cầu Booking mới.</p>{# câu báo trống #}
       {% endif %}
     </section>
 
-    <section class="panel tq-khoi" aria-labelledby="tq-lich-tieu-de">
+    <section class="panel tq-khoi" aria-labelledby="tq-lich-tieu-de">{# khối "Lịch sắp tới" #}
       <header class="tq-khoi__dau">
-        <h2 id="tq-lich-tieu-de">Lịch sắp tới</h2>
-        {% if nag.url_lich %}<a class="tq-xem-tat-ca" href="{{ nag.url_lich }}">Xem lịch</a>{% endif %}
+        <h2 id="tq-lich-tieu-de">Lịch sắp tới</h2>{# tiêu đề khối #}
+        {% if nag.url_lich %}<a class="tq-xem-tat-ca" href="{{ nag.url_lich }}">Xem lịch</a>{% endif %}{# link tới lịch khả dụng (ẩn nếu chưa có) #}
       </header>
-      {% if nag.lich_sap_toi %}
+      {% if nag.lich_sap_toi %}{# có buổi chụp sắp tới #}
       <ul class="tq-ds">
-        {% for b in nag.lich_sap_toi %}
+        {% for b in nag.lich_sap_toi %}{# lặp qua từng buổi chụp (tối đa 5, gần nhất trước) #}
         <li class="tq-dong">
           <div class="tq-dong__chinh">
-            <p class="tq-dong__tieu-de">{% if b.href %}<a href="{{ b.href }}">{{ b.goi }}</a>{% else %}{{ b.goi }}{% endif %}</p>
-            <p class="tq-dong__phu">Khách hàng {{ b.ben_kia }} · {{ b.gio_chup|date:"H:i d/m/Y" }}</p>
+            <p class="tq-dong__tieu-de">{% if b.href %}<a href="{{ b.href }}">{{ b.goi }}</a>{% else %}{{ b.goi }}{% endif %}</p>{# tên gói, link sang màn xử lý #}
+            <p class="tq-dong__phu">Khách hàng {{ b.ben_kia }} · {{ b.gio_chup|date:"H:i d/m/Y" }}</p>{# tên Khách + giờ chụp #}
           </div>
-          {% status_badge b.trang_thai %}
+          {% status_badge b.trang_thai %}{# nhãn trạng thái (Chốt Booking) #}
         </li>
         {% endfor %}
       </ul>
       {% else %}
-      <p class="tq-rong">Chưa có buổi chụp nào sắp tới.</p>
+      <p class="tq-rong">Chưa có buổi chụp nào sắp tới.</p>{# câu báo trống #}
       {% endif %}
     </section>
     {% endif %}

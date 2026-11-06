@@ -422,6 +422,8 @@ def chi_tiet_yeu_cau(request, ma_booking):
     except XuLyBookingLoi:
         # ...thì trả trang 404 'không tìm thấy'.
         raise Http404('Không tìm thấy Booking.')
+    # T8: import BÊN TRONG hàm vì da_chup.py đã import tiep_nhan.py ở đầu file; import ở đầu file này sẽ bị vòng import.
+    from bookings.da_chup import da_den_gio_chup
     # Dựng trang chi tiết từ 'nag_chi_tiet.html' với các dữ liệu bên dưới.
     return render(request, 'bookings/nag_chi_tiet.html', {
         # Toàn bộ thông tin Booking.
@@ -430,6 +432,9 @@ def chi_tiet_yeu_cau(request, ma_booking):
         'ten_khach': _ten_hien_thi(booking.MaKhachHang),
         # Cờ 'đã quá giờ chụp' để giao diện ẩn nút Chấp nhận.
         'da_qua_gio_chup': da_qua_gio_chup(booking),                          # qua giờ chụp: ẩn nút Chấp nhận, vẫn cho Từ chối
+        # T8: cờ 'buổi chụp đã diễn ra' cho khối nút 'Đã chụp'. Lấy từ CHÍNH hàm mà da_chup.danh_dau_da_chup dùng khi kiểm tra lúc bấm,
+        # nên nút hiện ra và việc bấm được luôn khớp nhau (sau này đổi cách tính giờ ở da_chup.da_den_gio_chup thì cả hai cùng đổi).
+        'da_den_gio_chup': da_den_gio_chup(booking),
         # Cờ 'còn xử lý được' để giao diện chỉ hiện nút khi Booking đang chờ xác nhận.
         'co_the_xu_ly': booking.TrangThai == TrangThaiBooking.CHO_XAC_NHAN,   # chỉ lúc này mới hiện nút xử lý
         # T8: Booking đang 'Chốt Booking' -> hiện khối 'Đã chụp'; nút chỉ bấm được khi buổi chụp đã diễn ra.

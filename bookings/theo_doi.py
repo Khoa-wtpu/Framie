@@ -58,6 +58,7 @@ from bookings.models import Booking  # bảng Booking trong cơ sở dữ liệu
 from core.constants import LoaiThanhToan, TrangThaiBooking, TrangThaiThanhToan, VaiTro  # tên các trạng thái/vai trò dùng chung
 # tinh_so_tien: quy tắc chia 40% / 60% DUY NHẤT của dự án (cùng hàm Thanh toán dùng để thu tiền thật).
 from payments.models import tinh_so_tien  # hàm chia tiền cọc 40% / còn lại 60% của nhóm
+from reviews.models import DanhGia  # bảng đánh giá của Khách (để biết Booking này đã được đánh giá chưa)
 
 logger = logging.getLogger(__name__)  # tạo "cây bút ghi log" mang tên file này
 
@@ -96,6 +97,13 @@ TRANG_THAI_CHUA_CO_COC = {  # tập hợp các trạng thái mà cọc CHƯA Đ�
 TRANG_THAI_NAG_XU_LY_ANH = (TrangThaiBooking.DA_CHUP, TrangThaiBooking.CHO_HAU_KY, TrangThaiBooking.DANG_HAU_KY)  # 3 trạng thái hiện nút "Tải ảnh / Bắt đầu hậu kỳ"
 # Trạng thái mà Khách hàng phải chọn ảnh cần hậu kỳ.
 TRANG_THAI_KHACH_CHON_ANH = (TrangThaiBooking.CHO_KH_CHON_ANH,)  # chỉ "Chờ Khách hàng lựa chọn ảnh" hiện nút "Chọn ảnh cần hậu kỳ"
+# Trạng thái mà Khách hàng phải xem ảnh đã hậu kỳ để xác nhận bàn giao hoặc yêu cầu chỉnh sửa (N7 / N8).
+TRANG_THAI_KHACH_KIEM_TRA_ANH = (TrangThaiBooking.CHO_KH_KIEM_TRA,)  # chỉ "Chờ Khách hàng kiểm tra" hiện 2 nút: "Xác nhận hoàn tất bàn giao" và "Yêu cầu chỉnh sửa ảnh"
+# Trạng thái mà Khách hàng được tải ảnh hoàn chỉnh và đánh giá Nhiếp ảnh gia (N10 / N11).
+TRANG_THAI_KHACH_HOAN_THANH = (TrangThaiBooking.HOAN_THANH,)  # chỉ "Hoàn thành" hiện 2 nút: "Tải ảnh hoàn chỉnh" và "Đánh giá Nhiếp ảnh gia"
+
+# Khách hàng còn khoản phải thanh toán: "Chờ đặt cọc" (cọc 40%) và "Chờ xác nhận thanh toán" (phần còn lại 60%) -> hiện nút "Tải minh chứng" (UC5.1 / UC5.7).
+TRANG_THAI_KHACH_TAI_MINH_CHUNG = (TrangThaiBooking.CHO_DAT_COC, TrangThaiBooking.CHO_XAC_NHAN_THANH_TOAN)
 
 
 # ---------------------------------------------------------------------
@@ -224,6 +232,24 @@ def lay_chi_tiet_booking(user, vai_tro, ma_booking):  # một Booking của ngư
     return get_object_or_404(booking_cua_nguoi_dung(user, vai_tro), pk=ma_booking)  # tìm trong phạm vi của người này; không có -> 404
 
 
+def _nut_xac_nhan_thanh_toan(booking, la_nag, cac_khoan):  # nút "Xem và xác nhận minh chứng" của Nhiếp ảnh gia (url, chữ trên nút)
+    """Nhiếp ảnh gia thấy nút khi Khách đã gửi minh chứng và khoản đó đang chờ mình xác nhận:
+    cọc 40% (Booking "Chờ đặt cọc") hoặc phần còn lại 60% (Booking "Chờ xác nhận thanh toán"). Không có thì (None, '')."""
+    if not la_nag:  # chỉ Nhiếp ảnh gia xác nhận thanh toán; Khách và Quản trị viên không có nút này
+        return None, ''
+    if booking.TrangThai == TrangThaiBooking.CHO_DAT_COC:  # khoản cọc 40%
+        loai, cho, ten_url, nhan = (LoaiThanhToan.TIEN_COC, TrangThaiThanhToan.CHO_XAC_NHAN_COC,
+                                    'xac_nhan_thanh_toan_coc', 'Xem và xác nhận minh chứng cọc')
+    elif booking.TrangThai == TrangThaiBooking.CHO_XAC_NHAN_THANH_TOAN:  # khoản còn lại 60%
+        loai, cho, ten_url, nhan = (LoaiThanhToan.PHAN_CON_LAI, TrangThaiThanhToan.CHO_XAC_NHAN_60,
+                                    'xac_nhan_thanh_toan_con_lai', 'Xem và xác nhận thanh toán 60%')
+    else:  # trạng thái khác không có khoản nào chờ xác nhận
+        return None, ''
+    if any(k.LoaiThanhToan == loai and k.TrangThai == cho for k in cac_khoan):  # khoản đúng loại đang chờ Nhiếp ảnh gia
+        return _url_neu_co(ten_url, booking.pk), nhan  # trang xác nhận của module Thanh toán (tên url của Nguyên)
+    return None, ''  # Khách chưa gửi minh chứng thì chưa có gì để xác nhận
+
+
 def lay_thanh_toan(booking):  # các khoản thanh toán của Booking, cọc trước còn lại sau
     """Các khoản thanh toán của Booking (cọc 40% trước, phần còn lại 60% sau) để hiện cạnh trạng thái (BR4.7-2)."""
     thu_tu = {LoaiThanhToan.TIEN_COC: 0, LoaiThanhToan.PHAN_CON_LAI: 1}  # bảng thứ tự: cọc trước (0), còn lại sau (1)
@@ -349,7 +375,10 @@ def _trang_chi_tiet(request, ma_booking, ten_url_danh_sach):  # phần chung c�
             logger.warning('Booking #%s lệch dữ liệu thanh toán: %s', booking.pk, cau)  # ...ghi log để lập trình viên biết
     la_nag = vai_tro == VaiTro.NHIEP_ANH_GIA  # người xem có phải Nhiếp ảnh gia không
     la_khach = vai_tro == VaiTro.KHACH_HANG  # người xem có phải Khách hàng không
+    cac_khoan = lay_thanh_toan(booking)  # các khoản thanh toán (dùng cho khối Thanh toán và nút xác nhận)
+    url_xac_nhan_tt, nhan_xac_nhan_tt = _nut_xac_nhan_thanh_toan(booking, la_nag, cac_khoan)  # nút xác nhận minh chứng của Nhiếp ảnh gia
     yeu_cau_huy = lay_yeu_cau_huy(booking)  # T9: yêu cầu hủy của Booking (None nếu chưa bị hủy)
+    da_danh_gia = bool(la_khach and booking.TrangThai in TRANG_THAI_KHACH_HOAN_THANH and DanhGia.objects.filter(MaBooking=booking).exists())  # Khách xem Booking Hoàn thành: đã đánh giá chưa (mỗi Booking chỉ đánh giá 1 lần)
     return render(request, 'bookings/theo_doi_chi_tiet.html', {  # dựng trang chi tiết, kèm dữ liệu bên dưới
         'booking': booking,  # Booking đang xem
         'vai_tro': vai_tro,  # vai trò người xem
@@ -362,7 +391,7 @@ def _trang_chi_tiet(request, ma_booking, ten_url_danh_sach):  # phần chung c�
         'tien_coc': _tien(tinh_so_tien(booking.TongGiaTri, LoaiThanhToan.TIEN_COC)),  # số tiền cọc 40%
         'tien_con_lai': _tien(tinh_so_tien(booking.TongGiaTri, LoaiThanhToan.PHAN_CON_LAI)),  # số tiền còn lại 60%
         'lich_su': booking.lich_su_trang_thai.all(),                     # lịch sử đổi trạng thái, đã sắp từ cũ đến mới (Meta.ordering)
-        'thanh_toan': lay_thanh_toan(booking),  # các khoản thanh toán của Booking
+        'thanh_toan': cac_khoan,  # các khoản thanh toán của Booking
         'canh_bao': canh_bao,  # cảnh báo lệch (chỉ Quản trị viên có nội dung)
         'co_the_huy': (la_khach or la_nag) and co_the_huy(booking),  # T9: hiện nút "Hủy Booking" (Quản trị viên không hủy)
         'yeu_cau_huy': yeu_cau_huy,  # T9: khối "Thông tin hủy" (bên hủy, lý do, xử lý tiền cọc, hoàn tiền)
@@ -375,6 +404,27 @@ def _trang_chi_tiet(request, ma_booking, ten_url_danh_sach):  # phần chung c�
         # Khách hàng khi Booking "Chờ Khách hàng lựa chọn ảnh" -> nút tới trang chọn ảnh (N6). Quản trị viên và Nhiếp ảnh gia không có nút này.
         'url_chon_anh': (_url_neu_co('chon_anh_hau_ky', booking.pk)  # địa chỉ trang chọn ảnh cần hậu kỳ (tên url của Nguyên)...
                          if la_khach and booking.TrangThai in TRANG_THAI_KHACH_CHON_ANH else None),  # ...chỉ khi là Khách VÀ đúng trạng thái; không thì None
+        # Khách hàng khi Booking "Chờ Khách hàng kiểm tra" -> nút xác nhận hoàn tất bàn giao (N8, UC5.6). Nhiếp ảnh gia và Quản trị viên không có nút này.
+        'url_xac_nhan_ban_giao': (_url_neu_co('xac_nhan_ban_giao', booking.pk)  # địa chỉ trang xác nhận bàn giao (tên url của Nguyên)...
+                                  if la_khach and booking.TrangThai in TRANG_THAI_KHACH_KIEM_TRA_ANH else None),  # ...chỉ khi là Khách VÀ đúng trạng thái; không thì None
+        # Khách hàng khi Booking "Chờ Khách hàng kiểm tra" -> nút yêu cầu chỉnh sửa ảnh (N7, UC5.5). Nhiếp ảnh gia và Quản trị viên không có nút này.
+        'url_yeu_cau_chinh_sua': (_url_neu_co('yeu_cau_chinh_sua', booking.pk)  # địa chỉ trang yêu cầu chỉnh sửa (tên url của Nguyên)...
+                                  if la_khach and booking.TrangThai in TRANG_THAI_KHACH_KIEM_TRA_ANH else None),  # ...chỉ khi là Khách VÀ đúng trạng thái; không thì None
+        # Khách hàng khi Booking "Hoàn thành" -> nút tải ảnh hoàn chỉnh (N10, UC5.8). Nhiếp ảnh gia và Quản trị viên không có nút này.
+        'url_tai_anh_hoan_chinh': (_url_neu_co('tai_anh_hoan_chinh', booking.pk)  # địa chỉ trang tải ảnh hoàn chỉnh (tên url của Nguyên)...
+                                   if la_khach and booking.TrangThai in TRANG_THAI_KHACH_HOAN_THANH else None),  # ...chỉ khi là Khách VÀ đúng trạng thái; không thì None
+        # Khách hàng khi Booking "Hoàn thành" -> nút đánh giá Nhiếp ảnh gia (N11, UC6.1); đã đánh giá rồi thì nút đổi thành "Xem đánh giá của bạn".
+        'url_danh_gia': (_url_neu_co('danh_gia_booking', booking.pk)  # địa chỉ trang đánh giá (tên url của module reviews)...
+                         if la_khach and booking.TrangThai in TRANG_THAI_KHACH_HOAN_THANH else None),  # ...chỉ khi là Khách VÀ đúng trạng thái; không thì None
+        'da_danh_gia': da_danh_gia,  # Khách đã đánh giá Booking này chưa (template dùng để đổi chữ trên nút)
+        # Khách hàng khi Booking "Chờ đặt cọc" / "Chờ xác nhận thanh toán" -> nút tới trang tải minh chứng thanh toán (payments, N2 / N9). Nhiếp ảnh gia và Quản trị viên không có nút này.
+        'url_tai_minh_chung': (_url_neu_co('tai_len_minh_chung', booking.pk)  # địa chỉ trang tải minh chứng (tên url của Nguyên)...
+                               if la_khach and booking.TrangThai in TRANG_THAI_KHACH_TAI_MINH_CHUNG else None),  # ...chỉ khi là Khách VÀ đúng trạng thái; không thì None
+        'nhan_tai_minh_chung': ('Tải minh chứng đặt cọc' if booking.TrangThai == TrangThaiBooking.CHO_DAT_COC  # chữ trên nút: khoản cọc 40%...
+                                else 'Tải minh chứng thanh toán 60%'),  # ...hoặc phần còn lại 60%
+        # Nhiếp ảnh gia khi Khách đã gửi minh chứng (cọc 40% / phần còn lại 60%) -> nút xem và xác nhận (N3 / N9). Khách và Quản trị viên không có nút này.
+        'url_xac_nhan_thanh_toan': url_xac_nhan_tt,  # địa chỉ trang xác nhận; None thì template ẩn nút
+        'nhan_xac_nhan_thanh_toan': nhan_xac_nhan_tt,  # chữ trên nút
         # Nhiếp ảnh gia khi Booking "Đã chụp" / "Chờ hậu kỳ" / "Đang hậu kỳ" -> nút tới trang tải ảnh / hậu kỳ (N4, N5). Khách và Quản trị viên không có nút này.
         'url_tai_anh': (_url_neu_co('tai_anh_len', booking.pk)  # địa chỉ trang tải ảnh / hậu kỳ (tên url của Nguyên)...
                         if la_nag and booking.TrangThai in TRANG_THAI_NAG_XU_LY_ANH else None),  # ...chỉ khi là Nhiếp ảnh gia VÀ đúng trạng thái; không thì None

@@ -174,7 +174,6 @@ def photographer_detail(request, ma_nhiep_anh_gia):
         return request.path + ('?' + urlencode(tham_so) if tham_so else '') + '#' + MO_TA_LICH
 
     vai_tro = _vai_tro_xem(request.user)
-    url_chat = _url_co_the('chat_start', ma_nhiep_anh_gia=nag.pk)   # Module 8 đặt tên URL này; chưa có thì nút "Liên hệ" tạm khóa
     dang_nhap = redirect_to_login(request.get_full_path()).url
     cac_goi = _cac_goi(nag, goi_chon, lambda ma: url_trang(dau_tuan, ma))
     co_goi = any(g['ap_dung'] for g in cac_goi)
@@ -212,7 +211,6 @@ def photographer_detail(request, ma_nhiep_anh_gia):
         'co_chon_slot': bool(_url_co_the('chon_slot', ma_lich=1)),
         # --- người xem ---
         'vai_tro': vai_tro,
-        'url_lien_he': (url_chat if vai_tro == 'khach_hang' else dang_nhap) if url_chat else '',
         'url_dang_nhap': dang_nhap,
         'url_chon_lich': _url_co_the('lich_chon_slot', ma_nhiep_anh_gia=nag.pk),
         'mo_ta_lich': MO_TA_LICH,

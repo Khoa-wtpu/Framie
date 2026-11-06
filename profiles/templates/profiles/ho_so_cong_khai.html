@@ -19,7 +19,7 @@
     </div>
     {% if vai_tro != 'khac' %}
     <div class="hscc__hanh-dong">
-      {% nut_nhan_tin nag.pk %}
+      {% nut_nhan_tin nag.pk %}{# P10 (Phanh): nút Nhắn tin; Khách hàng đã đăng nhập thấy form POST, chưa đăng nhập thấy link tới trang đăng nhập #}
       {% if co_goi %}<a class="btn btn--primary" href="#{{ mo_ta_lich }}">Đặt lịch</a>{% endif %}
     </div>
     {% endif %}

@@ -19,7 +19,7 @@
 {# ---------- 1. Banner + tìm kiếm nhanh (nền tối) ---------- #}
 {# ▸ <section> = một khối nội dung. Các lớp class: tc-khoi (khối chung), tc-khoi--toi (nền tối), tc-banner (kiểu banner). #}
 {# ▸ aria-labelledby: giúp phần mềm đọc màn hình cho người khiếm thị biết khối này có tiêu đề là phần tử "tc-banner-tieu-de". #}
-<section class="tc-khoi tc-khoi--toi tc-banner" aria-labelledby="tc-banner-tieu-de">
+<section class="tc-khoi tc-khoi--toi tc-banner giu-mau-trang" aria-labelledby="tc-banner-tieu-de">
   {# ▸ Thẻ rỗng chỉ để trang trí: vẽ khung ngắm máy ảnh (4 góc) bằng CSS. aria-hidden="true" = phần mềm đọc màn hình bỏ qua. #}
   <span class="tc-khung" aria-hidden="true"></span>
   {# ▸ Dòng chữ trang trí giả lập thông số máy ảnh (khẩu độ f/1.8, tốc độ 1/250s, ISO 100). Chỉ hiện trên màn hình lớn. #}
@@ -213,7 +213,7 @@
       {# ▸ Vòng lặp qua danh sách bước; mỗi phần tử là cặp (tiêu đề, mô tả) được tách sẵn thành 2 biến tieu_de và mo_ta. #}
       {% for tieu_de, mo_ta in buoc_dat_lich %}
       {# ▸ Mỗi bước là một thẻ trắng (lớp tc-buoc). #}
-      <li class="tc-buoc">
+      <li class="tc-buoc loe-sang">
         {# ▸ Vòng tròn đen chứa số thứ tự. forloop.counter = số lượt lặp hiện tại, đếm từ 1 (1,2,3,4,5). #}
         <span class="tc-buoc__so" aria-hidden="true">{{ forloop.counter }}</span>
         {# ▸ Tiêu đề bước (h3). Có thêm chữ "Bước N:" ẩn trên màn hình (sr-only) chỉ để người dùng đọc màn hình nghe rõ số bước. #}
@@ -254,7 +254,7 @@
       {# ▸ Một ô trong lưới. #}
       <li>
         {# ▸ Cả ô là một liên kết: bấm vào sang trang tìm kiếm đã lọc theo loại hình này. #}
-        <a class="tc-loai" href="{% url 'search' %}?loai_hinh={{ lh.ma }}">
+        <a class="tc-loai loe-sang" href="{% url 'search' %}?loai_hinh={{ lh.ma }}">
           {# ▸ Tên loại hình, chữ to đậm. #}
           <span class="tc-loai__ten">{{ lh.ten }}</span>
           {# ▸ Dòng phụ: nếu có người nhận chụp (so_nguoi khác 0) thì ghi "N nhiếp ảnh gia"; nếu là 0 thì ghi "Xem nhiếp ảnh gia" (không hiện số 0 cho đỡ xấu). #}
@@ -278,7 +278,7 @@
 
 {# ---------- 5. Lời mời đăng ký (nền tối) ---------- #}
 {# ▸ Khối cuối, nền tối, kêu gọi hành động. Nội dung đổi tùy khách đã đăng nhập hay chưa. #}
-<section class="tc-khoi tc-khoi--toi tc-moi" aria-labelledby="tc-moi-tieu-de">
+<section class="tc-khoi tc-khoi--toi tc-moi giu-mau-trang" aria-labelledby="tc-moi-tieu-de">
   {# ▸ Hộp căn giữa, nội dung căn giữa theo CSS. #}
   <span class="tc-khung" aria-hidden="true"></span>
   <div class="container tc-moi__noi-dung">
