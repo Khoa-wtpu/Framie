@@ -1,5 +1,6 @@
 # chat/test_trao_doi.py - P11 (UC8.2, UC8.3). Chạy: python manage.py test chat
 import itertools  # bộ đếm để mỗi User có số điện thoại khác nhau
+import re  # cắt đúng vùng HTML cần kiểm tra (cột trái, token CSRF)
 from unittest import mock  # patch để ép lỗi 5a và 2a
 
 from django.contrib.auth import get_user_model  # model User của dự án (accounts.User)
@@ -17,6 +18,15 @@ from profiles.models import NhiepAnhGia  # hồ sơ Nhiếp ảnh gia
 User = get_user_model()  # model User
 _DEM = itertools.count(500)  # bắt đầu từ 500 để không trùng số điện thoại với tests.py của P10
 AJAX = {'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'}  # tiêu đề chat.js gửi kèm mọi yêu cầu ngầm
+
+
+def _cot_trai(html):  # chỉ lấy danh sách cuộc ở cột trái, bỏ qua header (header cũng có aria-current)
+    m = re.search(r'<ul class="hop-thu".*?</ul>', html, re.S)  # khối <ul class="hop-thu">...</ul>
+    return m.group(0) if m else ''  # không có thì trả chuỗi rỗng
+
+
+def _bo_csrf(html):  # token CSRF đổi mỗi lần nên bỏ đi trước khi so sánh hai trang
+    return re.sub(r'name="csrfmiddlewaretoken" value="[^"]+"', 'name="csrfmiddlewaretoken" value=""', html)
 
 
 def _tao_user(ten, vai_tro, trang_thai=None):  # tạo User thuộc một nhóm
@@ -54,6 +64,7 @@ class XemLichSuTests(CoSoTest):  # UC8.3
             r = self.client.get(self.url_trang)  # mở cuộc trò chuyện
             self.assertEqual(r.status_code, 200)  # mở được
             html = r.content.decode()  # nội dung trang
+            html = html[html.index('data-chat-list'):]  # chỉ xét khung tin nhắn, bỏ cột trái (xem trước tin cuối)
             self.assertLess(html.index('Chào anh'), html.index('Chào em'))  # cũ trước, mới sau
 
     def test_tin_cua_minh_va_cua_doi_phuong_khac_class(self):  # tin của mình nằm bên phải
@@ -103,7 +114,8 @@ class XemLichSuTests(CoSoTest):  # UC8.3
         with mock.patch('chat.views.services.lay_tin_gan_nhat', side_effect=DatabaseError('hỏng')):  # ép lỗi DB
             r = self.client.get(self.url_trang)  # mở trang
         self.assertEqual(r.status_code, 200)  # không phải trang 500
-        self.assertContains(r, services.LOI_TAI_LICH_SU)  # hiện thông báo theo đặc tả
+        self.assertContains(r, 'Không thể tải lịch sử trao đổi')  # tiêu đề theo wireframe
+        self.assertContains(r, 'Vui lòng thực hiện lại.')  # mô tả theo đặc tả (template tách thành 2 phần)
 
     def test_noi_dung_duoc_escape_chong_xss(self):  # chèn thẻ script
         self.tin(self.khach, '<script>alert(1)</script>')  # tin độc hại
@@ -236,4 +248,179 @@ class HopThuTests(CoSoTest):  # menu "Tin nhắn" (url name inbox)
     def test_danh_sach_trong_hien_cau_huong_dan(self):  # chưa có cuộc nào
         CuocTroChuyen.objects.all().delete()  # xóa cuộc trò chuyện
         self.client.force_login(self.khach)  # đăng nhập
-        self.assertContains(self.client.get(reverse('inbox')), 'Bạn chưa có cuộc trò chuyện nào')  # câu hướng dẫn
+        self.assertContains(self.client.get(reverse('inbox')), 'Chưa có cuộc trò chuyện nào')  # tiêu đề ở cột phải
+
+
+# ---------------------------------------------------------------------------------------------
+# Bổ sung checkpoint 4: kiểm thử theo bảng trường hợp (tách Khách hàng / Nhiếp ảnh gia)
+# ---------------------------------------------------------------------------------------------
+
+class CotTraiVaVaiTroTests(CoSoTest):  # lỗi gốc: trang chi tiết bị rỗng cột trái, nhãn/câu chữ không theo vai trò
+    def setUp(self):  # thêm một cuộc trò chuyện thứ hai để kiểm tra danh sách có nhiều dòng
+        super().setUp()  # dựng cuộc 1 (khach1 - nag1)
+        self.khach2 = _tao_user('khach2', VaiTro.KHACH_HANG)  # Khách hàng thứ hai
+        self.nag2 = _tao_nag('nag2')  # Nhiếp ảnh gia thứ hai
+        self.cuoc_khach = CuocTroChuyen.objects.create(MaKhachHang=self.khach, MaNhiepAnhGia=self.nag2)  # khach1 - nag2
+        self.cuoc_nag = CuocTroChuyen.objects.create(MaKhachHang=self.khach2, MaNhiepAnhGia=self.nag)  # khach2 - nag1
+
+    # ---- trường hợp 8: mở một cuộc thì cột trái vẫn đủ danh sách ----
+    def test_khach_mo_chi_tiet_cot_trai_van_day_du(self):  # lỗi ảnh 3 của khách hàng
+        self.client.force_login(self.khach)  # Khách hàng
+        r = self.client.get(self.url_trang)  # mở cuộc 1
+        self.assertEqual(r.status_code, 200)  # mở được
+        self.assertEqual({c['ma'] for c in r.context['cac_cuoc']}, {self.cuoc.pk, self.cuoc_khach.pk})  # đủ 2 cuộc của mình
+        self.assertContains(r, 'nag2')  # tên đối phương của cuộc còn lại hiện ở cột trái
+        self.assertNotContains(r, 'Bạn chưa có cuộc trò chuyện nào')  # không hiện câu "trống"
+
+    def test_nag_mo_chi_tiet_cot_trai_van_day_du(self):  # lỗi ảnh 1 của nhiếp ảnh gia
+        self.client.force_login(self.nag.MaTaiKhoan)  # Nhiếp ảnh gia
+        r = self.client.get(self.url_trang)  # mở cuộc 1
+        self.assertEqual(r.status_code, 200)  # mở được
+        self.assertEqual({c['ma'] for c in r.context['cac_cuoc']}, {self.cuoc.pk, self.cuoc_nag.pk})  # đủ 2 cuộc của mình
+        self.assertContains(r, 'khach2')  # tên Khách hàng của cuộc còn lại hiện ở cột trái
+        self.assertNotContains(r, 'Chưa có khách hàng nào nhắn tin cho bạn')  # không hiện câu "trống"
+
+    def test_cuoc_dang_mo_duoc_lam_noi_bat_dung_mot_dong(self):  # nổi bật cuộc đang mở
+        for u in (self.khach, self.nag.MaTaiKhoan):  # cả hai vai trò
+            self.client.force_login(u)  # đăng nhập
+            ds = _cot_trai(self.client.get(self.url_trang).content.decode())  # chỉ xét cột trái (header cũng có aria-current)
+            self.assertEqual(ds.count('aria-current="page"'), 1)  # chỉ một dòng được đánh dấu
+            self.assertEqual(ds.count('is-active'), 1)  # và chỉ một dòng có class nổi bật
+            self.assertIn(f'href="{self.url_trang}" aria-current="page"', ds)  # đúng là dòng của cuộc đang mở
+
+    def test_tran_chi_tiet_va_hop_thu_dung_chung_ngu_canh_cot_trai(self):  # tránh quên truyền biến lần nữa
+        for u in (self.khach, self.nag.MaTaiKhoan):  # cả hai vai trò
+            self.client.force_login(u)  # đăng nhập
+            ds_hop_thu = self.client.get(reverse('inbox')).context['cac_cuoc']  # danh sách ở hộp thư
+            ds_chi_tiet = self.client.get(self.url_trang).context['cac_cuoc']  # danh sách ở trang chi tiết
+            self.assertEqual([c['ma'] for c in ds_hop_thu], [c['ma'] for c in ds_chi_tiet])  # giống hệt nhau
+
+    # ---- nhãn vai trò, nút Xem hồ sơ (trường hợp 19) ----
+    def test_khach_thay_doi_phuong_la_nhiep_anh_gia(self):  # lỗi nhãn ảnh 1
+        self.client.force_login(self.khach)  # Khách hàng
+        r = self.client.get(self.url_trang)  # mở cuộc 1
+        self.assertEqual(r.context['doi_phuong']['vai_tro'], 'Nhiếp ảnh gia')  # nhãn đúng
+        self.assertContains(r, '<p class="chat__vai-tro">Nhiếp ảnh gia</p>')  # hiện ở đầu cột giữa và cột phải
+        self.assertNotContains(r, '<p class="chat__vai-tro">Khách hàng</p>')  # không còn nhãn sai
+        self.assertContains(r, '>Xem hồ sơ</a>')  # Khách hàng có nút Xem hồ sơ
+
+    def test_nag_thay_doi_phuong_la_khach_hang_khong_co_xem_ho_so(self):  # trường hợp 19
+        self.client.force_login(self.nag.MaTaiKhoan)  # Nhiếp ảnh gia
+        r = self.client.get(self.url_trang)  # mở cuộc 1
+        self.assertEqual(r.context['doi_phuong']['vai_tro'], 'Khách hàng')  # nhãn đúng
+        self.assertEqual(r.context['doi_phuong']['ho_so'], '')  # Khách hàng không có trang hồ sơ công khai
+        self.assertContains(r, '<p class="chat__vai-tro">Khách hàng</p>')  # nhãn hiện đúng
+        self.assertNotContains(r, '<p class="chat__vai-tro">Nhiếp ảnh gia</p>')  # không lẫn nhãn
+        self.assertNotContains(r, 'Xem hồ sơ')  # không nút Xem hồ sơ (cột phải và menu ···)
+
+    # ---- trường hợp 6: hộp thư trống theo vai trò ----
+    def test_hop_thu_trong_cau_chu_theo_vai_tro(self):  # câu chữ khác nhau
+        CuocTroChuyen.objects.all().delete()  # xóa hết cuộc trò chuyện
+        self.client.force_login(self.khach)  # Khách hàng
+        r = self.client.get(reverse('inbox'))  # hộp thư
+        self.assertContains(r, 'Chưa có cuộc trò chuyện nào')  # tiêu đề dành cho Khách (cột phải)
+        self.assertContains(r, 'Hãy tìm nhiếp ảnh gia để bắt đầu.')  # mô tả (cột phải)
+        self.assertContains(r, 'Bạn chưa nhắn tin cho nhiếp ảnh gia nào.')  # mô tả (cột trái)
+        self.assertNotContains(r, 'Chưa có khách hàng nào nhắn tin cho bạn')  # không lẫn câu của Nhiếp ảnh gia
+        self.client.force_login(self.nag.MaTaiKhoan)  # Nhiếp ảnh gia
+        r = self.client.get(reverse('inbox'))  # hộp thư
+        self.assertContains(r, 'Chưa có khách hàng nào nhắn tin cho bạn.')  # câu dành cho Nhiếp ảnh gia
+        self.assertNotContains(r, 'Hãy tìm nhiếp ảnh gia')  # không lẫn câu của Khách
+        self.assertNotContains(r, '>Tìm kiếm</a>')  # Nhiếp ảnh gia không có nút Tìm kiếm
+
+    # ---- trường hợp 7 ----
+    def test_hop_thu_chua_chon_cuoc_nao(self):  # cột giữa nhắc chọn cuộc
+        for u in (self.khach, self.nag.MaTaiKhoan):  # cả hai vai trò
+            self.client.force_login(u)  # đăng nhập
+            r = self.client.get(reverse('inbox'))  # hộp thư
+            self.assertContains(r, 'Chọn một cuộc trò chuyện')  # lời nhắc
+            self.assertNotIn('aria-current="page"', _cot_trai(r.content.decode()))  # chưa dòng nào ở cột trái nổi bật (header vẫn có)
+
+    # ---- trường hợp 9: cuộc mới chưa có tin ----
+    def test_cuoc_chua_co_tin_cau_chao_theo_vai_tro(self):  # câu chữ khác nhau
+        self.client.force_login(self.khach)  # Khách hàng
+        r = self.client.get(self.url_trang)  # mở cuộc 1 (chưa có tin)
+        self.assertContains(r, 'Hãy gửi lời chào đến nhiếp ảnh gia.')  # câu của Khách
+        self.assertNotContains(r, 'Hãy gửi lời chào đến khách hàng.')  # không lẫn
+        self.client.force_login(self.nag.MaTaiKhoan)  # Nhiếp ảnh gia
+        r = self.client.get(self.url_trang)  # mở cuộc 1
+        self.assertContains(r, 'Hãy gửi lời chào đến khách hàng.')  # câu của Nhiếp ảnh gia
+        self.assertNotContains(r, 'Khách hàng chưa nhắn gì')  # không dùng câu cũ
+        self.assertNotContains(r, 'Hãy gửi lời chào đến nhiếp ảnh gia.')  # không lẫn
+
+    # ---- trường hợp 12, 14 ----
+    def test_loi_gui_tin_dung_chu_wireframe(self):  # luồng 5a
+        self.assertEqual(services.LOI_GUI_TIN, 'Không thể gửi tin nhắn. Vui lòng thử lại.')  # đúng wireframe Lỗi gửi tin
+
+    def test_loi_tai_lich_su_khoa_o_nhap_va_co_thu_lai(self):  # luồng 2a UC8.3, cả hai vai trò
+        for u in (self.khach, self.nag.MaTaiKhoan):  # đăng nhập lần lượt
+            self.client.force_login(u)  # đăng nhập
+            with mock.patch('chat.views.services.lay_tin_gan_nhat', side_effect=DatabaseError('hỏng')):  # ép lỗi DB
+                r = self.client.get(self.url_trang)  # mở trang
+            self.assertEqual(r.status_code, 200)  # không phải trang 500
+            self.assertContains(r, 'Không thể tải lịch sử trao đổi')  # tiêu đề lỗi
+            self.assertContains(r, '>Thử lại</a>')  # nút Thử lại
+            self.assertContains(r, '>Quay lại danh sách</a>')  # nút Quay lại
+            self.assertContains(r, 'chat__soan--khoa')  # ô nhập bị khóa theo wireframe
+            self.assertContains(r, 'disabled')  # nút Gửi và ô nhập bị vô hiệu
+            self.assertEqual(len(r.context['cac_cuoc']), 2)  # cột trái vẫn đủ danh sách
+
+    def test_khong_tai_duoc_danh_sach_bao_loi_khong_noi_trong(self):  # lỗi cột trái
+        for u in (self.khach, self.nag.MaTaiKhoan):  # cả hai vai trò
+            self.client.force_login(u)  # đăng nhập
+            with mock.patch('chat.services.danh_sach_cuoc', side_effect=DatabaseError('hỏng')):  # ép lỗi DB
+                r = self.client.get(reverse('inbox'))  # hộp thư
+            self.assertEqual(r.status_code, 200)  # trang vẫn hiện
+            self.assertContains(r, services.LOI_TAI_LICH_SU)  # báo lỗi
+            self.assertNotContains(r, 'chưa có cuộc trò chuyện nào')  # không nhầm với trường hợp trống
+            self.assertNotContains(r, 'Chưa có khách hàng nào nhắn tin cho bạn')  # không nhầm với trường hợp trống
+
+    # ---- trường hợp 16, 17 ----
+    def test_cuoc_khong_ton_tai_va_cuoc_cua_nguoi_khac_cung_trang_404(self):  # không lộ cuộc có tồn tại
+        self.client.force_login(self.khach)  # Khách hàng
+        r_khong_co = self.client.get(reverse('chi_tiet_cuoc_tro_chuyen', args=[99999]))  # không tồn tại
+        r_cua_nguoi = self.client.get(reverse('chi_tiet_cuoc_tro_chuyen', args=[self.cuoc_nag.pk]))  # của khach2 - nag1
+        for r in (r_khong_co, r_cua_nguoi):  # cả hai
+            self.assertEqual(r.status_code, 404)  # 404
+            self.assertContains(r, 'Không tìm thấy cuộc trò chuyện', status_code=404)  # trang riêng của chat
+            self.assertContains(r, 'Quay lại danh sách', status_code=404)  # có nút về hộp thư
+        self.assertEqual(_bo_csrf(r_khong_co.content.decode()), _bo_csrf(r_cua_nguoi.content.decode()))  # giống hệt nhau (bỏ token CSRF)
+
+    # ---- trường hợp 18 ----
+    def test_co_san_cau_khong_tim_thay_khi_loc(self):  # chat.js hiện câu này khi lọc không ra
+        self.client.force_login(self.khach)  # đăng nhập
+        r = self.client.get(reverse('inbox'))  # hộp thư
+        self.assertContains(r, 'data-chat-ds-trong')  # phần tử dành cho câu thông báo
+        self.assertContains(r, 'Không tìm thấy cuộc trò chuyện phù hợp.')  # câu theo bảng trường hợp
+
+    # ---- chỗ đặt hộp lỗi và dấu hiệu cho chat.js (nhóm tin, dòng ngày) ----
+    def test_hop_loi_nam_tren_khung_chat_dung_wireframe(self):  # Lỗi gửi tin: hộp nét đứt ngay dưới đầu cuộc trò chuyện
+        self.client.force_login(self.khach)  # đăng nhập
+        html = self.client.get(self.url_trang).content.decode()  # mở trang
+        self.assertLess(html.index('data-chat-loi'), html.index('class="chat__khung"'))  # hộp lỗi nằm trên khung tin
+        self.assertIn('data-hom-nay="', html)  # ngày hôm nay để chat.js dựng dòng "Hôm nay"
+        self.assertIn('data-chat-gui', html)  # nút Gửi để chat.js khóa khi ô trống
+
+    def test_tin_nhan_co_du_data_cho_chat_js(self):  # chat.js nhóm tin theo người/ngày/phút
+        self.tin(self.khach, 'a')  # tin của khách
+        self.client.force_login(self.nag.MaTaiKhoan)  # nhiếp ảnh gia xem
+        html = self.client.get(self.url_trang).content.decode()  # mở trang
+        for dau_hieu in ('data-nguoi="doi"', 'data-ngay="', 'data-ts="'):  # các thuộc tính cần có
+            self.assertIn(dau_hieu, html)  # có đủ
+        d = self.client.get(self.url_moi + '?sau=0', **AJAX).json()  # qua JSON polling
+        self.assertIn('data-ts="', d['tin_nhan'][0]['html'])  # tin polling cũng có đủ
+
+
+class GioDanhSachTests(TestCase):  # filter gio_ds: 12:30 / Hôm qua / Thứ Hai / dd/mm/yyyy (wireframe cột trái)
+    def test_cac_moc_thoi_gian(self):  # đủ 4 kiểu hiển thị
+        import datetime  # tính lùi ngày
+        from django.utils import timezone  # giờ địa phương
+        from chat.templatetags.chat_tags import THU, gio_ds  # filter cần thử
+        bay_gio = timezone.localtime()  # hiện tại
+        self.assertEqual(gio_ds(bay_gio), bay_gio.strftime('%H:%M'))  # hôm nay: chỉ giờ
+        self.assertEqual(gio_ds(bay_gio - datetime.timedelta(days=1)), 'Hôm qua')  # hôm qua
+        ba_ngay = bay_gio - datetime.timedelta(days=3)  # 3 ngày trước
+        self.assertEqual(gio_ds(ba_ngay), THU[ba_ngay.weekday()])  # trong tuần: tên thứ
+        muoi_ngay = bay_gio - datetime.timedelta(days=10)  # 10 ngày trước
+        self.assertEqual(gio_ds(muoi_ngay), muoi_ngay.strftime('%d/%m/%Y'))  # xa hơn: ngày đầy đủ
+        self.assertEqual(gio_ds(None), '')  # không có giờ thì để trống

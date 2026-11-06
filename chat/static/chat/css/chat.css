@@ -1,33 +1,144 @@
-/* chat/static/chat/css/chat.css - P11. CHỈ dùng biến trong tokens.css (README_GIAO_DIEN mục 1), không gõ mã màu. */
-.chat-trang { max-width: 860px; } /* cột hẹp cho dễ đọc */
-.chat { display: flex; flex-direction: column; gap: var(--space-3); } /* xếp dọc: đầu, danh sách, form */
-.chat__dau { display: flex; align-items: center; gap: var(--space-3); } /* hàng đầu: nút quay lại, ảnh, tên */
-.chat__avatar { width: 2.5rem; height: 2.5rem; flex: none; } /* ảnh đại diện to hơn avatar ở header (2rem) */
-.chat__ten { margin: 0; font-size: var(--text-lg); min-width: 0; } /* tên đối phương, nhỏ lại so với h1 mặc định */
-.chat__ten a { text-decoration: none; } /* bỏ gạch chân cho gọn */
-.chat__ten a:hover { text-decoration: underline; } /* rê chuột thì hiện gạch chân để biết bấm được */
-.chat__trang-thai { padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); background: var(--warning-bg); color: var(--warning-fg); font-size: var(--text-sm); } /* thanh báo mất kết nối, dùng màu cảnh báo */
-.chat__khung { position: relative; } /* làm mốc cho nút "Có tin mới" */
-.chat__danh-sach { height: clamp(20rem, 60vh, 40rem); overflow-y: auto; padding: var(--space-4); background: var(--surface-gradient); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overscroll-behavior: contain; } /* khung cuộn chứa các tin */
-.chat__tin { display: flex; flex-direction: column; gap: var(--space-2); } /* các bong bóng xếp dọc */
-.chat__tai-cu { display: flex; margin: 0 auto var(--space-3); } /* nút "Xem tin cũ hơn" ở giữa, phía trên */
-.chat__trong { color: var(--color-text-muted); text-align: center; margin: var(--space-5) 0; } /* câu hướng dẫn khi chưa có tin */
-.chat__tin-moi { position: absolute; left: 50%; bottom: var(--space-3); transform: translateX(-50%); box-shadow: var(--shadow-md); } /* nút nổi ở đáy khung cuộn */
-.chat__tin-moi:hover { transform: translateX(-50%) translateY(-2px); } /* giữ căn giữa khi rê chuột (btn--soft có translateY riêng) */
-.chat__loi { margin: 0; font-size: var(--text-sm); } /* dòng lỗi dưới khung, màu đỏ lấy từ .field__error */
-.tn { max-width: 78%; padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); overflow-wrap: anywhere; } /* bong bóng: tối đa 78% bề ngang, tự ngắt từ dài */
-.tn__noi-dung { margin: 0; } /* bỏ khoảng cách dưới của thẻ p */
-.tn__gio { display: block; margin-top: var(--space-1); font-size: var(--text-xs); opacity: .75; } /* giờ gửi, chữ nhỏ */
-.tn--cua-toi { align-self: flex-end; background: var(--btn-primary-bg); color: var(--color-white); border-bottom-right-radius: var(--radius-sm); } /* tin của mình: bên phải, nền đậm như nút chính */
-.tn--cua-toi .tn__gio { text-align: right; } /* giờ canh phải */
-.tn--doi-phuong { align-self: flex-start; background: var(--color-surface-alt); border: 1px solid var(--color-border); border-bottom-left-radius: var(--radius-sm); } /* tin của đối phương: bên trái, nền nhạt */
-.chat__soan { display: flex; align-items: flex-end; gap: var(--space-3); } /* hàng nhập: ô nhập và nút Gửi */
-.chat__soan textarea.input { flex: 1; min-height: 2.75rem; max-height: 9rem; resize: none; } /* ô nhập tự cao lên tới 9rem; thắng quy tắc min-height 6rem của textarea.input */
-.hop-thu { display: grid; gap: var(--space-3); } /* danh sách cuộc trò chuyện */
-.hop-thu__muc { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4); background: var(--surface-gradient); border: 1px solid var(--color-border); border-radius: var(--radius-lg); text-decoration: none; transition: transform .2s, box-shadow .2s; } /* mỗi dòng giống thẻ card */
-.hop-thu__muc:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); } /* rê chuột nhấc nhẹ như card--link */
-.hop-thu__chu { display: grid; min-width: 0; flex: 1; } /* khối chữ chiếm phần còn lại, cho phép cắt chữ dài */
-.hop-thu__ten { font-weight: var(--fw-heading); } /* tên đối phương đậm */
+/* chat/static/chat/css/chat.css - P11 (viết lại theo wireframe SC8.2: 3 cột). CHỈ dùng biến trong tokens.css, không gõ mã màu (README_GIAO_DIEN mục 1). */
+
+/* ===== 0. KHUNG TRANG ===== */
+.chat-trang { width: 100%; box-sizing: border-box; margin-inline: auto; padding-block: var(--space-5); } /* width:100% để .container luôn rộng đủ, không bị co lại và lệch phải so với logo và các trang khác */
+.chat-trang [hidden] { display: none !important; } /* thuộc tính hidden luôn thắng display:flex bên dưới, để chat.js ẩn/hiện nút và thanh báo đúng */
+.chat-luoi { display: grid; gap: var(--space-4); grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr); height: clamp(32rem, calc(100vh - 16rem), 50rem); } /* trang Hộp thư: 2 cột (danh sách + vùng chờ), cao cố định để chỉ vùng tin nhắn cuộn */
+.chat-luoi--3-cot { grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr) minmax(15rem, 19rem); } /* trang chi tiết: 3 cột đúng wireframe (danh sách | trò chuyện | thông tin đối phương) */
+.chat-cot { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; background: var(--surface-gradient); border: 1px solid var(--color-border); border-radius: var(--radius-lg); } /* mỗi cột là một khung bo góc giống thẻ card; min-height:0 để phần bên trong cuộn được */
+
+/* ===== 1. CỘT TRÁI: DANH SÁCH CUỘC TRÒ CHUYỆN ===== */
+.chat-cot__dau { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); padding: var(--space-4) var(--space-4) var(--space-3); } /* hàng đầu cột: "Tin nhắn" bên trái, "Xem tất cả ›" bên phải (đúng wireframe) */
+.chat-cot__xem-het { flex: none; color: var(--color-text-muted); font-size: var(--text-sm); text-decoration: none; } /* link "Xem tất cả ›" chữ xám nhỏ */
+.chat-cot__xem-het:hover { color: var(--color-black); text-decoration: underline; } /* rê chuột: đậm lên và gạch chân */
+.chat-cot__tieu-de { margin: 0; font-size: var(--text-lg); font-weight: var(--fw-heading); } /* chữ "Tin nhắn" nằm trong cột, canh trái đúng wireframe */
+.chat-cot__loi { padding: 0 var(--space-4) var(--space-3); } /* chỗ đặt hộp lỗi khi không tải được danh sách */
+.chat-cot__rong { display: grid; gap: var(--space-3); justify-items: start; padding: var(--space-4); } /* danh sách trống: câu hướng dẫn và nút */
+.chat-tim { position: relative; margin: 0 var(--space-4) var(--space-3); } /* khung ô tìm; relative để đặt kính lúp chồng lên ô */
+.chat-tim__icon { position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--color-text-muted); } /* kính lúp nằm trong ô, không chặn chuột */
+.chat-tim__o { width: 100%; box-sizing: border-box; padding-left: 2.5rem; border-radius: 999px; } /* ô tìm bo tròn như wireframe, chừa chỗ cho kính lúp */
+.hop-thu { display: flex; flex-direction: column; gap: var(--space-1); flex: 1; min-height: 0; margin: 0; padding: 0 var(--space-3) var(--space-3); list-style: none; overflow-y: auto; } /* danh sách cuộn riêng trong cột */
+.hop-thu__muc { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); border: 2px solid transparent; border-radius: var(--radius-md); color: inherit; text-decoration: none; transition: background .2s; } /* mỗi dòng: viền trong suốt để khi chọn không bị nhảy bố cục */
+.hop-thu__muc:hover { background: var(--color-surface-alt); } /* rê chuột: nền nhạt, không nhấc lên nữa */
+.hop-thu__muc.is-active { border-color: currentColor; background: var(--color-surface-alt); } /* cuộc đang mở: viền đậm như wireframe */
+.hop-thu__chu { display: grid; gap: 2px; min-width: 0; flex: 1; } /* khối chữ chiếm phần còn lại, cho phép cắt chữ dài */
+.hop-thu__hang { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); } /* hàng trên: tên bên trái, giờ bên phải */
+.hop-thu__ten { font-weight: var(--fw-heading); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* tên đậm, dài quá thì cắt ... */
+.hop-thu__gio { flex: none; color: var(--color-text-muted); font-size: var(--text-xs); } /* giờ hoặc ngày của tin cuối */
 .hop-thu__xem-truoc { color: var(--color-text-muted); font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* xem trước tin cuối, một dòng */
-.hop-thu__gio { color: var(--color-text-muted); font-size: var(--text-xs); flex: none; } /* giờ tin cuối */
-@media (max-width: 600px) { .tn { max-width: 90%; } .hop-thu__gio { display: none; } } /* điện thoại: bong bóng rộng hơn, ẩn giờ ở danh sách cho đỡ chật */
+.chat__trong { margin: var(--space-4); color: var(--color-text-muted); text-align: center; } /* câu "Không tìm thấy..." */
+
+/* ===== 2. ẢNH ĐẠI DIỆN (dùng chung cả 3 cột) ===== */
+.chat-trang .avatar { display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; overflow: hidden; flex: none; } /* khung tròn, ảnh hoặc chữ cái đầu nằm giữa */
+.chat-trang .avatar img { width: 100%; height: 100%; object-fit: cover; } /* ảnh phủ kín khung tròn, không méo */
+.chat__avatar { width: 2.5rem; height: 2.5rem; } /* ảnh trong danh sách và đầu cuộc trò chuyện */
+
+/* ===== 3. CỘT GIỮA: CUỘC TRÒ CHUYỆN ===== */
+.chat { gap: 0; } /* bỏ khoảng cách cũ giữa các khối; ngăn cách bằng đường kẻ */
+.chat__dau { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); } /* đầu cuộc trò chuyện: ảnh + tên + vai trò, có đường kẻ dưới */
+.chat__quay-lai { display: none; } /* nút "‹ Tin nhắn" chỉ hiện trên điện thoại (xem media query cuối file) */
+.chat__nguoi { min-width: 0; } /* cho phép cắt tên dài */
+.chat__ten { margin: 0; font-size: var(--text-base, 1rem); font-weight: var(--fw-heading); } /* tên đối phương */
+.chat__ten a { color: inherit; text-decoration: none; } /* tên là link tới hồ sơ nhưng không gạch chân */
+.chat__ten a:hover { text-decoration: underline; } /* rê chuột mới gạch chân */
+.chat__vai-tro { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); } /* "Nhiếp ảnh gia" / "Khách hàng" */
+.chat__trang-thai { margin: 0; padding: var(--space-2) var(--space-4); background: var(--warning-bg); color: var(--warning-fg); font-size: var(--text-sm); } /* thanh báo mất kết nối */
+.chat__khung { position: relative; display: flex; flex: 1; min-height: 0; } /* khung chứa vùng cuộn; relative cho nút "Có tin mới" */
+.chat__danh-sach { display: flex; flex-direction: column; flex: 1; min-width: 0; padding: var(--space-4) var(--space-5); overflow-y: auto; overscroll-behavior: contain; } /* vùng cuộn tin nhắn, KHÔNG viền riêng vì khung cột đã có */
+.chat__tai-cu { align-self: center; flex: none; margin-bottom: var(--space-3); } /* nút "Xem tin cũ hơn" ở giữa phía trên */
+.chat__tin { display: flex; flex-direction: column; justify-content: flex-end; flex: 1 1 auto; gap: var(--space-3); } /* tin xếp dọc và dồn xuống đáy như wireframe (tin mới nhất sát ô nhập) */
+.chat__tin-moi { position: absolute; left: 50%; bottom: var(--space-3); transform: translateX(-50%); box-shadow: var(--shadow-md); } /* nút nổi "Có tin mới ↓" */
+.chat__tin-moi:hover { transform: translateX(-50%) translateY(-2px); } /* giữ căn giữa khi rê chuột */
+.chat__loi { margin: 0 var(--space-4) var(--space-2); font-size: var(--text-sm); } /* hộp lỗi gửi tin, nằm ngay trên ô nhập */
+
+/* --- bong bóng tin nhắn --- */
+.tn { display: flex; flex: none; max-width: min(75%, 40rem); overflow-wrap: anywhere; } /* khối tin; bong bóng nằm trong .tn__noi-dung */
+.tn__noi-dung { margin: 0; padding: var(--space-2) var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg); } /* hình dạng bong bóng dùng chung */
+.tn__gio { display: block; margin-top: var(--space-1); padding: 0 var(--space-1); color: var(--color-text-muted); font-size: var(--text-xs); } /* giờ gửi nằm dưới bong bóng, chữ nhỏ */
+.tn--doi-phuong { align-self: flex-start; align-items: flex-start; gap: var(--space-2); } /* tin đối phương: bên trái, ảnh nhỏ cạnh bong bóng */
+.tn--doi-phuong .tn__cot { min-width: 0; } /* cột chứa bong bóng và giờ, cho phép xuống dòng */
+.tn--doi-phuong .tn__noi-dung { background: transparent; } /* bong bóng đối phương: nền trống, chỉ có viền */
+.tn__avatar { width: 2rem; height: 2rem; } /* ảnh nhỏ cạnh tin đối phương */
+.tn--cua-toi { align-self: flex-end; flex-direction: column; align-items: flex-end; } /* tin của mình: bên phải, giờ canh phải */
+.tn--cua-toi .tn__noi-dung { background: var(--color-surface-alt); } /* bong bóng của mình: nền xám nhạt như wireframe */
+
+/* --- ô nhập --- */
+.chat__soan { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-top: 1px solid var(--color-border); } /* hàng nhập: ô nhập + nút Gửi, có đường kẻ trên */
+.chat__soan textarea.input { flex: 1; min-height: 2.75rem; max-height: 9rem; resize: none; border-radius: 1.5rem; } /* ô nhập bo tròn như wireframe, tự cao tới 9rem */
+.chat__soan .btn { flex: none; min-width: 5rem; } /* nút Gửi không bị bóp nhỏ */
+
+/* --- trạng thái trống / lỗi (giữa khung) --- */
+.chat__trong-lon { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); max-width: 32rem; margin: auto; padding: var(--space-5); text-align: center; } /* margin:auto để nằm chính giữa khung */
+.chat__icon-tron { display: grid; place-items: center; width: 7rem; height: 7rem; border: 1px solid var(--color-border); border-radius: 50%; background: var(--color-surface-alt); } /* vòng tròn chứa biểu tượng, đúng wireframe */
+.chat__trong-lon-tieu-de { margin: 0; font-size: var(--text-lg); font-weight: var(--fw-heading); } /* tiêu đề trạng thái */
+.chat__trong-lon-mo-ta { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); } /* mô tả trạng thái */
+.chat__trong-lon-nut { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-3); } /* hai nút "Thử lại" và "Quay lại danh sách" */
+.chat__trong-lon--nang { padding-bottom: calc(var(--space-5) + 4.5rem); } /* trang rỗng của Nhiếp ảnh gia: chừa thêm đáy bằng chiều cao nút + khoảng cách, khối nhích lên ngang vị trí trang rỗng của Khách hàng */
+.chat-cot--chua-chon { justify-content: center; } /* trang Hộp thư: khối "Chọn một cuộc trò chuyện" ở giữa cột */
+
+/* --- nút "···" và menu thả xuống (thẻ details, không cần JavaScript) --- */
+.chat__menu { position: relative; margin-left: auto; flex: none; } /* đẩy sang mép phải đầu cuộc trò chuyện; relative để menu thả bám theo nút */
+.chat__menu > summary { list-style: none; cursor: pointer; letter-spacing: 0.1em; } /* nút ba chấm, bỏ mũi tên mặc định của details */
+.chat__menu > summary::-webkit-details-marker { display: none; } /* bỏ mũi tên trên Safari/Chrome cũ */
+.chat__menu-ds { position: absolute; z-index: 5; top: calc(100% + var(--space-1)); right: 0; min-width: 14rem; margin: 0; padding: var(--space-1); list-style: none; background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-md); } /* hộp thả, canh mép phải theo nút */
+.chat__menu-ds a { display: block; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm, 0.5rem); color: inherit; font-size: var(--text-sm); text-decoration: none; } /* mỗi lựa chọn là một dòng bấm được */
+.chat__menu-ds a:hover, .chat__menu-ds a:focus-visible { background: var(--color-surface-alt); } /* rê chuột hoặc dùng phím Tab: nền nhạt */
+
+/* --- dòng ngày "Hôm nay / Hôm qua / dd/mm/yyyy" (chat.js chèn) --- */
+.chat__ngay { display: flex; flex: none; align-items: center; gap: var(--space-3); margin: var(--space-2) 0; color: var(--color-text-muted); font-size: var(--text-xs); } /* chữ giữa, hai đường kẻ hai bên */
+.chat__ngay::before, .chat__ngay::after { content: ""; flex: 1; height: 1px; background: var(--color-border); } /* đường kẻ mảnh bên trái và phải */
+
+/* --- nhóm tin liên tiếp cùng người, cùng ngày, cách nhau dưới 5 phút (chat.js gắn class) --- */
+.tn--lien-tiep { margin-top: calc(var(--space-1) - var(--space-3)); } /* tin nối tiếp nhích sát tin trước (bù khoảng gap của .chat__tin) */
+.tn--co-tiep .tn__gio { display: none; } /* chỉ tin cuối nhóm mới hiện giờ */
+.tn--co-tiep .tn__avatar { visibility: hidden; } /* chỉ tin cuối nhóm mới hiện ảnh; vẫn giữ chỗ để bong bóng thẳng hàng */
+
+/* --- tin gửi lỗi: bong bóng nét đứt + "Không gửi được. Gửi lại" (luồng ngoại lệ 5a) --- */
+.tn--loi { flex-direction: column; align-items: flex-end; } /* nằm bên phải như tin của mình */
+.tn--loi .tn__hang { display: flex; align-items: center; gap: var(--space-2); } /* dấu ! và bong bóng cùng hàng */
+.tn--loi .tn__noi-dung { white-space: pre-wrap; background: transparent; border-style: dashed; border-color: var(--color-black); } /* nét đứt đậm để phân biệt với tin đã gửi */
+.tn__icon-loi { display: inline-grid; place-items: center; flex: none; width: 1.5rem; height: 1.5rem; border: 2px solid var(--color-black); border-radius: 50%; font-size: var(--text-xs); font-weight: var(--fw-heading); line-height: 1; } /* vòng tròn có dấu ! */
+.tn__loi-chu { margin-top: var(--space-1); color: var(--color-text-muted); font-size: var(--text-xs); } /* dòng "Không gửi được." */
+.tn__gui-lai { padding: 0; border: 0; background: none; color: var(--color-black); font: inherit; font-weight: var(--fw-heading); text-decoration: underline; cursor: pointer; } /* nút "Gửi lại" trông như link đậm */
+.tn__gui-lai:disabled { opacity: .5; cursor: default; } /* đang gửi lại thì mờ đi */
+
+/* --- hộp báo lỗi nét đứt ở đầu khung (đúng wireframe "Lỗi gửi tin") --- */
+.chat .chat__loi { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-3) var(--space-4) 0; padding: var(--space-3) var(--space-4); background: transparent; color: var(--color-black); border: 1px dashed var(--color-black); border-radius: var(--radius-md); } /* thay kiểu hộp đỏ bằng khung nét đứt đơn sắc */
+.chat .chat__loi::before { content: "!"; display: inline-grid; place-items: center; flex: none; width: 1.25rem; height: 1.25rem; border: 2px solid var(--color-black); border-radius: 50%; font-size: var(--text-xs); font-weight: var(--fw-heading); line-height: 1; } /* dấu ! trong vòng tròn */
+
+/* --- ô nhập bị khóa (màn hình Lỗi khởi tạo) --- */
+.chat__soan--khoa { opacity: .6; pointer-events: none; } /* mờ đi và không bấm được */
+.chat__soan--khoa textarea.input { background: var(--color-surface-alt); cursor: not-allowed; } /* nền xám nhạt, con trỏ cấm */
+.chat__soan .btn:disabled { cursor: not-allowed; } /* nút Gửi khóa khi ô trống hoặc đang gửi */
+
+/* --- trang một cột (không tìm thấy cuộc trò chuyện) --- */
+.chat-cot--don { max-width: 40rem; min-height: 22rem; margin: var(--space-6, 3rem) auto; justify-content: center; } /* khung đơn nằm giữa trang, không có 3 cột */
+
+/* ===== 4. CỘT PHẢI: THÔNG TIN ĐỐI PHƯƠNG ===== */
+.chat-cot--phai { padding: var(--space-5) var(--space-4); gap: var(--space-4); overflow-y: auto; } /* cột phải có thể cuộn nếu dài */
+.chat-ho-so { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding-bottom: var(--space-4); border-bottom: 1px solid var(--color-border); text-align: center; } /* ảnh lớn, tên, vai trò, nút xem hồ sơ */
+.chat-ho-so__anh { width: 6.5rem; height: 6.5rem; font-size: 2.5rem; } /* ảnh lớn ở giữa */
+.chat-ho-so__ten { margin: 0; font-weight: var(--fw-heading); } /* tên đối phương */
+.chat-muc { display: grid; gap: var(--space-3); } /* mỗi mục: Booking liên quan, File phương tiện */
+.chat-muc__tieu-de { margin: 0; font-size: var(--text-sm); font-weight: var(--fw-heading); } /* tiêu đề mục */
+.chat-muc__rong { display: grid; gap: var(--space-1); padding: var(--space-3); border: 1px dashed var(--color-border); border-radius: var(--radius-md); font-size: var(--text-sm); } /* khung giữ chỗ khi chưa có dữ liệu */
+.chat-muc__rong span { color: var(--color-text-muted); } /* câu giải thích nhạt hơn dòng đậm */
+
+/* ===== 5. MÀN HÌNH NHỎ ===== */
+@media (max-width: 1179px) { /* laptop nhỏ / tablet ngang: bỏ cột phải cho đỡ chật */
+  .chat-luoi--3-cot { grid-template-columns: minmax(15rem, 19rem) minmax(0, 1fr); } /* còn 2 cột */
+  .chat-cot--phai { display: none; } /* ẩn cột thông tin đối phương */
+}
+@media (max-width: 959px) { /* điện thoại / tablet dọc: mỗi lần chỉ thấy một cột */
+  .chat-luoi, .chat-luoi--3-cot { grid-template-columns: minmax(0, 1fr); height: clamp(28rem, calc(100vh - 12rem), 50rem); } /* một cột duy nhất */
+  .chat-trang--chi-tiet .chat-cot--ds { display: none; } /* trang chi tiết: ẩn danh sách, dùng nút quay lại */
+  .chat-trang--hop-thu .chat-cot--chua-chon { display: none; } /* trang Hộp thư: ẩn vùng chờ, chỉ hiện danh sách */
+  .chat-trang--hop-thu-rong .chat-cot--ds { display: none; } /* Khách hàng chưa có cuộc nào: danh sách trống nên ẩn đi */
+  .chat-trang--hop-thu-rong .chat-cot--chua-chon { display: flex; } /* ...và hiện khối hướng dẫn + nút Tìm kiếm */
+  .chat__quay-lai { display: inline-flex; } /* hiện nút "‹ Tin nhắn" */
+  .chat__danh-sach { padding: var(--space-3); } /* bớt lề cho rộng chỗ */
+  .tn { max-width: 90%; } /* bong bóng rộng hơn */
+  .hop-thu__gio { display: none; } /* ẩn giờ ở danh sách cho đỡ chật */
+  .chat__loi { margin-inline: var(--space-3); } /* hộp lỗi sát lề hơn */
+  .chat-cot--don { margin-block: var(--space-4); min-height: 18rem; } /* trang đơn bớt cao */
+}

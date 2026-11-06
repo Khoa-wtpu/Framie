@@ -1,6 +1,6 @@
 # chat/services.py - P10 (UC8.1) và P11 (UC8.2, UC8.3): logic nghiệp vụ. View và template chỉ gọi các hàm ở đây.
 from django.core.exceptions import ValidationError  # lỗi dữ liệu không hợp lệ (tin rỗng, tin quá dài)
-from django.db import IntegrityError, transaction  # IntegrityError: lỗi trùng khóa; transaction: gói lệnh lưu cho an toàn
+from django.db import DatabaseError, IntegrityError, transaction  # IntegrityError: lỗi trùng khóa; transaction: gói lệnh lưu cho an toàn
 from django.db.models import DateTimeField, OuterRef, Q, Subquery  # Q: điều kiện OR; Subquery/OuterRef: lấy tin cuối của từng cuộc
 from django.db.models.functions import Coalesce  # lấy giá trị đầu tiên khác NULL
 from django.http import Http404  # lỗi "không tìm thấy trang"
@@ -13,8 +13,11 @@ from core.constants import TrangThaiHoSo, VaiTro  # tên vai trò và tên trạ
 SO_TIN_MOI_LAN = 30  # mỗi lần tải: 30 tin gần nhất, kéo lên trên thì tải thêm 30 tin cũ hơn (giống Messenger)
 SO_TIN_MOI_TOI_DA = 100  # một lần polling trả tối đa 100 tin mới, tránh trả quá nặng nếu mất kết nối lâu
 GIOI_HAN_NOI_DUNG = 2000  # tin nhắn tối đa 2000 ký tự (cột NoiDung kiểu TEXT không tự giới hạn)
-LOI_GUI_TIN = 'Không thể gửi tin nhắn. Vui lòng thực hiện lại.'  # luồng ngoại lệ 5a của UC8.2
+LOI_GUI_TIN = 'Không thể gửi tin nhắn. Vui lòng thử lại.'  # luồng ngoại lệ 5a của UC8.2
 LOI_TAI_LICH_SU = 'Không thể tải lịch sử trao đổi. Vui lòng thực hiện lại.'  # luồng ngoại lệ 2a của UC8.3
+LOI_KHOI_TAO = 'Không thể khởi tạo cuộc trò chuyện. Vui lòng thực hiện lại.'  # luồng ngoại lệ 2a của UC8.1
+NHAN_KHACH_HANG = 'Khách hàng'  # nhãn vai trò hiển thị
+NHAN_NHIEP_ANH_GIA = 'Nhiếp ảnh gia'  # nhãn vai trò hiển thị
 
 
 def la_khach_hang(user):  # True nếu người dùng đã đăng nhập VÀ thuộc nhóm Khách hàng
@@ -87,6 +90,16 @@ def lay_cuoc_cua_nguoi_dung(user, ma_cuoc):  # lấy cuộc trò chuyện nếu 
     return cuoc  # hợp lệ
 
 
+def thong_tin_nag(nag):  # thông tin Nhiếp ảnh gia dạng giống thong_tin_doi_phuong (dùng khi chưa có cuộc trò chuyện)
+    tai_khoan = nag.MaTaiKhoan  # tài khoản User
+    try:  # đọc đường dẫn ảnh đại diện
+        anh = nag.AnhDaiDien.url if nag.AnhDaiDien else ''  # có ảnh thì lấy .url
+    except ValueError:  # file ảnh lỗi
+        anh = ''  # dùng chữ cái đầu
+    ten = tai_khoan.get_full_name() or tai_khoan.get_username()  # họ tên hoặc tên đăng nhập
+    return {'ten': ten, 'anh': anh, 'chu_cai': ten[:1].upper(), 'ho_so': duong_dan_ho_so(nag.pk), 'vai_tro': NHAN_NHIEP_ANH_GIA}  # gói cho template
+
+
 def thong_tin_doi_phuong(cuoc, user):  # tên, ảnh, chữ cái đầu và link hồ sơ của người ở phía bên kia cuộc trò chuyện
     if cuoc.MaKhachHang_id == user.pk:  # user là Khách hàng -> đối phương là Nhiếp ảnh gia
         nag = cuoc.MaNhiepAnhGia  # hồ sơ Nhiếp ảnh gia
@@ -96,12 +109,14 @@ def thong_tin_doi_phuong(cuoc, user):  # tên, ảnh, chữ cái đầu và link
         except ValueError:  # file ảnh lỗi
             anh = ''  # dùng chữ cái đầu thay thế
         ho_so = duong_dan_ho_so(nag.pk)  # Khách hàng được xem hồ sơ công khai của Nhiếp ảnh gia
+        vai_tro = NHAN_NHIEP_ANH_GIA  # đối phương là Nhiếp ảnh gia
     else:  # user là Nhiếp ảnh gia -> đối phương là Khách hàng
         tai_khoan = cuoc.MaKhachHang  # tài khoản Khách hàng
         anh = ''  # Khách hàng không có ảnh đại diện trong CSDL
         ho_so = ''  # Khách hàng không có trang hồ sơ công khai
+        vai_tro = NHAN_KHACH_HANG  # đối phương là Khách hàng
     ten = tai_khoan.get_full_name() or tai_khoan.get_username()  # ưu tiên họ tên, không có thì dùng tên đăng nhập
-    return {'ten': ten, 'anh': anh, 'chu_cai': ten[:1].upper(), 'ho_so': ho_so}  # gói lại cho template
+    return {'ten': ten, 'anh': anh, 'chu_cai': ten[:1].upper(), 'ho_so': ho_so, 'vai_tro': vai_tro}  # gói lại cho template
 
 
 def lay_tin_gan_nhat(cuoc, so_luong=SO_TIN_MOI_LAN):  # UC8.3: các tin gần nhất để hiện khi mở cuộc trò chuyện
@@ -140,6 +155,19 @@ def gui_tin_nhan(cuoc, nguoi_gui, noi_dung):  # UC8.2: lưu một tin nhắn và
     with transaction.atomic():  # gói trong giao dịch
         tin.save()  # INSERT, ThoiGianGui do Django tự điền
     return tin  # trả về tin vừa lưu
+
+
+def ngu_canh_danh_sach(user):  # dữ liệu cột trái mà MỌI trang chat đều phải có: hộp thư và chi tiết dùng chung, tránh quên truyền biến
+    loi = ''  # thông báo lỗi nếu không tải được danh sách
+    try:  # truy vấn danh sách
+        cac_cuoc = danh_sach_cuoc(user)  # các cuộc trò chuyện của người dùng
+    except DatabaseError:  # lỗi bất ngờ
+        cac_cuoc, loi = [], LOI_TAI_LICH_SU  # danh sách rỗng kèm báo lỗi
+    return {  # gói cho template _danh_sach_cuoc.html
+        'cac_cuoc': cac_cuoc,  # danh sách
+        'loi': loi,  # lỗi tải danh sách
+        'la_khach': la_khach_hang(user),  # chọn câu chữ theo vai trò
+    }  # hết gói
 
 
 def danh_sach_cuoc(user):  # màn hình danh sách "Tin nhắn": các cuộc trò chuyện của user, cuộc có tin mới nhất lên đầu
