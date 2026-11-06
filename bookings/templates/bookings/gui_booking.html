@@ -65,9 +65,11 @@
     </div>
 
     {% include "includes/form_field.html" with field=form.ngay_gio_chup %}{# ngày và giờ chụp #}
-    {% include "includes/form_field.html" with field=form.dia_diem %}{# địa điểm chụp #}
+    {% include "includes/form_field.html" with field=form.khu_vuc %}{# địa điểm chụp: chọn khu vực của Nhiếp ảnh gia #}
+    {% include "includes/form_field.html" with field=form.dia_chi_cu_the %}{# địa chỉ cụ thể (không bắt buộc) #}
     {% include "includes/form_field.html" with field=form.so_nguoi %}{# số người tham gia #}
-    {% include "includes/form_field.html" with field=form.concept %}{# concept chụp ảnh #}
+    {% include "includes/form_field.html" with field=form.phong_cach %}{# concept: chọn phong cách của Nhiếp ảnh gia #}
+    {% include "includes/form_field.html" with field=form.mo_ta_concept %}{# mô tả concept (không bắt buộc) #}
     {% include "includes/form_field.html" with field=form.yeu_cau_rieng %}{# yêu cầu riêng của khách #}
 
     <div class="ct__nut">{# hàng nút #}
