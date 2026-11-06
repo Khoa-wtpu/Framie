@@ -35,6 +35,7 @@
   /* nền trang, mặt thẻ, nút đậm và chữ tiêu đề: đều là gradient đen - xám */
   --bg-gradient: radial-gradient(ellipse 70% 50% at 88% -6%, #585858 0%, rgba(88, 88, 88, 0) 72%), radial-gradient(ellipse 60% 45% at 5% 105%, #444444 0%, rgba(68, 68, 68, 0) 70%), linear-gradient(180deg, #2A2A2A 0%, #0A0A0A 100%);
   --surface-gradient: linear-gradient(180deg, #353535 0%, #232323 100%);
+  --surface-solid: #2A2A2A;       /* nền trơn cho khung cần phẳng (Admin Tổng quan) */
   --text-gradient: linear-gradient(180deg, #FFFFFF 30%, #8A8A8A 100%);
   --btn-primary-bg: linear-gradient(135deg, var(--color-black) 0%, var(--color-black-hover) 55%, var(--color-text-muted) 100%);
   --btn-primary-bg-hover: linear-gradient(135deg, var(--color-black-hover) 0%, var(--color-black) 55%, var(--color-black-hover) 100%);
@@ -156,6 +157,7 @@
 
   --bg-gradient: radial-gradient(ellipse 70% 50% at 88% -6%, #C4C4C4 0%, rgba(196, 196, 196, 0) 72%), radial-gradient(ellipse 60% 45% at 5% 105%, #D2D2D2 0%, rgba(210, 210, 210, 0) 70%), linear-gradient(180deg, #FFFFFF 0%, #DDDDDD 100%);
   --surface-gradient: linear-gradient(180deg, #FFFFFF 0%, #EDEDED 100%);
+  --surface-solid: #FFFFFF;
   --text-gradient: linear-gradient(180deg, #1A1A1A 30%, #777777 100%);
   --btn-primary-bg: linear-gradient(135deg, var(--color-black) 0%, var(--color-black-hover) 55%, var(--color-text-muted) 100%);
   --btn-primary-bg-hover: linear-gradient(135deg, var(--color-black-hover) 0%, var(--color-black) 55%, var(--color-black-hover) 100%);
