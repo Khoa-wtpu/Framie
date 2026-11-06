@@ -1,0 +1,13 @@
+{% load static %}{# Banner giữ chỗ dùng chung: include trong templates/base.html. Dữ liệu từ bookings/context_processors.py #}
+{% if giu_cho_banner %}
+<div class="container">
+  <div class="gc-banner" id="banner-giu-cho" role="status"
+       data-con-lai="{{ giu_cho_banner.con_lai_giay }}" data-url-trang-thai="{{ giu_cho_banner.url_trang_thai }}"
+       data-het-han-chu="Thời gian giữ chỗ đã hết hạn. Khung giờ đã được trả về lịch trống.">
+    <p class="gc-banner__chu">Bạn đang giữ khung giờ <strong>{{ giu_cho_banner.khung_gio }}</strong> với <strong>{{ giu_cho_banner.ten_nag }}</strong>.
+      Còn lại <strong class="gc-banner__dem" data-gc-dem>{{ giu_cho_banner.con_lai_chu }}</strong></p>
+    <a class="btn btn--primary btn--sm gc-banner__nut" href="{{ giu_cho_banner.url_tiep_tuc }}">Tiếp tục đặt lịch</a>
+  </div>
+</div>
+<script src="{% static 'bookings/js/banner_giu_cho.js' %}" defer></script>
+{% endif %}

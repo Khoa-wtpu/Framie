@@ -137,7 +137,9 @@
           <li class="lich-slot lich-slot--{{ s.mau }}{% if s.ngan %} is-qua{% endif %}">
             <span class="lich-slot__gio">{{ s.gio }}</span>
             {% status_badge s.lich.TrangThai %}
-            {% if s.ngan %}
+            {% if s.cua_toi and url_tiep_tuc_giu_cho %}
+            <a class="btn btn--primary btn--sm" href="{{ url_tiep_tuc_giu_cho }}">Tiếp tục đặt lịch</a>
+            {% elif s.ngan %}
             <span class="lich-slot__ghi" title="Ngắn hơn thời lượng của gói đã chọn">Quá ngắn cho gói</span>
             {% elif s.chon_duoc and vai_tro == 'khach_hang' and co_chon_slot %}
             <form class="hscc__slot-form" method="post" action="{% url 'chon_slot' s.lich.pk %}">

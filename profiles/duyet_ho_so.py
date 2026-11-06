@@ -189,6 +189,5 @@ def xu_ly_duyet_ho_so(ma_duyet, quan_tri_vien, hanh_dong, noi_dung=''):
         thong_bao = gui_thong_bao(nag_user, tieu_de, noi_dung_tb)
         if thong_bao is None:
             logger.warning('duyet_ho_so: không tạo được thông báo cho hồ sơ #%s', luot.MaNhiepAnhGia_id)
-        if hanh_dong == PHE_DUYET:      # đặc tả 3a.1: chỉ Phê duyệt mới gửi Email "đăng ký thành công"
-            gui_email_sau_commit(thong_bao, nag_user, tieu_de, noi_dung_tb)
+        gui_email_sau_commit(thong_bao, nag_user, tieu_de, noi_dung_tb)
     return luot, thong_bao is not None

@@ -22,7 +22,7 @@ from django.db.models import Max, Q
 
 from accounts.services import tach_ho_ten
 from core.constants import VaiTro
-from notifications.services import gui_thong_bao_nhieu_nguoi
+from notifications.services import gui_thong_bao_nhieu_nguoi_kem_email
 from profiles.models import (DuyetHoSo, KhuVuc, LoaiHinhChup, NhiepAnhGia,
                              NhiepAnhGia_KhuVuc, NhiepAnhGia_LoaiHinhChup,
                              NhiepAnhGia_PhongCach, PhongCach)
@@ -164,7 +164,7 @@ class NhiepAnhGiaForm(forms.ModelForm):
         else:
             tieu_de = 'Hồ sơ nhiếp ảnh gia vừa được cập nhật'
             noi_dung = f'{ten} vừa cập nhật hồ sơ (lần nộp {lan}). Hồ sơ đang chờ bạn duyệt lại.'
-        gui_thong_bao_nhieu_nguoi(nguoi_nhan, tieu_de, noi_dung)
+        gui_thong_bao_nhieu_nguoi_kem_email(nguoi_nhan, tieu_de, noi_dung)
 
 
 # =====================================================================
