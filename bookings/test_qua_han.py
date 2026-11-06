@@ -216,3 +216,33 @@ class KichHoat(QuaHanBase):
         out = StringIO()
         call_command('xu_ly_qua_han', stdout=out)
         self.assertIn('Hết hạn đặt cọc: 1', out.getvalue())
+
+    def _mo_trang_roi_kiem_tra_het_han(self, duong_dan):
+        bk = self.booking(TT.CHO_DAT_COC, HanDatCoc=self.bay_gio - timedelta(hours=1))
+        self.client.get(duong_dan.format(pk=bk.pk))    # chưa đăng nhập vẫn chạy middleware rồi mới chuyển hướng
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, TT.HET_THOI_HAN_DAT_COC, f'Middleware không chạy ở {duong_dan}')
+
+    def test_mo_trang_thanh_toan_thi_tu_xu_ly(self):
+        self._mo_trang_roi_kiem_tra_het_han('/booking/{pk}/minh-chung/')        # payments: tải minh chứng
+
+    def test_mo_trang_ban_giao_thi_tu_xu_ly(self):
+        self._mo_trang_roi_kiem_tra_het_han('/booking/{pk}/tai-anh/')           # delivery: Nhiếp ảnh gia tải ảnh
+
+    def test_mo_trang_tim_kiem_thi_tu_xu_ly(self):
+        self._mo_trang_roi_kiem_tra_het_han('/tim-kiem/')
+
+    def test_tien_to_khop_duong_dan_that(self):
+        """Chống lệch: mọi trang thanh toán, bàn giao, tìm kiếm, tổng quan phải nằm trong TIEN_TO_LIEN_QUAN."""
+        from django.urls import reverse
+        from bookings.middleware import TIEN_TO_LIEN_QUAN
+        cac_trang = [('tai_len_minh_chung', {'ma_booking': 1}), ('xem_minh_chung', {'ma_minh_chung': 1}),
+                     ('xac_nhan_thanh_toan_coc', {'ma_booking': 1}), ('xac_nhan_thanh_toan_con_lai', {'ma_booking': 1}),
+                     ('tai_anh_len', {'ma_booking': 1}), ('xem_anh', {'ma_anh': 1}),
+                     ('chon_anh_hau_ky', {'ma_booking': 1}), ('bat_dau_hau_ky', {'ma_booking': 1}),
+                     ('yeu_cau_chinh_sua', {'ma_booking': 1}), ('xac_nhan_ban_giao', {'ma_booking': 1}),
+                     ('tai_anh_hoan_chinh', {'ma_booking': 1}), ('search', {}), ('dashboard', {})]
+        for ten, kwargs in cac_trang:
+            with self.subTest(ten=ten):
+                duong_dan = reverse(ten, kwargs=kwargs)
+                self.assertTrue(duong_dan.startswith(TIEN_TO_LIEN_QUAN), f'{ten} -> {duong_dan} không khớp tiền tố nào')

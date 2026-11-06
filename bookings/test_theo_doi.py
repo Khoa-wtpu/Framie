@@ -79,7 +79,7 @@ class UC47KhachHang(TheoDoiBase):  # nhóm test: Khách hàng xem "Booking của
         self.assertEqual(res.status_code, 200)  # trang mở được
         self.assertEqual(list(res.context['lich_su']), list(LichSuTrangThaiBooking.objects.filter(MaBooking=bk)))  # lịch sử trên trang = lịch sử trong cơ sở dữ liệu
         self.assertContains(res, 'Lịch sử trạng thái')  # có tiêu đề khối lịch sử
-        self.assertContains(res, 'td-timeline')  # có khung dòng thời gian (tên class CSS)
+        self.assertContains(res, 'ct-timeline')  # có khung dòng thời gian (tên class CSS)
         self.assertContains(res, BenThucHien.NHIEP_ANH_GIA)  # hiện ai là người đổi trạng thái
 
     def test_khong_xem_duoc_booking_cua_nguoi_khac(self):                    # BR4.7-1
@@ -126,6 +126,39 @@ class UC47QuanTriVien(TheoDoiBase):  # nhóm test: Quản trị viên tra cứu
         res = self.client.get(reverse('admin_bookings'), {'q': f'#{a.pk}'})  # tìm theo mã Booking, ví dụ #5
         self.assertEqual(list(res.context['page_obj']), [a])  # chỉ còn đúng Booking đó
         self.assertEqual(self.client.get(reverse('admin_booking_detail', kwargs={'ma_booking': b.pk})).status_code, 200)  # mở chi tiết Booking bất kỳ -> được
+
+    def test_quan_tri_tab_loc_nhieu_trang_thai_va_sap_xep(self):  # tình huống: bố cục giống trang Duyệt hồ sơ (tab + bộ lọc chọn nhiều)
+        a = self.tao_booking(gio='09:00')  # "Chờ xác nhận" (đang xử lý)
+        b = self.tao_booking(gio='13:00', trang_thai=BK.CHO_DAT_COC)  # "Chờ đặt cọc" (đang xử lý)
+        c = self.tao_booking(gio='16:00', trang_thai=BK.DA_HUY)  # "Đã hủy" (đã kết thúc)
+        self.dang_nhap(self.admin)  # đăng nhập Quản trị viên
+        url = reverse('admin_bookings')  # trang "Tất cả Booking"
+        res = self.client.get(url)  # không tham số: tab "Tất cả", mới nhất trước
+        self.assertEqual(list(res.context['page_obj']), [c, b, a])  # đủ 3 Booking, cái tạo sau lên đầu
+        self.assertEqual((res.context['so_tat_ca'], res.context['so_dang_xu_ly'], res.context['so_ket_thuc']), (3, 2, 1))  # số trên 3 tab
+        self.assertContains(res, 'abk__tabs')  # có hàng tab (tên class CSS)
+        res = self.client.get(url, {'tab': 'ket_thuc'})  # tab "Đã kết thúc"
+        self.assertEqual(list(res.context['page_obj']), [c])  # chỉ còn Booking đã kết thúc
+        res = self.client.get(url, {'tab': 'dang_xu_ly'})  # tab "Đang xử lý"
+        self.assertEqual(list(res.context['page_obj']), [b, a])  # loại Booking đã kết thúc
+        res = self.client.get(url, {'trang_thai': [BK.CHO_XAC_NHAN, BK.DA_HUY]})  # chọn NHIỀU trạng thái cùng lúc
+        self.assertEqual(list(res.context['page_obj']), [c, a])  # giữ đúng 2 trạng thái đã chọn
+        self.assertEqual(res.context['so_bo_loc'], 2)  # nút "Bộ lọc" hiện số 2
+        res = self.client.get(url, {'sap_xep': 'cu'})  # cũ nhất trước
+        self.assertEqual(list(res.context['page_obj']), [a, b, c])  # thứ tự đảo lại
+        res = self.client.get(url, {'tu_ngay': 'khong-phai-ngay', 'trang_thai': 'gõ_bậy'})  # giá trị lạ trên thanh địa chỉ
+        self.assertEqual(res.status_code, 200)  # không gây lỗi trang
+        self.assertCountEqual(list(res.context['page_obj']), [a, b, c])  # coi như không lọc
+
+    def test_quan_tri_tim_nhieu_tu_khoa(self):  # tình huống: gõ nhiều từ, mỗi từ phải khớp (như trang Duyệt hồ sơ)
+        a = self.tao_booking(gio='09:00')  # Booking của Khách A gửi Nhiếp ảnh gia 'nag'
+        self.tao_booking(nag=self.nag_khac, gio='13:00', MaKhachHang=self.khach_b)  # Booking của Khách B
+        self.dang_nhap(self.admin)  # đăng nhập Quản trị viên
+        res = self.client.get(reverse('admin_bookings'), {'q': f'#{a.pk} {self.khach.username}'})  # mã Booking + tên đăng nhập của khách
+        self.assertEqual(list(res.context['page_obj']), [a])  # cả hai từ khóa đều khớp Booking a
+        res = self.client.get(reverse('admin_bookings'), {'q': f'#{a.pk} khach_b'})  # mã của a nhưng tên của khách b
+        self.assertEqual(list(res.context['page_obj']), [])  # không Booking nào khớp cả hai
+        self.assertContains(res, uc.TB_KHONG_KHOP_BO_LOC)  # hiện "Không có Booking nào khớp bộ lọc."
 
     def test_nag_khong_vao_trang_quan_tri(self):  # tình huống: Nhiếp ảnh gia cố vào trang Quản trị
         self.dang_nhap(self.nag.MaTaiKhoan)  # đăng nhập Nhiếp ảnh gia

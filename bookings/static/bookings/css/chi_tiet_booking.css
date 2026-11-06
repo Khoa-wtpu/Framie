@@ -1,0 +1,133 @@
+/* ==========================================================================
+   bookings/static/bookings/css/chi_tiet_booking.css  -  Trang CHI TIẾT Booking
+   Quy ước nhóm: CHỈ dùng biến trong static/css/tokens.css (không gõ mã màu), tự đổi theo chế độ Trắng / Đen.
+   Mọi class bắt đầu bằng "ct-" (chi tiết) để không đụng CSS của trang khác.
+   Phong cách: nhiều khoảng trắng, chữ nhỏ viết hoa giãn chữ cho nhãn, số lớn cho thông tin quan trọng,
+   viền mảnh + nền gradient trắng–xám/đen–xám của nhóm => sang trọng nhưng dễ đọc.
+   ========================================================================== */
+
+/* ---------- Khung trang ---------- */
+.ct { padding-block: var(--space-6); }                                  /* khung trang: chừa khoảng trống trên/dưới cho thoáng */
+.ct > * + * { margin-top: var(--space-5); }                             /* mọi khối con xếp dọc, cách nhau --space-5 */
+.ct__quay-lai { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); text-decoration: none; font-size: var(--text-sm); transition: color .15s, transform .15s; }  /* link "Quay lại": chữ xám, mũi tên + chữ cùng hàng */
+.ct__quay-lai:hover { color: var(--color-text); transform: translateX(-2px); }  /* rê chuột: đậm màu + nhích sang trái như "lùi lại" */
+
+/* ---------- Đầu trang: tiêu đề + nút thao tác ---------- */
+.ct__dau { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-4); }  /* tiêu đề bên trái, nút bên phải; hẹp thì nút xuống dòng */
+.ct__nhan-nho { margin: 0 0 var(--space-1); font-size: var(--text-xs); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-muted); }  /* dòng chữ nhỏ viết hoa phía trên tiêu đề (kiểu tạp chí) */
+.ct__tieu-de { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }  /* "Booking #1" và nhãn trạng thái cùng một hàng */
+.ct__tieu-de h1 { margin: 0; }                                          /* bỏ lề dưới mặc định của h1 cho thẳng hàng với nhãn */
+.ct__gui-luc { margin: var(--space-2) 0 0; font-size: var(--text-sm); color: var(--color-text-muted); }  /* dòng "Gửi lúc ..." dưới tiêu đề */
+.ct__hanh-dong { display: flex; flex-wrap: wrap; gap: var(--space-3); }  /* các nút thao tác xếp ngang, tự xuống dòng khi hẹp */
+.ct__hanh-dong .btn { white-space: nowrap; }                            /* chữ trên nút không bị ngắt dòng */
+
+/* ---------- Dải thông tin chính: ngày giờ | địa điểm | số người ---------- */
+.ct__dai { display: grid; grid-template-columns: 1.3fr 1.5fr .8fr; background: var(--surface-gradient); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; }  /* MỘT thẻ lớn chia 3 ô; overflow:hidden để góc bo tròn cắt gọn nội dung */
+.ct__o { min-width: 0; padding: var(--space-5) var(--space-6); }       /* mỗi ô: lề trong rộng rãi; min-width:0 để chữ dài không làm vỡ lưới */
+.ct__o + .ct__o { border-left: 1px solid var(--color-border); }        /* đường kẻ dọc mảnh ngăn giữa các ô */
+.ct__o-nhan { margin: 0 0 var(--space-3); font-size: var(--text-xs); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-muted); }  /* nhãn ô: nhỏ, HOA, giãn chữ, xám */
+.ct__ngay { display: flex; align-items: baseline; gap: var(--space-3); }  /* số ngày lớn + "tháng/năm" cùng đường chân chữ */
+.ct__ngay-so { font-size: var(--text-3xl); font-weight: var(--fw-heading); line-height: 1; }  /* số ngày thật to (ví dụ 04) làm điểm nhấn */
+.ct__ngay-thang { font-size: var(--text-base); color: var(--color-text-muted); }  /* "tháng 11 · 2026" nhỏ, xám */
+.ct__o-phu { margin: var(--space-2) 0 0; font-size: var(--text-sm); color: var(--color-text-muted); }  /* dòng phụ: thứ + giờ */
+.ct__o-chinh { margin: 0; font-size: var(--text-lg); font-weight: var(--fw-heading); line-height: 1.4; overflow-wrap: anywhere; }  /* giá trị chính của ô (địa điểm, số người); chữ dài tự xuống dòng */
+.ct__so-nguoi { font-size: var(--text-3xl); font-weight: var(--fw-heading); line-height: 1; margin: 0; }  /* số người to, cùng cỡ với số ngày cho cân đối */
+
+/* ---------- Thân trang: cột chính + cột phụ ---------- */
+.ct__than { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: var(--space-5); align-items: start; }  /* trái co giãn, phải cố định 22rem; mỗi cột cao theo nội dung */
+.ct__cot > * + * { margin-top: var(--space-5); }                        /* các thẻ trong một cột cách nhau --space-5 */
+
+/* ---------- Thẻ thông tin ---------- */
+.ct__the { background: var(--surface-gradient); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-5) var(--space-6); box-shadow: var(--shadow-sm); min-width: 0; }  /* thẻ: nền gradient của nhóm, viền mảnh, bóng rất nhẹ */
+.ct__the-tieu-de { margin: 0 0 var(--space-4); font-size: var(--text-xs); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-muted); }  /* tiêu đề thẻ: giống nhãn ô cho đồng bộ */
+.ct__the--noi-bat { border-color: var(--color-text-muted); }            /* thẻ Thanh toán: viền đậm hơn để nổi bật */
+
+/* ---------- Gói dịch vụ + 2 người tham gia ---------- */
+.ct__goi { margin: 0; font-size: var(--text-xl); font-weight: var(--fw-heading); line-height: 1.25; }  /* tên gói in to */
+.ct__loai { margin: var(--space-1) 0 var(--space-5); color: var(--color-text-muted); font-size: var(--text-sm); }  /* loại hình chụp, chữ xám nhỏ dưới tên gói */
+.ct__nguoi-ds { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: var(--space-4); padding-top: var(--space-5); border-top: 1px solid var(--color-border); }  /* hai người xếp ngang, hẹp thì xếp dọc; có đường kẻ ngăn với phần gói */
+.ct__nguoi { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }  /* ảnh tròn bên trái, tên bên phải */
+.ct__avatar { flex: none; width: 3rem; height: 3rem; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--color-black); color: var(--color-white); font-weight: var(--fw-heading); border: 1px solid var(--color-border); }  /* ô tròn 3rem; chưa có ảnh thì hiện chữ cái đầu trên nền đậm */
+.ct__avatar img { width: 100%; height: 100%; object-fit: cover; }       /* ảnh đại diện phủ kín ô tròn, không méo */
+.ct__nguoi-vai { margin: 0; font-size: var(--text-xs); letter-spacing: .1em; text-transform: uppercase; color: var(--color-text-muted); }  /* "Khách hàng" / "Nhiếp ảnh gia": nhỏ, HOA, xám */
+.ct__nguoi-ten { margin: 0; font-weight: var(--fw-heading); overflow-wrap: anywhere; }  /* tên người, in đậm */
+
+/* ---------- Danh sách "nhãn – giá trị" ---------- */
+.ct__ds { margin: 0; }                                                  /* bỏ lề mặc định của <dl> */
+.ct__dong { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: var(--space-4); padding-block: var(--space-3); border-bottom: 1px solid var(--color-border); }  /* nhãn rộng cố định 9rem + giá trị: các giá trị thẳng cột; có đường kẻ mảnh giữa các dòng */
+.ct__dong:first-child { padding-top: 0; }                               /* dòng đầu sát tiêu đề thẻ */
+.ct__dong:last-child { border-bottom: 0; padding-bottom: 0; }           /* dòng cuối không cần đường kẻ */
+.ct__dong dt { color: var(--color-text-muted); font-size: var(--text-sm); }  /* nhãn: xám, nhỏ */
+.ct__dong dd { margin: 0; overflow-wrap: anywhere; }                    /* giá trị: chữ dài tự xuống dòng */
+.ct__ghi-chu { margin: var(--space-3) 0 0; font-size: var(--text-sm); color: var(--color-text-muted); }  /* câu chú thích nhỏ cuối thẻ */
+
+/* ---------- Thanh toán ---------- */
+.ct__tong { margin: 0; font-size: var(--text-2xl); font-weight: var(--fw-heading); line-height: 1.1; }  /* tổng giá trị: số lớn nhất của cột phụ */
+.ct__tong small { font-size: var(--text-sm); font-weight: 400; color: var(--color-text-muted); margin-left: var(--space-1); }  /* chữ "VNĐ" nhỏ, xám cạnh số */
+.ct__khoan-ds { list-style: none; margin: var(--space-4) 0 0; padding: var(--space-4) 0 0; border-top: 1px solid var(--color-border); display: grid; gap: var(--space-3); }  /* các khoản (cọc, còn lại): có đường kẻ ngăn với tổng; bỏ chấm đầu dòng */
+.ct__khoan { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); }  /* tên khoản bên trái, nhãn trạng thái bên phải; hẹp thì xuống dòng */
+.ct__khoan-ten { display: block; font-weight: var(--fw-heading); }      /* tên khoản (Tiền cọc / Phần còn lại) */
+.ct__khoan-tien { display: block; font-size: var(--text-sm); color: var(--color-text-muted); }  /* số tiền của khoản, xám nhỏ dưới tên */
+
+/* ---------- Dòng thời gian lịch sử trạng thái ---------- */
+.ct-timeline { list-style: none; margin: 0; padding: 0 0 0 var(--space-5); border-left: 1px solid var(--color-border); display: grid; gap: var(--space-5); }  /* đường kẻ dọc bên trái, các mốc cách đều */
+.ct-timeline__muc { position: relative; }                               /* mỗi mốc làm "gốc tọa độ" để đặt chấm tròn */
+.ct-timeline__muc::before { content: ""; position: absolute; top: .45rem; left: calc(-1 * (var(--space-5) + .3125rem)); width: .625rem; height: .625rem; border-radius: 50%; background: var(--color-text-muted); border: 2px solid var(--color-bg); box-sizing: content-box; }  /* chấm tròn nằm đúng trên đường kẻ; viền cùng màu nền để "khoét" đường kẻ cho gọn */
+.ct-timeline__muc:last-child::before { background: var(--color-black); }  /* mốc cuối (trạng thái hiện tại) tô đậm để dễ nhận */
+.ct-timeline__dong { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }  /* "cũ → mới" cùng một hàng, hẹp thì xuống dòng */
+.ct-timeline__meta { margin-top: var(--space-1); font-size: var(--text-sm); color: var(--color-text-muted); }  /* "giờ · người đổi" nhỏ, xám */
+.ct-timeline__ly-do { margin-top: var(--space-1); font-size: var(--text-sm); overflow-wrap: anywhere; }  /* lý do đổi trạng thái; dài thì tự ngắt */
+
+/* ---------- Màn hình hẹp ---------- */
+@media (max-width: 60rem) {                                             /* máy tính bảng: rộng <= 60rem */
+  .ct__than { grid-template-columns: 1fr; }                             /* hai cột chính/phụ xếp thành một cột dọc */
+}
+@media (max-width: 40rem) {                                             /* điện thoại: rộng <= 40rem */
+  .ct__dai { grid-template-columns: 1fr; }                              /* dải thông tin xếp dọc từng ô */
+  .ct__o + .ct__o { border-left: 0; border-top: 1px solid var(--color-border); }  /* đổi đường kẻ dọc thành đường kẻ ngang */
+  .ct__o, .ct__the { padding: var(--space-4) var(--space-5); }          /* thu nhỏ lề trong cho đỡ chật */
+  .ct__dong { grid-template-columns: 1fr; gap: var(--space-1); }        /* nhãn nằm trên giá trị */
+}
+
+/* ==========================================================================
+   PHẦN DÙNG CHUNG CHO CÁC TRANG BOOKING KHÁC (Nhiếp ảnh gia xử lý, hủy, chọn lịch, giữ chỗ, gửi yêu cầu)
+   Cùng ngôn ngữ thiết kế với trang chi tiết: thẻ gradient + viền mảnh, nhãn nhỏ viết hoa, số lớn cho thông tin quan trọng.
+   ========================================================================== */
+
+/* ---------- Khung hẹp cho trang dạng form (đọc dễ hơn khi dòng chữ không quá dài) ---------- */
+.ct--hep { max-width: 46rem; }                                          /* giới hạn bề rộng trang form; .container vẫn tự căn giữa */
+
+/* ---------- Đầu trang đơn giản: dòng nhỏ + tiêu đề + mô tả ---------- */
+.ct__mo-ta { margin: var(--space-2) 0 0; color: var(--color-text-muted); max-width: 40rem; }  /* câu mô tả dưới tiêu đề, xám, không kéo quá dài */
+.ct__dau h1 { margin: 0; }                                              /* tiêu đề trong đầu trang: bỏ lề dưới cho thẳng hàng */
+
+/* ---------- Hàng nút bấm ---------- */
+.ct__nut { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); margin-top: var(--space-5); }  /* các nút xếp ngang, tự xuống dòng khi hẹp; cách phần trên một khoảng */
+.ct__nut form { margin: 0; }                                            /* form chứa nút không thêm lề, nút thẳng hàng với nút khác */
+
+/* ---------- Thẻ hộp lưu ý (lời nhắc hậu quả) ---------- */
+.ct__luu-y { margin: 0 0 var(--space-4); padding: var(--space-4); border: 1px dashed var(--color-border); border-radius: var(--radius-md); color: var(--color-text-muted); font-size: var(--text-sm); }  /* khung nét đứt, chữ xám nhỏ: nhắc nhẹ, không gây rối */
+.ct__luu-y--huy { margin-top: var(--space-5); }  /* T9: khoảng cách phía trên lời nhắc hậu quả khi hủy (thay cho style trong thẻ HTML) */
+
+/* ---------- Bộ đếm ngược giữ chỗ ---------- */
+.ct__dem { text-align: center; }                                        /* nội dung bộ đếm căn giữa thẻ */
+.ct__dem .giu-cho__so, .ct__dem .gui-booking__dem { display: block; margin: var(--space-2) 0 var(--space-3); font-size: var(--text-3xl); font-weight: var(--fw-heading); font-variant-numeric: tabular-nums; line-height: 1; }  /* số phút:giây thật to, các chữ số đều nhau để không nhảy */
+.ct__dem progress { display: block; width: 100%; height: .375rem; border: 0; border-radius: var(--radius-pill); overflow: hidden; background: var(--color-surface-alt); accent-color: var(--color-black); }  /* thanh tiến trình mảnh, bo tròn, màu theo chữ chính */
+.ct__dem progress::-webkit-progress-bar { background: var(--color-surface-alt); }  /* nền thanh (Chrome/Safari) */
+.ct__dem progress::-webkit-progress-value { background: var(--color-black); border-radius: var(--radius-pill); }  /* phần đã chạy (Chrome/Safari) */
+.ct__dem progress::-moz-progress-bar { background: var(--color-black); border-radius: var(--radius-pill); }  /* phần đã chạy (Firefox) */
+
+/* ---------- Trang chọn lịch: mỗi ngày một thẻ, các khung giờ là nút bo tròn ---------- */
+.ct__ngay-the { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-5); }  /* thẻ một ngày: bên trái là ngày, bên phải là các khung giờ */
+.ct__ngay-cot { flex: none; min-width: 7rem; }                          /* cột ngày rộng cố định để các thẻ thẳng hàng */
+.ct__ngay-cot .ct__ngay-so { display: block; }                          /* số ngày to nằm trên dòng thứ */
+.ct__ngay-cot .ct__o-phu { margin-top: var(--space-1); }                /* dòng thứ/tháng sát số ngày */
+.ct__slot-ds { flex: 1; min-width: 14rem; display: flex; flex-wrap: wrap; gap: var(--space-3); list-style: none; margin: 0; padding: 0; }  /* các khung giờ xếp ngang, tự xuống dòng */
+.ct__slot-ds form { margin: 0; }                                        /* form của từng slot không thêm lề */
+
+/* ---- Lớp bổ trợ thay cho style trong thẻ HTML (quy ước nhóm: không dùng thuộc tính style) ---- */
+.ct__nut--giua { justify-content: center; }                      /* hàng nút căn giữa (trang giữ chỗ) */
+.ct__canh-trai { text-align: left; }                              /* căn trái tiêu đề / danh sách trong thẻ căn giữa (trang gửi Booking) */
+.ct__dem-khung { margin-top: var(--space-4); }                    /* khoảng cách phía trên khu đồng hồ đếm ngược */
+.ct__o-nhan--khoi { display: block; }                             /* nhãn nhỏ chiếm cả dòng, số đếm nằm dòng dưới */
+.ct__o-phu--khong-le { margin: 0; }                               /* dòng phụ không lề (gợi ý khi chưa có lịch trống) */

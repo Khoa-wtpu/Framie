@@ -1,82 +1,56 @@
 {# UC4.1 bước 1-2: trang lịch của một Nhiếp ảnh gia, liệt kê các slot "Lịch trống". Dùng bởi bookings/giu_cho.py #}
-{# Kế thừa bố cục chung của website, bao gồm phần đầu trang, menu và chân trang. #}
-{% extends "base.html" %}
-{# Nạp các template tag tùy chỉnh của dự án; trang này kế thừa bộ tag dùng chung. #}
-{# static: để nạp bookings.css; ui: các template tag dùng chung của dự án. #}
-{% load static ui %}
+{# GIAO DIỆN: mỗi ngày là một thẻ (số ngày lớn bên trái, các khung giờ bo tròn bên phải). CSS: bookings/css/chi_tiet_booking.css (class "ct"). #}
+{% extends "base.html" %}{# kế thừa khung chung (đầu trang, menu, chân trang) #}
+{% load static ui %}{# static: nạp CSS; ui: thẻ dùng chung của dự án #}
 
-{# Đặt tiêu đề trang trên tab trình duyệt, kèm tên nhiếp ảnh gia đang được xem. #}
-{% block title %}Chọn lịch chụp với {{ ten_nag }}{% endblock %}
+{% block title %}Chọn lịch chụp với {{ ten_nag }}{% endblock %}{# chữ trên tab trình duyệt, kèm tên nhiếp ảnh gia #}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'bookings/css/chi_tiet_booking.css' %}">{% endblock %}{# nạp CSS dùng chung của các trang Booking #}
 
-{# CSS riêng của UC4.1/4.2 nằm trong bookings/static/bookings/css/bookings.css (chỉ dùng token). #}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'bookings/css/bookings.css' %}">{% endblock %}
-
-{# Bắt đầu khối nội dung chính của trang. #}
 {% block content %}
-{# Tạo vùng nội dung có chiều rộng và căn lề theo quy tắc chung của website. #}
-<section class="container">
-  {# Tiêu đề chính, hiển thị tên nhiếp ảnh gia để khách biết mình đang chọn lịch với ai. #}
-  <h1>Chọn lịch chụp với {{ ten_nag }}</h1>
-  {# Thông báo số ngày lịch được hiển thị; nhắc khách rằng sau khi chọn, slot được giữ trong so_phut_giu phút (lấy từ THOI_GIAN_GIU_CHO, không viết cứng). #}
-  <p>Các khung giờ còn trống trong {{ so_ngay }} ngày tới. Khi bạn chọn một khung giờ, hệ thống giữ chỗ cho bạn
-     <strong>{{ so_phut_giu|floatformat:"-1" }} phút</strong> để gửi yêu cầu Booking.</p>
+<div class="container ct">{# khung giữa trang #}
 
-  {# Chỉ hiển thị thông báo này nếu khách hàng hiện đang có một lượt giữ chỗ. #}
-  {% if giu_cho_hien_tai %}
-  {# Khung thông báo màu thông tin; role=status giúp công nghệ hỗ trợ nhận biết nội dung trạng thái. #}
-  <div class="alert alert--info" role="status">
+  <header>
+    <p class="ct__nhan-nho">Chọn lịch chụp</p>{# dòng nhỏ viết hoa #}
+    <h1>Chọn lịch chụp với {{ ten_nag }}</h1>{# tiêu đề: cho khách biết đang chọn lịch với ai #}
+    {# so_phut_giu lấy từ THOI_GIAN_GIU_CHO, không viết cứng. Giữ nguyên thẻ <strong> vì test kiểm tra đúng chuỗi này. #}
+    <p class="ct__mo-ta">Các khung giờ còn trống trong {{ so_ngay }} ngày tới. Khi bạn chọn một khung giờ, hệ thống giữ chỗ cho bạn <strong>{{ so_phut_giu|floatformat:"-1" }} phút</strong> để gửi yêu cầu Booking.</p>
+  </header>
+
+  {% if giu_cho_hien_tai %}{# chỉ hiện khi khách đang có một lượt giữ chỗ #}
+  <div class="alert alert--info" role="status">{# khung thông tin xanh #}
     <div class="alert__body">
-      {# Tiêu đề cho biết khách đang giữ một khung giờ khác hoặc một khung giờ đã chọn trước đó. #}
-      <strong class="alert__title">Bạn đang giữ chỗ một khung giờ</strong>
+      <strong class="alert__title">Bạn đang giữ chỗ một khung giờ</strong>{# tiêu đề thông báo #}
       <span class="alert__text">
-        {# Hiển thị ngày, giờ bắt đầu và giờ kết thúc của slot khách đang giữ. #}
-        {{ giu_cho_hien_tai.MaLich.Ngay|date:"d/m/Y" }}, {{ giu_cho_hien_tai.MaLich.GioBatDau|time:"H:i" }}–{{ giu_cho_hien_tai.MaLich.GioKetThuc|time:"H:i" }}.
-        {# Tạo liên kết đến màn hình đếm ngược của lượt giữ chỗ hiện tại; truyền khóa chính của lượt giữ. #}
-        <a href="{% url 'man_hinh_giu_cho' giu_cho_hien_tai.pk %}">Xem thời gian còn lại</a>.
-        {# Giải thích rằng nếu chọn slot khác bên dưới, lượt giữ hiện tại sẽ được thay thế. #}
-        Chọn khung giờ khác bên dưới sẽ thay thế khung giờ này.
+        {{ giu_cho_hien_tai.MaLich.Ngay|date:"d/m/Y" }}, {{ giu_cho_hien_tai.MaLich.GioBatDau|time:"H:i" }}–{{ giu_cho_hien_tai.MaLich.GioKetThuc|time:"H:i" }}.{# ngày + giờ của slot đang giữ #}
+        <a href="{% url 'man_hinh_giu_cho' giu_cho_hien_tai.pk %}">Xem thời gian còn lại</a>.{# link tới màn hình đếm ngược #}
+        Chọn khung giờ khác bên dưới sẽ thay thế khung giờ này.{# giải thích: chọn slot khác sẽ thay thế lượt giữ hiện tại #}
       </span>
     </div>
   </div>
-  {# Kết thúc điều kiện kiểm tra khách có lượt giữ chỗ hiện tại hay không. #}
   {% endif %}
 
-  {# Lặp qua danh sách lịch đã được view gom theo ngày; mỗi phần tử gồm một ngày và các slot của ngày đó. #}
-  {% for ngay, slots in lich_theo_ngay %}
-  {# Tạo một khung giao diện riêng cho từng ngày có lịch trống. #}
-  <div class="panel">
-    {# Hiển thị ngày theo định dạng thứ, ngày/tháng/năm. #}
-    <h2>{{ ngay|date:"l, d/m/Y" }}</h2>
-    {# Danh sách các slot; .slot-list (bookings.css) bỏ dấu đầu dòng và xếp các slot thành hàng, tự xuống dòng khi thiếu chỗ. #}
-    <ul class="slot-list">
-      {# Lặp qua từng khung giờ trống thuộc ngày đang xét. #}
-      {% for slot in slots %}
+  {% for ngay, slots in lich_theo_ngay %}{# lặp qua từng ngày (view đã gom slot theo ngày) #}
+  <section class="ct__the ct__ngay-the">{# thẻ của một ngày #}
+    <div class="ct__ngay-cot">{# cột ngày bên trái #}
+      <span class="ct__ngay-so">{{ ngay|date:"d" }}</span>{# số ngày thật to #}
+      <p class="ct__o-phu"><strong>{{ ngay|date:"l" }}</strong> · {{ ngay|date:"m/Y" }}</p>{# thứ + tháng/năm #}
+    </div>
+    <ul class="ct__slot-ds" aria-label="Khung giờ trống ngày {{ ngay|date:'d/m/Y' }}">{# danh sách khung giờ của ngày #}
+      {% for slot in slots %}{# lặp qua từng khung giờ trống #}
       <li>
-        {# Mỗi slot có một form riêng; gửi dữ liệu bằng POST đến view chon_slot, kèm mã slot trên URL. #}
-        <form method="post" action="{% url 'chon_slot' slot.pk %}">
-          {# Sinh CSRF token để bảo vệ form POST khỏi yêu cầu giả mạo từ website khác. #}
-          {% csrf_token %}
-          {# Gửi kèm mã nhiếp ảnh gia dưới dạng input ẩn để view biết trang lịch cần quay lại khi có lỗi. #}
-          <input type="hidden" name="ma_nhiep_anh_gia" value="{{ nag.pk }}">
-          {# Nút gửi form; khi khách bấm, hệ thống thực hiện yêu cầu chọn và giữ slot. #}
-          <button class="btn btn--soft" type="submit">
-            {# Hiển thị giờ bắt đầu và giờ kết thúc của slot theo định dạng giờ:phút. #}
-            {{ slot.GioBatDau|time:"H:i" }}–{{ slot.GioKetThuc|time:"H:i" }}
-          </button>
+        <form method="post" action="{% url 'chon_slot' slot.pk %}">{# mỗi slot một form POST tới view chon_slot #}
+          {% csrf_token %}{# mã chống giả mạo yêu cầu #}
+          <input type="hidden" name="ma_nhiep_anh_gia" value="{{ nag.pk }}">{# gửi kèm mã nhiếp ảnh gia để view biết trang lịch cần quay lại khi có lỗi #}
+          <button class="btn btn--soft" type="submit">{{ slot.GioBatDau|time:"H:i" }}–{{ slot.GioKetThuc|time:"H:i" }}</button>{# nút chọn: hiện giờ bắt đầu–kết thúc #}
         </form>
       </li>
-      {# Kết thúc vòng lặp các slot trong ngày hiện tại. #}
       {% endfor %}
     </ul>
-  </div>
-  {# Nếu lich_theo_ngay không có ngày/slot nào, hiển thị nội dung thay thế trong khối empty. #}
-  {% empty %}
-  <div class="panel">
-    {# Thông báo chưa có lịch trống trong khoảng ngày đang hiển thị và gợi ý khách quay lại hoặc chọn người khác. #}
-    <p>Hiện chưa có khung giờ trống trong {{ so_ngay }} ngày tới. Bạn hãy quay lại sau hoặc chọn nhiếp ảnh gia khác.</p>
-  </div>
-  {# Kết thúc vòng lặp lịch theo ngày. #}
+  </section>
+  {% empty %}{# không có ngày/slot nào #}
+  <section class="ct__the">
+    <p class="ct__o-phu ct__o-phu--khong-le">Hiện chưa có khung giờ trống trong {{ so_ngay }} ngày tới. Bạn hãy quay lại sau hoặc chọn nhiếp ảnh gia khác.</p>{# gợi ý khi chưa có lịch #}
+  </section>
   {% endfor %}
-</section>
-{# Kết thúc vùng nội dung chính. #}
+</div>
 {% endblock %}
