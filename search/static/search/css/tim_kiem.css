@@ -19,14 +19,11 @@
 .tim__input { width: 100%; min-height: 2.75rem; padding: 0 var(--space-2); border: 0; background: transparent; color: var(--color-text); font: inherit; font-size: var(--text-base); outline: none; }
 .tim__input::placeholder { color: var(--color-text-muted); }
 .tim__nut-loc, .tim__gui { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: 2.75rem; padding: 0 var(--space-4); border-radius: var(--radius-pill); font: inherit; font-weight: var(--fw-heading); cursor: pointer; transition: background .2s, color .2s, border-color .2s, transform .2s, box-shadow .2s; }
-.tim__nut-loc { display: none; background: var(--gradient-white-gray); color: var(--color-black); border: 1px solid var(--color-border); }   /* chỉ hiện khi có JS (xem .tim--js) */
+.tim__nut-loc { display: none; }   /* chỉ hiện khi có JS (xem .tim--js); màu, viên thuốc, lóe sáng lấy từ .btn--secondary */
 .tim--js .tim__nut-loc { display: inline-flex; }
-.tim__nut-loc:hover { border-color: var(--color-black); }
-.tim__nut-loc[aria-expanded="true"] { background: var(--color-black); color: var(--color-white); border-color: var(--color-black); }
+.tim__nut-loc[aria-expanded="true"] { background: var(--btn-primary-bg-hover); box-shadow: var(--shadow-md); }
 .tim__so-loc { min-width: 1.4rem; height: 1.4rem; padding: 0 .35rem; display: inline-grid; place-items: center; border-radius: var(--radius-pill); background: var(--color-black); color: var(--color-white); font-size: var(--text-xs); }
 .tim__nut-loc[aria-expanded="true"] .tim__so-loc { background: var(--color-white); color: var(--color-black); }
-.tim__gui { border: 0; background: linear-gradient(135deg, var(--color-black) 0%, var(--color-black-hover) 55%, var(--color-text-muted) 100%); color: var(--color-white); }
-.tim__gui:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
 .tim__nut-loc:focus-visible, .tim__gui:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 
 /* ---- bảng bộ lọc: nổi bên dưới ô tìm kiếm ---- */

@@ -85,6 +85,15 @@
 {# ▸ Đóng khối banner. #}
 </section>
 
+{# ---------- Dải phim trang trí (chỉ để làm đẹp, không có nội dung) ---------- #}
+<div class="tc-phim giu-mau-trang" aria-hidden="true">
+  <div class="tc-phim__dai">
+    {% for i in "123456789012" %}<span class="tc-phim__khung"><b>{{ forloop.counter|stringformat:"02d" }}</b></span>{% endfor %}
+    {% for i in "123456789012" %}<span class="tc-phim__khung"><b>{{ forloop.counter|stringformat:"02d" }}</b></span>{% endfor %}
+  </div>
+</div>
+
+
 {# ---------- 2. Nhiếp ảnh gia nổi bật (nền trắng) ---------- #}
 {# ▸ Khối thứ 2, nền trắng mặc định (không có lớp --toi hay --xam). #}
 <section class="tc-khoi" aria-labelledby="tc-noi-bat-tieu-de">
@@ -95,6 +104,7 @@
       {# ▸ Nhóm tiêu đề + mô tả. #}
       <div>
         {# ▸ Tiêu đề khối (h2). #}
+        <p class="tc-nhan tc-nhan--so" aria-hidden="true">01 · Nổi bật</p>
         <h2 id="tc-noi-bat-tieu-de">Nhiếp ảnh gia nổi bật</h2>
         {# ▸ Mô tả, chữ màu xám nhạt (lớp "muted"). #}
         <p class="muted">Những nhiếp ảnh gia được khách hàng đánh giá cao nhất trên FRAMIE.</p>
@@ -192,6 +202,7 @@
     {# ▸ Phần đầu khối. #}
     <header class="tc-dau-khoi">
       {# ▸ Tiêu đề: số bước lấy tự động bằng "|length" (đếm số phần tử của danh sách) nên thêm/bớt bước thì tiêu đề tự cập nhật ("qua 5 bước"). #}
+      <p class="tc-nhan tc-nhan--so" aria-hidden="true">02 · Quy trình</p>
       <h2 id="tc-buoc-tieu-de">Đặt lịch trên FRAMIE qua {{ buoc_dat_lich|length }} bước</h2>
       {# ▸ Mô tả ngắn, chữ xám nhạt. #}
       <p class="muted">Từ lúc chọn nhiếp ảnh gia đến lúc nhận ảnh, bạn theo dõi mọi thứ ngay trên nền tảng.</p>
@@ -230,6 +241,7 @@
     {# ▸ Phần đầu khối. #}
     <header class="tc-dau-khoi">
       {# ▸ Tiêu đề dạng câu hỏi. #}
+      <p class="tc-nhan tc-nhan--so" aria-hidden="true">03 · Thể loại</p>
       <h2 id="tc-loai-tieu-de">Bạn muốn chụp loại hình nào?</h2>
       {# ▸ Mô tả hướng dẫn thao tác. #}
       <p class="muted">Chọn một loại hình để xem các nhiếp ảnh gia đang nhận chụp.</p>
@@ -268,6 +280,7 @@
 {# ▸ Khối cuối, nền tối, kêu gọi hành động. Nội dung đổi tùy khách đã đăng nhập hay chưa. #}
 <section class="tc-khoi tc-khoi--toi tc-moi" aria-labelledby="tc-moi-tieu-de">
   {# ▸ Hộp căn giữa, nội dung căn giữa theo CSS. #}
+  <span class="tc-khung" aria-hidden="true"></span>
   <div class="container tc-moi__noi-dung">
     {# ▸ NẾU khách ĐÃ đăng nhập (biến is_logged_in do hệ thống cung cấp sẵn cho mọi trang) thì hiện nội dung bên dưới. #}
     {% if is_logged_in %}
