@@ -244,3 +244,9 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
   .btn, .card, .loe-sang { transition: none; }
   .btn:hover, .card:hover, .loe-sang:hover { transform: none; }
 }
+
+/* ---------- Banner giữ chỗ (hiện trên mọi trang cho Khách đang giữ khung giờ; bookings/includes/banner_giu_cho.html) ---------- */
+.gc-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3) var(--space-5); margin-block: var(--space-3); padding: var(--space-3) var(--space-5); background: var(--surface-gradient); border: 1px solid var(--color-border); border-left: 4px solid var(--tone-amber-dot); border-radius: var(--radius-md); font-size: var(--text-sm); }
+.gc-banner__chu { margin: 0; }
+.gc-banner__dem { font-variant-numeric: tabular-nums; font-size: var(--text-lg); }
+.gc-banner.is-het-han { border-left-color: var(--tone-red-dot); }

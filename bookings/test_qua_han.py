@@ -172,7 +172,7 @@ class XoaAnhHetHan(QuaHanBase):
     def test_duong_dan_ngoai_thu_muc_anh_khong_bi_xoa(self):
         bk = self._ban_giao(self.bay_gio - timedelta(minutes=1))
         ngoai = Path(self.thu_muc.name).parent / 'file_ngoai_thu_muc.txt'
-        ngoai.write_text('giữ lại')
+        ngoai.write_text('giữ lại', encoding='utf-8')
         self.addCleanup(lambda: ngoai.unlink(missing_ok=True))
         Anh.objects.create(MaBooking=bk, TenAnh='l', DuongDanAnh='../file_ngoai_thu_muc.txt',
                            DinhDangAnh=DinhDangTep.JPG, KichThuocAnh=1, LoaiAnh=LoaiAnh.HOAN_CHINH, CoWatermark=0)

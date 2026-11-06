@@ -87,6 +87,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.layout',  # thêm dòng này
+                'bookings.context_processors.giu_cho_banner',
 
             ],
         },

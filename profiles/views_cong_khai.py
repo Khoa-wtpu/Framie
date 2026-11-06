@@ -9,8 +9,10 @@ from django.contrib.auth.views import redirect_to_login
 from django.db.models import Avg, Count
 from django.shortcuts import get_object_or_404, render
 from django.urls import NoReverseMatch, reverse
+from django.utils import timezone
 
-from core.constants import LoaiHauKy, TrangThaiGoi, TrangThaiSlot, VaiTro
+from bookings.models import GiuCho
+from core.constants import LoaiHauKy, TrangThaiGiuCho, TrangThaiGoi, TrangThaiSlot, VaiTro
 from core.status_tones import tone_of
 from profiles.models import GoiDichVu
 from reviews.models import DanhGia
@@ -105,7 +107,7 @@ def _so_phut(lich):
 _LOP_SLOT = {TrangThaiSlot.TRONG: 'trong', TrangThaiSlot.DANG_GIU: 'giu', TrangThaiSlot.DA_DAT: 'dat'}
 
 
-def _lich_tuan(nag, dau_tuan, bg, goi_chon):
+def _lich_tuan(nag, dau_tuan, bg, goi_chon, ma_lich_cua_toi=None):
     """7 ngày của tuần, mỗi ngày là danh sách khung giờ CHƯA bắt đầu. Khung giờ ngắn hơn gói đang chọn thì không chọn được."""
     cuoi = dau_tuan + timedelta(days=6)
     theo_ngay = {dau_tuan + timedelta(days=i): [] for i in range(7)}
@@ -123,6 +125,7 @@ def _lich_tuan(nag, dau_tuan, bg, goi_chon):
             'mau': tone_of(lich.TrangThai),                  # sky / amber / blue, giống màn Quản lý lịch của Nhiếp ảnh gia
             'ngan': ngan,
             'chon_duoc': lich.TrangThai == TrangThaiSlot.TRONG and not ngan,
+            'cua_toi': ma_lich_cua_toi is not None and lich.pk == ma_lich_cua_toi,   # khung giờ chính Khách đang giữ (còn hạn)
         })
     return [{'ngay': ngay, 'nhan': quan_ly.nhan_ngay(ngay), 'la_hom_nay': ngay == bg.date(), 'cac_slot': slots}
             for ngay, slots in theo_ngay.items()]
@@ -176,6 +179,10 @@ def photographer_detail(request, ma_nhiep_anh_gia):
     co_goi = any(g['ap_dung'] for g in cac_goi)
     projects = nag.projects.select_related('MaLoaiHinh').annotate(so_anh=Count('hinh_anh')).order_by('-NgayTao', '-pk')
     ma_goi_chon = goi_chon.pk if goi_chon else None
+    giu_cho_cua_toi = None                  # lượt giữ còn hạn của chính Khách đang xem: để hiện nút "Tiếp tục đặt lịch" thay vì chỉ nhãn "Đang giữ chỗ"
+    if vai_tro == 'khach_hang':
+        giu_cho_cua_toi = GiuCho.objects.filter(MaKhachHang=request.user, TrangThai=TrangThaiGiuCho.DANG_GIU,
+                                                ThoiDiemHetHan__gt=timezone.now()).first()
 
     return render(request, 'profiles/ho_so_cong_khai.html', {
         'nag': nag,
@@ -191,9 +198,9 @@ def photographer_detail(request, ma_nhiep_anh_gia):
         'projects': list(projects),
         'cac_danh_gia': _danh_gia_moi_nhat(nag),
         'so_danh_gia_hien': SO_DANH_GIA_HIEN,
-        'url_tat_ca_danh_gia': _url_co_the('photographer_reviews', ma_nag=nag.pk),
         # --- lịch khả dụng ---
-        'cac_ngay': _lich_tuan(nag, dau_tuan, bg, goi_chon),
+        'cac_ngay': _lich_tuan(nag, dau_tuan, bg, goi_chon, giu_cho_cua_toi.MaLich_id if giu_cho_cua_toi else None),
+        'url_tiep_tuc_giu_cho': _url_co_the('gui_booking', ma_giu_cho=giu_cho_cua_toi.pk) if giu_cho_cua_toi else '',
         'nhan_tuan': f'Tuần {dau_tuan:%d/%m} – {dau_tuan + timedelta(days=6):%d/%m/%Y}',
         'url_tuan_truoc': url_trang(dau_tuan - timedelta(weeks=1), ma_goi_chon) if dau_tuan > tuan_nay else '',
         'url_tuan_sau': (url_trang(dau_tuan + timedelta(weeks=1), ma_goi_chon)
