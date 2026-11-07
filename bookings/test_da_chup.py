@@ -41,7 +41,7 @@ class DaChupTest(nen.TiepNhanBase):  # nhóm test T8, kế thừa dữ liệu m�
     def test_goi_gioi_han_dung_o_da_chup_cho_tai_anh(self):  # tình huống: gói Giới hạn -> dừng ở "Đã chụp"
         bk = self.booking_chot(goi=self.goi_gioi_han)  # Booking chốt, gói Giới hạn
         res = self.bam(bk)  # bấm "Đã chụp"
-        self.assertRedirects(res, reverse('chi_tiet_yeu_cau_booking', kwargs={'ma_booking': bk.pk}))  # kết quả: được chuyển về trang chi tiết
+        self.assertRedirects(res, reverse('chi_tiet_booking', kwargs={'ma_booking': bk.pk}))  # kết quả: được chuyển về trang chi tiết
         bk.refresh_from_db()  # đọc lại Booking từ cơ sở dữ liệu để thấy giá trị mới
         self.assertEqual(bk.TrangThai, BK.DA_CHUP)  # trạng thái phải là "Đã chụp"
         self.assertEqual(LichSuTrangThaiBooking.objects.filter(MaBooking=bk, TrangThaiMoi=BK.DA_CHUP).count(), 1)  # lịch sử ghi đúng 1 dòng "Đã chụp"

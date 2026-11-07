@@ -18,9 +18,24 @@
   {% endif %}
 
   {# Luồng 2a: lọc theo trạng thái, sắp xếp theo thời gian. Gửi bằng GET để giữ được bộ lọc khi chuyển trang. #}
-  <form class="abk__form" method="get">{# form lọc; method=get => lựa chọn nằm trên thanh địa chỉ nên chuyển trang vẫn giữ #}
+  <form class="abk__form" method="get" role="search" aria-label="Tìm kiếm và lọc Booking">{# form lọc; method=get => lựa chọn nằm trên thanh địa chỉ nên chuyển trang vẫn giữ #}
+    {# Thanh tìm kiếm (cùng kiểu ô viên thuốc với trang Quản trị): [kính lúp | ô nhập | nút Tìm kiếm]. Tìm theo mã, tên / email Khách, gói, địa điểm. #}
+    <div class="abk__tim-kiem">
+      <div class="abk__pill">
+        <svg class="abk__bieu-tuong" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <label class="abk__o-tim">
+          <span class="sr-only">Tìm theo mã Booking, tên khách, email, gói dịch vụ hoặc địa điểm</span>
+          <input class="abk__input" type="search" name="q" value="{{ tu_khoa }}" maxlength="100" placeholder="Tìm theo mã Booking, tên khách, email, gói dịch vụ..." autocomplete="off">
+        </label>
+        <button class="abk__gui" type="submit">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <span class="abk__nhan">Tìm kiếm</span>
+        </button>
+      </div>
+    </div>
+
     <div class="abk__ket-qua-dau">{# hàng kết quả: số lượng bên trái, hai ô lọc bên phải #}
-      <p class="abk__dem" role="status">{{ page_obj.paginator.count }} Booking</p>{# tổng số Booking khớp bộ lọc #}
+      <p class="abk__dem" role="status">{% if tu_khoa %}Tìm thấy {{ page_obj.paginator.count }} Booking.{% else %}{{ page_obj.paginator.count }} Booking{% endif %}</p>{# tổng số Booking khớp bộ lọc #}
       <label class="abk__sap-xep">{# nhãn + ô chọn "Trạng thái" #}
         <span>Trạng thái</span>
         <select class="input" id="loc-trang-thai" name="trang_thai" data-tu-gui>{# chọn xong tự gửi form #}
@@ -74,7 +89,7 @@
 
   {% else %}{# không có Booking nào để hiển thị #}
     {# Ngoại lệ 2b: không có Booking "Chờ xác nhận" nào. Lọc trạng thái khác mà rỗng thì báo theo bộ lọc. #}
-    <p class="abk__trong">{% if dang_xem_yeu_cau_moi %}{{ TB_KHONG_CO_YEU_CAU }}{% else %}Không có Booking nào khớp bộ lọc.{% endif %}</p>{# khung nét đứt báo trống #}
+    <p class="abk__trong">{% if tu_khoa %}Không tìm thấy Booking nào khớp "{{ tu_khoa }}".{% elif dang_xem_yeu_cau_moi %}{{ TB_KHONG_CO_YEU_CAU }}{% else %}Không có Booking nào khớp bộ lọc.{% endif %}</p>{# khung nét đứt báo trống #}
   {% endif %}
 </div>
 {% endblock %}

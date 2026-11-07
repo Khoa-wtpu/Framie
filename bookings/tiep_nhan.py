@@ -52,6 +52,9 @@ from django.core.paginator import Paginator
 # DatabaseError: lỗi từ cơ sở dữ liệu.
 # transaction: gom nhiều thao tác lưu thành MỘT KHỐI - hoặc lưu hết, hoặc hủy hết, không bao giờ lưu dở dang.
 from django.db import DatabaseError, transaction
+
+# Q: ghép nhiều điều kiện tìm kiếm bằng "HOẶC" (dùng cho ô tìm kiếm ở trang Quản lý Booking).
+from django.db.models import Q
 # messages: hiện dòng thông báo ngắn trên đầu trang sau khi thao tác (ví dụ 'Đã chấp nhận Booking').
 from django.contrib import messages
 # Http404: báo 'không tìm thấy trang' (mã lỗi 404).
@@ -228,8 +231,9 @@ def da_qua_gio_chup(booking):
 
 
 # Trả về danh sách Booking để hiển thị ở trang 'Quản lý Booking' (UC4.3).
-def lay_danh_sach_booking(nag_user, trang_thai=LOC_MAC_DINH, sap_xep=SAP_XEP_MAC_DINH):
-    """UC4.3 bước 2 và luồng 2a: danh sách Booking của Nhiếp ảnh gia, lọc theo trạng thái, sắp xếp theo thời gian."""
+def lay_danh_sach_booking(nag_user, trang_thai=LOC_MAC_DINH, sap_xep=SAP_XEP_MAC_DINH, tu_khoa=''):
+    """UC4.3 bước 2 và luồng 2a: danh sách Booking của Nhiếp ảnh gia, lọc theo trạng thái, sắp xếp theo thời gian.
+    tu_khoa (tùy chọn): tìm theo mã Booking (vd 7 hoặc #7), tên / email Khách, tên gói hoặc địa điểm; nhiều từ thì Booking phải khớp tất cả các từ."""
     # Làm sạch tham số trước khi dùng.
     trang_thai, sap_xep = chuan_hoa_bo_loc(trang_thai, sap_xep)
     # Bắt đầu từ các Booking của Nhiếp ảnh gia này.
@@ -237,6 +241,16 @@ def lay_danh_sach_booking(nag_user, trang_thai=LOC_MAC_DINH, sap_xep=SAP_XEP_MAC
     # Nếu không chọn 'tất cả' thì chỉ giữ Booking đúng trạng thái đã chọn.
     if trang_thai != LOC_TAT_CA:
         ds = ds.filter(TrangThai=trang_thai)
+    # Tìm kiếm theo từ khóa (nếu có): tách thành từng từ, mỗi từ phải khớp ít nhất một trong các trường dưới đây.
+    for tu in (tu_khoa or '').split():
+        # Điều kiện cho riêng từ này: tên đăng nhập / email / tên / họ của Khách, tên gói, địa điểm (không phân biệt hoa thường).
+        dieu_kien = (Q(MaKhachHang__username__icontains=tu) | Q(MaKhachHang__email__icontains=tu)
+                     | Q(MaKhachHang__first_name__icontains=tu) | Q(MaKhachHang__last_name__icontains=tu)
+                     | Q(MaGoi__TenGoi__icontains=tu) | Q(DiaDiem__icontains=tu))
+        # Từ là số (có thể kèm dấu #) thì khớp thêm theo mã Booking.
+        if tu.lstrip('#').isdigit():
+            dieu_kien |= Q(pk=int(tu.lstrip('#')))
+        ds = ds.filter(dieu_kien)
     # Sắp xếp theo kiểu đã chọn. SAP_XEP[sap_xep][1] là danh sách cột dùng để sắp; dấu * 'bung' danh sách đó ra thành từng tham số riêng.
     return ds.order_by(*SAP_XEP[sap_xep][1])
 
@@ -386,8 +400,10 @@ def danh_sach_yeu_cau(request):
     # Đọc bộ lọc từ thanh địa chỉ (ví dụ ?trang_thai=...&sap_xep=...); không có thì dùng mặc định; rồi làm sạch giá trị.
     trang_thai, sap_xep = chuan_hoa_bo_loc(request.GET.get('trang_thai', LOC_MAC_DINH),
                                            request.GET.get('sap_xep', SAP_XEP_MAC_DINH))
-    # Lấy danh sách Booking của Nhiếp ảnh gia đang đăng nhập (request.user), đã lọc và sắp xếp.
-    ds = lay_danh_sach_booking(request.user, trang_thai, sap_xep)
+    # Từ khóa tìm kiếm trên thanh tìm kiếm (?q=...): cắt khoảng trắng hai đầu và giới hạn 100 ký tự.
+    tu_khoa = request.GET.get('q', '').strip()[:100]
+    # Lấy danh sách Booking của Nhiếp ảnh gia đang đăng nhập (request.user), đã lọc, tìm kiếm và sắp xếp.
+    ds = lay_danh_sach_booking(request.user, trang_thai, sap_xep, tu_khoa)
     # Chia thành từng trang 10 dòng và lấy trang số ?page=...; số trang lạ thì tự về trang hợp lệ.
     trang = Paginator(ds, SO_DONG_MOI_TRANG).get_page(request.GET.get('page'))
     # Dựng trang HTML từ file giao diện 'nag_danh_sach.html', kèm bộ dữ liệu bên dưới để file giao diện hiển thị.
@@ -397,6 +413,8 @@ def danh_sach_yeu_cau(request):
         # Bộ lọc và kiểu sắp xếp đang chọn, để các ô chọn hiển thị đúng giá trị.
         'trang_thai': trang_thai,
         'sap_xep': sap_xep,
+        # Từ khóa đang tìm, để ô tìm kiếm giữ nguyên chữ đã gõ.
+        'tu_khoa': tu_khoa,
         # Các lựa chọn trong ô 'Trạng thái': 'Tất cả' cộng toàn bộ trạng thái Booking.
         'lua_chon_trang_thai': [(LOC_TAT_CA, 'Tất cả trạng thái')] + list(TrangThaiBooking.CHOICES),
         # Các lựa chọn trong ô 'Sắp xếp theo thời gian' (lấy nhãn từ bảng SAP_XEP).
