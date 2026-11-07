@@ -250,3 +250,6 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
 .gc-banner__chu { margin: 0; }
 .gc-banner__dem { font-variant-numeric: tabular-nums; font-size: var(--text-lg); }
 .gc-banner.is-het-han { border-left-color: var(--tone-red-dot); }
+
+/* Nút Đăng xuất trong popup: thêm viền */
+.btn--logout { border-color: var(--color-black); }
