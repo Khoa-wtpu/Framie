@@ -55,11 +55,17 @@
          <button class="btn btn--secondary tb-nut-sao{% if tb|co_sao %} is-on{% endif %}" type="submit"><span class="tb-nut-sao__icon" aria-hidden="true">{% if tb|co_sao %}★{% else %}☆{% endif %}</span>{% if tb|co_sao %}Bỏ đánh dấu sao{% else %}Đánh dấu sao{% endif %}</button>
        </form>
      </div>
-     {# Nút chính duy nhất của màn hình. '#' nghĩa là trang Booking chưa được làm: hiện mờ, chưa bấm được #}
-     {% if url_booking == '#' %}
-       <span class="btn btn--primary is-disabled" role="link" aria-disabled="true">Xem Booking</span>
-     {% elif url_booking %}
-       <a class="btn btn--primary" href="{{ url_booking }}">Xem Booking</a>
+     {# P12: nút hành động theo vai trò và trạng thái hiện tại (nút chính đứng đầu danh sách nên đảo lại để nút chính nằm bên phải). '#' nghĩa là trang chưa được làm: hiện mờ, chưa bấm được #}
+     {% if hanh_dong %}
+     <div class="tb-chi-tiet__nut-trai">
+       {% for nut in hanh_dong reversed %}
+         {% if nut.url == '#' %}
+           <span class="btn {% if nut.chinh %}btn--primary{% else %}btn--secondary{% endif %} is-disabled" role="link" aria-disabled="true">{{ nut.nhan }}</span>
+         {% else %}
+           <a class="btn {% if nut.chinh %}btn--primary{% else %}btn--secondary{% endif %}" href="{{ nut.url }}">{{ nut.nhan }}</a>
+         {% endif %}
+       {% endfor %}
+     </div>
      {% endif %}
    </footer>
  </article>
