@@ -65,6 +65,9 @@ CHUYEN_HOP_LE = {  # dict (từ điển): mỗi cặp (cũ, mới) -> tập các
     (TT.CHO_DAT_COC, TT.DA_HUY): {KH, NAG},            # Hủy khi đang chờ cọc: cả Khách và Nhiếp ảnh gia đều được (bắt buộc lý do)
     (TT.CHOT_BOOKING, TT.DA_HUY): {KH, NAG},           # Hủy khi đã chốt: cả hai bên đều được (bắt buộc lý do)
 
+    # --- Hệ thống tự hủy khi quá giờ chụp mà Nhiếp ảnh gia chưa xác nhận ---
+    (TT.CHO_XAC_NHAN, TT.DA_HUY): {HT},                # Chờ xác nhận -> Đã hủy: CHỈ Hệ thống tự làm (đã quá giờ chụp mà Nhiếp ảnh gia chưa chấp nhận/từ chối); Khách và Nhiếp ảnh gia không có quyền hủy ở bước này
+
     # --- Buổi chụp ---
     (TT.CHOT_BOOKING, TT.DA_CHUP): {NAG},              # mục 8.1: Nhiếp ảnh gia cập nhật "Đã chụp" sau buổi chụp
 

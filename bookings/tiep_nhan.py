@@ -12,8 +12,9 @@
 #   UC4.5 Từ chối Booking
 #
 # Yêu cầu:
-#   UC4.3: Nhiếp ảnh gia vào "Quản lý Booking", thấy danh sách Booking "Chờ xác nhận" gửi đến CHÍNH MÌNH
-#          (lọc / sắp xếp theo trạng thái, thời gian), bấm vào một Booking để xem chi tiết.
+#   UC4.3: Nhiếp ảnh gia vào "Quản lý Booking", thấy danh sách Booking gửi đến CHÍNH MÌNH, mặc định ở "Tất cả trạng thái"
+#          (lọc riêng "Chờ xác nhận" hoặc trạng thái khác, sắp xếp theo thời gian), bấm vào một Booking để xem chi tiết.
+#          Booking "Chờ xác nhận" mà đã quá giờ chụp thì HỆ THỐNG tự hủy (bookings/qua_han.py), Nhiếp ảnh gia không phải từ chối.
 #          Không có Booking nào -> "Không có yêu cầu Booking mới". Không xem được Booking của người khác (BR4.3-1).
 #   UC4.4: Chấp nhận -> Booking "Chờ đặt cọc", HanDatCoc = lúc chấp nhận + 1 ngày, thông báo web + Email cho Khách
 #          (đặt cọc 40% trong 1 ngày, BR4.4-1).
@@ -51,6 +52,9 @@ from django.core.paginator import Paginator
 # DatabaseError: lỗi từ cơ sở dữ liệu.
 # transaction: gom nhiều thao tác lưu thành MỘT KHỐI - hoặc lưu hết, hoặc hủy hết, không bao giờ lưu dở dang.
 from django.db import DatabaseError, transaction
+
+# Q: ghép nhiều điều kiện tìm kiếm bằng "HOẶC" (dùng cho ô tìm kiếm ở trang Quản lý Booking).
+from django.db.models import Q
 # messages: hiện dòng thông báo ngắn trên đầu trang sau khi thao tác (ví dụ 'Đã chấp nhận Booking').
 from django.contrib import messages
 # Http404: báo 'không tìm thấy trang' (mã lỗi 404).
@@ -92,7 +96,7 @@ TB_THIEU_LY_DO = 'Vui lòng nhập lý do từ chối'                          
 TB_KHONG_CON_CHO_XAC_NHAN = 'Booking này không còn ở trạng thái "Chờ xác nhận" nên không thể xử lý.'
 # Câu báo khi chấp nhận một Booking mà giờ chụp đã trôi qua.
 TB_QUA_GIO_CHUP = ('Đã quá giờ chụp của Booking này nên không thể chấp nhận. '
-                   'Bạn có thể từ chối Booking để trả khung giờ về lịch trống.')
+                   'Hệ thống sẽ tự động hủy Booking và trả khung giờ về lịch trống.')
 # Câu báo thành công sau khi chấp nhận.
 TB_DA_CHAP_NHAN = 'Đã chấp nhận Booking. Khách hàng có 1 ngày để đặt cọc.'
 # Câu báo thành công sau khi từ chối.
@@ -100,11 +104,11 @@ TB_DA_TU_CHOI = 'Đã từ chối Booking và trả khung giờ về lịch tr�
 # Câu chung khi gặp lỗi kỹ thuật (người dùng không cần biết chi tiết lỗi).
 TB_LOI_HE_THONG = 'Không thể thực hiện yêu cầu, vui lòng thử lại sau.'
 
-# Bộ lọc trạng thái của danh sách. Mặc định xem yêu cầu mới (bước 2 của Basic Flow).
+# Bộ lọc trạng thái của danh sách. Mặc định xem TẤT CẢ trạng thái (muốn xem riêng yêu cầu mới thì chọn 'Chờ xác nhận').
 # Giá trị đặc biệt của bộ lọc, nghĩa là 'xem tất cả trạng thái'.
 LOC_TAT_CA = 'tat_ca'
-# Bộ lọc mặc định khi vừa mở trang: chỉ xem Booking đang 'Chờ xác nhận'.
-LOC_MAC_DINH = TrangThaiBooking.CHO_XAC_NHAN
+# Bộ lọc mặc định khi vừa mở trang (và khi ai đó gõ bậy giá trị lên thanh địa chỉ): xem tất cả trạng thái.
+LOC_MAC_DINH = LOC_TAT_CA
 
 # Các kiểu sắp xếp theo thời gian (luồng 2a): khóa dùng trên URL -> (nhãn, danh sách cột order_by).
 # Danh sách các kiểu sắp xếp. Mỗi mục có dạng: tên gọi trên URL -> (nhãn hiển thị, các cột dùng để sắp xếp).
@@ -221,14 +225,15 @@ def chuan_hoa_bo_loc(trang_thai, sap_xep):
 
 # Kiểm tra giờ chụp của Booking đã trôi qua chưa.
 def da_qua_gio_chup(booking):
-    """Booking đã qua giờ chụp chưa? Qua rồi thì không chấp nhận nữa (chỉ còn từ chối để trả slot về lịch trống)."""
+    """Booking đã qua giờ chụp chưa? Qua rồi thì không chấp nhận nữa (hệ thống sẽ tự hủy Booking và trả slot về lịch trống)."""
     # So sánh giờ chụp với thời điểm hiện tại: True nếu giờ chụp đã qua (hoặc đúng bây giờ).
     return booking.NgayGioChup <= timezone.now()
 
 
 # Trả về danh sách Booking để hiển thị ở trang 'Quản lý Booking' (UC4.3).
-def lay_danh_sach_booking(nag_user, trang_thai=LOC_MAC_DINH, sap_xep=SAP_XEP_MAC_DINH):
-    """UC4.3 bước 2 và luồng 2a: danh sách Booking của Nhiếp ảnh gia, lọc theo trạng thái, sắp xếp theo thời gian."""
+def lay_danh_sach_booking(nag_user, trang_thai=LOC_MAC_DINH, sap_xep=SAP_XEP_MAC_DINH, tu_khoa=''):
+    """UC4.3 bước 2 và luồng 2a: danh sách Booking của Nhiếp ảnh gia, lọc theo trạng thái, sắp xếp theo thời gian.
+    tu_khoa (tùy chọn): tìm theo mã Booking (vd 7 hoặc #7), tên / email Khách, tên gói hoặc địa điểm; nhiều từ thì Booking phải khớp tất cả các từ."""
     # Làm sạch tham số trước khi dùng.
     trang_thai, sap_xep = chuan_hoa_bo_loc(trang_thai, sap_xep)
     # Bắt đầu từ các Booking của Nhiếp ảnh gia này.
@@ -236,6 +241,16 @@ def lay_danh_sach_booking(nag_user, trang_thai=LOC_MAC_DINH, sap_xep=SAP_XEP_MAC
     # Nếu không chọn 'tất cả' thì chỉ giữ Booking đúng trạng thái đã chọn.
     if trang_thai != LOC_TAT_CA:
         ds = ds.filter(TrangThai=trang_thai)
+    # Tìm kiếm theo từ khóa (nếu có): tách thành từng từ, mỗi từ phải khớp ít nhất một trong các trường dưới đây.
+    for tu in (tu_khoa or '').split():
+        # Điều kiện cho riêng từ này: tên đăng nhập / email / tên / họ của Khách, tên gói, địa điểm (không phân biệt hoa thường).
+        dieu_kien = (Q(MaKhachHang__username__icontains=tu) | Q(MaKhachHang__email__icontains=tu)
+                     | Q(MaKhachHang__first_name__icontains=tu) | Q(MaKhachHang__last_name__icontains=tu)
+                     | Q(MaGoi__TenGoi__icontains=tu) | Q(DiaDiem__icontains=tu))
+        # Từ là số (có thể kèm dấu #) thì khớp thêm theo mã Booking.
+        if tu.lstrip('#').isdigit():
+            dieu_kien |= Q(pk=int(tu.lstrip('#')))
+        ds = ds.filter(dieu_kien)
     # Sắp xếp theo kiểu đã chọn. SAP_XEP[sap_xep][1] là danh sách cột dùng để sắp; dấu * 'bung' danh sách đó ra thành từng tham số riêng.
     return ds.order_by(*SAP_XEP[sap_xep][1])
 
@@ -385,8 +400,10 @@ def danh_sach_yeu_cau(request):
     # Đọc bộ lọc từ thanh địa chỉ (ví dụ ?trang_thai=...&sap_xep=...); không có thì dùng mặc định; rồi làm sạch giá trị.
     trang_thai, sap_xep = chuan_hoa_bo_loc(request.GET.get('trang_thai', LOC_MAC_DINH),
                                            request.GET.get('sap_xep', SAP_XEP_MAC_DINH))
-    # Lấy danh sách Booking của Nhiếp ảnh gia đang đăng nhập (request.user), đã lọc và sắp xếp.
-    ds = lay_danh_sach_booking(request.user, trang_thai, sap_xep)
+    # Từ khóa tìm kiếm trên thanh tìm kiếm (?q=...): cắt khoảng trắng hai đầu và giới hạn 100 ký tự.
+    tu_khoa = request.GET.get('q', '').strip()[:100]
+    # Lấy danh sách Booking của Nhiếp ảnh gia đang đăng nhập (request.user), đã lọc, tìm kiếm và sắp xếp.
+    ds = lay_danh_sach_booking(request.user, trang_thai, sap_xep, tu_khoa)
     # Chia thành từng trang 10 dòng và lấy trang số ?page=...; số trang lạ thì tự về trang hợp lệ.
     trang = Paginator(ds, SO_DONG_MOI_TRANG).get_page(request.GET.get('page'))
     # Dựng trang HTML từ file giao diện 'nag_danh_sach.html', kèm bộ dữ liệu bên dưới để file giao diện hiển thị.
@@ -396,12 +413,16 @@ def danh_sach_yeu_cau(request):
         # Bộ lọc và kiểu sắp xếp đang chọn, để các ô chọn hiển thị đúng giá trị.
         'trang_thai': trang_thai,
         'sap_xep': sap_xep,
+        # Từ khóa đang tìm, để ô tìm kiếm giữ nguyên chữ đã gõ.
+        'tu_khoa': tu_khoa,
         # Các lựa chọn trong ô 'Trạng thái': 'Tất cả' cộng toàn bộ trạng thái Booking.
         'lua_chon_trang_thai': [(LOC_TAT_CA, 'Tất cả trạng thái')] + list(TrangThaiBooking.CHOICES),
         # Các lựa chọn trong ô 'Sắp xếp theo thời gian' (lấy nhãn từ bảng SAP_XEP).
         'lua_chon_sap_xep': [(khoa, nhan) for khoa, (nhan, _) in SAP_XEP.items()],
-        # True nếu đang xem mặc định 'Chờ xác nhận' -> khi trống thì hiện câu 'Không có yêu cầu Booking mới'.
-        'dang_xem_yeu_cau_moi': trang_thai == LOC_MAC_DINH,
+        # True nếu đang lọc riêng 'Chờ xác nhận' -> khi trống thì hiện câu 'Không có yêu cầu Booking mới'.
+        'dang_xem_yeu_cau_moi': trang_thai == TrangThaiBooking.CHO_XAC_NHAN,
+        # Giá trị 'Chờ xác nhận' để template làm đường link 'Xem các yêu cầu này' (lọc nhanh) ở dòng nhắc đầu trang.
+        'trang_thai_cho_xac_nhan': TrangThaiBooking.CHO_XAC_NHAN,
         # Số yêu cầu đang chờ, để hiện dòng nhắc trên đầu trang.
         'so_cho_xac_nhan': dem_cho_xac_nhan(request.user),
         # Câu thông báo khi danh sách rỗng.
@@ -468,11 +489,11 @@ def chap_nhan(request, ma_booking):
         # ...lỗi khác (đã xử lý rồi, quá giờ chụp...) -> hiện dòng báo lỗi màu đỏ...
         messages.error(request, loi.thong_bao)
         # ...rồi quay lại trang chi tiết.
-        return redirect('chi_tiet_booking', ma_booking=ma_booking)
+        return redirect('chi_tiet_yeu_cau_booking', ma_booking=ma_booking)
     # Thành công -> hiện dòng báo màu xanh...
     messages.success(request, TB_DA_CHAP_NHAN)
     # ...rồi đưa về danh sách Quản lý Booking.
-    return redirect('chi_tiet_booking', ma_booking=ma_booking)
+    return redirect('manage_bookings')
 
 
 # Trang từ chối: chỉ Nhiếp ảnh gia đã duyệt.
@@ -492,7 +513,7 @@ def tu_choi(request, ma_booking):
     # Booking đã được xử lý rồi -> báo lỗi và quay lại trang chi tiết, không mở form.
     if booking.TrangThai != TrangThaiBooking.CHO_XAC_NHAN:
         messages.error(request, TB_KHONG_CON_CHO_XAC_NHAN)
-        return redirect('chi_tiet_booking', ma_booking=booking.pk)
+        return redirect('chi_tiet_yeu_cau_booking', ma_booking=booking.pk)
 
     # POST = người dùng vừa bấm 'Xác nhận từ chối'.
     if request.method == 'POST':
@@ -516,7 +537,7 @@ def tu_choi(request, ma_booking):
                 # Hiện dòng báo màu xanh...
                 messages.success(request, TB_DA_TU_CHOI)
                 # ...rồi đưa về danh sách.
-                return redirect('chi_tiet_booking', ma_booking=ma_booking)
+                return redirect('manage_bookings')
         # form không hợp lệ (ví dụ 4a: chưa nhập lý do) -> hiện lại form kèm lỗi, UC tiếp tục từ bước 4
     # Không phải POST (tức là GET) = người dùng mới mở trang: hiện form trống để nhập lý do (UC4.5 bước 3).
     else:
@@ -541,5 +562,6 @@ urlpatterns = [
     # /bookings/quan-ly/<mã>/chap-nhan/  -> nút Chấp nhận (UC4.4).
     path('quan-ly/<int:ma_booking>/chap-nhan/', chap_nhan, name='chap_nhan_booking'),
     # /bookings/quan-ly/<mã>/tu-choi/  -> trang Từ chối (UC4.5).
+    path('quan-ly/<int:ma_booking>/tu-choi/', tu_choi, name='tu_choi_booking'),
     path('quan-ly/<int:ma_booking>/tu-choi/', tu_choi, name='tu_choi_booking'),
 ]

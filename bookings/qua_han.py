@@ -1,12 +1,13 @@
 # =====================================================================
 # bookings/qua_han.py  -  T10: Tự động xử lý quá hạn
 #
-#   xu_ly_qua_han()  chạy cả 4 việc dưới đây, mỗi việc độc lập (một việc lỗi không chặn việc khác):
+#   xu_ly_qua_han()  chạy cả 5 việc dưới đây, mỗi việc độc lập (một việc lỗi không chặn việc khác):
 #     1. Giữ chỗ quá 5 phút                -> lượt giữ 'Hết hạn', khung giờ về 'Lịch trống'
 #                                             (dùng lại hàm của UC4.1: giai_phong_giu_cho_het_han)
 #     2. Quá 1 ngày chưa đặt cọc           -> Booking 'Hết thời hạn đặt cọc', khung giờ về 'Lịch trống'
 #     3. Quá 2 ngày chưa thanh toán 60%    -> khoản thanh toán 'Quá hạn thanh toán'
 #     4. Ảnh quá 3 ngày sau khi mở quyền tải -> xóa file ảnh, ảnh 'Đã xóa' (phần xóa: delivery/xoa_anh_het_han.py, dùng kho ảnh của Nguyên)
+#     5. Quá giờ chụp mà Nhiếp ảnh gia chưa xác nhận -> Booking 'Đã hủy' (Hệ thống tự hủy, không bắt Nhiếp ảnh gia từ chối), khung giờ về 'Lịch trống'
 #
 #   Được gọi từ 2 nơi:
 #     - bookings/middleware.py : mỗi khi mở các trang liên quan (Booking, Tổng quan, Thanh toán, Bàn giao, Tìm kiếm)
@@ -32,6 +33,7 @@ from payments.models import MinhChungThanhToan, ThanhToan
 logger = logging.getLogger(__name__)
 
 LY_DO_HET_HAN_COC = 'Quá 1 ngày chưa đặt cọc'
+LY_DO_QUA_GIO_CHUP = 'Quá giờ chụp mà Nhiếp ảnh gia chưa xác nhận'   # lý do ghi vào Lịch sử trạng thái khi hệ thống tự hủy
 
 
 def _bao_ca_hai_ben(booking, tieu_de, noi_dung_khach, noi_dung_nag, gui_email_khach=False):
@@ -83,7 +85,7 @@ def xu_ly_het_han_dat_coc(bay_gio=None):
 # 3. Quá 2 ngày chưa thanh toán 60%
 # ---------------------------------------------------------------------
 def xu_ly_qua_han_thanh_toan(bay_gio=None):
-    """Khoản 'Phần còn lại' đang 'Chờ xác nhận thanh toán', Khách chưa tải minh chứng và Booking đã quá
+    """Khoản 'Phần còn lại' đang 'Chờ xác nhận thanh toán (60%)', Khách chưa tải minh chứng và Booking đã quá
     HanThanhToanConLai -> khoản thanh toán thành 'Quá hạn thanh toán'. Trạng thái Booking giữ nguyên
     (bảng chuyển của bookings/services.py không có bước nào từ 'Chờ xác nhận thanh toán' sang trạng thái khác)."""
     bay_gio = bay_gio or timezone.now()
@@ -133,12 +135,56 @@ def xu_ly_xoa_anh_het_han(bay_gio=None):
 
 
 # ---------------------------------------------------------------------
-# Chạy cả bốn việc
+# 5. Quá giờ chụp mà Nhiếp ảnh gia chưa xác nhận
+# ---------------------------------------------------------------------
+# Hàm tự hủy các Booking 'Chờ xác nhận' mà giờ chụp đã trôi qua. Trả về số Booking đã hủy.
+def xu_ly_het_han_cho_xac_nhan(bay_gio=None):
+    """Booking 'Chờ xác nhận' mà NgayGioChup <= bây giờ (Nhiếp ảnh gia chưa chấp nhận cũng chưa từ chối) -> 'Đã hủy'
+    (bên thực hiện = Hệ thống), khung giờ về 'Lịch trống', báo Khách (web + Email) và Nhiếp ảnh gia (web).
+    Chưa đặt cọc nên không phát sinh mất / hoàn tiền cọc, và không cần tạo Yêu cầu hủy (UC4.6 chỉ dành cho Booking đã được chấp nhận)."""
+    # Không truyền mốc giờ thì lấy giờ hiện tại (test có thể truyền giờ giả để thử).
+    bay_gio = bay_gio or timezone.now()
+    # Lấy MÃ của các Booking đang 'Chờ xác nhận' mà giờ chụp đã đến hoặc đã qua (chỉ lấy mã, xử lý từng cái bên dưới).
+    ds_ma = list(Booking.objects.filter(TrangThai=TrangThaiBooking.CHO_XAC_NHAN, NgayGioChup__lte=bay_gio)
+                 .values_list('pk', flat=True))
+    # Biến đếm số Booking đã hủy thành công.
+    so = 0
+    # Xử lý lần lượt từng Booking.
+    for ma in ds_ma:
+        # Đổi sang 'Đã hủy' bằng hàm DUY NHẤT của nhóm; hàm tự ghi Lịch sử và tự trả slot về 'Lịch trống' (bảng DOI_SLOT).
+        try:
+            chuyen_trang_thai_booking(ma, TrangThaiBooking.DA_HUY, BenThucHien.HE_THONG, ly_do=LY_DO_QUA_GIO_CHUP)
+        # Người khác vừa đổi trạng thái (vd Nhiếp ảnh gia vừa từ chối), hoặc slot không đổi được: bỏ qua Booking này, làm tiếp Booking sau.
+        except ValidationError as loi:
+            logger.info('xu_ly_het_han_cho_xac_nhan: bỏ qua Booking %s (%s)', ma, ' '.join(loi.messages))
+            continue
+        # Đọc lại Booking kèm Khách và Nhiếp ảnh gia để gửi thông báo.
+        bk = Booking.objects.select_related('MaKhachHang', 'MaNhiepAnhGia__MaTaiKhoan').get(pk=ma)
+        # Đổi giờ chụp (lưu theo giờ quốc tế) sang giờ Việt Nam để ghi vào thông báo.
+        gio_chup = timezone.localtime(bk.NgayGioChup)
+        # Báo cả hai bên; Khách nhận thêm Email (gui_email_khach=True).
+        _bao_ca_hai_ben(
+            bk, f'Booking #{ma} đã bị hủy tự động',
+            f'Booking #{ma} đã bị hủy tự động vì Nhiếp ảnh gia chưa xác nhận trước giờ chụp ({gio_chup:%H:%M %d/%m/%Y}). '
+            'Khung giờ đã được trả về lịch trống, bạn có thể chọn khung giờ khác.',
+            f'Booking #{ma} đã quá giờ chụp ({gio_chup:%H:%M %d/%m/%Y}) mà bạn chưa xác nhận nên hệ thống đã tự động hủy. '
+            'Khung giờ đã được trả về lịch trống của bạn.',
+            gui_email_khach=True)
+        # Cộng vào số Booking đã hủy.
+        so += 1
+    # Trả về tổng số Booking đã hủy.
+    return so
+
+
+# ---------------------------------------------------------------------
+# Chạy cả năm việc
 # ---------------------------------------------------------------------
 def xu_ly_qua_han():
-    """Chạy cả 4 việc quá hạn. Việc nào lỗi thì ghi log rồi chạy tiếp việc sau. Trả về dict số mục đã xử lý."""
+    """Chạy cả 5 việc quá hạn. Việc nào lỗi thì ghi log rồi chạy tiếp việc sau. Trả về dict số mục đã xử lý."""
     ket_qua = {}
+    # Danh sách (tên việc, hàm) - thêm ('cho_xac_nhan', ...) là việc thứ 5: tự hủy Booking 'Chờ xác nhận' đã quá giờ chụp.
     for ten, ham in (('giu_cho', xu_ly_giu_cho_het_han), ('dat_coc', xu_ly_het_han_dat_coc),
+                     ('cho_xac_nhan', xu_ly_het_han_cho_xac_nhan),
                      ('thanh_toan_60', xu_ly_qua_han_thanh_toan), ('xoa_anh', xu_ly_xoa_anh_het_han)):
         try:
             ket_qua[ten] = ham()

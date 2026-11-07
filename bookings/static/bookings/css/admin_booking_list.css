@@ -63,9 +63,9 @@
 }
 @media (prefers-reduced-motion: reduce) { .abk--js .abk__bang { animation: none; } }
 
-.abk__cuon { overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+.abk__cuon { overflow-x: auto; background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
 .abk__bang-luot { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
-.abk__bang-luot th, .abk__bang-luot td { padding: var(--space-3) var(--space-4); text-align: center; vertical-align: middle; border-bottom: 1px solid var(--color-border); }
+.abk__bang-luot th, .abk__bang-luot td { padding: var(--space-2) var(--space-3); text-align: center; vertical-align: middle; border-bottom: 1px solid var(--color-border); }
 .abk__bang-luot thead th { background: var(--gradient-white-gray); font-weight: var(--fw-heading); white-space: nowrap; }
 .abk__bang-luot tbody tr:last-child > * { border-bottom: 0; }
 .abk__bang-luot tbody th { font-weight: var(--fw-heading); }
@@ -75,7 +75,32 @@
 
 /* ---- cột riêng của bảng Booking ---- */
 .abk__bang-luot .abk__ma { font-weight: var(--fw-heading); white-space: nowrap; }
-.abk__bang-luot .abk__phu { display: block; color: var(--color-text-muted); font-size: var(--text-xs); }
-.abk__bang-luot .abk__cat { max-width: 15rem; margin-inline: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* địa điểm dài thì cắt "..." */
+.abk__bang-luot .abk__phu { display: block; color: var(--color-text-muted); font-size: var(--text-xs); overflow-wrap: anywhere; }   /* email dài thì xuống dòng thay vì làm bảng rộng ra */
+.abk__bang-luot .abk__cat { max-width: 10rem; margin-inline: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* địa điểm dài thì cắt "..." */
 .abk__bang-luot .abk__gio { white-space: nowrap; }
 .abk__bang-luot tbody tr:hover { background: var(--color-surface-alt); }
+
+/* ---- cột "Thao tác" (nút Xem chi tiết): luôn dính mép phải khung bảng ----
+   Màn hình đủ rộng thì cột nằm đúng chỗ như mọi cột khác; màn hình hẹp phải cuộn ngang thì cột này vẫn đứng yên bên phải,
+   nên nút Xem chi tiết không bao giờ bị che khuất. */
+.abk__bang-luot .abk__thao-tac { white-space: nowrap; }
+@media (max-width: 56rem) {   /* chỉ cửa sổ hẹp mới cần dính mép phải để nút không bị cuộn mất */
+  .abk__bang-luot .abk__thao-tac { position: sticky; right: 0; z-index: 1; background: var(--color-white); box-shadow: -10px 0 12px -10px color-mix(in srgb, var(--color-black) 35%, transparent); }
+}
+.abk__bang-luot thead .abk__thao-tac { background: var(--gradient-white-gray); }   /* ô tiêu đề cột nút dùng nền gradient giống các ô tiêu đề khác */
+.abk__bang-luot tbody tr:hover > .abk__thao-tac { background: var(--color-surface-alt); }   /* rê chuột vào dòng thì ô nút đổi màu theo dòng */
+
+/* ---- CHỈ bảng ở trang Quản trị "Tất cả Booking" được nới rộng (class abk__cuon--rong gắn trong admin_booking_list.html) ----
+   Tiêu đề, tab, ô tìm kiếm, đếm Booking và phân trang giữ nguyên bề ngang chuẩn như các trang khác (Gói dịch vụ,...).
+   Riêng khung bảng được kéo rộng ra hai bên khung trang, tối đa 96rem, luôn chừa lề 1,5rem hai bên màn hình. */
+.abk__cuon--rong { width: min(96rem, calc(100vw - 3rem)); position: relative; left: 50%; transform: translateX(-50%); }
+@media (max-width: 75rem) {   /* cửa sổ chưa thật rộng: bỏ cột "Thời điểm gửi" + dòng email để cột Trạng thái và nút Xem chi tiết đủ chỗ */
+  .abk__cuon--rong .abk__bang-luot thead th:nth-child(6), .abk__cuon--rong .abk__bang-luot tbody td:nth-child(6) { display: none; }
+  .abk__cuon--rong .abk__bang-luot tbody td:nth-child(2) .abk__phu, .abk__cuon--rong .abk__bang-luot tbody td:nth-child(3) .abk__phu { display: none; }
+}
+.abk__cuon--rong .abk__thao-tac .btn { min-width: 6.25rem; }
+@media (max-width: 75rem) {   /* thu gọn chữ + lề ô riêng cho bảng rộng để vừa khung, không phải cuộn ngang */
+  .abk__cuon--rong .abk__bang-luot { font-size: var(--text-xs); }
+  .abk__cuon--rong .abk__bang-luot th, .abk__cuon--rong .abk__bang-luot td { padding: var(--space-2); }
+  .abk__cuon--rong .abk__bang-luot .abk__cat { max-width: 7rem; }
+}
