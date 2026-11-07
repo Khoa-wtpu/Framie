@@ -149,10 +149,10 @@ class NhiepAnhGiaForm(forms.ModelForm):
             return   # đang có lượt chờ xử lý: không tạo thêm lượt thứ hai
         lan = (DuyetHoSo.objects.filter(MaNhiepAnhGia=nag)
                .aggregate(m=Max('LanNop'))['m'] or 0) + 1
-        DuyetHoSo.objects.create(MaNhiepAnhGia=nag, LanNop=lan)
-        self._bao_quan_tri_vien(nag, lan)
+        luot = DuyetHoSo.objects.create(MaNhiepAnhGia=nag, LanNop=lan)
+        self._bao_quan_tri_vien(nag, lan, luot)
 
-    def _bao_quan_tri_vien(self, nag, lan):
+    def _bao_quan_tri_vien(self, nag, lan, luot=None):
         # K3: có lượt duyệt mới thì báo cho mọi Quản trị viên (nhóm Quản trị viên hoặc superuser).
         # gui_thong_bao_nhieu_nguoi không ném lỗi: thông báo hỏng không làm hỏng việc lưu hồ sơ.
         nguoi_nhan = (get_user_model().objects.filter(is_active=True)
@@ -164,7 +164,7 @@ class NhiepAnhGiaForm(forms.ModelForm):
         else:
             tieu_de = 'Hồ sơ nhiếp ảnh gia vừa được cập nhật'
             noi_dung = f'{ten} vừa cập nhật hồ sơ (lần nộp {lan}). Hồ sơ đang chờ bạn duyệt lại.'
-        gui_thong_bao_nhieu_nguoi_kem_email(nguoi_nhan, tieu_de, noi_dung)
+        gui_thong_bao_nhieu_nguoi_kem_email(nguoi_nhan, tieu_de, noi_dung, duyet_ho_so=luot)
 
 
 # =====================================================================
