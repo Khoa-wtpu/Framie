@@ -75,7 +75,7 @@
       <section class="ct__the">{# thẻ xử lý yêu cầu #}
         <h2 class="ct__the-tieu-de">Xử lý yêu cầu</h2>
         {% if da_qua_gio_chup %}{# giờ chụp đã qua: cảnh báo, chỉ còn từ chối #}
-          {% include "includes/alert.html" with level="warning" text="Đã quá giờ chụp của Booking này nên không thể chấp nhận. Bạn có thể từ chối để trả khung giờ về lịch trống." %}
+          {% include "includes/alert.html" with level="warning" text="Đã quá giờ chụp của Booking này nên không thể chấp nhận. Hệ thống sẽ tự động hủy Booking và trả khung giờ về lịch trống." %}
         {% else %}{# giờ chụp chưa qua: giải thích hậu quả của hai lựa chọn #}
         <p class="ct__luu-y">Nếu chấp nhận, Khách hàng có 1 ngày để đặt cọc 40% giá trị buổi chụp ({{ tien_coc }} VNĐ). Nếu từ chối, bạn phải nhập lý do và khung giờ được trả về lịch trống ngay.</p>
         {% endif %}

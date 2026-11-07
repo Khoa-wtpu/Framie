@@ -87,6 +87,49 @@ class HetHanDatCoc(QuaHanBase):
         self.assertEqual(qua_han.xu_ly_het_han_dat_coc(), 0)
 
 
+class HuyChoXacNhanQuaGioChup(QuaHanBase):
+    # Booking 'Chờ xác nhận' mà giờ chụp đã qua: truyền NgayGioChup vào booking() (được ghi thẳng bằng update).
+    def _qua_gio(self, **kw):
+        return self.booking(TT.CHO_XAC_NHAN, NgayGioChup=self.bay_gio - timedelta(hours=1), **kw)
+
+    def test_qua_gio_chup_chua_xac_nhan_thi_tu_huy_va_nha_slot(self):
+        bk = self._qua_gio()
+        self.assertEqual(qua_han.xu_ly_het_han_cho_xac_nhan(), 1)
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, TT.DA_HUY)
+        self.assertEqual(bk.MaLich.TrangThai, TrangThaiSlot.TRONG)
+        ls = LichSuTrangThaiBooking.objects.get(MaBooking=bk)
+        self.assertEqual((ls.TrangThaiCu, ls.TrangThaiMoi, ls.BenThucHien, ls.LyDo),
+                         (TT.CHO_XAC_NHAN, TT.DA_HUY, BenThucHien.HE_THONG, qua_han.LY_DO_QUA_GIO_CHUP))
+        self.assertEqual(ThongBao.objects.filter(MaBooking=bk).count(), 2)   # báo Khách và Nhiếp ảnh gia
+
+    def test_chua_den_gio_chup_thi_giu_nguyen(self):
+        bk = self.booking(TT.CHO_XAC_NHAN)     # giờ chụp mặc định 30 ngày nữa
+        self.assertEqual(qua_han.xu_ly_het_han_cho_xac_nhan(), 0)
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, TT.CHO_XAC_NHAN)
+
+    def test_trang_thai_khac_khong_bi_dong_vao(self):
+        bk = self.booking(TT.CHO_DAT_COC, NgayGioChup=self.bay_gio - timedelta(hours=1),
+                          HanDatCoc=self.bay_gio + timedelta(hours=1))      # đã chấp nhận, còn hạn cọc
+        self.assertEqual(qua_han.xu_ly_het_han_cho_xac_nhan(), 0)
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, TT.CHO_DAT_COC)
+
+    def test_chay_lai_khong_xu_ly_hai_lan(self):
+        self._qua_gio()
+        self.assertEqual(qua_han.xu_ly_het_han_cho_xac_nhan(), 1)
+        self.assertEqual(qua_han.xu_ly_het_han_cho_xac_nhan(), 0)
+
+    def test_nam_viec_deu_chay_va_lenh_in_ket_qua(self):
+        self._qua_gio()
+        self.assertEqual(qua_han.xu_ly_qua_han()['cho_xac_nhan'], 1)         # nằm trong tổng hợp
+        self._qua_gio()
+        out = StringIO()
+        call_command('xu_ly_qua_han', stdout=out)
+        self.assertIn('Tự hủy quá giờ chụp: 1', out.getvalue())
+
+
 class QuaHanThanhToan(QuaHanBase):
     def _tt60(self, han, **kw):
         bk = self.booking(TT.CHO_XAC_NHAN_THANH_TOAN, TrangThaiSlot.DA_DAT, HanThanhToanConLai=han)
@@ -172,7 +215,7 @@ class XoaAnhHetHan(QuaHanBase):
     def test_duong_dan_ngoai_thu_muc_anh_khong_bi_xoa(self):
         bk = self._ban_giao(self.bay_gio - timedelta(minutes=1))
         ngoai = Path(self.thu_muc.name).parent / 'file_ngoai_thu_muc.txt'
-        ngoai.write_text('giữ lại', encoding='utf-8')
+        ngoai.write_text('giữ lại')
         self.addCleanup(lambda: ngoai.unlink(missing_ok=True))
         Anh.objects.create(MaBooking=bk, TenAnh='l', DuongDanAnh='../file_ngoai_thu_muc.txt',
                            DinhDangAnh=DinhDangTep.JPG, KichThuocAnh=1, LoaiAnh=LoaiAnh.HOAN_CHINH, CoWatermark=0)
