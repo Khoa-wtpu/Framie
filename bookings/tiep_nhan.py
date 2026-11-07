@@ -422,6 +422,10 @@ def chi_tiet_yeu_cau(request, ma_booking):
     except XuLyBookingLoi:
         # ...thì trả trang 404 'không tìm thấy'.
         raise Http404('Không tìm thấy Booking.')
+    # Từ "Đã chụp" trở đi, việc của Nhiếp ảnh gia (bắt đầu hậu kỳ, tải ảnh, tải ảnh chỉnh sửa theo yêu cầu) nằm ở trang chi tiết
+    # "chi_tiet_booking"; trang xử lý yêu cầu này không có các nút đó. Link trong thông báo vẫn trỏ về đây nên chuyển sang đúng trang.
+    if booking.TrangThai in (TrangThaiBooking.DA_CHUP, TrangThaiBooking.CHO_HAU_KY, TrangThaiBooking.DANG_HAU_KY):
+        return redirect('chi_tiet_booking', ma_booking=booking.pk)
     # T8: import BÊN TRONG hàm vì da_chup.py đã import tiep_nhan.py ở đầu file; import ở đầu file này sẽ bị vòng import.
     from bookings.da_chup import da_den_gio_chup
     # Dựng trang chi tiết từ 'nag_chi_tiet.html' với các dữ liệu bên dưới.

@@ -61,10 +61,8 @@
   .xn-decide p { margin: 0; } /* bỏ khoảng cách mặc định của đoạn văn */
   .xn-note { font-size: var(--text-sm); color: var(--color-text-muted); } /* ghi chú hướng dẫn, chữ mờ */
   .xn-details { border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-alt); } /* ĐÃ SỬA: bỏ #fafafa, nền ô xổ xuống tự đổi theo chế độ */
-  .xn-details > summary { list-style: none; cursor: pointer; padding: var(--space-3) var(--space-4); font-size: var(--text-sm); font-weight: var(--fw-heading); border-radius: var(--radius-md); } /* dòng tiêu đề bấm để mở */
+  .xn-details > summary { list-style: none; cursor: pointer; padding: var(--space-3) var(--space-4); font-size: var(--text-sm); font-weight: var(--fw-heading); border-radius: var(--radius-md); text-align: center; } /* dòng tiêu đề bấm để mở, chữ căn giữa */
   .xn-details > summary::-webkit-details-marker { display: none; } /* ẩn mũi tên mặc định của trình duyệt */
-  .xn-details > summary::after { content: "＋"; float: right; } /* dấu + ở bên phải khi đang đóng */
-  .xn-details[open] > summary::after { content: "－"; } /* đổi thành dấu - khi đang mở */
   .xn-details form { padding: 0 var(--space-4) var(--space-4); } /* khoảng đệm cho form bên trong */
   .xn-ok { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-md); background: var(--success-bg); color: var(--success-fg); font-weight: var(--fw-heading); } /* hộp xanh báo đã hoàn thành Booking */
 

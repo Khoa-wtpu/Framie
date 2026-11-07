@@ -8,22 +8,10 @@
     <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaKhachHang.get_full_name }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>
   </header>
 
-  {% if cho_bat_dau_hau_ky %}{# N6: Khách đã gửi danh sách (hoặc gói hậu kỳ toàn bộ) -> Nhiếp ảnh gia bắt đầu hậu kỳ #}
-    <section class="panel stack">{# khung bắt đầu hậu kỳ #}
-      <h2>Bắt đầu hậu kỳ</h2>{# tiêu đề khung #}
-      {% if gioi_han %}{# gói giới hạn: có danh sách Khách chọn #}
-        <p>Khách hàng đã chọn <strong>{{ anh_da_chon|length }}</strong> ảnh cần hậu kỳ:</p>{# số ảnh Khách chọn #}
-        <p class="muted">{% for a in anh_da_chon %}{{ a.TenAnh }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{# tên các ảnh Khách chọn #}
-      {% else %}{# gói hậu kỳ toàn bộ: không có bước chọn #}
-        <p>Gói hậu kỳ toàn bộ ảnh: sau khi bấm <strong>Bắt đầu hậu kỳ</strong>, bạn tải lên toàn bộ ảnh đã hậu kỳ.</p>{# giải thích #}
-      {% endif %}
-      <form method="post" action="{% url 'bat_dau_hau_ky' booking.pk %}">{# gửi POST tới view bat_dau_hau_ky #}
-        {% csrf_token %}{# mã chống giả mạo yêu cầu #}
-        <button class="btn btn--primary" type="submit">Bắt đầu hậu kỳ</button>{# nút bấm #}
-      </form>
-      <p class="muted">Bấm xong, Booking chuyển sang <strong>Đang hậu kỳ</strong> và có hạn 3 ngày để tải ảnh đã hậu kỳ.</p>{# nhắc hạn #}
-    </section>
-  {% elif not giai_doan %}
+  {% if cho_bat_dau_hau_ky %}
+    {% include "includes/alert.html" with level="info" text="Bấm “Bắt đầu hậu kỳ” tại trang chi tiết Booking để chuyển thẳng đến giao diện tải ảnh." %}
+  {% else %}
+  {% if not giai_doan %}
     {% include "includes/alert.html" with level="info" text="Booking này chưa đến lúc tải ảnh. Chỉ tải được sau khi buổi chụp hoàn tất (Đã chụp) hoặc khi đang hậu kỳ." %}
   {% else %}
     <section class="panel stack">
@@ -84,13 +72,32 @@
       <div id="khung-loi">
         {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}
       </div>
-      {% include "includes/form_field.html" with field=form.anh %}
+      <div class="field tai-anh__field{% if form.anh.errors %} has-error{% endif %}">
+        <span class="field__label">CHỌN ẢNH ĐỂ TẢI LÊN</span>
+        <label class="tai-anh__chon-tep" for="{{ form.anh.id_for_label }}">
+          <span class="tai-anh__cong" aria-hidden="true">+</span>
+          <span class="tai-anh__mo-ta">
+            <strong>Tải ảnh lên</strong>
+            <small>JPG, JPEG, PNG · tối đa 20 MB mỗi ảnh · 100 ảnh mỗi lần</small>
+          </span>
+        </label>
+        {{ form.anh }}
+        {% for loi in form.anh.errors %}<p class="field__error">{{ loi }}</p>{% endfor %}
+      </div>
+      <div id="khung-xem-truoc" class="tai-anh__xem-truoc" hidden>{# khung xem trước, ẩn cho tới khi có ảnh được chọn #}
+        <div class="tai-anh__xem-truoc-dau">{# hàng đầu: số ảnh đã chọn và nút xóa hết #}
+          <strong id="chu-da-chon"></strong>{# chữ "Đã chọn N ảnh" do JS điền vào #}
+          <button type="button" id="nut-xoa-het" class="btn btn--ghost btn--sm">Xóa hết</button>{# nút bỏ hết ảnh đã chọn #}
+        </div>
+        <div id="luoi-xem-truoc" class="tai-anh__luoi-xem-truoc"></div>{# lưới ảnh, JS thêm từng thẻ ảnh vào đây #}
+      </div>
       <div>
         <progress id="thanh-tien-trinh" class="tai-anh__tien-trinh" max="100" value="0" hidden aria-label="Tiến trình tải ảnh"></progress>
         <p id="chu-tien-trinh" class="muted" aria-live="polite"></p>
       </div>
       <button class="btn btn--primary" type="submit" id="nut-tai">Tải ảnh lên</button>
     </form>
+  {% endif %}
   {% endif %}
 
   {% if anhs %}

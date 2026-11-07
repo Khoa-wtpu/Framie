@@ -226,7 +226,8 @@ class UC47NhanVaMau(TheoDoiBase):  # nhóm test: nhãn và màu trạng thái th
 @override_settings(PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])  # băm mật khẩu nhanh cho test
 class UC47NutBanGiaoAnh(TheoDoiBase):  # nhóm test: nút dẫn sang các trang xử lý ảnh của Nguyên (N4-N6)
     NHAN_CHON_ANH = 'Chọn ảnh cần hậu kỳ'  # chữ trên nút của Khách hàng
-    NHAN_TAI_ANH = 'Tải ảnh / Bắt đầu hậu kỳ'  # chữ trên nút của Nhiếp ảnh gia
+    NHAN_TAI_ANH = 'Tải ảnh lên hệ thống'  # chữ trên nút tải ảnh sau khi đã bắt đầu hậu kỳ
+    NHAN_BAT_DAU = 'Bắt đầu hậu kỳ'
 
     def mo_chi_tiet(self, user, bk):  # hàm trợ giúp: đăng nhập rồi mở trang chi tiết Booking
         self.dang_nhap(user)  # đăng nhập bằng tài khoản truyền vào
@@ -259,8 +260,8 @@ class UC47NutBanGiaoAnh(TheoDoiBase):  # nhóm test: nút dẫn sang các trang 
 
     # ---- Nhiếp ảnh gia
     def test_nag_thay_nut_tai_anh_khi_da_chup_cho_hau_ky_hoac_dang_hau_ky(self):  # tình huống: Nhiếp ảnh gia còn việc với ảnh
-        gio = {BK.DA_CHUP: '07:00', BK.CHO_HAU_KY: '10:00', BK.DANG_HAU_KY: '13:00'}  # mỗi Booking một khung giờ riêng
-        for trang_thai in uc.TRANG_THAI_NAG_XU_LY_ANH:  # "Đã chụp", "Chờ hậu kỳ", "Đang hậu kỳ"
+        gio = {BK.DA_CHUP: '07:00', BK.DANG_HAU_KY: '13:00'}  # mỗi Booking một khung giờ riêng
+        for trang_thai in uc.TRANG_THAI_NAG_XU_LY_ANH:  # "Đã chụp", "Đang hậu kỳ"
             with self.subTest(trang_thai=trang_thai):  # báo lỗi riêng cho từng trạng thái
                 bk = self.tao_booking(trang_thai=trang_thai, gio=gio[trang_thai])  # Booking ở trạng thái đang thử
                 res = self.mo_chi_tiet(self.nag.MaTaiKhoan, bk)  # Nhiếp ảnh gia mở chi tiết
@@ -268,6 +269,14 @@ class UC47NutBanGiaoAnh(TheoDoiBase):  # nhóm test: nút dẫn sang các trang 
                 self.assertContains(res, self.NHAN_TAI_ANH)  # có chữ trên nút
                 self.assertContains(res, f'href="{self.url_tai_anh(bk)}"')  # nút trỏ đúng tới tai_anh_len
                 self.assertNotContains(res, self.NHAN_CHON_ANH)  # Nhiếp ảnh gia không thấy nút của Khách
+
+    def test_nag_thay_nut_bat_dau_hau_ky_rieng(self):
+        bk = self.tao_booking(trang_thai=BK.CHO_HAU_KY, gio='10:00')
+        res = self.mo_chi_tiet(self.nag.MaTaiKhoan, bk)
+        self.assertEqual(res.context['url_bat_dau_hau_ky'], reverse('bat_dau_hau_ky', kwargs={'ma_booking': bk.pk}))
+        self.assertContains(res, self.NHAN_BAT_DAU)
+        self.assertContains(res, 'method="post"')
+        self.assertNotContains(res, f'href="{self.url_tai_anh(bk)}"')
 
     def test_nag_khong_thay_nut_tai_anh_o_trang_thai_khac(self):  # tình huống: chưa chụp xong / đã giao ảnh cho Khách
         gio = {BK.CHOT_BOOKING: '07:00', BK.CHO_KH_CHON_ANH: '10:00', BK.CHO_KH_KIEM_TRA: '13:00', BK.HOAN_THANH: '16:00'}  # mỗi Booking một khung giờ riêng

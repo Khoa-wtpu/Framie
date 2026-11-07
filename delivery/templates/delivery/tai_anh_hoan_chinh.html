@@ -1,15 +1,11 @@
 {% extends "base.html" %}{# N10 - UC5.8: Khách hàng tải về thiết bị ảnh hoàn chỉnh (không watermark) #}
-{% load ui static %}{# nạp bộ thẻ ui (status_badge) và static (gọi file tĩnh) #}
+{% load static %}
 {% block title %}Tải ảnh hoàn chỉnh{% endblock %}{# tiêu đề tab trình duyệt #}
 {% block content %}{# mở khối nội dung chính của trang #}
 <div class="container stack tahc">{# khung chứa chính, các phần xếp dọc cách đều #}
-  <header class="tahc__hero">{# banner đầu trang #}
-    <span class="tahc__hero-icon" aria-hidden="true">🎉</span>{# ô icon trang trí #}
-    <div>{# phần chữ của banner #}
-      <h1>Tải ảnh hoàn chỉnh</h1>{# tiêu đề trang #}
-      <p class="tahc__hero-sub">Booking #{{ booking.pk }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>{# dòng phụ: mã booking, gói, nhãn trạng thái #}
-    </div>{# đóng phần chữ của banner #}
-  </header>{# đóng banner đầu trang #}
+  <header class="tahc__hero">
+    <h1>Tải ảnh hoàn chỉnh</h1>
+  </header>
 
   {% if ly_do %}{# chưa hoàn thành / hết hạn lưu trữ (4a) / chưa có ảnh #}
       {% include "includes/form_field.html" with field=form.anh %}{# giữ nguyên ô chọn ảnh có sẵn #}
@@ -21,16 +17,10 @@
         <div id="luoi-xem-truoc" class="tai-anh__luoi-xem-truoc"></div>{# lưới ảnh, JS thêm từng thẻ ảnh vào đây #}
       </div>{# đóng khung xem trước #}
   {% else %}{# trường hợp bình thường: khách được phép tải ảnh #}
-    <section class="panel stack tahc__info">{# khung thông tin về ảnh hoàn chỉnh #}
-      <div class="tahc__chips">{# hàng nhãn nhỏ #}
-        <span class="tahc__chip tahc__chip--green">✔ Không watermark</span>{# nhãn: ảnh không có watermark #}
-        <span class="tahc__chip tahc__chip--blue">✦ Độ phân giải đầy đủ</span>{# nhãn: ảnh giữ nguyên độ phân giải #}
-        <span class="tahc__chip tahc__chip--amber">⏰ Hạn tải: {{ han_tai|date:"d/m/Y H:i" }}</span>{# nhãn: hạn cuối được tải #}
-      </div>{# đóng hàng nhãn #}
-      <p>Đây là ảnh <strong>hoàn chỉnh</strong>, độ phân giải đầy đủ và không có watermark.
-        Bạn có thể tải đến hết <strong>{{ han_tai|date:"d/m/Y H:i" }}</strong>; sau thời điểm này ảnh sẽ bị xóa khỏi hệ thống và không thể tải nữa.</p>{# đoạn giải thích về ảnh và hạn tải #}
-      <p class="muted">Nếu lần tải bị lỗi, bạn chỉ cần bấm tải lại.</p>{# lời nhắc khi tải lỗi #}
-    </section>{# đóng khung thông tin #}
+    <section class="tahc__expiry" aria-label="Hạn tải ảnh">
+      <strong>Hạn tải: {{ han_tai|date:"d/m/Y H:i" }}</strong>
+      <p>Sau thời điểm này, ảnh sẽ bị xóa khỏi hệ thống và không thể tải nữa</p>
+    </section>
 
     <form method="post" class="panel stack tahc__khung" id="form-tai-anh">{# form danh sách ảnh, gửi bằng POST #}
       {% csrf_token %}{# mã bảo mật chống giả mạo form #}
@@ -54,7 +44,7 @@
                 </span>{# đóng hàng định dạng + dung lượng #}
               </span>{# đóng khối thông tin #}
             </label>{# đóng phần bên trái dòng #}
-            <button class="btn btn--secondary btn--sm tahc__btn-tai" type="submit" name="tai_mot" value="{{ a.pk }}">⬇ Tải</button>{# nút tải riêng ảnh này #}
+            <button class="btn btn--secondary btn--sm tahc__btn-tai" type="submit" name="tai_mot" value="{{ a.pk }}">Tải</button>{# nút tải riêng ảnh này #}
           </li>{# đóng dòng ảnh #}
         {% endfor %}{# hết vòng lặp ảnh #}
       </ul>{# đóng danh sách ảnh #}
@@ -84,73 +74,45 @@
 {% endblock %}{# đóng khối nội dung chính #}
 
 {% block extra_head %}{# mở khối thêm CSS vào <head> của trang #}
-<style>{# mở thẻ CSS đặt thẳng trong trang: không phụ thuộc thư mục static hay bộ nhớ đệm trình duyệt #}
-/* ===== Khung trang và banner đầu trang ===== */
-.tahc { max-width: 56rem; margin-inline: auto; padding-block: var(--space-6); } /* khung trang: rộng tối đa 56rem, căn giữa, cách trên dưới */
-.tahc__hero { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-6); border-radius: var(--radius-lg); border: 1px solid var(--color-border); background: linear-gradient(120deg, var(--color-gray-soft) 0%, var(--color-white) 100%); } /* banner đầu trang: icon + tiêu đề, nền gradient tự đổi theo chế độ sáng/tối */
-.tahc__hero h1 { margin: 0; } /* bỏ khoảng cách mặc định của tiêu đề */
-.tahc__hero-sub { margin: var(--space-1) 0 0; color: var(--color-text-muted); } /* dòng phụ dưới tiêu đề, màu mờ */
-.tahc__hero-icon { display: grid; place-items: center; flex: none; width: 3.5rem; height: 3.5rem; font-size: 1.75rem; background: var(--color-white); border-radius: var(--radius-md); box-shadow: var(--shadow-md); } /* ô vuông chứa icon 🎉, căn giữa */
-
-/* ===== Khung thông tin và các nhãn nhỏ ===== */
-.tahc__info { border-left: 6px solid var(--tone-violet-dot); } /* khung thông tin: vạch tím bên trái */
-.tahc__chips { display: flex; flex-wrap: wrap; gap: var(--space-2); } /* hàng nhãn: xếp ngang, tự xuống dòng */
-.tahc__chip { padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); font-size: var(--text-sm); font-weight: var(--fw-heading); } /* nhãn nhỏ dạng viên thuốc */
-.tahc__chip--green { background: var(--tone-green-bg); color: var(--tone-green-fg); } /* nhãn xanh lá: Không watermark */
-.tahc__chip--blue  { background: var(--tone-blue-bg);  color: var(--tone-blue-fg); } /* nhãn xanh dương: Độ phân giải đầy đủ */
-.tahc__chip--amber { background: var(--tone-amber-bg); color: var(--tone-amber-fg); } /* nhãn vàng: Hạn tải */
-
-/* ===== Bảng màu xanh của khung danh sách ảnh (2 bộ: tối là mặc định, sáng ghi đè) ===== */
-.tahc__khung { --hc-blue: #2F7FCB; --hc-blue-hover: #4A97E0; --hc-text: #7DB8EE; --hc-text-strong: #A9D0F5; --hc-blue-soft: #1D2A38; --hc-blue-line: #34506C; --hc-row-end: #242424; --hc-btn-bg: transparent; box-shadow: var(--shadow-card); } /* MỚI: bộ màu xanh cho chế độ TỐI (xanh nền, xanh chữ sáng, nền dòng xanh đen, viền xanh đậm) */
-:root[data-theme="light"] .tahc__khung { --hc-blue: #1F6FB5; --hc-blue-hover: #16507F; --hc-text: #1F6FB5; --hc-text-strong: #16507F; --hc-blue-soft: #EEF5FB; --hc-blue-line: #C3DAEE; --hc-row-end: #FFFFFF; --hc-btn-bg: #FFFFFF; } /* MỚI: bộ màu xanh cho chế độ SÁNG, giữ đúng như bản cũ */
-.tahc__tieu-de { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); } /* hàng tiêu đề khung: tên bên trái, nút Chọn tất cả bên phải */
-.tahc__tieu-de h2 { margin: 0; display: flex; align-items: center; gap: var(--space-2); } /* tiêu đề + số lượng ảnh nằm cùng hàng */
-.tahc__dem { display: inline-grid; place-items: center; min-width: 2rem; height: 2rem; padding-inline: var(--space-2); font-size: var(--text-sm); border-radius: var(--radius-pill); background: var(--hc-blue); color: #FFFFFF; } /* chấm tròn đếm số ảnh: nền xanh, chữ trắng cố định */
-.tahc__chon-het { display: inline-flex; align-items: center; gap: var(--space-2); cursor: pointer; font-weight: var(--fw-heading); padding: var(--space-2) var(--space-4); border-radius: var(--radius-pill); background: var(--hc-blue-soft); color: var(--hc-text-strong); border: 1px solid var(--hc-blue-line); } /* ĐÃ SỬA: nút Chọn tất cả dùng màu theo chế độ, không còn viên thuốc trắng ở nền tối */
-.tahc__chon-het input, .tahc__tick { width: 1.25rem; height: 1.25rem; accent-color: var(--hc-blue); cursor: pointer; flex: none; } /* ô tick: kích thước 1.25rem, màu xanh */
-.tahc__ds { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); } /* danh sách: bỏ chấm đầu dòng, các dòng cách đều */
-.tahc__khung .tahc__ds { margin-top: var(--space-5); } /* MỚI: tách danh sách ảnh ra khỏi hàng Chọn tất cả cho đỡ dính */
-
-/* ===== Mỗi dòng ảnh: [tick] [ô ảnh] [tên file + định dạng/dung lượng] ........ [nút Tải] ===== */
-.tahc__dong { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--hc-blue-line); border-radius: var(--radius-lg); background: linear-gradient(90deg, var(--hc-blue-soft) 0, var(--hc-row-end) 65%); transition: border-color .15s, box-shadow .15s, background .15s; } /* ĐÃ SỬA: nền dòng chuyển từ xanh nhạt sang màu nền thẻ (không còn gradient trắng ở nền tối) */
-.tahc__dong:hover { border-color: var(--hc-blue); box-shadow: var(--shadow-md); } /* rê chuột vào dòng: viền xanh đậm + đổ bóng */
-.tahc__dong:has(.tahc__tick:checked) { border-color: var(--hc-blue); background: var(--hc-blue-soft); box-shadow: 0 0 0 1px var(--hc-blue); } /* dòng đã tick: viền xanh, nền xanh nhạt/đen xanh */
-.tahc__trai { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--space-4); cursor: pointer; } /* phần bên trái dòng: tick + ảnh + thông tin, bấm vào đâu cũng tick */
-.tahc__anh { flex: none; width: 6rem; height: 4.5rem; overflow: hidden; border-radius: var(--radius-md); border: 2px solid var(--color-white); box-shadow: 0 0 0 1px var(--hc-blue-line), var(--shadow-sm); background: var(--color-gray-soft); } /* khung ảnh thu nhỏ 6rem x 4.5rem */
-.tahc__anh img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .25s; } /* ảnh lấp đầy khung, cắt vừa */
-.tahc__dong:hover .tahc__anh img { transform: scale(1.08); } /* rê chuột vào dòng: ảnh phóng nhẹ */
-.tahc__thongtin { min-width: 0; display: grid; gap: var(--space-1); } /* khối tên file + định dạng xếp dọc */
-.tahc__ten { font-weight: var(--fw-heading); overflow-wrap: anywhere; } /* tên file đậm, tự ngắt dòng khi dài */
-.tahc__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: var(--text-sm); } /* hàng định dạng + dung lượng */
-.tahc__tag { padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--hc-blue); color: #FFFFFF; font-size: var(--text-xs); font-weight: var(--fw-heading); line-height: 1.6; } /* nhãn PNG: nền xanh, chữ trắng cố định */
-.tahc__btn-tai { flex: none; border-color: var(--hc-text); color: var(--hc-text); background: var(--hc-btn-bg); } /* ĐÃ SỬA: nút Tải dùng xanh sáng ở nền tối, xanh đậm ở nền sáng */
-.tahc__btn-tai:hover { background: var(--hc-blue); border-color: var(--hc-blue); color: #FFFFFF; } /* rê chuột: nền xanh đặc, chữ trắng */
-
-/* ===== Nút dưới cùng ===== */
-.tahc__nut { display: flex; flex-wrap: wrap; gap: var(--space-3); } /* hàng nút: xếp ngang, tự xuống dòng */
-.tahc__nut .btn--primary { background: var(--hc-blue); border-color: var(--hc-blue); color: #FFFFFF; } /* ĐÃ SỬA: nút Tải ảnh đã chọn, nền xanh, chữ trắng cố định (trước đây chữ bị đảo màu theo chế độ) */
-.tahc__nut .btn--primary:hover { background: var(--hc-blue-hover); border-color: var(--hc-blue-hover); } /* rê chuột: đổi sắc xanh */
-.tahc__nut .btn--secondary { background: var(--hc-btn-bg); border-color: var(--hc-text); color: var(--hc-text); } /* ĐÃ SỬA: nút Tải tất cả, viền + chữ xanh theo chế độ */
-.tahc__nut .btn--secondary:hover { background: var(--hc-blue-soft); color: var(--hc-text-strong); } /* rê chuột: nền xanh nhạt/đen xanh */
-
-/* ===== Lịch sử tải ===== */
-.tahc__ls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface-alt); } /* mỗi dòng lịch sử tải */
-.tahc__ls-gio { font-size: var(--text-sm); color: var(--color-text-muted); } /* giờ tải, chữ nhỏ mờ */
-.tahc__ls-ten { flex: 1; min-width: 8rem; overflow-wrap: anywhere; } /* tên ảnh đã tải, chiếm phần còn lại */
-.tahc__ls-kq { padding: 0 var(--space-3); border-radius: var(--radius-pill); font-size: var(--text-sm); font-weight: var(--fw-heading); } /* nhãn kết quả tải */
-.tahc__ok  { color: var(--tone-green-fg); background: var(--tone-green-bg); } /* kết quả thành công: xanh lá */
-.tahc__loi { color: var(--tone-red-fg);   background: var(--tone-red-bg); } /* kết quả lỗi: đỏ */
-
-/* ===== Điện thoại và giảm chuyển động ===== */
-@media (max-width: 36rem) { /* màn hình nhỏ (điện thoại) */
-  .tahc__hero { padding: var(--space-5); } /* banner bớt đệm */
-  .tahc__dong { flex-direction: column; align-items: stretch; } /* dòng ảnh xếp dọc */
-  .tahc__btn-tai { width: 100%; } /* nút Tải rộng hết dòng */
-  .tahc__anh { width: 5rem; height: 3.75rem; } /* ảnh thu nhỏ lại */
-} /* hết phần điện thoại */
-@media (prefers-reduced-motion: reduce) { /* người dùng tắt hiệu ứng chuyển động */
-  .tahc__dong, .tahc__anh img, .tahc__nut .btn { transition: none; transform: none !important; } /* tắt hiệu ứng */
-} /* hết phần giảm chuyển động */
+<style>
+.tahc { max-width:56rem; margin-inline:auto; padding-block:var(--space-6); }
+.tahc__hero { padding:var(--space-5) var(--space-6); border:1px solid var(--color-border); border-radius:var(--radius-lg); background:linear-gradient(135deg,var(--color-gray-soft),var(--color-white)); }
+.tahc__hero h1 { margin:0; }
+.tahc__expiry { display:grid; gap:var(--space-2); padding:var(--space-4) var(--space-5); border:1px solid color-mix(in srgb, var(--tone-amber-dot) 30%, var(--tone-amber-bg)); border-left:4px solid var(--tone-amber-dot); border-radius:var(--radius-md); background:var(--tone-amber-bg); color:var(--tone-amber-fg); }
+.tahc__expiry strong { font-weight:700; }
+.tahc__expiry p { margin:0; color:inherit; }
+.tahc__khung { --hc-accent:var(--color-black); --hc-soft:var(--color-gray-soft); --hc-line:var(--color-border); box-shadow:var(--shadow-card); }
+.tahc__tieu-de { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:var(--space-3); }
+.tahc__tieu-de h2 { margin:0; display:flex; align-items:center; gap:var(--space-2); }
+.tahc__dem { display:inline-grid; place-items:center; min-width:2rem; height:2rem; padding-inline:var(--space-2); font-size:var(--text-sm); border-radius:var(--radius-pill); background:linear-gradient(135deg,#555,#999); color:#fff; }
+.tahc__chon-het { display:inline-flex; align-items:center; gap:var(--space-2); cursor:pointer; font-weight:var(--fw-heading); padding:var(--space-2) var(--space-4); border-radius:var(--radius-pill); background:var(--color-gray-soft); color:var(--color-text); border:1px solid var(--color-border); }
+.tahc__chon-het input,.tahc__tick { width:1.25rem; height:1.25rem; accent-color:#888; cursor:pointer; flex:none; }
+.tahc__ds { list-style:none; margin:0; padding:0; display:grid; gap:var(--space-3); }
+.tahc__khung .tahc__ds { margin-top:var(--space-5); }
+.tahc__dong { display:flex; align-items:center; justify-content:space-between; gap:var(--space-3); padding:var(--space-3); border:1px solid var(--hc-line); border-radius:var(--radius-lg); background:linear-gradient(90deg,var(--color-gray-soft),var(--color-white) 75%); transition:border-color .15s,box-shadow .15s; }
+.tahc__dong:hover { border-color:#999; box-shadow:var(--shadow-md); }
+.tahc__dong:has(.tahc__tick:checked) { border-color:#999; background:linear-gradient(90deg,#7772,var(--color-white)); box-shadow:0 0 0 1px #888; }
+.tahc__trai { flex:1; min-width:0; display:flex; align-items:center; gap:var(--space-4); cursor:pointer; }
+.tahc__anh { flex:none; width:6rem; height:4.5rem; overflow:hidden; border-radius:var(--radius-md); border:2px solid var(--color-white); box-shadow:0 0 0 1px var(--hc-line),var(--shadow-sm); background:var(--color-gray-soft); }
+.tahc__anh img { display:block; width:100%; height:100%; object-fit:cover; transition:transform .25s; }
+.tahc__dong:hover .tahc__anh img { transform:scale(1.06); }
+.tahc__thongtin { min-width:0; display:grid; gap:var(--space-1); }
+.tahc__ten { font-weight:var(--fw-heading); overflow-wrap:anywhere; }
+.tahc__meta { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-2); font-size:var(--text-sm); }
+.tahc__tag { padding:0 var(--space-2); border-radius:var(--radius-pill); background:linear-gradient(135deg,#666,#999); color:#fff; font-size:var(--text-xs); font-weight:var(--fw-heading); line-height:1.6; }
+.tahc__btn-tai { flex:none; border-color:#888; color:var(--color-text); background:var(--color-white); }
+.tahc__btn-tai:hover { background:var(--color-gray-soft); color:var(--color-text); }
+.tahc__nut { display:flex; flex-wrap:wrap; gap:var(--space-3); }
+.tahc__nut .btn--primary,.tahc__nut .btn--secondary { background:linear-gradient(135deg,#555,#999); border-color:#777; color:#fff; }
+.tahc__nut .btn--primary:hover,.tahc__nut .btn--secondary:hover { background:linear-gradient(135deg,#444,#888); }
+.tahc__ls { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-2) var(--space-4); padding:var(--space-2) var(--space-4); border-radius:var(--radius-md); background:var(--color-surface-alt); }
+.tahc__ls-gio { font-size:var(--text-sm); color:var(--color-text-muted); }
+.tahc__ls-ten { flex:1; min-width:8rem; overflow-wrap:anywhere; }
+.tahc__ls-kq { padding:0 var(--space-3); border-radius:var(--radius-pill); font-size:var(--text-sm); font-weight:var(--fw-heading); }
+.tahc__ok { color:var(--color-text); background:var(--color-gray-soft); }
+.tahc__loi { color:var(--tone-red-fg); background:var(--tone-red-bg); }
+@media(max-width:36rem) { .tahc__hero{padding:var(--space-5)} .tahc__dong{flex-direction:column;align-items:stretch} .tahc__btn-tai{width:100%} .tahc__anh{width:5rem;height:3.75rem} }
+@media(prefers-reduced-motion:reduce) { .tahc__dong,.tahc__anh img,.tahc__nut .btn{transition:none;transform:none!important} }
 </style>{# đóng thẻ CSS #}
 {% endblock %}{# đóng khối extra_head #}
 

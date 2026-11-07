@@ -109,3 +109,44 @@
   color: var(--danger-fg); /* chữ đỏ */
   font-weight: var(--fw-heading); /* chữ đậm vừa */
 } /* hết quy tắc báo lỗi */
+/* Ô chọn ảnh dạng nút cộng tròn theo moodboard */
+.tai-anh__field input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.tai-anh__chon-tep {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 6rem;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-alt);
+  cursor: pointer;
+}
+.tai-anh__chon-tep:hover { border-color: var(--color-border-hover); }
+.tai-anh__field:focus-within .tai-anh__chon-tep { outline:2px solid var(--color-focus); outline-offset:2px; }
+.tai-anh__cong {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 4.25rem;
+  height: 4.25rem;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #fff, #e5e5e5);
+  color: #444;
+  font-size: 2rem;
+  font-weight: 300;
+}
+.tai-anh__mo-ta { display: grid; gap: 2px; }
+.tai-anh__mo-ta strong { font-size: var(--text-base); }
+.tai-anh__mo-ta small { color: var(--color-text-muted); font-size: var(--text-xs); }
+.tai-anh__field input[type="file"]:focus-visible + * { outline: 2px solid var(--color-focus); }

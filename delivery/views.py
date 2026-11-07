@@ -170,7 +170,25 @@ def bat_dau_hau_ky(request, nag, ma_booking):                  # Nhiếp ảnh g
         messages.success(request, 'Đã bắt đầu hậu kỳ. Booking chuyển sang "Đang hậu kỳ", hạn 3 ngày.')  # báo đã bắt đầu hậu kỳ
     except services.LoiBatDauHauKy as loi:                     # sai trạng thái...
         messages.error(request, str(loi))                      # hiện lỗi
-    return redirect('chi_tiet_booking', ma_booking=booking.pk)  # hậu kỳ bắt đầu: quay về chi tiết Booking
+    return redirect('tai_anh_len', ma_booking=booking.pk)  # chuyển thẳng tới giao diện tải ảnh sau khi bắt đầu hậu kỳ
+
+
+# =====================================================================
+# Trang xem ảnh sau hậu kỳ: chỉ hiển thị lưới ảnh, không kèm thông tin Booking
+# =====================================================================
+@chi_khach_hang
+def xem_anh_hau_ky(request, ma_booking):
+    booking = get_object_or_404(
+        Booking.objects.select_related('MaGoi', 'MaNhiepAnhGia'),
+        pk=ma_booking, MaKhachHang=request.user)
+    booking.refresh_from_db()
+    ly_do = services.ly_do_khong_xac_nhan_duoc(booking)
+    anhs = list(services.anh_de_chinh_sua(booking)) if not ly_do else []
+    return render(request, 'delivery/xem_anh_hau_ky.html', {
+        'booking': booking, 'anhs': anhs, 'ly_do': ly_do,
+        'co_the_yeu_cau': services.ly_do_khong_yeu_cau_duoc(booking) is None,   # còn được yêu cầu chỉnh sửa không (hết 3 lần thì ẩn nút)
+        'so_lan_con_lai': services.so_lan_chinh_sua_con_lai(booking),            # số lần yêu cầu chỉnh sửa còn lại
+    })
 
 
 # =====================================================================
