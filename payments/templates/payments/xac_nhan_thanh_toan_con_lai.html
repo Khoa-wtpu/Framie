@@ -1,231 +1,231 @@
 {% extends "base.html" %}{# N9 - UC5.7: Nhiếp ảnh gia xem minh chứng và xác nhận thanh toán phần còn lại (60%) #}
-{% load ui %}
-{% block title %}Xác nhận thanh toán phần còn lại{% endblock %}
+{% load ui %}{# nạp bộ thẻ giao diện ui (có status_badge) #}
+{% block title %}Xác nhận thanh toán phần còn lại{% endblock %}{# tiêu đề tab trình duyệt #}
 
-{% block extra_head %}
-<style>
+{% block extra_head %}{# mở khối thêm nội dung vào <head> #}
+<style>{# mở thẻ CSS riêng của trang này #}
   /* ===== Bố cục chung ===== */
-  .xn-back { font-size: var(--text-sm); color: var(--color-text-muted); }
-  .xn-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
-  .xn-head h1 { margin: 0; }
-  .xn-sub { margin: var(--space-1) 0 0; color: var(--color-text-muted); }
-  .xn-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); align-items: start; }
-  @media (min-width: 960px) { .xn-layout { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); } }
-  .xn-main, .xn-aside { display: grid; gap: var(--space-5); }
-  @media (min-width: 960px) { .xn-aside { position: sticky; top: calc(var(--header-h) + var(--space-4)); } }
-  .xn-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-card); }
-  .xn-card h2 { margin: 0 0 var(--space-4); font-size: var(--text-lg); }
-  .xn-card__top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); margin-bottom: var(--space-4); }
-  .xn-card__top h2 { margin: 0; }
+  .xn-back { font-size: var(--text-sm); color: var(--color-text-muted); } /* nút quay lại: chữ nhỏ, màu mờ */
+  .xn-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); } /* hàng tiêu đề: xếp ngang, tự xuống dòng */
+  .xn-head h1 { margin: 0; } /* bỏ khoảng cách mặc định của h1 */
+  .xn-sub { margin: var(--space-1) 0 0; color: var(--color-text-muted); } /* dòng phụ dưới tiêu đề, màu mờ */
+  .xn-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); align-items: start; } /* điện thoại: 1 cột */
+  @media (min-width: 960px) { .xn-layout { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); } } /* màn rộng: chia 2 cột trái lớn, phải nhỏ */
+  .xn-main, .xn-aside { display: grid; gap: var(--space-5); } /* mỗi cột xếp các thẻ dọc, cách nhau đều */
+  @media (min-width: 960px) { .xn-aside { position: sticky; top: calc(var(--header-h) + var(--space-4)); } } /* cột phải dính theo khi cuộn trang */
+  .xn-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-card); } /* thẻ trắng/đen theo chế độ */
+  .xn-card h2 { margin: 0 0 var(--space-4); font-size: var(--text-lg); } /* tiêu đề nhỏ trong thẻ */
+  .xn-card__top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); margin-bottom: var(--space-4); } /* hàng đầu thẻ: tiêu đề bên trái, nhãn bên phải */
+  .xn-card__top h2 { margin: 0; } /* bỏ khoảng cách h2 trong hàng đầu thẻ */
 
   /* ===== Thanh tiến trình 3 bước ===== */
-  .xn-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
-  .xn-step { padding-top: var(--space-3); border-top: 4px solid var(--color-border); }
-  .xn-step small { display: block; font-size: var(--text-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: .04em; }
-  .xn-step strong { font-size: var(--text-sm); }
-  .xn-step--done { border-top-color: var(--color-black); }
-  .xn-step--active { border-top-color: var(--tone-amber-dot); }
-  .xn-step--active small { color: var(--tone-amber-fg); }
+  .xn-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); } /* chia đều 3 cột cho 3 bước */
+  .xn-step { padding-top: var(--space-3); border-top: 4px solid var(--color-border); } /* mỗi bước có vạch xám phía trên */
+  .xn-step small { display: block; font-size: var(--text-xs); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: .04em; } /* chữ "BƯỚC 1" nhỏ, viết hoa */
+  .xn-step strong { font-size: var(--text-sm); } /* tên bước, chữ đậm vừa */
+  .xn-step--done { border-top-color: var(--color-black); } /* bước đã xong: vạch đậm (tự đổi theo chế độ) */
+  .xn-step--active { border-top-color: var(--tone-amber-dot); } /* bước đang làm: vạch vàng */
+  .xn-step--active small { color: var(--tone-amber-fg); } /* chữ "BƯỚC" của bước đang làm: màu vàng */
 
   /* ===== Thẻ số tiền ===== */
-  .xn-amount { background: linear-gradient(135deg, #2b2b2b 0%, var(--color-black) 100%); color: var(--color-white); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-md); }
-  .xn-amount__label { font-size: var(--text-sm); opacity: .75; }
-  .xn-amount__value { margin: var(--space-1) 0; font-size: var(--text-3xl); font-weight: var(--fw-heading); line-height: var(--leading-tight); letter-spacing: -.01em; }
-  .xn-amount__value small { font-size: var(--text-lg); font-weight: var(--fw-regular); opacity: .75; }
-  .xn-amount__foot { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid rgba(255, 255, 255, .18); font-size: var(--text-sm); }
-  .xn-amount__foot span { opacity: .8; }
-  .xn-amount__foot strong { opacity: 1; }
+  .xn-amount { background: linear-gradient(135deg, #2b2b2b 0%, #1A1A1A 100%); color: #FFFFFF; border: 1px solid rgba(255, 255, 255, .12); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-md); } /* ĐÃ SỬA: nền tối + chữ trắng CỐ ĐỊNH, thêm viền mờ để không chìm ở chế độ tối */
+  .xn-amount__label { font-size: var(--text-sm); opacity: .75; } /* nhãn "Số tiền còn lại cần đối chiếu", hơi mờ */
+  .xn-amount__value { margin: var(--space-1) 0; font-size: var(--text-3xl); font-weight: var(--fw-heading); line-height: var(--leading-tight); letter-spacing: -.01em; } /* số tiền còn lại cỡ lớn */
+  .xn-amount__value small { font-size: var(--text-lg); font-weight: var(--fw-regular); opacity: .75; } /* chữ "đ" nhỏ hơn và mờ hơn */
+  .xn-amount__foot { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid rgba(255, 255, 255, .18); font-size: var(--text-sm); } /* hàng chân thẻ: tổng giá trị, hạn thanh toán */
+  .xn-amount__foot span { opacity: .8; } /* nhãn trong chân thẻ hơi mờ */
+  .xn-amount__foot strong { opacity: 1; } /* giá trị trong chân thẻ rõ nét */
 
   /* ===== Khung xem minh chứng ===== */
-  .xn-stage { display: grid; place-items: center; min-height: 320px; padding: var(--space-4); background: var(--color-surface-alt); border-radius: var(--radius-md); }
-  .xn-stage img { display: block; max-width: 100%; max-height: 520px; object-fit: contain; border-radius: var(--radius-sm); }
-  .xn-caption { margin: var(--space-3) 0 0; font-size: var(--text-sm); color: var(--color-text-muted); }
-  .xn-caption a { margin-left: var(--space-2); }
-  .xn-thumbs { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
-  .xn-thumb { width: 4.5rem; height: 4.5rem; padding: 0; border: 2px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface-alt); overflow: hidden; cursor: pointer; }
-  .xn-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .xn-thumb.is-active { border-color: var(--color-black); }
-  .xn-empty { display: grid; place-items: center; gap: var(--space-2); min-height: 220px; text-align: center; color: var(--color-text-muted); background: var(--color-surface-alt); border-radius: var(--radius-md); padding: var(--space-5); }
+  .xn-stage { display: grid; place-items: center; min-height: 320px; padding: var(--space-4); background: var(--color-surface-alt); border-radius: var(--radius-md); } /* khung chứa ảnh, ảnh căn giữa */
+  .xn-stage img { display: block; max-width: 100%; max-height: 520px; object-fit: contain; border-radius: var(--radius-sm); } /* ảnh co vừa khung, không méo */
+  .xn-caption { margin: var(--space-3) 0 0; font-size: var(--text-sm); color: var(--color-text-muted); } /* dòng chú thích dưới ảnh */
+  .xn-caption a { margin-left: var(--space-2); } /* link "Mở ảnh đầy đủ" cách chú thích một đoạn */
+  .xn-thumbs { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); } /* hàng ảnh nhỏ các lần gửi */
+  .xn-thumb { width: 4.5rem; height: 4.5rem; padding: 0; border: 2px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface-alt); overflow: hidden; cursor: pointer; } /* ô ảnh nhỏ bấm được */
+  .xn-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; } /* ảnh nhỏ lấp đầy ô */
+  .xn-thumb.is-active { border-color: var(--color-black); } /* ảnh nhỏ đang chọn: viền đậm */
+  .xn-empty { display: grid; place-items: center; gap: var(--space-2); min-height: 220px; text-align: center; color: var(--color-text-muted); background: var(--color-surface-alt); border-radius: var(--radius-md); padding: var(--space-5); } /* khung báo chưa có minh chứng */
 
   /* ===== Ô thông tin Booking (vạch màu bên trái) ===== */
-  .xn-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
-  .xn-tile { padding: var(--space-3) var(--space-4); background: #fafafa; border: 1px solid var(--color-border); border-left: 4px solid var(--tone-sky-dot); border-radius: var(--radius-md); min-width: 0; }
-  .xn-tile--wide { grid-column: 1 / -1; }
-  .xn-tile--violet { border-left-color: var(--tone-violet-dot); }
-  .xn-tile--amber { border-left-color: var(--tone-amber-dot); }
-  .xn-tile span { display: block; font-size: var(--text-xs); color: var(--color-text-muted); }
-  .xn-tile strong { display: block; font-size: var(--text-sm); word-break: break-word; }
+  .xn-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); } /* lưới 2 cột cho các ô thông tin */
+  .xn-tile { padding: var(--space-3) var(--space-4); background: var(--color-surface-alt); border: 1px solid var(--color-border); border-left: 4px solid var(--tone-sky-dot); border-radius: var(--radius-md); min-width: 0; } /* ĐÃ SỬA: bỏ #fafafa, nền ô tự đổi theo chế độ sáng/tối */
+  .xn-tile--wide { grid-column: 1 / -1; } /* ô rộng chiếm cả 2 cột (Địa điểm) */
+  .xn-tile--violet { border-left-color: var(--tone-violet-dot); } /* vạch trái màu tím */
+  .xn-tile--amber { border-left-color: var(--tone-amber-dot); } /* vạch trái màu vàng */
+  .xn-tile span { display: block; font-size: var(--text-xs); color: var(--color-text-muted); } /* nhãn nhỏ phía trên giá trị */
+  .xn-tile strong { display: block; font-size: var(--text-sm); word-break: break-word; } /* giá trị, tự ngắt dòng nếu dài */
 
   /* ===== Khu quyết định ===== */
-  .xn-decide { display: grid; gap: var(--space-3); }
-  .xn-decide p { margin: 0; }
-  .xn-note { font-size: var(--text-sm); color: var(--color-text-muted); }
-  .xn-details { border: 1px solid var(--color-border); border-radius: var(--radius-md); background: #fafafa; }
-  .xn-details > summary { list-style: none; cursor: pointer; padding: var(--space-3) var(--space-4); font-size: var(--text-sm); font-weight: var(--fw-heading); border-radius: var(--radius-md); }
-  .xn-details > summary::-webkit-details-marker { display: none; }
-  .xn-details > summary::after { content: "＋"; float: right; }
-  .xn-details[open] > summary::after { content: "－"; }
-  .xn-details form { padding: 0 var(--space-4) var(--space-4); }
-  .xn-ok { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-md); background: var(--success-bg); color: var(--success-fg); font-weight: var(--fw-heading); }
+  .xn-decide { display: grid; gap: var(--space-3); } /* khu quyết định xếp dọc */
+  .xn-decide p { margin: 0; } /* bỏ khoảng cách mặc định của đoạn văn */
+  .xn-note { font-size: var(--text-sm); color: var(--color-text-muted); } /* ghi chú hướng dẫn, chữ mờ */
+  .xn-details { border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-alt); } /* ĐÃ SỬA: bỏ #fafafa, nền ô xổ xuống tự đổi theo chế độ */
+  .xn-details > summary { list-style: none; cursor: pointer; padding: var(--space-3) var(--space-4); font-size: var(--text-sm); font-weight: var(--fw-heading); border-radius: var(--radius-md); } /* dòng tiêu đề bấm để mở */
+  .xn-details > summary::-webkit-details-marker { display: none; } /* ẩn mũi tên mặc định của trình duyệt */
+  .xn-details > summary::after { content: "＋"; float: right; } /* dấu + ở bên phải khi đang đóng */
+  .xn-details[open] > summary::after { content: "－"; } /* đổi thành dấu - khi đang mở */
+  .xn-details form { padding: 0 var(--space-4) var(--space-4); } /* khoảng đệm cho form bên trong */
+  .xn-ok { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-md); background: var(--success-bg); color: var(--success-fg); font-weight: var(--fw-heading); } /* hộp xanh báo đã hoàn thành Booking */
 
-  @media (max-width: 520px) { .xn-tiles { grid-template-columns: 1fr; } .xn-amount__value { font-size: var(--text-2xl); } }
-</style>
-{% endblock %}
+  @media (max-width: 520px) { .xn-tiles { grid-template-columns: 1fr; } .xn-amount__value { font-size: var(--text-2xl); } } /* điện thoại nhỏ: ô thông tin 1 cột, số tiền nhỏ lại */
+</style>{# đóng thẻ CSS #}
+{% endblock %}{# đóng khối extra_head #}
 
-{% block content %}
-<div class="container stack">
+{% block content %}{# mở khối nội dung chính của trang #}
+<div class="container stack">{# khung chứa chính, các phần xếp dọc #}
 
-  <a class="xn-back" href="{% url 'chi_tiet_booking' ma_booking=booking.pk %}">← Quay lại Booking #{{ booking.pk }}</a>
+  {% include "includes/quay_lai_booking.html" with booking=booking la_nag=True %}{# nút quay lại Booking (Nhiếp ảnh gia) #}
 
-  <header>
-    <div class="xn-head">
-      <h1>Xác nhận thanh toán phần còn lại</h1>
-      {% status_badge booking.TrangThai %}
-    </div>
-    <p class="xn-sub">Booking #{{ booking.pk }} · {{ booking.MaGoi.TenGoi }} · {{ booking.MaKhachHang.get_full_name }}</p>
-  </header>
+  <header>{# phần đầu trang #}
+    <div class="xn-head">{# hàng tiêu đề + nhãn trạng thái #}
+      <h1>Xác nhận thanh toán phần còn lại</h1>{# tiêu đề trang #}
+      {% status_badge booking.TrangThai %}{# nhãn trạng thái của Booking #}
+    </div>{# đóng hàng tiêu đề #}
+    <p class="xn-sub">Booking #{{ booking.pk }} · {{ booking.MaGoi.TenGoi }} · {{ booking.MaKhachHang.get_full_name }}</p>{# dòng phụ: mã booking, gói, tên khách #}
+  </header>{# đóng phần đầu trang #}
 
   {# ===== Tiến trình ===== #}
-  <div class="xn-steps" aria-label="Tiến trình thanh toán phần còn lại">
-    <div class="xn-step {% if minh_chungs %}xn-step--done{% else %}xn-step--active{% endif %}">
-      <small>Bước 1</small><strong>Khách gửi minh chứng</strong>
-    </div>
-    <div class="xn-step {% if da_hoan_thanh %}xn-step--done{% elif minh_chungs %}xn-step--active{% endif %}">
-      <small>Bước 2</small><strong>Bạn kiểm tra &amp; xác nhận</strong>
-    </div>
-    <div class="xn-step {% if da_hoan_thanh %}xn-step--done{% endif %}">
-      <small>Bước 3</small><strong>Hoàn thành Booking</strong>
-    </div>
-  </div>
+  <div class="xn-steps" aria-label="Tiến trình thanh toán phần còn lại">{# thanh tiến trình 3 bước #}
+    <div class="xn-step {% if minh_chungs %}xn-step--done{% else %}xn-step--active{% endif %}">{# bước 1: xong nếu khách đã gửi minh chứng #}
+      <small>Bước 1</small><strong>Khách gửi minh chứng</strong>{# tên bước 1 #}
+    </div>{# đóng bước 1 #}
+    <div class="xn-step {% if da_hoan_thanh %}xn-step--done{% elif minh_chungs %}xn-step--active{% endif %}">{# bước 2: đang làm nếu có minh chứng, xong nếu đã hoàn thành #}
+      <small>Bước 2</small><strong>Bạn kiểm tra &amp; xác nhận</strong>{# tên bước 2 #}
+    </div>{# đóng bước 2 #}
+    <div class="xn-step {% if da_hoan_thanh %}xn-step--done{% endif %}">{# bước 3: xong khi Booking đã hoàn thành #}
+      <small>Bước 3</small><strong>Hoàn thành Booking</strong>{# tên bước 3 #}
+    </div>{# đóng bước 3 #}
+  </div>{# đóng thanh tiến trình #}
 
-  <div class="xn-layout">
+  <div class="xn-layout">{# lưới 2 cột: trái minh chứng, phải quyết định #}
 
     {# ================= CỘT TRÁI: MINH CHỨNG + THÔNG TIN BOOKING ================= #}
-    <div class="xn-main">
+    <div class="xn-main">{# cột trái #}
 
-      <section class="xn-card">
-        <div class="xn-card__top">
-          <h2>Minh chứng của khách hàng</h2>
-          {% if thanh_toan %}{% status_badge thanh_toan.TrangThai %}{% endif %}
-        </div>
+      <section class="xn-card">{# thẻ minh chứng của khách #}
+        <div class="xn-card__top">{# hàng đầu thẻ #}
+          <h2>Minh chứng của khách hàng</h2>{# tiêu đề thẻ #}
+          {% if thanh_toan %}{% status_badge thanh_toan.TrangThai %}{% endif %}{# nhãn trạng thái thanh toán nếu có #}
+        </div>{# đóng hàng đầu thẻ #}
 
-        {% if minh_chungs %}
-          {% with moi_nhat=minh_chungs.0 %}
-            <div class="xn-stage">
-              <img id="xn-main-img" src="{% url 'xem_minh_chung' moi_nhat.pk %}" alt="Ảnh minh chứng chuyển khoản">
-            </div>
-            <p class="xn-caption">
-              <span id="xn-caption">Lần {{ minh_chungs|length }} · {{ moi_nhat.NgayTaiLen|date:"d/m/Y H:i" }} · {{ moi_nhat.TenTep }} ({{ moi_nhat.DinhDangTep }})</span>
-              <a id="xn-open" href="{% url 'xem_minh_chung' moi_nhat.pk %}" target="_blank" rel="noopener">Mở ảnh đầy đủ</a>
-            </p>
-          {% endwith %}
+        {% if minh_chungs %}{# nếu khách đã gửi ít nhất 1 minh chứng #}
+          {% with moi_nhat=minh_chungs.0 %}{# lấy minh chứng mới nhất đặt tên moi_nhat #}
+            <div class="xn-stage">{# khung xem ảnh #}
+              <img id="xn-main-img" src="{% url 'xem_minh_chung' moi_nhat.pk %}" alt="Ảnh minh chứng chuyển khoản">{# ảnh minh chứng đang xem #}
+            </div>{# đóng khung xem ảnh #}
+            <p class="xn-caption">{# dòng chú thích dưới ảnh #}
+              <span id="xn-caption">Lần {{ minh_chungs|length }} · {{ moi_nhat.NgayTaiLen|date:"d/m/Y H:i" }} · {{ moi_nhat.TenTep }} ({{ moi_nhat.DinhDangTep }})</span>{# lần gửi, ngày giờ, tên tệp, định dạng #}
+              <a id="xn-open" href="{% url 'xem_minh_chung' moi_nhat.pk %}" target="_blank" rel="noopener">Mở ảnh đầy đủ</a>{# link mở ảnh ở tab mới #}
+            </p>{# đóng dòng chú thích #}
+          {% endwith %}{# hết phạm vi biến moi_nhat #}
 
-          {% if minh_chungs|length > 1 %}
-            <div class="xn-thumbs" role="group" aria-label="Các lần gửi minh chứng">
-              {% for mc in minh_chungs %}
+          {% if minh_chungs|length > 1 %}{# nếu khách gửi nhiều hơn 1 lần thì hiện ảnh nhỏ #}
+            <div class="xn-thumbs" role="group" aria-label="Các lần gửi minh chứng">{# hàng ảnh nhỏ #}
+              {% for mc in minh_chungs %}{# lặp qua từng lần gửi #}
                 <button type="button" class="xn-thumb{% if forloop.first %} is-active{% endif %}"
                         data-src="{% url 'xem_minh_chung' mc.pk %}"
                         data-caption="Lần {{ forloop.revcounter }} · {{ mc.NgayTaiLen|date:'d/m/Y H:i' }} · {{ mc.TenTep }} ({{ mc.DinhDangTep }})"
-                        title="Lần {{ forloop.revcounter }}">
-                  <img src="{% url 'xem_minh_chung' mc.pk %}" alt="Minh chứng lần {{ forloop.revcounter }}">
-                </button>
-              {% endfor %}
-            </div>
-          {% endif %}
-        {% else %}
-          <div class="xn-empty">
-            <strong>Khách hàng chưa tải minh chứng</strong>
-            <span>Khi khách gửi ảnh chuyển khoản, ảnh sẽ hiện tại đây.</span>
-          </div>
-        {% endif %}
-      </section>
+                        title="Lần {{ forloop.revcounter }}">{# nút ảnh nhỏ, lưu đường dẫn ảnh và chú thích để JS đổi ảnh chính #}
+                  <img src="{% url 'xem_minh_chung' mc.pk %}" alt="Minh chứng lần {{ forloop.revcounter }}">{# ảnh nhỏ của lần gửi này #}
+                </button>{# đóng nút ảnh nhỏ #}
+              {% endfor %}{# hết vòng lặp #}
+            </div>{# đóng hàng ảnh nhỏ #}
+          {% endif %}{# hết điều kiện nhiều lần gửi #}
+        {% else %}{# nếu khách chưa gửi minh chứng nào #}
+          <div class="xn-empty">{# khung báo trống #}
+            <strong>Khách hàng chưa tải minh chứng</strong>{# thông báo chính #}
+            <span>Khi khách gửi ảnh chuyển khoản, ảnh sẽ hiện tại đây.</span>{# thông báo phụ #}
+          </div>{# đóng khung báo trống #}
+        {% endif %}{# hết điều kiện có minh chứng #}
+      </section>{# đóng thẻ minh chứng #}
 
-      <section class="xn-card">
-        <h2>Thông tin buổi chụp</h2>
-        <div class="xn-tiles">
-          <div class="xn-tile"><span>Khách hàng</span><strong>{{ booking.MaKhachHang.get_full_name }}</strong></div>
-          <div class="xn-tile"><span>Gói dịch vụ</span><strong>{{ booking.MaGoi.TenGoi }}</strong></div>
-          <div class="xn-tile xn-tile--violet"><span>Ngày giờ chụp</span><strong>{{ booking.NgayGioChup|date:"D, d/m/Y H:i" }}</strong></div>
-          <div class="xn-tile xn-tile--violet"><span>Mã Booking</span><strong>#{{ booking.pk }}</strong></div>
-          <div class="xn-tile xn-tile--wide"><span>Địa điểm</span><strong>{{ booking.DiaDiem }}</strong></div>
-        </div>
-      </section>
-    </div>
+      <section class="xn-card">{# thẻ thông tin buổi chụp #}
+        <h2>Thông tin buổi chụp</h2>{# tiêu đề thẻ #}
+        <div class="xn-tiles">{# lưới các ô thông tin #}
+          <div class="xn-tile"><span>Khách hàng</span><strong>{{ booking.MaKhachHang.get_full_name }}</strong></div>{# ô tên khách hàng #}
+          <div class="xn-tile"><span>Gói dịch vụ</span><strong>{{ booking.MaGoi.TenGoi }}</strong></div>{# ô tên gói dịch vụ #}
+          <div class="xn-tile xn-tile--violet"><span>Ngày giờ chụp</span><strong>{{ booking.NgayGioChup|date:"D, d/m/Y H:i" }}</strong></div>{# ô ngày giờ chụp, vạch tím #}
+          <div class="xn-tile xn-tile--violet"><span>Mã Booking</span><strong>#{{ booking.pk }}</strong></div>{# ô mã booking, vạch tím #}
+          <div class="xn-tile xn-tile--wide"><span>Địa điểm</span><strong>{{ booking.DiaDiem }}</strong></div>{# ô địa điểm, rộng hết hàng #}
+        </div>{# đóng lưới ô thông tin #}
+      </section>{# đóng thẻ thông tin buổi chụp #}
+    </div>{# đóng cột trái #}
 
     {# ================= CỘT PHẢI: SỐ TIỀN + QUYẾT ĐỊNH ================= #}
-    <aside class="xn-aside">
+    <aside class="xn-aside">{# cột phải #}
 
-      {% if thanh_toan %}
-        <section class="xn-amount">
-          <div class="xn-amount__label">Số tiền còn lại cần đối chiếu</div>
-          <div class="xn-amount__value">{{ thanh_toan.SoTien|floatformat:"0g" }} <small>đ</small></div>
-          <div class="xn-amount__foot">
-            <div><span>Tổng giá trị:</span> <strong>{{ booking.TongGiaTri|floatformat:"0g" }} đ</strong></div>
-            {% if booking.HanThanhToanConLai %}<div><span>Hạn thanh toán:</span> <strong>{{ booking.HanThanhToanConLai|date:"d/m/Y H:i" }}</strong></div>{% endif %}
-          </div>
-        </section>
-      {% endif %}
+      {% if thanh_toan %}{# nếu có bản ghi thanh toán thì hiện thẻ số tiền #}
+        <section class="xn-amount">{# thẻ số tiền còn lại (nền tối cố định) #}
+          <div class="xn-amount__label">Số tiền còn lại cần đối chiếu</div>{# nhãn của số tiền #}
+          <div class="xn-amount__value">{{ thanh_toan.SoTien|floatformat:"0g" }} <small>đ</small></div>{# số tiền còn lại, bỏ số lẻ, có dấu ngăn nghìn #}
+          <div class="xn-amount__foot">{# chân thẻ #}
+            <div><span>Tổng giá trị:</span> <strong>{{ booking.TongGiaTri|floatformat:"0g" }} đ</strong></div>{# tổng giá trị Booking #}
+            {% if booking.HanThanhToanConLai %}<div><span>Hạn thanh toán:</span> <strong>{{ booking.HanThanhToanConLai|date:"d/m/Y H:i" }}</strong></div>{% endif %}{# hạn thanh toán phần còn lại nếu có #}
+          </div>{# đóng chân thẻ #}
+        </section>{# đóng thẻ số tiền #}
+      {% endif %}{# hết điều kiện có thanh toán #}
 
-      {% if thanh_toan and thanh_toan.LyDoTuChoi %}
-        {% include "includes/alert.html" with level="warning" title="Đã yêu cầu Khách hàng bổ sung" text=thanh_toan.LyDoTuChoi %}
-      {% endif %}
+      {% if thanh_toan and thanh_toan.LyDoTuChoi %}{# nếu trước đó đã yêu cầu khách bổ sung #}
+        {% include "includes/alert.html" with level="warning" title="Đã yêu cầu Khách hàng bổ sung" text=thanh_toan.LyDoTuChoi %}{# hộp cảnh báo kèm lý do #}
+      {% endif %}{# hết điều kiện lý do từ chối #}
 
-      {% if da_hoan_thanh %}
-        <div class="xn-ok">✓ Booking đã hoàn thành. Khách hàng có thể tải ảnh hoàn chỉnh.</div>
-      {% elif khong_xu_ly_duoc %}
-        {% include "includes/alert.html" with level="warning" text=khong_xu_ly_duoc %}
-      {% else %}
-        {% if qua_han %}{# luồng 1b #}
-          {% include "includes/alert.html" with level="info" title="Khoản thanh toán đã quá hạn" text="Nếu hai bên đã tự thỏa thuận và bạn đã nhận đủ tiền ngoài hệ thống, bạn vẫn có thể xác nhận thủ công." %}
-        {% endif %}
+      {% if da_hoan_thanh %}{# nếu Booking đã hoàn thành #}
+        <div class="xn-ok">✓ Booking đã hoàn thành. Khách hàng có thể tải ảnh hoàn chỉnh.</div>{# hộp xanh báo đã hoàn thành #}
+      {% elif khong_xu_ly_duoc %}{# nếu không thể xử lý ở trạng thái hiện tại #}
+        {% include "includes/alert.html" with level="warning" text=khong_xu_ly_duoc %}{# hộp cảnh báo lý do không xử lý được #}
+      {% else %}{# trường hợp còn lại: cho nhiếp ảnh gia quyết định #}
+        {% if qua_han %}{# luồng 1b: khoản thanh toán đã quá hạn #}
+          {% include "includes/alert.html" with level="info" title="Khoản thanh toán đã quá hạn" text="Nếu hai bên đã tự thỏa thuận và bạn đã nhận đủ tiền ngoài hệ thống, bạn vẫn có thể xác nhận thủ công." %}{# hộp thông báo quá hạn, vẫn cho xác nhận thủ công #}
+        {% endif %}{# hết điều kiện quá hạn #}
 
-        <section class="xn-card xn-decide">
-          <h2>Quyết định của bạn</h2>
-          <p class="xn-note">Hãy mở app ngân hàng, kiểm tra đã nhận đúng số tiền ở trên rồi mới xác nhận. Xác nhận sẽ hoàn thành Booking và cho phép khách tải ảnh hoàn chỉnh (không watermark) trong 3 ngày.</p>
+        <section class="xn-card xn-decide">{# thẻ quyết định #}
+          <h2>Quyết định của bạn</h2>{# tiêu đề thẻ #}
+          <p class="xn-note">Hãy mở app ngân hàng, kiểm tra đã nhận đúng số tiền ở trên rồi mới xác nhận. Xác nhận sẽ hoàn thành Booking và cho phép khách tải ảnh hoàn chỉnh (không watermark) trong 3 ngày.</p>{# lời nhắc kiểm tra tiền và hệ quả khi xác nhận #}
 
-          <form method="post">
-            {% csrf_token %}
+          <form method="post">{# form xác nhận đã nhận đủ tiền #}
+            {% csrf_token %}{# mã bảo mật chống giả mạo form #}
             <button class="btn btn--primary btn--lg btn--block" type="submit" name="hanh_dong" value="xac_nhan"
-                    onclick="return confirm('Xác nhận đã nhận đủ tiền? Booking sẽ được hoàn thành.');">
-              ✓ Xác nhận đã nhận đủ tiền
-            </button>
-          </form>
+                    onclick="return confirm('Xác nhận đã nhận đủ tiền? Booking sẽ được hoàn thành.');">{# nút xác nhận, bấm sẽ hỏi lại 1 lần #}
+              ✓ Xác nhận đã nhận đủ tiền{# chữ trên nút #}
+            </button>{# đóng nút xác nhận #}
+          </form>{# đóng form xác nhận #}
 
-          {% if not qua_han %}
-            <details class="xn-details"{% if form.errors %} open{% endif %}>
-              <summary>Minh chứng chưa khớp hoặc số tiền chưa đủ? Yêu cầu bổ sung</summary>
-              <form method="post" novalidate>
-                {% csrf_token %}
-                {% include "includes/form_field.html" with field=form.ly_do %}
-                <button class="btn btn--secondary btn--block" type="submit" name="hanh_dong" value="bo_sung">Gửi yêu cầu bổ sung</button>
-              </form>
-            </details>
-          {% endif %}
-        </section>
-      {% endif %}
-    </aside>
-  </div>
-</div>
-{% endblock %}
+          {% if not qua_han %}{# chỉ cho yêu cầu bổ sung khi chưa quá hạn #}
+            <details class="xn-details"{% if form.errors %} open{% endif %}>{# ô xổ xuống, tự mở nếu form có lỗi #}
+              <summary>Minh chứng chưa khớp hoặc số tiền chưa đủ? Yêu cầu bổ sung</summary>{# dòng tiêu đề bấm để mở #}
+              <form method="post" novalidate>{# form yêu cầu khách bổ sung #}
+                {% csrf_token %}{# mã bảo mật chống giả mạo form #}
+                {% include "includes/form_field.html" with field=form.ly_do %}{# ô nhập lý do yêu cầu bổ sung #}
+                <button class="btn btn--secondary btn--block" type="submit" name="hanh_dong" value="bo_sung">Gửi yêu cầu bổ sung</button>{# nút gửi yêu cầu bổ sung #}
+              </form>{# đóng form bổ sung #}
+            </details>{# đóng ô xổ xuống #}
+          {% endif %}{# hết điều kiện chưa quá hạn #}
+        </section>{# đóng thẻ quyết định #}
+      {% endif %}{# hết điều kiện trạng thái #}
+    </aside>{# đóng cột phải #}
+  </div>{# đóng lưới 2 cột #}
+</div>{# đóng khung chứa chính #}
+{% endblock %}{# đóng khối nội dung chính #}
 
-{% block extra_js %}
-<script>
+{% block extra_js %}{# mở khối thêm JavaScript cuối trang #}
+<script>{# mở thẻ JavaScript #}
   // Bấm vào ảnh nhỏ để xem các lần gửi minh chứng khác
-  (function () {
-    var thumbs = document.querySelectorAll('.xn-thumb');
-    var img = document.getElementById('xn-main-img');
-    var cap = document.getElementById('xn-caption');
-    var open = document.getElementById('xn-open');
-    if (!thumbs.length || !img) return;
-    thumbs.forEach(function (t) {
-      t.addEventListener('click', function () {
-        img.src = t.dataset.src;
-        cap.textContent = t.dataset.caption;
-        open.href = t.dataset.src;
-        thumbs.forEach(function (x) { x.classList.remove('is-active'); });
-        t.classList.add('is-active');
-      });
-    });
-  })();
-</script>
-{% endblock %}
+  (function () { // bọc trong hàm tự chạy để biến không lọt ra ngoài
+    var thumbs = document.querySelectorAll('.xn-thumb'); // lấy tất cả ảnh nhỏ
+    var img = document.getElementById('xn-main-img'); // lấy ảnh chính đang hiển thị
+    var cap = document.getElementById('xn-caption'); // lấy dòng chú thích
+    var open = document.getElementById('xn-open'); // lấy link "Mở ảnh đầy đủ"
+    if (!thumbs.length || !img) return; // không có ảnh nhỏ hoặc ảnh chính thì dừng
+    thumbs.forEach(function (t) { // duyệt từng ảnh nhỏ
+      t.addEventListener('click', function () { // khi bấm vào ảnh nhỏ
+        img.src = t.dataset.src; // đổi ảnh chính sang ảnh vừa bấm
+        cap.textContent = t.dataset.caption; // đổi chú thích tương ứng
+        open.href = t.dataset.src; // đổi link mở ảnh đầy đủ
+        thumbs.forEach(function (x) { x.classList.remove('is-active'); }); // bỏ viền đậm của tất cả ảnh nhỏ
+        t.classList.add('is-active'); // thêm viền đậm cho ảnh vừa bấm
+      }); // hết xử lý bấm
+    }); // hết vòng duyệt ảnh nhỏ
+  })(); // chạy hàm ngay lập tức
+</script>{# đóng thẻ JavaScript #}
+{% endblock %}{# đóng khối extra_js #}

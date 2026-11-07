@@ -429,12 +429,16 @@ class BaoVeAnhTests(_NenAnh):                                  # N5: watermark v
         self.client.force_login(quan_tri)
         self.assertEqual(self.client.get(reverse('xem_anh', args=[anh.pk])).status_code, 403)
 
-    def test_chi_chuyen_anh_da_hau_ky(self):
+    def test_chuyen_ca_anh_khong_can_chinh_sua(self):
         bk = self.tao_booking(self.goi_gh, TT.CHO_KH_KIEM_TRA)
-        chua = self.tao_anh(bk, 'c1.jpg', loai=LoaiAnh.CHUA_HAU_KY)
-        self.assertEqual(services.chuyen_thanh_anh_hoan_chinh(bk), 0)               # không có ảnh Đã hậu kỳ thì không đổi gì
+        chua = self.tao_anh(bk, 'c1.jpg', loai=LoaiAnh.CHUA_HAU_KY, that=True)       # ảnh Khách không chọn sửa (giữ bản chụp)
+        da = self.tao_anh(bk, 'a1.jpg', loai=LoaiAnh.DA_HAU_KY, chon=1, that=True)   # ảnh đã chỉnh sửa
+        with self.captureOnCommitCallbacks(execute=True):
+            self.assertEqual(services.chuyen_thanh_anh_hoan_chinh(bk), 2)            # cả 2 ảnh đều thành Hoàn chỉnh
         chua.refresh_from_db()
-        self.assertEqual((chua.LoaiAnh, chua.CoWatermark), (LoaiAnh.CHUA_HAU_KY, 1))
+        da.refresh_from_db()
+        self.assertEqual((chua.LoaiAnh, chua.CoWatermark), (LoaiAnh.HOAN_CHINH, 0))
+        self.assertEqual((da.LoaiAnh, da.CoWatermark), (LoaiAnh.HOAN_CHINH, 0))
 
     def test_thieu_ban_goc_thi_bao_loi_va_khong_doi_gi(self):
         bk = self.tao_booking(self.goi_gh, TT.CHO_KH_KIEM_TRA)

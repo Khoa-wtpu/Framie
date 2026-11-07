@@ -11,4 +11,5 @@ urlpatterns = [
     path('booking/<int:ma_booking>/yeu-cau-chinh-sua/', views.yeu_cau_chinh_sua, name='yeu_cau_chinh_sua'),   # N7: Khách hàng yêu cầu chỉnh sửa ảnh
     path('booking/<int:ma_booking>/xac-nhan-ban-giao/', views.xac_nhan_ban_giao, name='xac_nhan_ban_giao'),   # N8: Khách hàng xác nhận hoàn tất bàn giao
     path('booking/<int:ma_booking>/tai-anh-hoan-chinh/', views_tai_anh.tai_anh_hoan_chinh, name='tai_anh_hoan_chinh'),   # N10: Khách hàng tải ảnh hoàn chỉnh
+    path('booking/<int:ma_booking>/tai-anh-hoan-chinh/<int:ma_anh>/xem-truoc/', views_tai_anh.xem_truoc_anh_hoan_chinh, name='xem_truoc_anh_hoan_chinh'),   # N10: ảnh thu nhỏ xem trước
 ]

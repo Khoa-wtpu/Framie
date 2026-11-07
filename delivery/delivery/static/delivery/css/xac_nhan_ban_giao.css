@@ -1,0 +1,35 @@
+/* ===== Trang xác nhận hoàn tất bàn giao (UC5.6) ===== */
+/* Lưới ảnh đã hậu kỳ (chỉ xem, bấm để mở ảnh lớn) */
+.xac-nhan-bg__luoi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.xac-nhan-bg__the {
+  width: 160px;
+  margin: 0;
+  padding: var(--space-1);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.xac-nhan-bg__the img {
+  display: block;
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.xac-nhan-bg__chu-thich {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+}
+/* Hàng 2 nút ở hộp hỏi lại trước khi xác nhận */
+.xac-nhan-bg__nut-hoi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
