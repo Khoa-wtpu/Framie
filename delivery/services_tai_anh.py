@@ -78,9 +78,15 @@ def ly_do_khong_tai_duoc(booking, bay_gio=None):               # trả về câu
 
 
 def lich_su_tai(booking, so_dong=SO_DONG_LICH_SU):             # các lượt tải gần nhất của Booking (mới nhất trước)
-    # Trả kết quả của bước xử lý hiện tại.
-    return list(LichSuTaiAnh.objects.filter(MaAnh__MaBooking=booking)
-                .select_related('MaAnh').order_by('-ThoiDiemTaiAnh', '-pk')[:so_dong])
+    # Lấy các dòng lịch sử gần nhất, kèm ảnh để template không phải truy vấn thêm cho từng dòng.
+    ds = list(LichSuTaiAnh.objects.filter(MaAnh__MaBooking=booking)
+              .select_related('MaAnh').order_by('-ThoiDiemTaiAnh', '-pk')[:so_dong])
+    # Duyệt từng dòng lịch sử để gắn cờ kết quả cho template.
+    for ls in ds:
+        # Cờ thanh_cong: so với hằng KetQuaTaiAnh.THANH_CONG, đổi chữ ở constants thì template không bị vỡ.
+        ls.thanh_cong = ls.KetQuaTaiAnh == KetQuaTaiAnh.THANH_CONG
+    # Trả danh sách đã gắn cờ cho view.
+    return ds
 
 
 def _ghi_lich_su(khach, ds_anh, ket_qua):                      # mỗi ảnh một dòng Lịch sử tải ảnh

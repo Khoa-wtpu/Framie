@@ -261,14 +261,15 @@ class BatDauHauKyViewTests(_NenChonAnh):                       # nút "Bắt đ�
         self.client.force_login(self.nag_user)  # đăng nhập bằng tài khoản cần thử
         trang = self.client.get(reverse('tai_anh_len', args=[bk.pk]))  # gửi yêu cầu tới trang
         self.assertEqual(trang.status_code, 200)  # kiểm tra hai giá trị bằng nhau
-        self.assertContains(trang, 'Bắt đầu hậu kỳ')  # kiểm tra trang có hiện đoạn chữ mong đợi
-        self.assertContains(trang, 'a1.jpg, a2.jpg')           # liệt kê ảnh Khách đã chọn
+        self.assertContains(trang, 'Bắt đầu hậu kỳ')  # hướng dẫn người dùng bắt đầu từ Booking detail
+        self.assertNotContains(trang, 'a1.jpg, a2.jpg')  # không còn trang trung gian liệt kê ảnh trước khi bắt đầu
 
     def test_post_bat_dau_chuyen_dang_hau_ky(self):  # tên test cho biết tình huống đang kiểm tra
         bk = self.tao_booking(self.goi_gh, TT.CHO_HAU_KY)  # tạo Booking ở trạng thái cần thử
         self.client.force_login(self.nag_user)  # đăng nhập bằng tài khoản cần thử
         phan_hoi = self.client.post(reverse('bat_dau_hau_ky', args=[bk.pk]))  # gửi yêu cầu tới trang
-        self.assertEqual(phan_hoi.status_code, 302)  # kiểm tra hai giá trị bằng nhau
+        self.assertEqual(phan_hoi.status_code, 302)  # chuyển hướng sau khi cập nhật trạng thái
+        self.assertEqual(phan_hoi.url, reverse('tai_anh_len', args=[bk.pk]))  # vào thẳng trang tải ảnh, không quay về Booking detail
         bk.refresh_from_db()  # đọc lại dữ liệu mới nhất từ database
         self.assertEqual(bk.TrangThai, TT.DANG_HAU_KY)  # kiểm tra hai giá trị bằng nhau
 

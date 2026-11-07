@@ -35,12 +35,10 @@
       {% if url_chon_anh %}{# Khách hàng + Booking "Chờ Khách hàng lựa chọn ảnh" #}
         <a class="btn btn--primary" href="{{ url_chon_anh }}">Chọn ảnh cần hậu kỳ</a>{# nút dẫn tới trang chọn ảnh (chon_anh_hau_ky) của module Bàn giao ảnh #}
       {% endif %}
-      {% if url_xac_nhan_ban_giao %}{# Khách hàng + Booking "Chờ Khách hàng kiểm tra" #}
-        <a class="btn btn--primary" href="{{ url_xac_nhan_ban_giao }}">Xác nhận hoàn tất bàn giao</a>{# nút dẫn tới trang xác nhận bàn giao (xac_nhan_ban_giao, UC5.6) #}
+      {% if url_xem_anh_hau_ky %}
+        <a class="btn btn--primary" href="{{ url_xem_anh_hau_ky }}">Xem ảnh sau hậu kỳ</a>
       {% endif %}
-      {% if url_yeu_cau_chinh_sua %}{# Khách hàng + Booking "Chờ Khách hàng kiểm tra" #}
-        <a class="btn btn--secondary" href="{{ url_yeu_cau_chinh_sua }}">Yêu cầu chỉnh sửa ảnh</a>{# nút dẫn tới trang yêu cầu chỉnh sửa ảnh (yeu_cau_chinh_sua, UC5.5) #}
-      {% endif %}
+      {# 2 nút "Xác nhận hoàn tất bàn giao" và "Yêu cầu chỉnh sửa ảnh" đã chuyển sang trang "Xem ảnh sau hậu kỳ" (delivery/xem_anh_hau_ky.html) #}
       {% if url_tai_anh_hoan_chinh %}{# Khách hàng + Booking "Hoàn thành" #}
         <a class="btn btn--primary" href="{{ url_tai_anh_hoan_chinh }}">Tải ảnh hoàn chỉnh</a>{# nút dẫn tới trang tải ảnh hoàn chỉnh không watermark (tai_anh_hoan_chinh, UC5.8) #}
       {% endif %}
@@ -53,8 +51,13 @@
       {% if url_tai_minh_chung %}{# Khách hàng + Booking "Chờ đặt cọc" / "Chờ xác nhận thanh toán" #}
         <a class="btn btn--primary" href="{{ url_tai_minh_chung }}">{{ nhan_tai_minh_chung }}</a>{# nút dẫn tới trang tải minh chứng thanh toán (tai_len_minh_chung) của module Thanh toán #}
       {% endif %}
-      {% if url_tai_anh %}{# Nhiếp ảnh gia + Booking "Đã chụp" / "Chờ hậu kỳ" / "Đang hậu kỳ" #}
-        <a class="btn btn--primary" href="{{ url_tai_anh }}">Tải ảnh / Bắt đầu hậu kỳ</a>{# nút dẫn tới trang tải ảnh (tai_anh_len) #}
+      {% if url_bat_dau_hau_ky %}
+        <form method="post" action="{{ url_bat_dau_hau_ky }}">
+          {% csrf_token %}
+          <button class="btn btn--primary" type="submit">Bắt đầu hậu kỳ</button>
+        </form>
+      {% elif url_tai_anh %}
+        <a class="btn btn--primary" href="{{ url_tai_anh }}">Tải ảnh lên hệ thống</a>
       {% endif %}
       {% if co_the_huy %}{# chỉ hiện khi được phép hủy (T9 / UC4.6) #}
         <a class="btn btn--danger" href="{% url 'huy_booking' ma_booking=booking.pk %}">Hủy Booking</a>{# nút đỏ dẫn tới trang nhập lý do + xác nhận hủy #}
@@ -66,6 +69,16 @@
   {% for cau in canh_bao %}{# mỗi chỗ lệch là một cảnh báo (Khách / Nhiếp ảnh gia nhận danh sách rỗng nên không thấy) #}
     {% include "includes/alert.html" with level="warning" title="Trạng thái không khớp dữ liệu thanh toán" text=cau %}{# khung cảnh báo vàng #}
   {% endfor %}
+
+  {% if dong_tien_do_anh %}{# Khách đang kiểm tra ảnh: cho biết Nhiếp ảnh gia đã tải ảnh lần đầu hay lần chỉnh sửa thứ mấy #}
+    {% include "includes/alert.html" with level="info" text=dong_tien_do_anh %}
+  {% endif %}
+  {% if thong_bao_thanh_toan_khach %}{# Khách: Booking được chấp nhận (cần tải minh chứng cọc) hoặc Nhiếp ảnh gia yêu cầu bổ sung minh chứng kèm lý do #}
+    {% include "includes/alert.html" with level=thong_bao_thanh_toan_khach.level title=thong_bao_thanh_toan_khach.title text=thong_bao_thanh_toan_khach.text %}
+  {% endif %}
+  {% if dong_thanh_toan_nag %}{# Nhiếp ảnh gia: Khách đã gửi minh chứng cọc / phần còn lại đang chờ xác nhận #}
+    {% include "includes/alert.html" with level="info" text=dong_thanh_toan_nag %}
+  {% endif %}
 
   {# ===== DẢI THÔNG TIN CHÍNH: một thẻ lớn chia 3 ô, nhìn là biết "chụp khi nào, ở đâu, mấy người" ===== #}
   <section class="ct__dai" aria-label="Thông tin buổi chụp">{# thẻ lớn, CSS chia 3 cột #}

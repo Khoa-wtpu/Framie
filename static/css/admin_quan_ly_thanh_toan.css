@@ -1,0 +1,110 @@
+/* static/css/admin_quan_ly_thanh_toan.css - trang "Quản lý thanh toán" của Quản trị viên.
+   Sao y kiểu dáng trang "Tất cả Booking" (bookings/static/bookings/css/admin_booking_list.css), chỉ đổi tiền tố abk -> abt. Chỉ dùng token trong tokens.css. */
+.abt { padding-block: var(--space-6); }
+.abt__tabs { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-block: var(--space-4); border-bottom: 1px solid var(--color-border); }
+.abt__tabs a { padding: var(--space-2) var(--space-4); text-decoration: none; color: var(--color-text-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.abt__tabs a:hover { color: var(--color-black); }
+.abt__tabs a.is-active { color: var(--color-black); border-bottom-color: var(--color-black); font-weight: var(--fw-heading); }
+
+/* ---- ô tìm kiếm dạng viên thuốc: [kính lúp | ô nhập | nút Bộ lọc | nút Tìm kiếm] ---- */
+.abt__form { display: grid; gap: var(--space-4); margin-bottom: var(--space-6); }
+.abt__tim-kiem { position: relative; }
+.abt__pill { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4); background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-pill); box-shadow: var(--shadow-md); transition: border-color .2s, box-shadow .2s; }
+.abt__pill:hover { border-color: var(--color-text-muted); }
+.abt__pill:focus-within { border-color: var(--color-black); box-shadow: var(--shadow-md), 0 0 0 3px color-mix(in srgb, var(--color-black) 12%, transparent); }
+.abt__bieu-tuong { flex: none; color: var(--color-text-muted); }
+.abt__o-tim { flex: 1; min-width: 0; }
+.abt__input { width: 100%; min-height: 2.75rem; padding: 0 var(--space-2); border: 0; background: transparent; color: var(--color-text); font: inherit; font-size: var(--text-base); outline: none; }
+.abt__input::placeholder { color: var(--color-text-muted); }
+.abt__nut-loc, .abt__gui { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: 2.75rem; padding: 0 var(--space-4); border-radius: var(--radius-pill); font: inherit; font-weight: var(--fw-heading); cursor: pointer; transition: background .2s, color .2s, border-color .2s, transform .2s, box-shadow .2s; }
+.abt__nut-loc { display: none; background: var(--gradient-white-gray); color: var(--color-black); border: 1px solid var(--color-border); }   /* chỉ hiện khi có JS (xem .abt--js) */
+.abt--js .abt__nut-loc { display: inline-flex; }
+.abt__nut-loc:hover { border-color: var(--color-black); }
+.abt__nut-loc[aria-expanded="true"] { background: var(--color-black); color: var(--color-white); border-color: var(--color-black); }
+.abt__so-loc { min-width: 1.4rem; height: 1.4rem; padding: 0 .35rem; display: inline-grid; place-items: center; border-radius: var(--radius-pill); background: var(--color-black); color: var(--color-white); font-size: var(--text-xs); }
+.abt__nut-loc[aria-expanded="true"] .abt__so-loc { background: var(--color-white); color: var(--color-black); }
+.abt__gui { border: 0; background: linear-gradient(135deg, var(--color-black) 0%, var(--color-black-hover) 55%, var(--color-text-muted) 100%); color: var(--color-white); }
+.abt__gui:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.abt__nut-loc:focus-visible, .abt__gui:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+
+/* ---- bảng bộ lọc: nổi bên dưới ô tìm kiếm ---- */
+.abt__bang { display: grid; gap: var(--space-5); margin-top: var(--space-3); padding: var(--space-5); background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
+.abt--js .abt__bang { position: absolute; z-index: 20; top: 100%; left: 0; right: 0; box-shadow: 0 16px 40px color-mix(in srgb, var(--color-black) 16%, transparent); animation: abt-mo .18s ease-out; }
+.abt--js .abt__bang[hidden] { display: none; }
+@keyframes abt-mo { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+/* ---- nhóm lọc: bấm để chọn, chọn được nhiều ---- */
+.abt__nhom { border: 0; padding: 0; margin: 0; min-width: 0; }
+.abt__nhom legend { padding: 0; margin-bottom: var(--space-2); font-size: var(--text-sm); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--color-text-muted); }
+.abt__vien-ds { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.abt__vien { position: relative; display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-2) var(--space-4); background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-pill); font-size: var(--text-sm); cursor: pointer; transition: border-color .15s, background .15s, color .15s, transform .15s; }
+.abt__vien input { position: absolute; opacity: 0; pointer-events: none; }
+.abt__vien:hover { border-color: var(--color-black); transform: translateY(-1px); }
+.abt__vien:has(input:checked) { background: linear-gradient(135deg, var(--color-black) 0%, var(--color-text-muted) 100%); border-color: var(--color-black); color: var(--color-white); }
+.abt__vien:has(input:checked)::before { content: "\2713"; font-size: var(--text-xs); }
+.abt__vien:has(input:focus-visible) { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.abt__gia-khoang { display: flex; align-items: center; gap: var(--space-3); max-width: 28rem; }
+.abt__ngay { display: flex; align-items: center; gap: var(--space-3); max-width: 28rem; }
+.abt__nut { display: flex; justify-content: flex-end; gap: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
+
+/* ---- thanh kết quả ---- */
+.abt__ket-qua-dau { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+.abt__dem { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+.abt__sap-xep { display: inline-flex; align-items: center; gap: var(--space-2); margin-left: auto; font-size: var(--text-sm); }
+.abt__sap-xep .input { width: auto; min-height: 2.25rem; padding-block: var(--space-1); border-radius: var(--radius-pill); }
+
+
+@media (max-width: 40rem) {
+  .abt__nhan { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }   /* màn nhỏ: chỉ còn biểu tượng để ô tìm kiếm vẫn nằm trên một hàng */
+  .abt__nut-loc, .abt__gui { padding: 0 var(--space-3); }
+  .abt__bieu-tuong { display: none; }
+  .abt__pill { padding-left: var(--space-3); }
+  .abt__sap-xep { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .abt--js .abt__bang { animation: none; } }
+
+.abt__cuon { overflow-x: auto; background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+.abt__bang-luot { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.abt__bang-luot th, .abt__bang-luot td { padding: var(--space-2) var(--space-3); text-align: center; vertical-align: middle; border-bottom: 1px solid var(--color-border); }
+.abt__bang-luot thead th { background: var(--gradient-white-gray); font-weight: var(--fw-heading); white-space: nowrap; }
+.abt__bang-luot tbody tr:last-child > * { border-bottom: 0; }
+.abt__bang-luot tbody th { font-weight: var(--fw-heading); }
+.abt__bang-luot tbody th.abt__cot-nag { text-align: left; }   /* tên cột vẫn căn giữa, riêng nội dung cột Nhiếp ảnh gia căn lề trái */
+.abt__trong { padding: var(--space-6); text-align: center; color: var(--color-text-muted); border: 1px dashed var(--color-border); border-radius: var(--radius-lg); }
+.abt__loi { margin: var(--space-2) 0 0; color: var(--danger-fg); font-size: var(--text-sm); }
+
+/* ---- cột riêng của bảng Booking ---- */
+.abt__bang-luot .abt__ma { font-weight: var(--fw-heading); white-space: nowrap; }
+.abt__bang-luot .abt__phu { display: block; color: var(--color-text-muted); font-size: var(--text-xs); overflow-wrap: anywhere; }   /* email dài thì xuống dòng thay vì làm bảng rộng ra */
+.abt__bang-luot .abt__cat { max-width: 10rem; margin-inline: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* địa điểm dài thì cắt "..." */
+.abt__bang-luot .abt__gio { white-space: nowrap; }
+.abt__bang-luot tbody tr:hover { background: var(--color-surface-alt); }
+
+/* ---- cột "Thao tác" (nút Xem chi tiết): luôn dính mép phải khung bảng ----
+   Màn hình đủ rộng thì cột nằm đúng chỗ như mọi cột khác; màn hình hẹp phải cuộn ngang thì cột này vẫn đứng yên bên phải,
+   nên nút Xem chi tiết không bao giờ bị che khuất. */
+.abt__bang-luot .abt__thao-tac { white-space: nowrap; }
+@media (max-width: 56rem) {   /* chỉ cửa sổ hẹp mới cần dính mép phải để nút không bị cuộn mất */
+  .abt__bang-luot .abt__thao-tac { position: sticky; right: 0; z-index: 1; background: var(--color-white); box-shadow: -10px 0 12px -10px color-mix(in srgb, var(--color-black) 35%, transparent); }
+}
+.abt__bang-luot thead .abt__thao-tac { background: var(--gradient-white-gray); }   /* ô tiêu đề cột nút dùng nền gradient giống các ô tiêu đề khác */
+.abt__bang-luot tbody tr:hover > .abt__thao-tac { background: var(--color-surface-alt); }   /* rê chuột vào dòng thì ô nút đổi màu theo dòng */
+
+/* ---- CHỈ bảng ở trang Quản trị "Quản lý thanh toán" được nới rộng (class abt__cuon--rong gắn trong admin_quan_ly_thanh_toan.html) ----
+   Tiêu đề, tab, ô tìm kiếm, đếm Booking và phân trang giữ nguyên bề ngang chuẩn như các trang khác (Gói dịch vụ,...).
+   Riêng khung bảng được kéo rộng ra hai bên khung trang, tối đa 96rem, luôn chừa lề 1,5rem hai bên màn hình. */
+.abt__cuon--rong { width: min(96rem, calc(100vw - 3rem)); position: relative; left: 50%; transform: translateX(-50%); }
+@media (max-width: 75rem) {   /* cửa sổ chưa thật rộng: bỏ dòng email dưới tên Khách hàng / Nhiếp ảnh gia để bảng vừa khung */
+  .abt__cuon--rong .abt__bang-luot tbody td:nth-child(3) .abt__phu, .abt__cuon--rong .abt__bang-luot tbody td:nth-child(4) .abt__phu { display: none; }
+}
+.abt__cuon--rong .abt__thao-tac .btn { min-width: 6.25rem; }
+@media (max-width: 75rem) {   /* thu gọn chữ + lề ô riêng cho bảng rộng để vừa khung, không phải cuộn ngang */
+  .abt__cuon--rong .abt__bang-luot { font-size: var(--text-xs); }
+  .abt__cuon--rong .abt__bang-luot th, .abt__cuon--rong .abt__bang-luot td { padding: var(--space-2); }
+  .abt__cuon--rong .abt__bang-luot .abt__cat { max-width: 7rem; }
+}
+
+/* ---- cột riêng của bảng thanh toán ---- */
+.abt__bang-luot .abt__tien { font-weight: var(--fw-heading); white-space: nowrap; }
+.abt__bang-luot .abt__khong { color: var(--color-text-muted); }
+.abt__cuon--rong .abt__bang-luot .abt__thao-tac .btn { min-width: 4.5rem; }

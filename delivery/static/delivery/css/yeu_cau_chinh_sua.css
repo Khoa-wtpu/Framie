@@ -7,10 +7,34 @@
 .yc-sua__quota { display: grid; gap: var(--space-3); padding: var(--space-4) var(--space-5); background: var(--color-surface); border: 1px solid var(--color-border); border-left: 4px solid var(--tone-violet-dot); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
 /* Quy tắc giao diện cho: .yc-sua__quota-text */
 .yc-sua__quota-text { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2); }
-/* Quy tắc giao diện cho: .yc-sua__bar */
-.yc-sua__bar { height: .5rem; background: var(--color-surface-alt); border-radius: var(--radius-pill); overflow: hidden; }
-/* Quy tắc giao diện cho: .yc-sua__bar span */
-.yc-sua__bar span { display: block; height: 100%; background: var(--color-black); border-radius: var(--radius-pill); }
+/* Quy tắc giao diện cho: .yc-sua__bar (thẻ <progress>: số lần đã dùng / tối đa) */
+.yc-sua__bar {
+  -webkit-appearance: none; /* tắt giao diện mặc định của Safari/Chrome */
+  appearance: none; /* tắt giao diện mặc định của trình duyệt */
+  display: block; /* chiếm trọn chiều ngang khung */
+  width: 100%; /* rộng bằng khung */
+  height: .5rem; /* thanh mảnh */
+  border: 0; /* bỏ viền mặc định */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu */
+  overflow: hidden; /* cắt phần màu thừa theo góc bo */
+  background: var(--color-surface-alt); /* nền thanh (Firefox dùng nền của chính thẻ) */
+  color: var(--color-black); /* màu phần đã đầy khi trình duyệt không hỗ trợ pseudo-element */
+} /* hết quy tắc thanh */
+/* Quy tắc giao diện cho: .yc-sua__bar::-webkit-progress-bar (nền thanh, Chrome/Safari/Edge) */
+.yc-sua__bar::-webkit-progress-bar {
+  background: var(--color-surface-alt); /* nền xám nhạt */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu */
+} /* hết quy tắc nền webkit */
+/* Quy tắc giao diện cho: .yc-sua__bar::-webkit-progress-value (phần đã đầy, Chrome/Safari/Edge) */
+.yc-sua__bar::-webkit-progress-value {
+  background: var(--color-black); /* màu đậm theo chế độ sáng/tối */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu */
+} /* hết quy tắc phần đầy webkit */
+/* Quy tắc giao diện cho: .yc-sua__bar::-moz-progress-bar (phần đã đầy, Firefox) */
+.yc-sua__bar::-moz-progress-bar {
+  background: var(--color-black); /* màu đậm theo chế độ sáng/tối */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu */
+} /* hết quy tắc phần đầy Firefox */
 
 /* --- Lịch sử các lần yêu cầu --- */
 /* Quy tắc giao diện cho: .yc-sua__lich-su */
@@ -73,8 +97,8 @@
 .yc-sua__the-body { display: grid; gap: var(--space-2); padding: var(--space-4); }
 /* Quy tắc giao diện cho: .yc-sua__ten */
 .yc-sua__ten { margin: 0; font-size: var(--text-sm); font-weight: var(--fw-heading); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* Quy tắc giao diện cho: .yc-sua__nhan */
-.yc-sua__nhan { font-size: var(--text-xs); color: var(--color-text-muted); }
+/* Quy tắc giao diện cho: .yc-sua__the-body .field (bỏ lề dưới mặc định của .field vì thẻ ảnh đã có khoảng cách riêng) */
+.yc-sua__the-body .field { margin-bottom: 0; }
 /* Quy tắc giao diện cho: .yc-sua__the-body textarea.input */
 .yc-sua__the-body textarea.input { min-height: 4.5rem; font-size: var(--text-sm); }
 /* Quy tắc giao diện cho: .yc-sua__dem */

@@ -8,7 +8,7 @@ class MinhChungForm(forms.Form):                              # form tải minh 
     tep = forms.ImageField(                                   # ImageField: tự kiểm tra tệp có đúng là ảnh (cần Pillow)
         label='Ảnh minh chứng chuyển khoản',
         help_text='Chỉ nhận JPG, JPEG hoặc PNG, tối đa 5 MB.',
-        widget=forms.FileInput(attrs={'accept': '.jpg,.jpeg,.png'}),  # trình duyệt chỉ gợi ý 3 đuôi này
+        widget=forms.FileInput(attrs={'accept': '.jpg,.jpeg,.png', 'class': 'mc-file-input'}),  # trình duyệt chỉ gợi ý 3 đuôi này
         error_messages={'required': 'Vui lòng chọn tệp minh chứng.',
                         'invalid_image': 'Tệp không phải ảnh hợp lệ.'})
 

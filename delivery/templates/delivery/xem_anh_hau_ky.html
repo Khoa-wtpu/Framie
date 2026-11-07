@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load ui static %}
+{% block title %}Xem ảnh sau hậu kỳ{% endblock %}
+{% block content %}
+<main class="container stack gallery-hau-ky">
+  <a class="muted" href="{% url 'chi_tiet_booking' ma_booking=booking.pk %}"><span aria-hidden="true">←</span> Quay lại Booking #{{ booking.pk }}</a>{# về trang chi tiết Booking (trang 1) #}
+  <header>
+    <h1>Xem ảnh sau hậu kỳ</h1>
+    <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>
+  </header>
+  {% if ly_do %}
+    {% include "includes/alert.html" with level="info" text=ly_do %}
+  {% else %}
+    <div class="gallery-hau-ky__grid" aria-label="Ảnh sau hậu kỳ">
+      {% for a in anhs %}
+        <button class="gallery-hau-ky__item" type="button"
+                data-full="{% url 'xem_anh' a.pk %}" data-alt="{{ a.TenAnh|escape }}"
+                aria-label="Xem ảnh {{ forloop.counter }}">
+          <img src="{% url 'xem_anh' a.pk %}?nho=1" alt="{{ a.TenAnh }}" loading="lazy">
+        </button>
+      {% empty %}
+        <p class="muted">Chưa có ảnh sau hậu kỳ để hiển thị.</p>
+      {% endfor %}
+    </div>
+    <section class="panel stack gallery-hau-ky__hanh-dong">{# 2 nút quyết định sau khi xem ảnh #}
+      <p>Xem kỹ ảnh rồi chọn: hài lòng thì xác nhận bàn giao, chưa hài lòng thì gửi yêu cầu chỉnh sửa{% if co_the_yeu_cau %} (còn {{ so_lan_con_lai }} lần){% endif %}.</p>
+      <div class="gallery-hau-ky__nut">
+        <a class="btn btn--primary" href="{% url 'xac_nhan_ban_giao' booking.pk %}">Xác nhận hoàn tất bàn giao</a>{# sang trang xác nhận bàn giao #}
+        {% if co_the_yeu_cau %}
+          <a class="btn btn--secondary" href="{% url 'yeu_cau_chinh_sua' booking.pk %}">Yêu cầu chỉnh sửa ảnh</a>{# sang trang gửi chi tiết yêu cầu chỉnh sửa #}
+        {% endif %}
+      </div>
+      {% if not co_the_yeu_cau %}<p class="muted">Bạn đã dùng hết số lần yêu cầu chỉnh sửa cho Booking này.</p>{% endif %}
+    </section>
+    <dialog class="gallery-hau-ky__dialog" id="gallery-lightbox" aria-label="Xem ảnh kích thước lớn">
+      <button class="gallery-hau-ky__close" type="button" aria-label="Đóng">×</button>
+      <img id="gallery-lightbox-image" alt="">
+    </dialog>
+  {% endif %}
+</main>
+{% endblock %}
+{% block extra_head %}
+<style>
+.gallery-hau-ky { padding-block: var(--space-6); }
+.gallery-hau-ky__grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:var(--space-4); }
+.gallery-hau-ky__item { display:block; padding:0; overflow:hidden; border:1px solid var(--color-border); border-radius:var(--radius-lg); background:var(--surface-gradient); cursor:zoom-in; }
+.gallery-hau-ky__item img { display:block; width:100%; aspect-ratio:4/3; object-fit:cover; transition:transform .2s; }
+.gallery-hau-ky__item:hover img { transform:scale(1.035); }
+.gallery-hau-ky__nut { display:flex; flex-wrap:wrap; gap:var(--space-3); }
+.gallery-hau-ky__dialog { width:min(92vw,1100px); max-width:none; max-height:92vh; padding:3.5rem 1rem 1rem; border:1px solid var(--color-border); border-radius:var(--radius-lg); background:var(--color-bg); }
+.gallery-hau-ky__dialog::backdrop { background:rgba(0,0,0,.88); }
+.gallery-hau-ky__dialog img { display:block; max-width:100%; max-height:calc(92vh - 5rem); margin:auto; object-fit:contain; }
+.gallery-hau-ky__close { position:absolute; top:.75rem; right:.75rem; width:2.5rem; height:2.5rem; border:1px solid var(--color-border); border-radius:50%; background:var(--color-surface); color:var(--color-text); font-size:1.5rem; cursor:pointer; }
+</style>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function () {
+  const dialog = document.getElementById('gallery-lightbox');
+  const image = document.getElementById('gallery-lightbox-image');
+  if (!dialog || !image) return;
+  document.querySelectorAll('.gallery-hau-ky__item').forEach(function (item) {
+    item.addEventListener('click', function () {
+      image.src = item.dataset.full;
+      image.alt = item.dataset.alt || 'Ảnh sau hậu kỳ';
+      dialog.showModal();
+    });
+  });
+  dialog.querySelector('.gallery-hau-ky__close').addEventListener('click', function () {
+    dialog.close();
+  });
+  dialog.addEventListener('click', function (event) {
+    if (event.target === dialog) dialog.close();
+  });
+  dialog.addEventListener('close', function () { image.removeAttribute('src'); });
+})();
+</script>
+{% endblock %}

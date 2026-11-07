@@ -4,29 +4,58 @@
 
 /* ---- ô chọn sao ---- */
 .dg-chon-sao { border: 0; padding: 0; margin: 0; }
-.dg-sao-chon { display: inline-flex; flex-direction: row-reverse; justify-content: flex-end; gap: var(--space-1); }
+.dg-chon-sao .field__label { text-transform: uppercase; }
+.dg-sao-chon { display: flex; width: 100%; flex-direction: row-reverse; justify-content: center; gap: var(--space-1); }
 .dg-sao-chon input { position: absolute; opacity: 0; pointer-events: none; }
-.dg-sao-chon label { position: relative; font-size: var(--text-3xl); line-height: 1; cursor: pointer; color: var(--color-border); transition: color .12s; }
-.dg-sao-chon label:hover,
-.dg-sao-chon label:hover ~ label,
-.dg-sao-chon input:checked ~ label { color: var(--tone-amber-dot); }          /* sao được chọn và các sao thấp hơn đều sáng */
+.dg-chon-sao .dg-sao-chon label,
+.dg-chon-sao .dg-sao-chon label span[aria-hidden] { position: relative; font-size: var(--text-3xl); line-height: 1; cursor: pointer; color: var(--color-text); transition: color .12s; }  /* sao chưa chọn: gần như trắng ở nền tối (tự đổi theo chế độ sáng/tối) */
+.dg-chon-sao .dg-sao-chon label:hover,
+.dg-chon-sao .dg-sao-chon label:hover ~ label,
+.dg-chon-sao .dg-sao-chon input:checked ~ label,
+.dg-chon-sao .dg-sao-chon label:hover span,
+.dg-chon-sao .dg-sao-chon label:hover ~ label span,
+.dg-chon-sao .dg-sao-chon input:checked ~ label span { color: var(--tone-amber-dot); }          /* sao được chọn và các sao thấp hơn đều sáng vàng */
 .dg-sao-chon input:focus-visible + label { outline: 2px solid var(--color-focus); outline-offset: 2px; border-radius: var(--radius-sm); }
 
 /* ---- hiển thị sao (chỉ đọc) ---- */
 .sao { display: inline-block; letter-spacing: .08em; white-space: nowrap; }
 .sao__day { color: var(--tone-amber-dot); }
-.sao__trong { color: var(--color-border); }
+.sao__trong { color: var(--color-text-muted); }  /* sao trống ở chế độ chỉ đọc: cùng màu xám sáng */
 
 /* ---- tổng quan điểm ---- */
 .dg-tong-quan { display: flex; flex-wrap: wrap; gap: var(--space-6); align-items: center; }
 .dg-tong-quan__so { font-size: var(--text-3xl); font-weight: var(--fw-heading); }
 .dg-phan-bo { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 14rem; }
 .dg-phan-bo li { display: grid; grid-template-columns: 3rem 1fr 2.5rem; gap: var(--space-2); align-items: center; font-size: var(--text-sm); }
-.dg-phan-bo__thanh { display: block; height: .5rem; background: var(--color-gray-soft); border-radius: var(--radius-pill); overflow: hidden; }
-.dg-phan-bo__thanh > span { display: block; height: 100%; background: var(--tone-amber-dot); }
+.dg-phan-bo__thanh { /* thanh phân bố số sao: thẻ <progress> */
+  -webkit-appearance: none; /* tắt giao diện mặc định của Safari/Chrome */
+  appearance: none; /* tắt giao diện mặc định của trình duyệt */
+  display: block; /* chiếm trọn ô giữa của dòng */
+  width: 100%; /* rộng bằng ô */
+  height: .5rem; /* thanh mảnh */
+  border: 0; /* bỏ viền mặc định */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu */
+  overflow: hidden; /* cắt phần màu thừa theo góc bo */
+  background: var(--color-gray-soft); /* nền thanh (Firefox dùng nền của chính thẻ) */
+  color: var(--tone-amber-dot); /* màu phần đã đầy khi trình duyệt không hỗ trợ pseudo-element */
+} /* hết quy tắc thanh */
+.dg-phan-bo__thanh::-webkit-progress-bar { /* phần nền của thanh (Chrome, Safari, Edge) */
+  background: var(--color-gray-soft); /* nền xám nhạt */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu */
+} /* hết quy tắc nền webkit */
+.dg-phan-bo__thanh::-webkit-progress-value { /* phần đã đầy (Chrome, Safari, Edge) */
+  background: var(--tone-amber-dot); /* màu vàng cho số sao */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu */
+} /* hết quy tắc phần đầy webkit */
+.dg-phan-bo__thanh::-moz-progress-bar { /* phần đã đầy (Firefox) */
+  background: var(--tone-amber-dot); /* màu vàng cho số sao */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu */
+} /* hết quy tắc phần đầy Firefox */
 
 /* ---- danh sách đánh giá ---- */
 .dg-ds { list-style: none; margin: 0; padding: 0; }
 .dg-muc { padding-block: var(--space-4); border-top: 1px solid var(--color-border); }
 .dg-muc__dau { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: baseline; }
 .dg-muc__nhan-xet { margin: var(--space-2) 0 0; overflow-wrap: anywhere; }
+
+.dg-dem-ky-tu--gioi-han { color: var(--tone-red-fg); font-weight: var(--fw-heading); }

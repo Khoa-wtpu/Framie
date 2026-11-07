@@ -222,6 +222,15 @@ class DanhGiaCongKhaiTests(_Nen):                              # hiển thị c�
         self.assertContains(r, 'Nguyễn')                       # tên khách hiện công khai
         self.assertNotContains(r, 'kh@x.vn')                   # nhưng không lộ email
 
+    def test_thanh_phan_bo_sao_dung_the_progress_khong_dung_style_inline(self):   # thanh phân bố sao: <progress>, không còn <span style="width:...">
+        services.tao_danh_gia(self.tao_booking().pk, self.kh, 5, '')   # 1 đánh giá 5 sao
+        services.tao_danh_gia(self.tao_booking().pk, self.kh, 4, '')   # 1 đánh giá 4 sao -> mỗi mức chiếm 50%
+        r = self.client.get(reverse('photographer_reviews', args=[self.nag.pk]))
+        self.assertContains(r, '<progress class="dg-phan-bo__thanh"', count=5)   # đủ 5 thanh, từ 5 sao đến 1 sao
+        self.assertContains(r, 'max="100" value="50" aria-label="5 sao"')        # 5 sao: 1/2 = 50%
+        self.assertContains(r, 'max="100" value="0" aria-label="1 sao"')         # 1 sao: chưa có = 0%
+        self.assertNotContains(r, 'style="width')                                # không còn style inline
+
     def test_chua_co_danh_gia(self):
         r = self.client.get(reverse('photographer_reviews', args=[self.nag.pk]))
         self.assertContains(r, 'chưa có đánh giá nào')
