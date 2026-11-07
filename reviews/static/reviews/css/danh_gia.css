@@ -27,8 +27,30 @@
 .dg-tong-quan__so { font-size: var(--text-3xl); font-weight: var(--fw-heading); }
 .dg-phan-bo { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 14rem; }
 .dg-phan-bo li { display: grid; grid-template-columns: 3rem 1fr 2.5rem; gap: var(--space-2); align-items: center; font-size: var(--text-sm); }
-.dg-phan-bo__thanh { display: block; height: .5rem; background: var(--color-gray-soft); border-radius: var(--radius-pill); overflow: hidden; }
-.dg-phan-bo__thanh > span { display: block; height: 100%; background: var(--tone-amber-dot); }
+.dg-phan-bo__thanh { /* thanh phân bố số sao: thẻ <progress> */
+  -webkit-appearance: none; /* tắt giao diện mặc định của Safari/Chrome */
+  appearance: none; /* tắt giao diện mặc định của trình duyệt */
+  display: block; /* chiếm trọn ô giữa của dòng */
+  width: 100%; /* rộng bằng ô */
+  height: .5rem; /* thanh mảnh */
+  border: 0; /* bỏ viền mặc định */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu */
+  overflow: hidden; /* cắt phần màu thừa theo góc bo */
+  background: var(--color-gray-soft); /* nền thanh (Firefox dùng nền của chính thẻ) */
+  color: var(--tone-amber-dot); /* màu phần đã đầy khi trình duyệt không hỗ trợ pseudo-element */
+} /* hết quy tắc thanh */
+.dg-phan-bo__thanh::-webkit-progress-bar { /* phần nền của thanh (Chrome, Safari, Edge) */
+  background: var(--color-gray-soft); /* nền xám nhạt */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu */
+} /* hết quy tắc nền webkit */
+.dg-phan-bo__thanh::-webkit-progress-value { /* phần đã đầy (Chrome, Safari, Edge) */
+  background: var(--tone-amber-dot); /* màu vàng cho số sao */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu */
+} /* hết quy tắc phần đầy webkit */
+.dg-phan-bo__thanh::-moz-progress-bar { /* phần đã đầy (Firefox) */
+  background: var(--tone-amber-dot); /* màu vàng cho số sao */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu */
+} /* hết quy tắc phần đầy Firefox */
 
 /* ---- danh sách đánh giá ---- */
 .dg-ds { list-style: none; margin: 0; padding: 0; }

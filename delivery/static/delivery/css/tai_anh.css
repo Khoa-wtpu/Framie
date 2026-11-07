@@ -150,3 +150,27 @@
 .tai-anh__mo-ta strong { font-size: var(--text-base); }
 .tai-anh__mo-ta small { color: var(--color-text-muted); font-size: var(--text-xs); }
 .tai-anh__field input[type="file"]:focus-visible + * { outline: 2px solid var(--color-focus); }
+
+/* ===== N7: khối "Khách hàng yêu cầu chỉnh sửa" trên trang tải ảnh (thay cho style inline) ===== */
+.tai-anh__yc-ds { /* danh sách từng ảnh Khách yêu cầu sửa */
+  display: flex; /* xếp các dòng ảnh theo cột */
+  flex-direction: column; /* mỗi ảnh một dòng, từ trên xuống */
+  gap: var(--space-4); /* khoảng cách giữa các dòng */
+} /* hết quy tắc danh sách */
+.tai-anh__yc-dong { /* một dòng: ảnh bên trái, nội dung bên phải */
+  display: flex; /* xếp ảnh và nội dung cạnh nhau */
+  flex-wrap: wrap; /* màn hình hẹp thì nội dung rớt xuống dưới ảnh */
+  align-items: flex-start; /* căn mép trên của ảnh và nội dung */
+  gap: var(--space-4); /* khoảng cách giữa ảnh và nội dung */
+} /* hết quy tắc một dòng */
+.tai-anh__yc-anh { /* ảnh thu nhỏ của ảnh cần sửa */
+  display: block; /* bỏ khoảng trống dưới ảnh */
+  width: 11.25rem; /* chiều rộng ảnh */
+  height: 7.5rem; /* chiều cao ảnh */
+  object-fit: cover; /* cắt ảnh cho vừa khung, không bị méo */
+  border-radius: var(--radius-sm); /* bo góc nhẹ */
+} /* hết quy tắc ảnh */
+.tai-anh__yc-nd { /* tên ảnh và nội dung Khách yêu cầu sửa */
+  flex: 1; /* chiếm phần còn lại của dòng */
+  min-width: 12.5rem; /* hẹp quá thì rớt xuống dòng */
+} /* hết quy tắc nội dung */

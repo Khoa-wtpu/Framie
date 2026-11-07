@@ -183,6 +183,18 @@ class TaiHoanChinhViewTests(_NenTaiHoanChinh):                 # view UC5.8
         self.assertContains(r, 'Chỉ Booking đã hoàn thành')
         self.assertNotContains(r, 'Tải tất cả')
 
+    def test_lich_su_gan_co_thanh_cong_theo_hang_so_va_template_chon_lop_mau(self):
+        bk = self.booking_hoan_thanh()
+        a = self.anh_hoan_chinh(bk, 'a1.jpg')
+        for ket_qua in (KetQuaTaiAnh.THANH_CONG, KetQuaTaiAnh.THAT_BAI):   # mỗi kết quả một dòng lịch sử
+            LichSuTaiAnh.objects.create(MaAnh=a, MaKhachHang=self.kh, ThoiDiemTaiAnh=timezone.now(), KetQuaTaiAnh=ket_qua)
+        co = {ls.KetQuaTaiAnh: ls.thanh_cong for ls in dich_vu.lich_su_tai(bk)}   # cờ do service tính sẵn
+        self.assertEqual(co, {KetQuaTaiAnh.THANH_CONG: True, KetQuaTaiAnh.THAT_BAI: False})
+        self.client.force_login(self.kh)
+        r = self.client.get(self.url(bk))
+        self.assertContains(r, 'tahc__ls-kq tahc__ok', count=1)    # dòng thành công dùng lớp màu thành công
+        self.assertContains(r, 'tahc__ls-kq tahc__loi', count=1)   # dòng thất bại dùng lớp màu lỗi
+
     def test_phan_quyen(self):
         bk = self.booking_hoan_thanh()
         self.client.force_login(self.nag_user)

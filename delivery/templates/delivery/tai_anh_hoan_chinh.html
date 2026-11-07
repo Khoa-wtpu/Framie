@@ -8,14 +8,7 @@
   </header>
 
   {% if ly_do %}{# chưa hoàn thành / hết hạn lưu trữ (4a) / chưa có ảnh #}
-      {% include "includes/form_field.html" with field=form.anh %}{# giữ nguyên ô chọn ảnh có sẵn #}
-      <div id="khung-xem-truoc" class="tai-anh__xem-truoc" hidden>{# khung xem trước, ẩn cho tới khi có ảnh được chọn #}
-        <div class="tai-anh__xem-truoc-dau">{# hàng đầu: số ảnh đã chọn và nút xóa hết #}
-          <strong id="chu-da-chon"></strong>{# chữ "Đã chọn N ảnh" do JS điền vào #}
-          <button type="button" id="nut-xoa-het" class="btn btn--ghost btn--sm">Xóa hết</button>{# nút bỏ hết ảnh đã chọn #}
-        </div>{# đóng hàng đầu #}
-        <div id="luoi-xem-truoc" class="tai-anh__luoi-xem-truoc"></div>{# lưới ảnh, JS thêm từng thẻ ảnh vào đây #}
-      </div>{# đóng khung xem trước #}
+    {% include "includes/alert.html" with level="warning" text=ly_do %}{# hiện lý do chưa tải được #}
   {% else %}{# trường hợp bình thường: khách được phép tải ảnh #}
     <section class="tahc__expiry" aria-label="Hạn tải ảnh">
       <strong>Hạn tải: {{ han_tai|date:"d/m/Y H:i" }}</strong>
@@ -64,7 +57,7 @@
           <li class="tahc__ls">{# một dòng lịch sử #}
             <span class="tahc__ls-gio">{{ ls.ThoiDiemTaiAnh|date:"d/m/Y H:i" }}</span>{# giờ tải #}
             <span class="tahc__ls-ten">{{ ls.MaAnh.TenAnh }}</span>{# tên ảnh đã tải #}
-            <span class="tahc__ls-kq {% if ls.KetQuaTaiAnh == 'Tải ảnh thành công' %}tahc__ok{% else %}tahc__loi{% endif %}">{{ ls.KetQuaTaiAnh }}</span>{# nhãn kết quả: xanh nếu thành công, đỏ nếu lỗi #}
+            <span class="tahc__ls-kq {% if ls.thanh_cong %}tahc__ok{% else %}tahc__loi{% endif %}">{{ ls.KetQuaTaiAnh }}</span>{# nhãn kết quả: xanh nếu thành công, đỏ nếu lỗi #}
           </li>{# đóng dòng lịch sử #}
         {% endfor %}{# hết vòng lặp lịch sử #}
       </ul>{# đóng danh sách lịch sử #}
