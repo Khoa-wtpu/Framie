@@ -11,7 +11,7 @@ from core.constants import TrangThaiHoSo, VaiTro  # tên 3 vai trò và trạng 
 TRANG_CHU_THEO_VAI_TRO = {  # từ điển: vai trò -> danh sách tên URL ưu tiên
     VaiTro.QUAN_TRI_VIEN: ['admin_dashboard', 'admin_accounts'],  # TODO: đổi cho đúng tên URL trang tổng quan khi làm B7
     VaiTro.NHIEP_ANH_GIA: ['dashboard', 'photographer_profile'],  # B9 Trang tổng quan (NAG chưa duyệt vẫn vào được, chỉ thấy tình trạng hồ sơ)
-    VaiTro.KHACH_HANG: ['dashboard', 'search', 'home'],  # B9 Trang tổng quan, chưa có thì trang tìm kiếm rồi trang chủ
+    VaiTro.KHACH_HANG: ['home'],  # Khách hàng đăng nhập xong về Trang chủ FRAMIE
 }  # hết từ điển
 
 

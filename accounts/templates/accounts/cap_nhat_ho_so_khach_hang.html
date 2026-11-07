@@ -1,0 +1,32 @@
+{% extends "base.html" %}{# Cập nhật hồ sơ (Khách hàng) #}
+{% load static %}
+{% block title %}Cập nhật hồ sơ{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'accounts/css/tai_khoan.css' %}">{% endblock %}
+{% block content %}
+<div class="container tk" style="max-width: 48rem;">
+  <header class="tk__dau">
+    <h1>Cập nhật hồ sơ</h1>
+    <p>Chỉnh sửa thông tin tài khoản của bạn. Mật khẩu đổi ở mục Đổi mật khẩu.</p>
+  </header>
+
+  {% if form.non_field_errors %}
+    {% include "includes/alert.html" with level="danger" text=form.non_field_errors.0 %}
+  {% endif %}
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <section class="tk__khoi">
+      <h2>Thông tin tài khoản</h2>
+      {% include "includes/form_field.html" with field=form.ho_ten %}
+      <div class="tk__luoi">
+        {% include "includes/form_field.html" with field=form.so_dien_thoai %}
+        {% include "includes/form_field.html" with field=form.email %}
+      </div>
+    </section>
+    <div class="tk__luoi">
+      <a class="btn btn--secondary btn--block" href="{% url 'customer_profile' %}">Hủy</a>
+      <button class="btn btn--primary btn--block" type="submit">Lưu thay đổi</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

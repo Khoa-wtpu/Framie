@@ -39,6 +39,14 @@ class ThongBao(models.Model):  # bảng THONGBAO: mỗi dòng là một thông b
         null=True,  # cho phép NULL ở cơ sở dữ liệu: thông báo không gửi email thì để trống
         blank=True,  # cho phép để trống khi nhập ở form/admin
     )  # hết khai báo TrangThaiGuiEmail
+    MaDuyetHoSo = models.ForeignKey(  # P12: lượt duyệt hồ sơ phát sinh thông báo (để nút "Duyệt hồ sơ" dẫn đúng hồ sơ)
+        'profiles.DuyetHoSo',  # trỏ tới model DuyetHoSo của Khoa (viết dạng chuỗi để tránh import vòng)
+        on_delete=models.PROTECT,  # ON DELETE RESTRICT: không cho xóa lượt duyệt nếu còn thông báo trỏ tới
+        null=True,  # cho phép NULL: thông báo không gắn với lượt duyệt hồ sơ thì để trống
+        blank=True,  # cho phép để trống khi nhập ở form/admin
+        db_column='MaDuyetHoSo',  # tên cột đúng như Data Dictionary
+        related_name='thong_bao',  # từ một lượt duyệt gọi ngược ra các thông báo của nó
+    )  # hết khai báo MaDuyetHoSo
 
     class Meta:  # tùy chọn thêm cho bảng
         db_table = 'THONGBAO'  # tên bảng đúng như Data Dictionary (nếu bỏ dòng này Django tự đặt notifications_thongbao)
