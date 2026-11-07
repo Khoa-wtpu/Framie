@@ -1,6 +1,7 @@
 /* bookings/static/bookings/css/admin_booking_list.css - trang "Tất cả Booking" của Quản trị viên.
    Bố cục và kiểu dáng LẤY THEO profiles/static/profiles/css/duyet_ho_so.css (trang Duyệt hồ sơ Nhiếp ảnh gia). Chỉ dùng token trong tokens.css. */
 .abk { padding-block: var(--space-6); }
+.abk.container { max-width: none; padding-inline: var(--space-4); }   /* trang bảng: bỏ giới hạn bề ngang, dãn hết khung màn hình để đủ chỗ cho 8 cột kể cả nút Xem chi tiết */
 .abk__tabs { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-block: var(--space-4); border-bottom: 1px solid var(--color-border); }
 .abk__tabs a { padding: var(--space-2) var(--space-4); text-decoration: none; color: var(--color-text-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .abk__tabs a:hover { color: var(--color-black); }
@@ -65,7 +66,7 @@
 
 .abk__cuon { overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
 .abk__bang-luot { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
-.abk__bang-luot th, .abk__bang-luot td { padding: var(--space-3) var(--space-4); text-align: center; vertical-align: middle; border-bottom: 1px solid var(--color-border); }
+.abk__bang-luot th, .abk__bang-luot td { padding: var(--space-2) var(--space-3); text-align: center; vertical-align: middle; border-bottom: 1px solid var(--color-border); }
 .abk__bang-luot thead th { background: var(--gradient-white-gray); font-weight: var(--fw-heading); white-space: nowrap; }
 .abk__bang-luot tbody tr:last-child > * { border-bottom: 0; }
 .abk__bang-luot tbody th { font-weight: var(--fw-heading); }
@@ -75,7 +76,39 @@
 
 /* ---- cột riêng của bảng Booking ---- */
 .abk__bang-luot .abk__ma { font-weight: var(--fw-heading); white-space: nowrap; }
-.abk__bang-luot .abk__phu { display: block; color: var(--color-text-muted); font-size: var(--text-xs); }
-.abk__bang-luot .abk__cat { max-width: 15rem; margin-inline: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* địa điểm dài thì cắt "..." */
+.abk__bang-luot .abk__phu { display: block; color: var(--color-text-muted); font-size: var(--text-xs); overflow-wrap: anywhere; }   /* email dài thì xuống dòng thay vì làm bảng rộng ra */
+.abk__bang-luot .abk__cat { max-width: 10rem; margin-inline: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* địa điểm dài thì cắt "..." */
 .abk__bang-luot .abk__gio { white-space: nowrap; }
 .abk__bang-luot tbody tr:hover { background: var(--color-surface-alt); }
+
+/* ---- cột "Thao tác" (nút Xem chi tiết): luôn dính mép phải khung bảng ----
+   Màn hình đủ rộng thì cột nằm đúng chỗ như mọi cột khác; màn hình hẹp phải cuộn ngang thì cột này vẫn đứng yên bên phải,
+   nên nút Xem chi tiết không bao giờ bị che khuất. */
+.abk__bang-luot .abk__thao-tac { position: sticky; right: 0; z-index: 1; white-space: nowrap; background: var(--color-white); box-shadow: -10px 0 12px -10px color-mix(in srgb, var(--color-black) 35%, transparent); }   /* nền đặc để chữ các cột khác không lộ ra phía sau khi cuộn; bóng mờ bên trái làm rõ ranh giới */
+.abk__bang-luot thead .abk__thao-tac { background: var(--gradient-white-gray); }   /* ô tiêu đề dùng nền gradient giống các ô tiêu đề khác */
+.abk__bang-luot tbody tr:hover > .abk__thao-tac { background: var(--color-surface-alt); }   /* rê chuột vào dòng thì ô nút đổi màu theo dòng */
+
+/* ---- mở rộng bảng để luôn thấy nút "Xem chi tiết" ----
+   1) Bảng dãn hết bề ngang khung cuộn, cột Thao tác có chiều rộng tối thiểu đúng bằng nút (không bị cắt).
+   2) Màn hình vừa/nhỏ: thu gọn lề ô + cỡ chữ, cho các cột chữ xuống dòng để cả 8 cột vừa khung, không phải cuộn ngang.
+   3) Nếu vẫn quá hẹp thì cột Thao tác (sticky) đứng yên mép phải nên nút luôn hiện. */
+.abk__cuon { max-width: 100%; }
+.abk__bang-luot { min-width: 100%; }
+.abk__bang-luot .abk__thao-tac { min-width: 7.5rem; width: 1%; }
+.abk__bang-luot .abk__thao-tac .btn { min-width: 6.25rem; }
+.abk__bang-luot td > .badge, .abk__bang-luot td .badge { white-space: nowrap; }
+@media (max-width: 80rem) {
+  .abk__bang-luot { font-size: var(--text-xs); }
+  .abk__bang-luot th, .abk__bang-luot td { padding: var(--space-2); }
+  .abk__bang-luot .abk__cat { max-width: 7rem; }
+  .abk__bang-luot .abk__gio { white-space: normal; }
+  .abk__bang-luot .abk__thao-tac { min-width: 6.5rem; }
+  .abk__bang-luot .abk__thao-tac .btn { min-width: 5.5rem; padding-inline: var(--space-3); }
+}
+/* Màn hình chưa thật rộng (< 75rem, ví dụ cửa sổ ~700-1200px): bỏ cột "Thời điểm gửi" và dòng email để Trạng thái + nút Xem chi tiết đều hiện đủ, không bị che.
+   (Thời điểm gửi vẫn xem được trong trang chi tiết; màn hình rộng vẫn hiện đầy đủ 8 cột.) */
+@media (max-width: 64rem) {
+  .abk__bang-luot thead th:nth-child(6), .abk__bang-luot tbody td:nth-child(6) { display: none; }
+  .abk__bang-luot tbody td:nth-child(2) .abk__phu, .abk__bang-luot tbody td:nth-child(3) .abk__phu { display: none; }
+  .abk__bang-luot tbody td:nth-child(7) .badge { white-space: normal; }
+}

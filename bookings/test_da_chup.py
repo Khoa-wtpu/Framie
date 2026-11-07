@@ -63,7 +63,7 @@ class DaChupTest(nen.TiepNhanBase):  # nhóm test T8, kế thừa dữ liệu m�
         self.assertEqual(bk.TrangThai, BK.CHOT_BOOKING)  # trạng thái giữ nguyên "Chốt Booking"
 
     def test_chi_bam_duoc_khi_dang_chot_booking(self):  # tình huống: các trạng thái khác "Chốt Booking" đều không bấm được
-        for tt in (BK.CHO_XAC_NHAN, BK.CHO_DAT_COC, BK.DA_CHUP, BK.HOAN_THANH, BK.DA_HUY):  # thử lần lượt từng trạng thái
+        for tt in (BK.CHO_DAT_COC, BK.DA_CHUP, BK.HOAN_THANH, BK.DA_HUY):  # thử lần lượt từng trạng thái (không có 'Chờ xác nhận': Booking đó mà quá giờ chụp thì hệ thống tự hủy, xem test_qua_han.py)
             bk = self.tao_booking(trang_thai=tt, gio=f'{BK.ALL.index(tt):02d}:00',  # mỗi Booking một khung giờ riêng để không trùng slot
                                   NgayGioChup=timezone.now() - timedelta(hours=1), NgayTao=timezone.now() - timedelta(days=2))  # giờ chụp đã qua
             self.bam(bk)  # bấm "Đã chụp"

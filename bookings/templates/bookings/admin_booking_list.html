@@ -82,7 +82,7 @@
           <th scope="col">Lịch chụp</th>
           <th scope="col">Thời điểm gửi</th>
           <th scope="col">Trạng thái</th>
-          <th scope="col"><span class="sr-only">Thao tác</span></th>
+          <th scope="col" class="abk__thao-tac"><span class="sr-only">Thao tác</span></th>{# cột nút: luôn dính mép phải bảng (CSS .abk__thao-tac) #}
         </tr>
       </thead>
       <tbody>
@@ -95,7 +95,7 @@
           <td><span class="abk__gio">{{ bk.NgayGioChup|date:"d/m/Y H:i" }}</span><span class="abk__phu abk__cat" title="{{ bk.DiaDiem }}">{{ bk.DiaDiem }}</span></td>
           <td class="abk__gio">{{ bk.NgayTao|date:"d/m/Y H:i" }}</td>
           <td>{% status_badge bk.TrangThai %}</td>{# nhãn trạng thái có màu thống nhất toàn hệ thống #}
-          <td><a class="btn btn--soft btn--sm" href="{% url 'admin_booking_detail' ma_booking=bk.pk %}">Xem chi tiết</a></td>
+          <td class="abk__thao-tac"><a class="btn btn--soft btn--sm" href="{% url 'admin_booking_detail' ma_booking=bk.pk %}">Xem chi tiết</a></td>{# nút Xem chi tiết #}
         </tr>
         {% endfor %}
       </tbody>

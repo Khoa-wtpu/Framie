@@ -3,6 +3,7 @@
 {% block title %}Đánh giá nhiếp ảnh gia{% endblock %}
 {% block content %}
 <div class="container stack dg-trang">
+  {% include "includes/quay_lai_booking.html" with booking=booking %}{# nút quay lại Booking (Khách hàng) #}
   <header>
     <h1>Đánh giá nhiếp ảnh gia</h1>
     <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>

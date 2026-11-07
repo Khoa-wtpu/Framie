@@ -141,6 +141,17 @@ class ChuyenTrangThaiBookingTests(TestCase):  # nhóm test cho hàm chuyen_trang
         chuyen_trang_thai_booking(bk, TT.HET_THOI_HAN_DAT_COC, BEN.HE_THONG, 'Quá 1 ngày chưa đặt cọc')  # Hệ thống làm thì được
         self.assertEqual(LichSuTrangThaiBooking.objects.get().BenThucHien, BEN.HE_THONG)  # lịch sử ghi bên thực hiện là Hệ thống
 
+    def test_cho_xac_nhan_chi_he_thong_tu_huy(self):  # test: "Chờ xác nhận -> Đã hủy" chỉ Hệ thống được làm (quá giờ chụp mà chưa xác nhận)
+        bk = self.tao_booking(TT.CHO_XAC_NHAN)
+        for ben in (BEN.KHACH_HANG, BEN.NHIEP_ANH_GIA):  # Khách và Nhiếp ảnh gia không được hủy ở bước này
+            with self.assertRaises(ValidationError):
+                chuyen_trang_thai_booking(bk, TT.DA_HUY, ben, 'Bận')
+        chuyen_trang_thai_booking(bk, TT.DA_HUY, BEN.HE_THONG, 'Quá giờ chụp mà Nhiếp ảnh gia chưa xác nhận')  # Hệ thống làm thì được
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, TT.DA_HUY)  # đã ở "Đã hủy"
+        self.assertIsNone(bk.LyDoTuChoi)  # đây là hủy chứ không phải từ chối nên không lưu LyDoTuChoi
+        self.assertEqual(LichSuTrangThaiBooking.objects.get().BenThucHien, BEN.HE_THONG)  # lịch sử ghi bên thực hiện là Hệ thống
+
     def test_goi_gioi_han_phai_qua_buoc_chon_anh(self):  # test: gói giới hạn không được bỏ qua bước chọn ảnh
         bk = self.tao_booking(TT.DA_CHUP, self.goi_gioi_han)
         with self.assertRaises(ValidationError):  # nhảy thẳng vào hậu kỳ -> cấm
@@ -212,6 +223,7 @@ class ChuyenTrangThaiBookingTests(TestCase):  # nhóm test cho hàm chuyen_trang
             (TT.CHO_DAT_COC, TT.HET_THOI_HAN_DAT_COC, BEN.HE_THONG, TrangThaiSlot.TRONG),  # hết hạn cọc -> slot trống
             (TT.CHO_DAT_COC, TT.DA_HUY, BEN.KHACH_HANG, TrangThaiSlot.TRONG),  # Khách hủy -> slot trống
             (TT.CHOT_BOOKING, TT.DA_HUY, BEN.NHIEP_ANH_GIA, TrangThaiSlot.TRONG),  # nhiếp ảnh gia hủy sau khi chốt -> slot trống
+            (TT.CHO_XAC_NHAN, TT.DA_HUY, BEN.HE_THONG, TrangThaiSlot.TRONG),  # hệ thống tự hủy (quá giờ chụp chưa xác nhận) -> slot trống
             (TT.CHO_XAC_NHAN, TT.CHO_DAT_COC, BEN.NHIEP_ANH_GIA, TrangThaiSlot.DANG_GIU),  # chấp nhận: slot vẫn giữ
         ]
         for truoc, moi, ben, slot_mong_doi in cac_ca:

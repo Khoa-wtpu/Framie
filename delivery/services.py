@@ -1,5 +1,6 @@
 # delivery/services.py - N4 / UC5.3: Nhiếp ảnh gia tải ảnh lên Booking (Nguyên)
 import logging                                                 # ghi cảnh báo khi xử lý ảnh quá chậm
+import re                                                      # N7: tách chữ và số trong tên tệp để sắp xếp tự nhiên
 from pathlib import Path                                       # tách đuôi và tên tệp
 import time                                                    # đo thời gian chèn watermark
 import uuid                                                    # tên tệp ngẫu nhiên, không trùng
@@ -116,52 +117,51 @@ def _them_anh_goc(kho, booking, ds_tep, da_luu):               # giai đoạn 1:
     return TrangThaiBooking.CHO_HAU_KY                         # gói hậu kỳ toàn bộ: bỏ qua bước chọn ảnh
 
 
+def _khoa_sap_xep(ten_tep):                                    # N7: khóa sắp xếp "tự nhiên" để IMG_2 đứng trước IMG_10
+    phan = re.split(r'(\d+)', Path(ten_tep).stem.lower())      # tách tên (bỏ đuôi, viết thường) thành các cụm chữ và cụm số xen kẽ nhau
+    return [int(p) if i % 2 else p for i, p in enumerate(phan)]   # vị trí lẻ là cụm số -> đổi sang số nguyên để so sánh đúng thứ tự số
+
+
 def _them_ban_hau_ky(kho, booking, ds_tep, da_luu, xoa_sau):   # giai đoạn 2: tải ảnh đã hậu kỳ (ghi đè ảnh cũ, chỉ giữ bản mới nhất)
     # Gói hậu kỳ toàn bộ đi thẳng từ "Đang hậu kỳ" mà chưa có bước tải ảnh gốc.
     # Vì vậy lượt tải đầu tiên của gói này tạo bản ghi ảnh mới, không ghép theo tên ảnh gốc.
-    if (booking.MaGoi.LoaiHauKy == LoaiHauKy.TOAN_BO
-            and not Anh.objects.filter(MaBooking=booking).exists()):
-        da_co_trong_luot, trung = set(), []
-        for tep in ds_tep:
-            khoa = _khoa_ten(tep.name)
-            if khoa in da_co_trong_luot:
-                trung.append(tep.name)
-            da_co_trong_luot.add(khoa)
-        if trung:
-            raise LoiTaiAnh('Tên ảnh bị trùng trong lần tải này: ' + ', '.join(trung[:10]))
-        for tep in ds_tep:
-            duong_dan, kich_thuoc, dinh_dang = _luu_hai_ban(kho, booking, tep, da_luu)
-            Anh.objects.create(
-                MaBooking=booking, TenAnh=Path(tep.name).name[:255], DuongDanAnh=duong_dan,
-                DinhDangAnh=dinh_dang, KichThuocAnh=kich_thuoc, LoaiAnh=LoaiAnh.DA_HAU_KY,
-                PhienBanAnh=1, CoWatermark=1, DuocChonHauKy=0, NgayTaiLen=timezone.now())
-        return TrangThaiBooking.CHO_KH_KIEM_TRA
+    if (booking.MaGoi.LoaiHauKy == LoaiHauKy.TOAN_BO           # gói là "Hậu kỳ toàn bộ ảnh"
+            and not Anh.objects.filter(MaBooking=booking).exists()):   # và Booking này chưa có ảnh nào
+        da_co_trong_luot, trung = set(), []                    # da_co_trong_luot: tên đã gặp; trung: danh sách tên bị trùng
+        for tep in ds_tep:                                     # duyệt từng tệp vừa chọn
+            khoa = _khoa_ten(tep.name)                         # tên không đuôi, viết thường
+            if khoa in da_co_trong_luot:                       # tên này đã xuất hiện trong lần tải này
+                trung.append(tep.name)                         # ghi nhận là trùng
+            da_co_trong_luot.add(khoa)                         # đánh dấu đã gặp tên này
+        if trung:                                              # có tên trùng
+            raise LoiTaiAnh('Tên ảnh bị trùng trong lần tải này: ' + ', '.join(trung[:10]))   # báo lỗi, tối đa 10 tên
+        for tep in ds_tep:                                     # không trùng: tạo bản ghi ảnh mới cho từng tệp
+            duong_dan, kich_thuoc, dinh_dang = _luu_hai_ban(kho, booking, tep, da_luu)   # lưu bản gốc + bản watermark
+            Anh.objects.create(                                # tạo bản ghi ảnh
+                MaBooking=booking, TenAnh=Path(tep.name).name[:255], DuongDanAnh=duong_dan,   # thuộc Booking, tên, đường dẫn
+                DinhDangAnh=dinh_dang, KichThuocAnh=kich_thuoc, LoaiAnh=LoaiAnh.DA_HAU_KY,   # định dạng, kích thước, loại "Đã hậu kỳ"
+                PhienBanAnh=1, CoWatermark=1, DuocChonHauKy=0, NgayTaiLen=timezone.now())   # phiên bản 1, có watermark
+        return TrangThaiBooking.CHO_KH_KIEM_TRA                # gói toàn bộ lượt đầu: gửi Khách kiểm tra luôn
 
-    can = {_khoa_ten(a.TenAnh): a for a in anh_can_hau_ky(booking)}
-    la, lap, thay = [], set(), []
-    for tep in ds_tep:
-        khoa = _khoa_ten(tep.name)
-        if khoa not in can:
-            la.append(tep.name)                                # tên không khớp ảnh nào đang cần hậu kỳ
-        elif khoa in lap:
-            la.append(tep.name + ' (chọn trùng)')
-        lap.add(khoa)
-    if la:
-        raise LoiTaiAnh('Không có ảnh nào đang cần hậu kỳ khớp tên: ' + ', '.join(la[:10]))
-    for tep in ds_tep:
-        anh = can[_khoa_ten(tep.name)]
-        duong_dan_cu = anh.DuongDanAnh
-        duong_dan, kich_thuoc, dinh_dang = _luu_hai_ban(kho, booking, tep, da_luu)
+    ds_can = list(anh_can_hau_ky(booking))                     # các ảnh còn phải tải bản hậu kỳ (mọi lượt)
+    if len(ds_tep) != len(ds_can):                             # KHÔNG cần trùng tên, chỉ cần ĐỦ SỐ LƯỢNG
+        raise LoiTaiAnh(f'Cần tải đúng {len(ds_can)} ảnh hậu kỳ, nhưng bạn đang chọn {len(ds_tep)} ảnh. '
+                        f'Vui lòng chọn đúng {len(ds_can)} ảnh.')   # báo lỗi nói rõ cần bao nhiêu ảnh
+    cap = list(zip(sorted(ds_tep, key=lambda t: _khoa_sap_xep(t.name)),   # tệp tải lên xếp theo tên (A-Z, số tăng dần)
+                   sorted(ds_can, key=lambda a: _khoa_sap_xep(a.TenAnh))))   # ảnh cần sửa cũng xếp theo tên; ghép lần lượt từng cặp
+    for tep, anh in cap:                                       # duyệt từng cặp (tệp mới, ảnh cũ cần thay)
+        duong_dan_cu = anh.DuongDanAnh                         # nhớ đường dẫn file cũ để xóa sau
+        duong_dan, kich_thuoc, dinh_dang = _luu_hai_ban(kho, booking, tep, da_luu)   # lưu bản gốc + bản watermark của tệp mới
         if anh.LoaiAnh == LoaiAnh.DA_HAU_KY:                   # tải lại sau yêu cầu chỉnh sửa của Khách: tăng phiên bản
-            anh.PhienBanAnh += 1
-        anh.TenAnh = Path(tep.name).name[:255]
-        anh.DuongDanAnh, anh.DinhDangAnh, anh.KichThuocAnh = duong_dan, dinh_dang, kich_thuoc
-        anh.LoaiAnh, anh.CoWatermark = LoaiAnh.DA_HAU_KY, 1
+            anh.PhienBanAnh += 1                               # phiên bản + 1
+        anh.TenAnh = (Path(anh.TenAnh).stem + Path(tep.name).suffix)[:255]   # giữ tên ảnh cũ (chỉ lấy đuôi mới) để Khách vẫn nhận ra ảnh
+        anh.DuongDanAnh, anh.DinhDangAnh, anh.KichThuocAnh = duong_dan, dinh_dang, kich_thuoc   # cập nhật đường dẫn, định dạng, kích thước
+        anh.LoaiAnh, anh.CoWatermark = LoaiAnh.DA_HAU_KY, 1    # ảnh thành "Đã hậu kỳ", có watermark
         anh.NgayTaiLen = timezone.now()                        # cũng là mốc cho biết ảnh này đã được tải lại
-        anh.save()
+        anh.save()                                             # lưu bản ghi
         xoa_sau.extend([duong_dan_cu, duong_dan_goc(duong_dan_cu)])   # file bản cũ sẽ bị xóa sau khi lưu thành công (chỉ giữ bản mới nhất)
     if anh_can_hau_ky(booking).exists():                       # còn ảnh chưa có bản hậu kỳ: Booking vẫn ở Đang hậu kỳ
-        return None
+        return None                                            # chưa đổi trạng thái
     return TrangThaiBooking.CHO_KH_KIEM_TRA                    # đủ ảnh: gửi Khách kiểm tra
 
 
@@ -231,14 +231,16 @@ def mo_anh(user, ma_anh):                                      # dùng cho trang
 
 def chuyen_thanh_anh_hoan_chinh(booking):                      # N5: ảnh Hoàn chỉnh KHÔNG có watermark
     """Gọi khi Nhiếp ảnh gia xác nhận đủ 60% (UC5.7), trong cùng giao dịch với bước đó.
-    Ảnh 'Đã hậu kỳ' -> 'Hoàn chỉnh': đổi sang BẢN GỐC (không watermark), xóa bản có watermark.
+    Ảnh 'Đã hậu kỳ' (bản chỉnh sửa mới nhất) VÀ ảnh 'Chưa hậu kỳ' (ảnh Khách không chọn sửa, giữ nguyên bản chụp)
+    -> 'Hoàn chỉnh': đổi sang BẢN GỐC (không watermark), xóa bản có watermark.
     Trả về số ảnh đã chuyển."""
     kho = kho_anh()
     xoa_sau = []
     try:
         with transaction.atomic():
             ds = list(Anh.objects.select_for_update().filter(
-                MaBooking=booking, TrangThaiLuuTru=LuuTruAnh.CON_LUU, LoaiAnh=LoaiAnh.DA_HAU_KY))
+                MaBooking=booking, TrangThaiLuuTru=LuuTruAnh.CON_LUU,
+                LoaiAnh__in=[LoaiAnh.DA_HAU_KY, LoaiAnh.CHUA_HAU_KY]))   # gồm cả ảnh không cần chỉnh sửa (C) + ảnh chỉnh sửa cuối (D, E)
             for anh in ds:
                 goc = duong_dan_goc(anh.DuongDanAnh)            # bản không watermark do UC5.3 đã lưu sẵn
                 if not kho.exists(goc):

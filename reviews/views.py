@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from accounts.permissions import chi_khach_hang
 from bookings.models import Booking
+from core.buoc_ke import thanh_cong_co_nut, url_booking
 from reviews import services
 from reviews.forms import DanhGiaForm
 from reviews.models import DanhGia
@@ -28,7 +29,8 @@ def danh_gia_booking(request, ma_booking):                     # trang UC6.1
             except services.LoiDanhGia as loi:
                 messages.error(request, str(loi))
             else:
-                messages.success(request, 'Cảm ơn bạn! Đánh giá đã được gửi và hiển thị công khai trên hồ sơ nhiếp ảnh gia.')
+                thanh_cong_co_nut(request, 'Cảm ơn bạn! Đánh giá đã được gửi và hiển thị công khai trên hồ sơ nhiếp ảnh gia.',
+                                  url_booking(booking), 'Quay lại Booking')   # ở lại trang đánh giá, kèm nút về Booking
                 return redirect('danh_gia_booking', ma_booking=booking.pk)   # tránh gửi lại khi F5
 
     booking.refresh_from_db()

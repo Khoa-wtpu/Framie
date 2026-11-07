@@ -35,6 +35,24 @@
       {% if url_chon_anh %}{# Khách hàng + Booking "Chờ Khách hàng lựa chọn ảnh" #}
         <a class="btn btn--primary" href="{{ url_chon_anh }}">Chọn ảnh cần hậu kỳ</a>{# nút dẫn tới trang chọn ảnh (chon_anh_hau_ky) của module Bàn giao ảnh #}
       {% endif %}
+      {% if url_xac_nhan_ban_giao %}{# Khách hàng + Booking "Chờ Khách hàng kiểm tra" #}
+        <a class="btn btn--primary" href="{{ url_xac_nhan_ban_giao }}">Xác nhận hoàn tất bàn giao</a>{# nút dẫn tới trang xác nhận bàn giao (xac_nhan_ban_giao, UC5.6) #}
+      {% endif %}
+      {% if url_yeu_cau_chinh_sua %}{# Khách hàng + Booking "Chờ Khách hàng kiểm tra" #}
+        <a class="btn btn--secondary" href="{{ url_yeu_cau_chinh_sua }}">Yêu cầu chỉnh sửa ảnh</a>{# nút dẫn tới trang yêu cầu chỉnh sửa ảnh (yeu_cau_chinh_sua, UC5.5) #}
+      {% endif %}
+      {% if url_tai_anh_hoan_chinh %}{# Khách hàng + Booking "Hoàn thành" #}
+        <a class="btn btn--primary" href="{{ url_tai_anh_hoan_chinh }}">Tải ảnh hoàn chỉnh</a>{# nút dẫn tới trang tải ảnh hoàn chỉnh không watermark (tai_anh_hoan_chinh, UC5.8) #}
+      {% endif %}
+      {% if url_danh_gia %}{# Khách hàng + Booking "Hoàn thành" #}
+        <a class="btn btn--secondary" href="{{ url_danh_gia }}">{% if da_danh_gia %}Xem đánh giá của bạn{% else %}Đánh giá Nhiếp ảnh gia{% endif %}</a>{# nút dẫn tới trang đánh giá (danh_gia_booking, UC6.1); đã đánh giá thì chữ đổi thành "Xem đánh giá của bạn" #}
+      {% endif %}
+      {% if url_xac_nhan_thanh_toan %}{# Nhiếp ảnh gia + Khách đã gửi minh chứng đang chờ xác nhận #}
+        <a class="btn btn--primary" href="{{ url_xac_nhan_thanh_toan }}">{{ nhan_xac_nhan_thanh_toan }}</a>{# nút dẫn tới trang xem minh chứng và xác nhận / yêu cầu bổ sung (payments) #}
+      {% endif %}
+      {% if url_tai_minh_chung %}{# Khách hàng + Booking "Chờ đặt cọc" / "Chờ xác nhận thanh toán" #}
+        <a class="btn btn--primary" href="{{ url_tai_minh_chung }}">{{ nhan_tai_minh_chung }}</a>{# nút dẫn tới trang tải minh chứng thanh toán (tai_len_minh_chung) của module Thanh toán #}
+      {% endif %}
       {% if url_tai_anh %}{# Nhiếp ảnh gia + Booking "Đã chụp" / "Chờ hậu kỳ" / "Đang hậu kỳ" #}
         <a class="btn btn--primary" href="{{ url_tai_anh }}">Tải ảnh / Bắt đầu hậu kỳ</a>{# nút dẫn tới trang tải ảnh (tai_anh_len) #}
       {% endif %}

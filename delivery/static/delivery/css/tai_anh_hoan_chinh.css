@@ -1,74 +1,101 @@
 /* N10 - UC5.8: trang tải ảnh hoàn chỉnh (chỉ dùng biến trong tokens.css) */
+/* Quy tắc giao diện cho: .tahc */
 .tahc { max-width: 56rem; margin-inline: auto; padding-block: var(--space-6); }
-.tahc__back { font-size: var(--text-sm); color: var(--color-text-muted); }
 
-/* ===== Thẻ chào mừng (nền đen, giống thẻ số tiền ở trang xác nhận thanh toán) ===== */
-.tahc__hero { background: linear-gradient(135deg, #2b2b2b 0%, var(--color-black) 100%); color: var(--color-white);
-              border-radius: var(--radius-lg); padding: var(--space-6); box-shadow: var(--shadow-md); }
-.tahc__hero-top { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
-.tahc__hero-kicker { margin: 0; font-size: var(--text-sm); opacity: .75; }
-.tahc__hero-title { margin: var(--space-1) 0 0; font-size: var(--text-2xl); line-height: var(--leading-tight); color: var(--color-white); }
-.tahc__stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3);
-               margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid rgba(255, 255, 255, .18); }
-.tahc__stat span { display: block; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .04em; opacity: .7; }
-.tahc__stat strong { display: block; margin-top: var(--space-1); font-size: var(--text-base); }
-.tahc__stat--count strong { color: var(--tone-amber-dot); font-size: var(--text-lg); }
+/* ---------- Banner đầu trang: gradient xám nhạt -> trắng, không hình trang trí ---------- */
+.tahc__hero { display: flex; align-items: center; gap: var(--space-4);
+              padding: var(--space-6); border-radius: var(--radius-lg); border: 1px solid var(--color-border);
+              background: linear-gradient(120deg, var(--color-gray-soft) 0%, var(--color-white) 100%); }
+.tahc__hero h1 { margin: 0; }
+.tahc__hero-sub { margin: var(--space-1) 0 0; color: var(--color-text-muted); }
+.tahc__hero-icon { display: grid; place-items: center; flex: none; width: 3.5rem; height: 3.5rem; font-size: 1.75rem;
+                   background: var(--color-white); border-radius: var(--radius-md); box-shadow: var(--shadow-md); }
 
-/* ===== Dải lưu ý ===== */
-.tahc__note { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4);
-              background: var(--tone-amber-bg); color: var(--tone-amber-fg); border-radius: var(--radius-md); }
-.tahc__note p { margin: 0; font-size: var(--text-sm); }
-.tahc__note-icon { flex: none; display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%;
-                   background: var(--tone-amber-dot); color: var(--color-white); font-weight: var(--fw-heading); font-size: var(--text-sm); }
+/* ---------- Khung thông tin ---------- */
+/* Quy tắc giao diện cho: .tahc__info */
+.tahc__info { border-left: 6px solid var(--tone-violet-dot); }
+/* Quy tắc giao diện cho: .tahc__chips */
+.tahc__chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+/* Quy tắc giao diện cho: .tahc__chip */
+.tahc__chip { padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); font-size: var(--text-sm); font-weight: var(--fw-heading); }
+/* Quy tắc giao diện cho: .tahc__chip--green */
+.tahc__chip--green { background: var(--tone-green-bg); color: var(--tone-green-fg); }
+/* Quy tắc giao diện cho: .tahc__chip--blue */
+.tahc__chip--blue  { background: var(--tone-blue-bg);  color: var(--tone-blue-fg); }
+/* Quy tắc giao diện cho: .tahc__chip--amber */
+.tahc__chip--amber { background: var(--tone-amber-bg); color: var(--tone-amber-fg); }
 
-/* ===== Thẻ nội dung ===== */
-.tahc__card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg);
-              padding: var(--space-5); box-shadow: var(--shadow-card); }
-.tahc__card h2 { margin: 0; font-size: var(--text-lg); }
-.tahc__card-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3);
-                  margin-bottom: var(--space-4); }
-.tahc__chon-het { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm);
-                  font-weight: var(--fw-heading); cursor: pointer; }
-.tahc__goi-y { margin: var(--space-4) 0 0; font-size: var(--text-sm); color: var(--color-text-muted); }
+/* ---------- Khung danh sách ảnh: MỘT tone xanh biển - trắng ---------- */
+.tahc__khung { --hc-blue: #1F6FB5; --hc-blue-dark: #16507F; --hc-blue-soft: #EEF5FB; --hc-blue-line: #C3DAEE;
+               box-shadow: var(--shadow-card); }
+.tahc__tieu-de { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.tahc__tieu-de h2 { margin: 0; display: flex; align-items: center; gap: var(--space-2); }
+.tahc__dem { display: inline-grid; place-items: center; min-width: 2rem; height: 2rem; padding-inline: var(--space-2);
+             font-size: var(--text-sm); border-radius: var(--radius-pill); background: var(--hc-blue); color: var(--color-white); }
+.tahc__chon-het { display: inline-flex; align-items: center; gap: var(--space-2); cursor: pointer; font-weight: var(--fw-heading);
+                  padding: var(--space-2) var(--space-4); border-radius: var(--radius-pill);
+                  background: var(--hc-blue-soft); color: var(--hc-blue-dark); border: 1px solid var(--hc-blue-line); }
+.tahc__chon-het input, .tahc__tick { width: 1.25rem; height: 1.25rem; accent-color: var(--hc-blue); cursor: pointer; flex: none; }
 
-/* ===== Lưới ảnh: mỗi ảnh là một thẻ ===== */
-.tahc__luoi { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
-.tahc__anh { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3); background: #fafafa;
-             border: 2px solid var(--color-border); border-radius: var(--radius-md); transition: border-color .15s, background .15s, box-shadow .15s; }
-.tahc__anh:hover { box-shadow: var(--shadow-sm); }
-.tahc__anh.is-chon { border-color: var(--color-black); background: var(--color-white); }
-.tahc__anh-chon { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--space-3); cursor: pointer; }
-.tahc__anh-chon input { flex: none; }
-.tahc__loai { flex: none; display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: var(--radius-sm);
-              background: var(--tone-violet-bg); color: var(--tone-violet-fg); font-size: var(--text-xs); font-weight: var(--fw-heading); }
-.tahc__anh-info { min-width: 0; display: grid; }
-.tahc__anh-info strong { font-size: var(--text-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tahc__anh-info small { color: var(--color-text-muted); font-size: var(--text-xs); }
-.tahc__tai { flex: none; }
+.tahc__ds { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
 
-/* ===== Thanh thao tác dính đáy màn hình ===== */
-.tahc__bar { position: sticky; bottom: var(--space-4); z-index: 5; display: flex; flex-wrap: wrap; align-items: center;
-             justify-content: space-between; gap: var(--space-3); margin-top: var(--space-4); padding: var(--space-3) var(--space-4);
-             background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
-.tahc__bar-dem { font-size: var(--text-sm); color: var(--color-text-muted); }
-.tahc__bar-dem strong { color: var(--color-black); font-size: var(--text-lg); }
+/* Mỗi dòng: [tick] [ô ảnh] [tên file + định dạng/dung lượng] ........ [nút Tải] */
+.tahc__dong { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+              padding: var(--space-3); border: 1px solid var(--hc-blue-line); border-radius: var(--radius-lg);
+              background: linear-gradient(90deg, var(--hc-blue-soft) 0, var(--color-white) 65%);
+              transition: border-color .15s, box-shadow .15s, background .15s; }
+.tahc__dong:hover { border-color: var(--hc-blue); box-shadow: var(--shadow-md); }
+.tahc__dong:has(.tahc__tick:checked) { border-color: var(--hc-blue); background: var(--hc-blue-soft); box-shadow: 0 0 0 1px var(--hc-blue); }
+
+.tahc__trai { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--space-4); cursor: pointer; }
+.tahc__anh { flex: none; width: 6rem; height: 4.5rem; overflow: hidden; border-radius: var(--radius-md);
+             border: 2px solid var(--color-white); box-shadow: 0 0 0 1px var(--hc-blue-line), var(--shadow-sm); background: var(--color-gray-soft); }
+.tahc__anh img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .25s; }
+.tahc__dong:hover .tahc__anh img { transform: scale(1.08); }
+.tahc__thongtin { min-width: 0; display: grid; gap: var(--space-1); }
+.tahc__ten { font-weight: var(--fw-heading); overflow-wrap: anywhere; }
+.tahc__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: var(--text-sm); }
+.tahc__tag { padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--hc-blue); color: var(--color-white);
+             font-size: var(--text-xs); font-weight: var(--fw-heading); line-height: 1.6; }
+.tahc__btn-tai { flex: none; border-color: var(--hc-blue); color: var(--hc-blue); background: var(--color-white); }
+.tahc__btn-tai:hover { background: var(--hc-blue); color: var(--color-white); }
+
+/* ---------- Nút dưới cùng ---------- */
 .tahc__nut { display: flex; flex-wrap: wrap; gap: var(--space-3); }
-.tahc__nut .btn[disabled] { opacity: .45; cursor: not-allowed; }
+.tahc__nut .btn--primary { background: var(--hc-blue); border-color: var(--hc-blue); color: var(--color-white); }
+.tahc__nut .btn--primary:hover { background: var(--hc-blue-dark); border-color: var(--hc-blue-dark); }
+.tahc__nut .btn--secondary { background: var(--color-white); border-color: var(--hc-blue); color: var(--hc-blue); }
+.tahc__nut .btn--secondary:hover { background: var(--hc-blue-soft); color: var(--hc-blue-dark); }
 
-/* ===== Lịch sử tải ===== */
-.tahc__ls { list-style: none; margin: var(--space-4) 0 0; padding: 0; }
-.tahc__ls-dong { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); padding-block: var(--space-3);
-                 border-top: 1px solid var(--color-border); font-size: var(--text-sm); }
-.tahc__ls-gio { color: var(--color-text-muted); min-width: 8.5rem; }
+/* ---------- Lịch sử tải ---------- */
+/* Quy tắc giao diện cho: .tahc__ls */
+.tahc__ls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4);
+            padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface-alt); }
+/* Quy tắc giao diện cho: .tahc__ls-gio */
+.tahc__ls-gio { font-size: var(--text-sm); color: var(--color-text-muted); }
+/* Quy tắc giao diện cho: .tahc__ls-ten */
 .tahc__ls-ten { flex: 1; min-width: 8rem; overflow-wrap: anywhere; }
-.tahc__pill { padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); font-size: var(--text-xs); font-weight: var(--fw-heading); }
-.tahc__ok { background: var(--tone-green-bg); color: var(--tone-green-fg); }
-.tahc__loi { background: var(--tone-red-bg); color: var(--tone-red-fg); }
+/* Quy tắc giao diện cho: .tahc__ls-kq */
+.tahc__ls-kq { padding: 0 var(--space-3); border-radius: var(--radius-pill); font-size: var(--text-sm); font-weight: var(--fw-heading); }
+/* Quy tắc giao diện cho: .tahc__ok */
+.tahc__ok  { color: var(--tone-green-fg); background: var(--tone-green-bg); }
+/* Quy tắc giao diện cho: .tahc__loi */
+.tahc__loi { color: var(--tone-red-fg);   background: var(--tone-red-bg); }
 
-@media (max-width: 720px) {
-  .tahc__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .tahc__luoi { grid-template-columns: 1fr; }
-  .tahc__hero-title { font-size: var(--text-xl); }
-  .tahc__bar { flex-direction: column; align-items: stretch; }
-  .tahc__nut .btn { flex: 1; }
+/* ---------- Điện thoại ---------- */
+/* Quy tắc giao diện cho: @media (max-width: 36rem) */
+@media (max-width: 36rem) {
+/* Quy tắc giao diện cho: .tahc__hero */
+  .tahc__hero { padding: var(--space-5); }
+/* Quy tắc giao diện cho: .tahc__dong */
+  .tahc__dong { flex-direction: column; align-items: stretch; }
+/* Quy tắc giao diện cho: .tahc__btn-tai */
+  .tahc__btn-tai { width: 100%; }
+/* Quy tắc giao diện cho: .tahc__anh */
+  .tahc__anh { width: 5rem; height: 3.75rem; }
+}
+/* Quy tắc giao diện cho: @media (prefers-reduced-motion: reduce) */
+@media (prefers-reduced-motion: reduce) {
+/* Quy tắc giao diện cho: .tahc__dong, .tahc__anh img, .tahc__nut .btn */
+  .tahc__dong, .tahc__anh img, .tahc__nut .btn { transition: none; transform: none !important; }
 }

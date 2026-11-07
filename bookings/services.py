@@ -65,6 +65,9 @@ CHUYEN_HOP_LE = {  # dict (từ điển): mỗi cặp (cũ, mới) -> tập các
     (TT.CHO_DAT_COC, TT.DA_HUY): {KH, NAG},            # Hủy khi đang chờ cọc: cả Khách và Nhiếp ảnh gia đều được (bắt buộc lý do)
     (TT.CHOT_BOOKING, TT.DA_HUY): {KH, NAG},           # Hủy khi đã chốt: cả hai bên đều được (bắt buộc lý do)
 
+    # --- Hệ thống tự hủy khi quá giờ chụp mà Nhiếp ảnh gia chưa xác nhận ---
+    (TT.CHO_XAC_NHAN, TT.DA_HUY): {HT},                # Chờ xác nhận -> Đã hủy: CHỈ Hệ thống tự làm (đã quá giờ chụp mà Nhiếp ảnh gia chưa chấp nhận/từ chối); Khách và Nhiếp ảnh gia không có quyền hủy ở bước này
+
     # --- Buổi chụp ---
     (TT.CHOT_BOOKING, TT.DA_CHUP): {NAG},              # mục 8.1: Nhiếp ảnh gia cập nhật "Đã chụp" sau buổi chụp
 
@@ -113,6 +116,21 @@ DO_DAI_LY_DO_TOI_DA = 255   # LichSuTrangThaiBooking.LyDo là CharField(max_leng
 # ---------------------------------------------------------------------
 # PHẦN 3: HÀM CHÍNH
 # ---------------------------------------------------------------------
+def _khoi_phuc_slot_dang_giu(bk):
+    """Booking sắp 'Chốt Booking' mà slot lại đang 'Lịch trống' (bị nhả nhầm: hết hạn giữ chỗ, dữ liệu cũ...)
+    thì đặt lại 'Đang giữ chỗ' để bước chuyển sang 'Đã đặt lịch' hợp lệ. Chỉ làm khi không có Booking
+    còn hiệu lực nào khác dùng slot này. Gọi trong transaction.atomic()."""
+    from bookings.models import TRANG_THAI_HET_HIEU_LUC  # import trong hàm để tránh vòng import
+    from schedule.models import LichKhaDung
+    lich = LichKhaDung.objects.select_for_update().get(pk=bk.MaLich_id)
+    if lich.TrangThai != TrangThaiSlot.TRONG:
+        return
+    if (Booking.objects.filter(MaLich_id=lich.pk).exclude(pk=bk.pk)
+            .exclude(TrangThai__in=TRANG_THAI_HET_HIEU_LUC).exists()):
+        raise ValidationError('Khung giờ này đã gắn với một Booking khác, không thể chốt.')
+    LichKhaDung.objects.filter(pk=lich.pk, TrangThai=TrangThaiSlot.TRONG).update(TrangThai=TrangThaiSlot.DANG_GIU)
+
+
 def chuyen_trang_thai_booking(booking, trang_thai_moi, ben_thuc_hien, ly_do=None):  # khai báo hàm; ly_do mặc định None (không bắt buộc)
     """Đổi trạng thái một Booking và tự ghi một dòng Lịch sử trạng thái.
 
@@ -194,6 +212,8 @@ def chuyen_trang_thai_booking(booking, trang_thai_moi, ben_thuc_hien, ly_do=None
         )
 
         # 9. Đổi trạng thái slot nếu bước này có đi kèm (lỗi ở đây thì rollback cả Booking lẫn Lịch sử)
+        if trang_thai_moi == TT.CHOT_BOOKING:  # tự sửa slot bị nhả nhầm (đang 'Lịch trống' dù Booking còn hiệu lực)
+            _khoi_phuc_slot_dang_giu(bk)
         if trang_thai_moi in DOI_SLOT:  # trạng thái mới có yêu cầu đổi slot không
             doi_trang_thai_khung_gio(bk.MaLich_id, DOI_SLOT[trang_thai_moi])  # gọi hàm của Khoa: truyền mã slot (MaLich_id) và trạng thái slot mới
 

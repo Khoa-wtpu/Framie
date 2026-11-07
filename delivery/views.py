@@ -51,7 +51,8 @@ def tai_anh_len(request, nag, ma_booking):
 
     booking.refresh_from_db()                                  # đọc lại trạng thái mới nhất
     giai_doan = services.xac_dinh_giai_doan(booking)
-    cho_hau_ky = list(services.anh_can_hau_ky(booking)) if giai_doan and giai_doan['loai'] == LoaiAnh.DA_HAU_KY else []
+    cho_hau_ky = (sorted(services.anh_can_hau_ky(booking), key=lambda a: services._khoa_sap_xep(a.TenAnh))
+                  if giai_doan and giai_doan['loai'] == LoaiAnh.DA_HAU_KY else [])   # xếp "tự nhiên" giống cách ghép ảnh khi tải lên
     page_obj = Paginator(
         Anh.objects.filter(MaBooking=booking, TrangThaiLuuTru=LuuTruAnh.CON_LUU).order_by('TenAnh'), 24
     ).get_page(request.GET.get('page'))
@@ -60,7 +61,8 @@ def tai_anh_len(request, nag, ma_booking):
                    if cho_bat_dau and booking.MaGoi.LoaiHauKy == LoaiHauKy.GIOI_HAN else [])   # N6: danh sách ảnh Khách đã chọn (chỉ gói giới hạn)
     yeu_cau_moi = (YeuCauChinhSua.objects.filter(MaBooking=booking).order_by('-SoLanYeuCau').first()   # N7: yêu cầu chỉnh sửa gần nhất của Khách
                    if booking.TrangThai == TrangThaiBooking.DANG_HAU_KY else None)   # N7: chỉ hiện khi đang hậu kỳ
-    yeu_cau_anhs = (list(YeuCauChinhSua_Anh.objects.filter(MaYeuCauChinhSua=yeu_cau_moi).select_related('MaAnh').order_by('MaAnh__TenAnh'))
+    yeu_cau_anhs = (sorted(YeuCauChinhSua_Anh.objects.filter(MaYeuCauChinhSua=yeu_cau_moi).select_related('MaAnh'),   # N7: lấy các ảnh Khách yêu cầu sửa
+                           key=lambda ct: services._khoa_sap_xep(ct.MaAnh.TenAnh))   # N7: xếp "tự nhiên" giống hệt cách ghép ảnh khi tải lên
                     if yeu_cau_moi else [])   # N7: nội dung cần sửa của từng ảnh để Nhiếp ảnh gia đọc
     return render(request, 'delivery/tai_anh_len.html', {
         'booking': booking, 'giai_doan': giai_doan, 'form': form,
