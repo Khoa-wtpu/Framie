@@ -91,7 +91,7 @@
         {% for tt in page_obj %}
         <tr>
           <th scope="row" class="abt__ma">#{{ tt.pk }}</th>
-          <td class="abt__ma">{{ tt.MaBooking_id }}</td>
+          <td class="abt__ma">#{{ tt.MaBooking_id }}</td>
           <td>{{ tt.MaBooking.MaKhachHang.get_full_name|default:tt.MaBooking.MaKhachHang.username }}<span class="abt__phu">{{ tt.MaBooking.MaKhachHang.email }}</span></td>
           <td>{{ tt.MaBooking.MaNhiepAnhGia.MaTaiKhoan.get_full_name|default:tt.MaBooking.MaNhiepAnhGia.MaTaiKhoan.username }}<span class="abt__phu">{{ tt.MaBooking.MaNhiepAnhGia.MaTaiKhoan.email }}</span></td>
           <td>{{ tt.MaBooking.MaGoi.TenGoi }}</td>
