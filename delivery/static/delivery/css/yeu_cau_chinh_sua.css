@@ -1,57 +1,121 @@
 /* ===== Trang yêu cầu chỉnh sửa ảnh (UC5.5) ===== */
+/* Quy tắc giao diện cho: .yc-sua__back */
 .yc-sua__back { font-size: var(--text-sm); color: var(--color-text-muted); }
 
 /* --- Thanh số lần chỉnh sửa --- */
+/* Quy tắc giao diện cho: .yc-sua__quota */
 .yc-sua__quota { display: grid; gap: var(--space-3); padding: var(--space-4) var(--space-5); background: var(--color-surface); border: 1px solid var(--color-border); border-left: 4px solid var(--tone-violet-dot); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
+/* Quy tắc giao diện cho: .yc-sua__quota-text */
 .yc-sua__quota-text { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2); }
-.yc-sua__bar { height: .5rem; background: var(--color-surface-alt); border-radius: var(--radius-pill); overflow: hidden; }
-.yc-sua__bar span { display: block; height: 100%; background: var(--color-black); border-radius: var(--radius-pill); }
+/* Quy tắc giao diện cho: .yc-sua__bar (thẻ <progress>: số lần đã dùng / tối đa) */
+.yc-sua__bar {
+  -webkit-appearance: none; /* tắt giao diện mặc định của Safari/Chrome */
+  appearance: none; /* tắt giao diện mặc định của trình duyệt */
+  display: block; /* chiếm trọn chiều ngang khung */
+  width: 100%; /* rộng bằng khung */
+  height: .5rem; /* thanh mảnh */
+  border: 0; /* bỏ viền mặc định */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu */
+  overflow: hidden; /* cắt phần màu thừa theo góc bo */
+  background: var(--color-surface-alt); /* nền thanh (Firefox dùng nền của chính thẻ) */
+  color: var(--color-black); /* màu phần đã đầy khi trình duyệt không hỗ trợ pseudo-element */
+} /* hết quy tắc thanh */
+/* Quy tắc giao diện cho: .yc-sua__bar::-webkit-progress-bar (nền thanh, Chrome/Safari/Edge) */
+.yc-sua__bar::-webkit-progress-bar {
+  background: var(--color-surface-alt); /* nền xám nhạt */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu */
+} /* hết quy tắc nền webkit */
+/* Quy tắc giao diện cho: .yc-sua__bar::-webkit-progress-value (phần đã đầy, Chrome/Safari/Edge) */
+.yc-sua__bar::-webkit-progress-value {
+  background: var(--color-black); /* màu đậm theo chế độ sáng/tối */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu */
+} /* hết quy tắc phần đầy webkit */
+/* Quy tắc giao diện cho: .yc-sua__bar::-moz-progress-bar (phần đã đầy, Firefox) */
+.yc-sua__bar::-moz-progress-bar {
+  background: var(--color-black); /* màu đậm theo chế độ sáng/tối */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu */
+} /* hết quy tắc phần đầy Firefox */
 
 /* --- Lịch sử các lần yêu cầu --- */
+/* Quy tắc giao diện cho: .yc-sua__lich-su */
 .yc-sua__lich-su { background: var(--color-surface-alt); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); font-size: var(--text-sm); }
+/* Quy tắc giao diện cho: .yc-sua__lich-su summary */
 .yc-sua__lich-su summary { cursor: pointer; font-weight: var(--fw-heading); }
+/* Quy tắc giao diện cho: .yc-sua__lich-su ul */
 .yc-sua__lich-su ul { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; gap: var(--space-3); }
+/* Quy tắc giao diện cho: .yc-sua__lich-su li */
 .yc-sua__lich-su li { padding-left: var(--space-3); border-left: 3px solid var(--color-border); }
 
 /* --- Bố cục 2 cột --- */
+/* Quy tắc giao diện cho: .yc-sua__layout */
 .yc-sua__layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); align-items: start; }
+/* Quy tắc giao diện cho: @media (min-width: 960px) */
 @media (min-width: 960px) {
+/* Quy tắc giao diện cho: .yc-sua__layout */
   .yc-sua__layout { grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr); }
+/* Quy tắc giao diện cho: .yc-sua__aside */
   .yc-sua__aside { position: sticky; top: calc(var(--header-h) + var(--space-4)); }
 }
+/* Quy tắc giao diện cho: .yc-sua__toolbar */
 .yc-sua__toolbar { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-4); }
+/* Quy tắc giao diện cho: .yc-sua__toolbar h2 */
 .yc-sua__toolbar h2 { margin: 0 0 var(--space-1); font-size: var(--text-lg); }
+/* Quy tắc giao diện cho: .yc-sua__toolbar p */
 .yc-sua__toolbar p { margin: 0; font-size: var(--text-sm); }
 
 /* --- Lưới ảnh --- */
+/* Quy tắc giao diện cho: .yc-sua__luoi */
 .yc-sua__luoi { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: var(--space-4); }
+/* Quy tắc giao diện cho: .yc-sua__the */
 .yc-sua__the { position: relative; display: flex; flex-direction: column; background: var(--color-surface); border: 2px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; transition: border-color .15s, box-shadow .15s, transform .15s; }
+/* Quy tắc giao diện cho: .yc-sua__the:hover */
 .yc-sua__the:hover { border-color: #A8A8A8; }
+/* Quy tắc giao diện cho: .yc-sua__the--chon */
 .yc-sua__the--chon { border-color: var(--color-black); box-shadow: var(--shadow-md); }
 
+/* Quy tắc giao diện cho: .yc-sua__anh */
 .yc-sua__anh { position: relative; display: block; cursor: pointer; background: var(--color-surface-alt); }
+/* Quy tắc giao diện cho: .yc-sua__anh img */
 .yc-sua__anh img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: contain; user-select: none; -webkit-user-drag: none; }
 
 /* Ô tick tròn góc trái ảnh (ẩn checkbox thật nhưng vẫn bấm/bàn phím được) */
+/* Quy tắc giao diện cho: .yc-sua__anh input[type="checkbox"] */
 .yc-sua__anh input[type="checkbox"] { position: absolute; opacity: 0; width: 1px; height: 1px; }
+/* Quy tắc giao diện cho: .yc-sua__tick */
 .yc-sua__tick { position: absolute; top: var(--space-3); left: var(--space-3); z-index: 1; display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border: 2px solid var(--color-gray); border-radius: 50%; background: rgba(255, 255, 255, .92); color: transparent; font-size: var(--text-sm); font-weight: var(--fw-heading); transition: background .15s, border-color .15s, color .15s; }
+/* Quy tắc giao diện cho: .yc-sua__anh input:checked + .yc-sua__tick */
 .yc-sua__anh input:checked + .yc-sua__tick { background: var(--color-black); border-color: var(--color-black); color: var(--color-white); }
+/* Quy tắc giao diện cho: .yc-sua__anh input:focus-visible + .yc-sua__tick */
 .yc-sua__anh input:focus-visible + .yc-sua__tick { box-shadow: 0 0 0 3px rgba(26, 26, 26, .25); }
 
+/* Quy tắc giao diện cho: .yc-sua__xem-lon */
 .yc-sua__xem-lon { position: absolute; top: var(--space-3); right: var(--space-3); z-index: 1; padding: .2rem .7rem; border-radius: var(--radius-pill); background: rgba(255, 255, 255, .92); border: 1px solid var(--color-border); font-size: var(--text-xs); font-weight: var(--fw-heading); text-decoration: none; }
+/* Quy tắc giao diện cho: .yc-sua__xem-lon:hover */
 .yc-sua__xem-lon:hover { background: var(--color-white); border-color: var(--color-black); }
 
+/* Quy tắc giao diện cho: .yc-sua__the-body */
 .yc-sua__the-body { display: grid; gap: var(--space-2); padding: var(--space-4); }
+/* Quy tắc giao diện cho: .yc-sua__ten */
 .yc-sua__ten { margin: 0; font-size: var(--text-sm); font-weight: var(--fw-heading); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.yc-sua__nhan { font-size: var(--text-xs); color: var(--color-text-muted); }
+/* Quy tắc giao diện cho: .yc-sua__the-body .field (bỏ lề dưới mặc định của .field vì thẻ ảnh đã có khoảng cách riêng) */
+.yc-sua__the-body .field { margin-bottom: 0; }
+/* Quy tắc giao diện cho: .yc-sua__the-body textarea.input */
 .yc-sua__the-body textarea.input { min-height: 4.5rem; font-size: var(--text-sm); }
+/* Quy tắc giao diện cho: .yc-sua__dem */
 .yc-sua__dem { justify-self: end; font-size: var(--text-xs); }
 
 /* --- Khung tổng kết bên phải --- */
+/* Quy tắc giao diện cho: .yc-sua__tom-tat */
 .yc-sua__tom-tat { display: grid; gap: var(--space-3); padding: var(--space-5); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
+/* Quy tắc giao diện cho: .yc-sua__tom-tat .field */
 .yc-sua__tom-tat .field { margin-bottom: 0; }
+/* Quy tắc giao diện cho: .yc-sua__so-chon */
 .yc-sua__so-chon { display: flex; align-items: baseline; gap: var(--space-2); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-border); }
+/* Quy tắc giao diện cho: .yc-sua__so-chon strong */
 .yc-sua__so-chon strong { font-size: var(--text-3xl); line-height: 1; }
+/* Quy tắc giao diện cho: .yc-sua__goi-y */
 .yc-sua__goi-y { margin: 0; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); background: var(--warning-bg); color: var(--warning-fg); font-size: var(--text-sm); }
+/* Quy tắc giao diện cho: .yc-sua__luu-y */
 .yc-sua__luu-y { margin: 0; font-size: var(--text-xs); text-align: center; }
+/* Quy tắc giao diện cho: .yc-sua__tom-tat .btn[disabled] */
 .yc-sua__tom-tat .btn[disabled] { opacity: .4; }

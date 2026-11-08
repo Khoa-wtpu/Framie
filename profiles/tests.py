@@ -7,6 +7,7 @@ from io import BytesIO
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.messages import get_messages
+from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -40,6 +41,8 @@ def tao_user(ten, vai_tro, so=1):
     nhom, _ = Group.objects.get_or_create(name=vai_tro)
     user.groups.add(nhom)
     return user
+
+HOP_THU_GIA = {'default': {'BACKEND': 'django.core.mail.backends.locmem.EmailBackend'}}   # email chỉ vào mail.outbox, không gửi thật (P12)
 
 
 @override_settings(MEDIA_ROOT=THU_MUC_ANH)
@@ -226,6 +229,14 @@ class TaoHoSoK3TestCase(TestCase):
         self.assertIn('mới', tb.first().TieuDe)
         # Nhiếp ảnh gia không tự nhận thông báo của chính mình
         self.assertFalse(ThongBao.objects.filter(MaNguoiNhan=self.user).exists())
+
+    @override_settings(MAILERS=HOP_THU_GIA)
+    def test_gui_ho_so_gui_email_cho_quan_tri_vien(self):          # P12: hồ sơ mới gửi cả email cho Quản trị viên
+        form = NhiepAnhGiaForm(self.du_lieu(), self.tep(), user=self.user)
+        self.assertTrue(form.is_valid(), form.errors)
+        with self.captureOnCommitCallbacks(execute=True):
+            form.save()
+        self.assertEqual([m.to for m in mail.outbox], [['qtv@example.com']])
 
     def test_cap_nhat_ho_so_bao_quan_tri_vien_lan_hai(self):
         nag = NhiepAnhGiaForm(self.du_lieu(), self.tep(), user=self.user)

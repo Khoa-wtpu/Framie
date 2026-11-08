@@ -8,22 +8,10 @@
     <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaKhachHang.get_full_name }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>
   </header>
 
-  {% if cho_bat_dau_hau_ky %}{# N6: Khách đã gửi danh sách (hoặc gói hậu kỳ toàn bộ) -> Nhiếp ảnh gia bắt đầu hậu kỳ #}
-    <section class="panel stack">{# khung bắt đầu hậu kỳ #}
-      <h2>Bắt đầu hậu kỳ</h2>{# tiêu đề khung #}
-      {% if gioi_han %}{# gói giới hạn: có danh sách Khách chọn #}
-        <p>Khách hàng đã chọn <strong>{{ anh_da_chon|length }}</strong> ảnh cần hậu kỳ:</p>{# số ảnh Khách chọn #}
-        <p class="muted">{% for a in anh_da_chon %}{{ a.TenAnh }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{# tên các ảnh Khách chọn #}
-      {% else %}{# gói hậu kỳ toàn bộ: không có bước chọn #}
-        <p>Gói hậu kỳ toàn bộ ảnh: sau khi bấm <strong>Bắt đầu hậu kỳ</strong>, bạn tải lên toàn bộ ảnh đã hậu kỳ.</p>{# giải thích #}
-      {% endif %}
-      <form method="post" action="{% url 'bat_dau_hau_ky' booking.pk %}">{# gửi POST tới view bat_dau_hau_ky #}
-        {% csrf_token %}{# mã chống giả mạo yêu cầu #}
-        <button class="btn btn--primary" type="submit">Bắt đầu hậu kỳ</button>{# nút bấm #}
-      </form>
-      <p class="muted">Bấm xong, Booking chuyển sang <strong>Đang hậu kỳ</strong> và có hạn 3 ngày để tải ảnh đã hậu kỳ.</p>{# nhắc hạn #}
-    </section>
-  {% elif not giai_doan %}
+  {% if cho_bat_dau_hau_ky %}
+    {% include "includes/alert.html" with level="info" text="Bấm “Bắt đầu hậu kỳ” tại trang chi tiết Booking để chuyển thẳng đến giao diện tải ảnh." %}
+  {% else %}
+  {% if not giai_doan %}
     {% include "includes/alert.html" with level="info" text="Booking này chưa đến lúc tải ảnh. Chỉ tải được sau khi buổi chụp hoàn tất (Đã chụp) hoặc khi đang hậu kỳ." %}
   {% else %}
     <section class="panel stack">
@@ -34,11 +22,27 @@
           {% if gioi_han %}<strong>Chờ Khách hàng lựa chọn ảnh</strong> (Khách có 2 ngày để chọn){% else %}<strong>Chờ hậu kỳ</strong> (gói hậu kỳ toàn bộ ảnh){% endif %}.
           Tên ảnh (không tính đuôi) không được trùng nhau.</p>
       {% else %}
-        <p>Chọn các ảnh đã hậu kỳ. <strong>Tên tệp (không tính đuôi) phải trùng tên ảnh gốc</strong> để hệ thống thay đúng ảnh.
-          Khi đủ ảnh, Booking chuyển sang <strong>Chờ Khách hàng kiểm tra</strong>.</p>
+        {% if yeu_cau_moi %}{# N7: Khách đã yêu cầu chỉnh sửa -> không cần trùng tên, chỉ cần đủ số lượng #}
+          <p>Chọn <strong>đúng {{ yeu_cau_anhs|length }} ảnh</strong> đã chỉnh sửa theo yêu cầu của Khách hàng (tên tệp tùy ý).{# nhắc số lượng cần tải #}
+            Hệ thống ghép theo thứ tự tên: tệp xếp thứ 1 (A-Z) thay cho ảnh số 1 trong danh sách bên dưới, tệp thứ 2 thay cho ảnh số 2, và tiếp tục như vậy.{# giải thích cách ghép #}
+            Khi đủ ảnh, Booking chuyển sang <strong>Chờ Khách hàng kiểm tra</strong>.</p>{# nhắc bước tiếp theo #}
+        {% else %}{# lượt hậu kỳ đầu tiên #}
+          <p>Chọn <strong>đúng {{ cho_hau_ky|length }} ảnh</strong> đã hậu kỳ (tên tệp tùy ý).
+            Hệ thống ghép theo thứ tự tên: tệp xếp thứ 1 (A-Z) thay cho ảnh số 1 trong danh sách bên dưới, tệp thứ 2 thay cho ảnh số 2, và tiếp tục như vậy.
+            Khi đủ ảnh, Booking chuyển sang <strong>Chờ Khách hàng kiểm tra</strong>.</p>
+        {% endif %}
         {% if cho_hau_ky %}
-          <p>Còn <strong>{{ cho_hau_ky|length }}</strong> ảnh cần tải:</p>
-          <p class="muted">{% for a in cho_hau_ky %}{{ a.TenAnh }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+          <p>Còn <strong>{{ cho_hau_ky|length }}</strong> ảnh cần sửa:</p>
+          <div class="tai-anh__luoi">{# hiện ảnh thu nhỏ của các ảnh còn phải sửa #}
+            {% for a in cho_hau_ky %}
+              <figure class="tai-anh__the">
+                <a href="{% url 'xem_anh' a.pk %}" target="_blank" rel="noopener">{# bấm để xem ảnh lớn ở tab mới #}
+                  <img src="{% url 'xem_anh' a.pk %}?nho=1" alt="{{ a.TenAnh }}" loading="lazy" draggable="false">
+                </a>
+                <figcaption class="muted tai-anh__chu-thich">{{ forloop.counter }}. {{ a.TenAnh }}</figcaption>
+              </figure>
+            {% endfor %}
+          </div>
         {% endif %}
       {% endif %}
     </section>
@@ -47,14 +51,14 @@
       <section class="panel stack">{# khung yêu cầu chỉnh sửa của Khách #}
         <h2>Khách hàng yêu cầu chỉnh sửa (lần {{ yeu_cau_moi.SoLanYeuCau }}/3)</h2>{# lần thứ mấy #}
         <p><strong>Nhận xét tổng quát:</strong> {{ yeu_cau_moi.NoiDung }}</p>{# nhận xét chung của Khách #}
-        <div style="display:flex; flex-direction:column; gap:1rem;">{# danh sách từng ảnh cần sửa, mỗi ảnh một dòng #}
+        <div class="tai-anh__yc-ds">{# danh sách từng ảnh cần sửa, mỗi ảnh một dòng #}
           {% for ct in yeu_cau_anhs %}{# duyệt từng ảnh #}
-            <div style="display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-start;">{# một dòng: ảnh bên trái, nội dung bên phải #}
+            <div class="tai-anh__yc-dong">{# một dòng: ảnh bên trái, nội dung bên phải #}
               <a href="{% url 'xem_anh' ct.MaAnh.pk %}" target="_blank" rel="noopener">{# bấm vào ảnh để xem lớn ở tab mới #}
-                <img src="{% url 'xem_anh' ct.MaAnh.pk %}?nho=1" alt="{{ ct.MaAnh.TenAnh }}" loading="lazy" draggable="false" style="width:180px; height:120px; object-fit:cover; border-radius:8px; display:block;">{# ảnh thu nhỏ của ảnh cần sửa #}
+                <img src="{% url 'xem_anh' ct.MaAnh.pk %}?nho=1" alt="{{ ct.MaAnh.TenAnh }}" loading="lazy" draggable="false" class="tai-anh__yc-anh">{# ảnh thu nhỏ của ảnh cần sửa #}
               </a>
-              <div style="flex:1; min-width:200px;">{# tên ảnh và nội dung cần sửa #}
-                <strong>{{ ct.MaAnh.TenAnh }}</strong>{# tên ảnh #}
+              <div class="tai-anh__yc-nd">{# tên ảnh và nội dung cần sửa #}
+                <strong>{{ forloop.counter }}. {{ ct.MaAnh.TenAnh }}</strong>{# số thứ tự + tên ảnh cần sửa #}{# tên ảnh #}
                 <p>{{ ct.NoiDungChinhSua }}</p>{# nội dung Khách yêu cầu sửa #}
               </div>
             </div>
@@ -68,13 +72,32 @@
       <div id="khung-loi">
         {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}
       </div>
-      {% include "includes/form_field.html" with field=form.anh %}
+      <div class="field tai-anh__field{% if form.anh.errors %} has-error{% endif %}">
+        <span class="field__label">CHỌN ẢNH ĐỂ TẢI LÊN</span>
+        <label class="tai-anh__chon-tep" for="{{ form.anh.id_for_label }}">
+          <span class="tai-anh__cong" aria-hidden="true">+</span>
+          <span class="tai-anh__mo-ta">
+            <strong>Tải ảnh lên</strong>
+            <small>JPG, JPEG, PNG · tối đa 20 MB mỗi ảnh · 100 ảnh mỗi lần</small>
+          </span>
+        </label>
+        {{ form.anh }}
+        {% for loi in form.anh.errors %}<p class="field__error">{{ loi }}</p>{% endfor %}
+      </div>
+      <div id="khung-xem-truoc" class="tai-anh__xem-truoc" hidden>{# khung xem trước, ẩn cho tới khi có ảnh được chọn #}
+        <div class="tai-anh__xem-truoc-dau">{# hàng đầu: số ảnh đã chọn và nút xóa hết #}
+          <strong id="chu-da-chon"></strong>{# chữ "Đã chọn N ảnh" do JS điền vào #}
+          <button type="button" id="nut-xoa-het" class="btn btn--ghost btn--sm">Xóa hết</button>{# nút bỏ hết ảnh đã chọn #}
+        </div>
+        <div id="luoi-xem-truoc" class="tai-anh__luoi-xem-truoc"></div>{# lưới ảnh, JS thêm từng thẻ ảnh vào đây #}
+      </div>
       <div>
         <progress id="thanh-tien-trinh" class="tai-anh__tien-trinh" max="100" value="0" hidden aria-label="Tiến trình tải ảnh"></progress>
         <p id="chu-tien-trinh" class="muted" aria-live="polite"></p>
       </div>
       <button class="btn btn--primary" type="submit" id="nut-tai">Tải ảnh lên</button>
     </form>
+  {% endif %}
   {% endif %}
 
   {% if anhs %}

@@ -18,7 +18,7 @@ TONE_BY_STATUS = {
     SL.TRONG: "sky", SL.DANG_GIU: "amber", SL.DA_DAT: "blue",
     GC.DA_HOAN_TAT: "green", GC.HET_HAN: "gray",
     # Thanh toán
-    TT.CHO_XAC_NHAN_COC: "violet", TT.DA_DAT_COC: "teal", TT.CHO_XAC_NHAN_60: "lime",
+    TT.CHO_XAC_NHAN_COC: "violet", TT.DA_DAT_COC: "lime", TT.CHO_XAC_NHAN_60: "lime",
     TT.QUA_HAN: "red", TT.DA_THANH_TOAN: "green",
     # Gói dịch vụ
     TrangThaiGoi.DANG_AP_DUNG: "green", TrangThaiGoi.NGUNG_AP_DUNG: "gray", TrangThaiGoi.DA_AN: "brown",

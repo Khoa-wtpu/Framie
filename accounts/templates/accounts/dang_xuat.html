@@ -10,7 +10,7 @@
        {% csrf_token %}{# mã chống giả mạo form #}
        <div class="modal__actions">{# căn 2 nút vào giữa #}
          <a class="btn btn--secondary" href="{{ urls.home }}">Hủy</a>{# quay lại, không đăng xuất; kiểu nút phụ giống popup #}
-         <button class="btn btn--primary" type="submit">Đăng xuất</button>{# nút chính; không dùng nút đỏ vì đăng xuất không phải xóa/hủy #}
+         <button class="btn btn--primary btn--logout" type="submit">Đăng xuất</button>{# nút chính; không dùng nút đỏ vì đăng xuất không phải xóa/hủy #}
        </div>
      </form>
    </div>

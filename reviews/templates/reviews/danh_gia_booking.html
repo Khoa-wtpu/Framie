@@ -3,6 +3,7 @@
 {% block title %}Đánh giá nhiếp ảnh gia{% endblock %}
 {% block content %}
 <div class="container stack dg-trang">
+  {% include "includes/quay_lai_booking.html" with booking=booking %}{# nút quay lại Booking (Khách hàng) #}
   <header>
     <h1>Đánh giá nhiếp ảnh gia</h1>
     <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>
@@ -23,7 +24,7 @@
     <form method="post" id="form-danh-gia" class="panel stack" novalidate>
       {% csrf_token %}
       <fieldset class="field{% if form.diem.errors %} has-error{% endif %} dg-chon-sao">
-        <legend class="field__label">Số sao<span class="field__req" aria-hidden="true"> *</span></legend>
+        <legend class="field__label">SỐ SAO<span class="field__req" aria-hidden="true"> *</span></legend>
         <div class="dg-sao-chon">{# các ô radio xếp 5 -> 1, CSS đảo chiều để hiện 1 -> 5 và tô sáng các sao bên trái #}
           {% for i in "54321" %}
             <input type="radio" name="diem" id="sao-{{ i }}" value="{{ i }}"{% if diem_chon|stringformat:"d" == i %} checked{% endif %}>
@@ -37,7 +38,7 @@
         <label class="field__label" for="nhan-xet">Nhận xét (không bắt buộc, tối đa {{ toi_da }} ký tự)</label>
         <textarea class="input" id="nhan-xet" name="nhan_xet" rows="5" maxlength="{{ toi_da }}"
                   placeholder="Chia sẻ trải nghiệm của bạn với nhiếp ảnh gia...">{{ nhan_xet_nhap }}</textarea>
-        <p class="field__hint"><span id="dem-ky-tu">0</span>/{{ toi_da }} ký tự</p>
+        <p class="field__hint dg-dem-ky-tu"><span id="dem-ky-tu">0</span>/{{ toi_da }} ký tự</p>
         {% for loi in form.nhan_xet.errors %}<p class="field__error">{{ loi }}</p>{% endfor %}
       </div>
 

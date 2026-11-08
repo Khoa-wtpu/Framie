@@ -1,4 +1,4 @@
-# notifications/mau_email.py - P9: 20 nội dung email mẫu theo TO-BE (Phanh)
+# notifications/mau_email.py - P9 và P12: 28 nội dung mẫu theo TO-BE (Phanh). Các mẫu đánh dấu NGOÀI TO-BE là sự kiện nhóm bổ sung, đã hoặc đang chờ Khoa duyệt
 MAU = {  # giá trị giả điền vào các chỗ trống
     'ten': 'Nguyễn Văn A',  # tên người liên quan
     'ma': 15,  # mã Booking
@@ -28,4 +28,12 @@ SU_KIEN = {  # khóa là tên sự kiện; giá trị là (tiêu đề, nội du
     'ban_giao_kh': ('Vui lòng thanh toán phần còn lại', 'Bạn cần thanh toán {so_tien} cho Booking #{ma} trước {han}.'),  # gửi Khách hàng
     'thanh_toan': ('Đã xác nhận thanh toán', 'Ảnh hoàn chỉnh của Booking #{ma} có thể tải về trong 3 ngày.'),  # gửi Khách hàng
     'moi_danh_gia': ('Mời bạn đánh giá', 'Booking #{ma} đã hoàn thành. Mời bạn đánh giá Nhiếp ảnh gia.'),  # gửi Khách hàng
-}  # hết 20 sự kiện
+    'ho_so_nop_lai': ('Hồ sơ nhiếp ảnh gia vừa được cập nhật', '{ten} vừa cập nhật hồ sơ (lần nộp 2). Hồ sơ đang chờ bạn duyệt lại.'),  # gửi Quản trị viên
+    'ho_so_chinh_sua': ('Hồ sơ của bạn cần chỉnh sửa', 'Quản trị viên yêu cầu bạn chỉnh sửa hồ sơ: {ly_do}. Vui lòng cập nhật và gửi lại hồ sơ.'),  # gửi Nhiếp ảnh gia (email là NGOÀI TO-BE, theo code của Khoa)
+    'bo_sung_minh_chung': ('Nhiếp ảnh gia yêu cầu bổ sung minh chứng', 'Booking #{ma}: {ly_do}'),  # gửi Khách hàng, chỉ web, dùng cho cả cọc và 60%
+    'khach_chon_xong_anh': ('Khách hàng đã chọn ảnh cần hậu kỳ', 'Khách hàng {ten} đã gửi danh sách ảnh cần hậu kỳ của Booking #{ma}.'),  # gửi Nhiếp ảnh gia, chỉ web
+    'het_han_dat_coc': ('Booking #{ma} đã hết thời hạn đặt cọc', 'Booking #{ma} đã bị hủy tự động vì quá 1 ngày chưa đặt cọc. Khung giờ đã được trả về lịch trống.'),  # NGOÀI TO-BE: gửi cả hai bên, email chỉ cho Khách
+    'qua_han_60': ('Booking #{ma}: quá hạn thanh toán', 'Khoản thanh toán 60% còn lại của Booking #{ma} đã quá hạn. Vui lòng liên hệ Nhiếp ảnh gia để được hỗ trợ.'),  # NGOÀI TO-BE: gửi cả hai bên, chỉ web
+    'anh_het_han_tai': ('Ảnh Booking #{ma} đã hết hạn tải', 'Đã quá 3 ngày kể từ khi mở quyền tải, ảnh của Booking #{ma} đã được xóa khỏi hệ thống.'),  # NGOÀI TO-BE: gửi Khách hàng, chỉ web
+    'xac_nhan_hoan_coc': ('Khách hàng đã nhận lại tiền cọc - Booking #{ma}', '{ten} đã xác nhận nhận lại {so_tien} tiền cọc của Booking #{ma}.'),  # NGOÀI TO-BE: gửi Nhiếp ảnh gia, web và email
+}  # hết 28 sự kiện

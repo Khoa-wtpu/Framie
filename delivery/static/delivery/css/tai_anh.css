@@ -1,12 +1,15 @@
+/* Quy tắc giao diện cho: .tai-anh__luoi */
 .tai-anh__luoi {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
 }
+/* Quy tắc giao diện cho: .tai-anh__the */
 .tai-anh__the {
   width: 140px;
   margin: 0;
 }
+/* Quy tắc giao diện cho: .tai-anh__the img */
 .tai-anh__the img {
   display: block;
   width: 140px;
@@ -15,15 +18,159 @@
   user-select: none;
   -webkit-user-drag: none;
 }
+/* Quy tắc giao diện cho: .tai-anh__chu-thich */
 .tai-anh__chu-thich {
   margin-top: var(--space-1);
   font-size: var(--text-xs);
   overflow-wrap: anywhere;
 }
+/* Quy tắc giao diện cho: .tai-anh__tien-trinh */
 .tai-anh__tien-trinh {
   display: block;
   width: 100%;
 }
+/* Quy tắc giao diện cho: .tai-anh__tien-trinh[hidden] */
 .tai-anh__tien-trinh[hidden] {
   display: none;
 }
+
+.tai-anh input[type="file"].input { /* làm ô chọn tệp trông như vùng thả ảnh */
+  border-style: dashed; /* viền nét đứt */
+  padding: var(--space-5); /* đệm rộng cho dễ bấm, dễ thả */
+  cursor: pointer; /* con trỏ bàn tay */
+} /* hết quy tắc ô chọn tệp */
+.tai-anh__vung-keo { /* vùng đang có ảnh kéo tới */
+  outline: 2px dashed var(--color-black); /* viền nét đứt đậm báo "thả vào đây" */
+  outline-offset: 4px; /* cách ô một chút cho dễ nhìn */
+  border-radius: var(--radius-md); /* bo góc cho mềm */
+} /* hết quy tắc vùng kéo */
+.tai-anh__xem-truoc[hidden] { /* khi chưa có ảnh nào */
+  display: none; /* ẩn hẳn khung xem trước */
+} /* hết quy tắc ẩn */
+.tai-anh__xem-truoc-dau { /* hàng đầu của khung xem trước */
+  display: flex; /* xếp chữ và nút trên một hàng */
+  align-items: center; /* căn giữa theo chiều dọc */
+  justify-content: space-between; /* chữ bên trái, nút bên phải */
+  margin-bottom: var(--space-3); /* cách lưới ảnh bên dưới */
+} /* hết quy tắc hàng đầu */
+.tai-anh__luoi-xem-truoc { /* lưới chứa các ảnh xem trước */
+  display: grid; /* dùng lưới */
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* tự chia cột, mỗi ô rộng tối thiểu 150px */
+  gap: var(--space-3); /* khoảng cách giữa các ô */
+} /* hết quy tắc lưới */
+.tai-anh__o { /* một ô ảnh */
+  position: relative; /* làm mốc để đặt nút xóa ở góc */
+  margin: 0; /* bỏ lề mặc định của figure */
+  overflow: hidden; /* cắt phần ảnh thừa theo góc bo */
+  background: var(--color-surface-alt); /* nền xám nhạt */
+  border: 1px solid var(--color-border); /* viền mảnh */
+  border-radius: var(--radius-md); /* bo góc */
+} /* hết quy tắc ô ảnh */
+.tai-anh__o img { /* ảnh thu nhỏ trong ô */
+  display: block; /* bỏ khoảng trống dưới ảnh */
+  width: 100%; /* ảnh rộng bằng ô */
+  aspect-ratio: 4 / 3; /* giữ tỉ lệ khung 4:3 */
+  object-fit: cover; /* cắt ảnh cho vừa khung, không méo */
+} /* hết quy tắc ảnh */
+.tai-anh__o-chu { /* phần chú thích dưới ảnh */
+  display: flex; /* xếp tên và dung lượng theo cột */
+  flex-direction: column; /* tên ở trên, dung lượng ở dưới */
+  gap: 2px; /* khoảng cách nhỏ giữa hai dòng */
+  padding: var(--space-2) var(--space-3); /* đệm quanh chữ */
+  font-size: var(--text-xs); /* chữ nhỏ */
+} /* hết quy tắc chú thích */
+.tai-anh__o-ten { /* dòng tên tệp */
+  overflow: hidden; /* cắt phần tên quá dài */
+  white-space: nowrap; /* không xuống dòng */
+  text-overflow: ellipsis; /* hiện dấu ... khi tên bị cắt */
+} /* hết quy tắc tên tệp */
+.tai-anh__nut-xoa { /* nút × ở góc trên bên phải ảnh */
+  position: absolute; /* đặt tự do trong ô ảnh */
+  top: var(--space-2); /* cách mép trên */
+  right: var(--space-2); /* cách mép phải */
+  width: 1.75rem; /* chiều rộng nút */
+  height: 1.75rem; /* chiều cao nút (bằng chiều rộng để thành hình tròn) */
+  border: 0; /* bỏ viền mặc định */
+  border-radius: var(--radius-pill); /* bo tròn hoàn toàn */
+  background: var(--color-black); /* nền đen */
+  color: var(--color-white); /* dấu × màu trắng */
+  font-size: var(--text-base); /* cỡ dấu × */
+  line-height: 1; /* chặn dấu × bị lệch dòng */
+  cursor: pointer; /* con trỏ bàn tay */
+} /* hết quy tắc nút xóa */
+.tai-anh__nut-xoa:hover { /* khi rê chuột vào nút xóa */
+  background: var(--color-black-hover); /* đổi sang đen nhạt hơn */
+} /* hết quy tắc hover */
+.tai-anh__o--loi { /* ô ảnh bị lỗi (sai định dạng / quá nặng) */
+  border-color: var(--danger-fg); /* viền đỏ */
+  box-shadow: 0 0 0 1px var(--danger-fg); /* viền đỏ dày thêm cho dễ thấy */
+} /* hết quy tắc ô lỗi */
+.tai-anh__o-bao-loi { /* dòng chữ báo lỗi dưới ảnh */
+  color: var(--danger-fg); /* chữ đỏ */
+  font-weight: var(--fw-heading); /* chữ đậm vừa */
+} /* hết quy tắc báo lỗi */
+/* Ô chọn ảnh dạng nút cộng tròn theo moodboard */
+.tai-anh__field input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.tai-anh__chon-tep {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 6rem;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-alt);
+  cursor: pointer;
+}
+.tai-anh__chon-tep:hover { border-color: var(--color-border-hover); }
+.tai-anh__field:focus-within .tai-anh__chon-tep { outline:2px solid var(--color-focus); outline-offset:2px; }
+.tai-anh__cong {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 4.25rem;
+  height: 4.25rem;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #fff, #e5e5e5);
+  color: #444;
+  font-size: 2rem;
+  font-weight: 300;
+}
+.tai-anh__mo-ta { display: grid; gap: 2px; }
+.tai-anh__mo-ta strong { font-size: var(--text-base); }
+.tai-anh__mo-ta small { color: var(--color-text-muted); font-size: var(--text-xs); }
+.tai-anh__field input[type="file"]:focus-visible + * { outline: 2px solid var(--color-focus); }
+
+/* ===== N7: khối "Khách hàng yêu cầu chỉnh sửa" trên trang tải ảnh (thay cho style inline) ===== */
+.tai-anh__yc-ds { /* danh sách từng ảnh Khách yêu cầu sửa */
+  display: flex; /* xếp các dòng ảnh theo cột */
+  flex-direction: column; /* mỗi ảnh một dòng, từ trên xuống */
+  gap: var(--space-4); /* khoảng cách giữa các dòng */
+} /* hết quy tắc danh sách */
+.tai-anh__yc-dong { /* một dòng: ảnh bên trái, nội dung bên phải */
+  display: flex; /* xếp ảnh và nội dung cạnh nhau */
+  flex-wrap: wrap; /* màn hình hẹp thì nội dung rớt xuống dưới ảnh */
+  align-items: flex-start; /* căn mép trên của ảnh và nội dung */
+  gap: var(--space-4); /* khoảng cách giữa ảnh và nội dung */
+} /* hết quy tắc một dòng */
+.tai-anh__yc-anh { /* ảnh thu nhỏ của ảnh cần sửa */
+  display: block; /* bỏ khoảng trống dưới ảnh */
+  width: 11.25rem; /* chiều rộng ảnh */
+  height: 7.5rem; /* chiều cao ảnh */
+  object-fit: cover; /* cắt ảnh cho vừa khung, không bị méo */
+  border-radius: var(--radius-sm); /* bo góc nhẹ */
+} /* hết quy tắc ảnh */
+.tai-anh__yc-nd { /* tên ảnh và nội dung Khách yêu cầu sửa */
+  flex: 1; /* chiếm phần còn lại của dòng */
+  min-width: 12.5rem; /* hẹp quá thì rớt xuống dòng */
+} /* hết quy tắc nội dung */

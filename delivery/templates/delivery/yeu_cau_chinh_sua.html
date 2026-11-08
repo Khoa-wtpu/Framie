@@ -17,9 +17,7 @@
       <strong>Còn {{ so_lan_con_lai }} lần chỉnh sửa</strong>
       <span class="muted">Đã dùng {{ so_lan_da_dung }} / {{ so_lan_toi_da }} lần</span>
     </div>
-    <div class="yc-sua__bar" role="progressbar" aria-valuemin="0" aria-valuemax="{{ so_lan_toi_da }}" aria-valuenow="{{ so_lan_da_dung }}">
-      <span style="width: {% widthratio so_lan_da_dung so_lan_toi_da 100 %}%"></span>
-    </div>
+    <progress class="yc-sua__bar" max="{{ so_lan_toi_da }}" value="{{ so_lan_da_dung }}" aria-label="Số lần chỉnh sửa đã dùng"></progress>{# đã dùng / tối đa; không dùng style inline #}
   </section>
 
   {% if lich_su %}
@@ -64,10 +62,13 @@
 
               <div class="yc-sua__the-body">
                 <p class="yc-sua__ten" title="{{ a.TenAnh }}">{{ a.TenAnh }}</p>
-                <label class="yc-sua__nhan" for="nd-{{ a.pk }}">Nội dung cần chỉnh</label>
-                <textarea class="input" id="nd-{{ a.pk }}" name="noi_dung_{{ a.pk }}" rows="2" maxlength="500"
-                          placeholder="Ví dụ: làm sáng hơn, xóa vết bẩn ở góc phải...">{{ a.noi_dung_nhap }}</textarea>
-                <span class="yc-sua__dem muted" data-dem-cho="nd-{{ a.pk }}" data-toi-da="500">0/500</span>
+                {# Tên ô động noi_dung_<mã ảnh> nên không dùng được includes/form_field.html (cần BoundField); viết tay nhưng giữ cùng khung .field và nhãn .field__label. Lỗi của trang này hiện bằng includes/alert.html ở đầu trang (qua messages). #}
+                <div class="field">
+                  <label class="field__label" for="nd-{{ a.pk }}">Nội dung cần chỉnh</label>
+                  <textarea class="input" id="nd-{{ a.pk }}" name="noi_dung_{{ a.pk }}" rows="2" maxlength="500"
+                            placeholder="Ví dụ: làm sáng hơn, xóa vết bẩn ở góc phải...">{{ a.noi_dung_nhap }}</textarea>
+                  <span class="yc-sua__dem muted" data-dem-cho="nd-{{ a.pk }}" data-toi-da="500">0/500</span>
+                </div>
               </div>
             </article>
           {% endfor %}

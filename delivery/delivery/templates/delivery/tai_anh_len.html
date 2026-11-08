@@ -1,0 +1,104 @@
+{% extends "base.html" %}{# N4 - UC5.3: Nhiếp ảnh gia tải ảnh lên Booking #}
+{% load ui static %}
+{% block title %}Tải ảnh lên hệ thống{% endblock %}
+{% block content %}
+<div class="container stack tai-anh">
+  {% include "includes/quay_lai_booking.html" with booking=booking la_nag=True %}{# nút quay lại Booking (Nhiếp ảnh gia) #}
+  <header>
+    <h1>Tải ảnh lên hệ thống</h1>
+    <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaKhachHang.get_full_name }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>
+  </header>
+
+  {% if cho_bat_dau_hau_ky %}{# N6: Khách đã gửi danh sách (hoặc gói hậu kỳ toàn bộ) -> Nhiếp ảnh gia bắt đầu hậu kỳ #}
+    <section class="panel stack">{# khung bắt đầu hậu kỳ #}
+      <h2>Bắt đầu hậu kỳ</h2>{# tiêu đề khung #}
+      {% if gioi_han %}{# gói giới hạn: có danh sách Khách chọn #}
+        <p>Khách hàng đã chọn <strong>{{ anh_da_chon|length }}</strong> ảnh cần hậu kỳ:</p>{# số ảnh Khách chọn #}
+        <p class="muted">{% for a in anh_da_chon %}{{ a.TenAnh }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{# tên các ảnh Khách chọn #}
+      {% else %}{# gói hậu kỳ toàn bộ: không có bước chọn #}
+        <p>Gói hậu kỳ toàn bộ ảnh: sau khi bấm <strong>Bắt đầu hậu kỳ</strong>, bạn tải lên toàn bộ ảnh đã hậu kỳ.</p>{# giải thích #}
+      {% endif %}
+      <form method="post" action="{% url 'bat_dau_hau_ky' booking.pk %}">{# gửi POST tới view bat_dau_hau_ky #}
+        {% csrf_token %}{# mã chống giả mạo yêu cầu #}
+        <button class="btn btn--primary" type="submit">Bắt đầu hậu kỳ</button>{# nút bấm #}
+      </form>
+      <p class="muted">Bấm xong, Booking chuyển sang <strong>Đang hậu kỳ</strong> và có hạn 3 ngày để tải ảnh đã hậu kỳ.</p>{# nhắc hạn #}
+    </section>
+  {% elif not giai_doan %}
+    {% include "includes/alert.html" with level="info" text="Booking này chưa đến lúc tải ảnh. Chỉ tải được sau khi buổi chụp hoàn tất (Đã chụp) hoặc khi đang hậu kỳ." %}
+  {% else %}
+    <section class="panel stack">
+      <h2>{{ giai_doan.tieu_de }}</h2>
+      {% if dang_o_buoc_goc %}
+        <p>Chọn các ảnh đã chụp. Hệ thống tự động chèn watermark trước khi lưu.
+          Tải xong, Booking chuyển sang
+          {% if gioi_han %}<strong>Chờ Khách hàng lựa chọn ảnh</strong> (Khách có 2 ngày để chọn){% else %}<strong>Chờ hậu kỳ</strong> (gói hậu kỳ toàn bộ ảnh){% endif %}.
+          Tên ảnh (không tính đuôi) không được trùng nhau.</p>
+      {% else %}
+        <p>Chọn các ảnh đã hậu kỳ. <strong>Tên tệp (không tính đuôi) phải trùng tên ảnh gốc</strong> để hệ thống thay đúng ảnh.
+          Khi đủ ảnh, Booking chuyển sang <strong>Chờ Khách hàng kiểm tra</strong>.</p>
+        {% if cho_hau_ky %}
+          <p>Còn <strong>{{ cho_hau_ky|length }}</strong> ảnh cần tải:</p>
+          <p class="muted">{% for a in cho_hau_ky %}{{ a.TenAnh }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+        {% endif %}
+      {% endif %}
+    </section>
+
+    {% if yeu_cau_moi %}{# N7: Khách đã gửi yêu cầu chỉnh sửa -> Nhiếp ảnh gia đọc để sửa #}
+      <section class="panel stack">{# khung yêu cầu chỉnh sửa của Khách #}
+        <h2>Khách hàng yêu cầu chỉnh sửa (lần {{ yeu_cau_moi.SoLanYeuCau }}/3)</h2>{# lần thứ mấy #}
+        <p><strong>Nhận xét tổng quát:</strong> {{ yeu_cau_moi.NoiDung }}</p>{# nhận xét chung của Khách #}
+        <div class="tai-anh__yc-ds">{# danh sách từng ảnh cần sửa, mỗi ảnh một dòng #}
+          {% for ct in yeu_cau_anhs %}{# duyệt từng ảnh #}
+            <div class="tai-anh__yc-dong">{# một dòng: ảnh bên trái, nội dung bên phải #}
+              <a href="{% url 'xem_anh' ct.MaAnh.pk %}" target="_blank" rel="noopener">{# bấm vào ảnh để xem lớn ở tab mới #}
+                <img src="{% url 'xem_anh' ct.MaAnh.pk %}?nho=1" alt="{{ ct.MaAnh.TenAnh }}" loading="lazy" draggable="false" class="tai-anh__yc-anh">{# ảnh thu nhỏ của ảnh cần sửa #}
+              </a>
+              <div class="tai-anh__yc-noidung">{# tên ảnh và nội dung cần sửa #}
+                <strong>{{ ct.MaAnh.TenAnh }}</strong>{# tên ảnh #}
+                <p>{{ ct.NoiDungChinhSua }}</p>{# nội dung Khách yêu cầu sửa #}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" id="form-tai-anh" class="panel stack" novalidate data-so-anh-toi-da="{{ so_anh_toi_da }}">
+      {% csrf_token %}
+      <div id="khung-loi">
+        {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}
+      </div>
+      {% include "includes/form_field.html" with field=form.anh %}
+      <div>
+        <progress id="thanh-tien-trinh" class="tai-anh__tien-trinh" max="100" value="0" hidden aria-label="Tiến trình tải ảnh"></progress>
+        <p id="chu-tien-trinh" class="muted" aria-live="polite"></p>
+      </div>
+      <button class="btn btn--primary" type="submit" id="nut-tai">Tải ảnh lên</button>
+    </form>
+  {% endif %}
+
+  {% if anhs %}
+    <section class="panel stack">
+      <h2>Ảnh trong Booking ({{ page_obj.paginator.count }})</h2>
+      <div class="tai-anh__luoi">
+        {% for a in anhs %}
+          <figure class="tai-anh__the">
+            <img src="{% url 'xem_anh' a.pk %}?nho=1" alt="{{ a.TenAnh }}" loading="lazy" draggable="false">
+            <figcaption class="muted tai-anh__chu-thich">{{ a.TenAnh }}<br>{{ a.LoaiAnh }} · v{{ a.PhienBanAnh }}</figcaption>
+          </figure>
+        {% endfor %}
+      </div>
+      {% include "includes/pagination.html" with page_obj=page_obj %}
+    </section>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'delivery/css/tai_anh.css' %}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'delivery/js/tai_anh.js' %}" defer></script>
+{% endblock %}

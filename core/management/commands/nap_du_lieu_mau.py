@@ -367,9 +367,16 @@ class Command(BaseCommand):
             else:
                 dung_luong = ve_anh(self.rieng / duong_dan, 640, 427, i, f'{b["ma"]} - ảnh {i + 1}',
                                     a['loai'], watermark=not hoan_chinh)
+            phien_ban = a.get('phien_ban', {}).get(i, 1)
+            duong_dan_truoc = None                  # E2: ảnh hậu kỳ từ phiên bản 2 trở đi mới có bản có watermark liền trước
+            if phien_ban > 1 and a['loai'] == LoaiAnh.DA_HAU_KY and not da_xoa:
+                duong_dan_truoc = f'mau/booking_{b["ma"].lower()}/{ten_file[:-4]}_truoc.jpg'
+                ve_anh(self.rieng / duong_dan_truoc, 640, 427, i + 4, f'{b["ma"]} - ảnh {i + 1}',
+                       'Bản trước', watermark=True)
             ds.append(Anh.objects.create(
-                MaBooking=bk, TenAnh=ten_file, DuongDanAnh=duong_dan, DinhDangAnh=DinhDangTep.JPG,
-                KichThuocAnh=dung_luong, LoaiAnh=a['loai'], PhienBanAnh=a.get('phien_ban', {}).get(i, 1),
+                MaBooking=bk, TenAnh=ten_file, DuongDanAnh=duong_dan, DuongDanAnhTruoc=duong_dan_truoc,
+                DinhDangAnh=DinhDangTep.JPG,
+                KichThuocAnh=dung_luong, LoaiAnh=a['loai'], PhienBanAnh=phien_ban,
                 CoWatermark=0 if hoan_chinh else 1, DuocChonHauKy=1 if i < so_chon else 0,
                 TrangThaiLuuTru=LuuTruAnh.DA_XOA if da_xoa else LuuTruAnh.CON_LUU, NgayTaiLen=a['ngay']))
         return ds

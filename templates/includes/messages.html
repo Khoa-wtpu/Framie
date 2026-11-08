@@ -1,7 +1,9 @@
-{% if messages %}
+{% load buoc_ke %}{% if messages %}
 <div class="container flash">
   {% for message in messages %}
-    {% include "includes/alert.html" with level=message.tags text=message dismissible=True %}
+    {% with nut=message|nut_buoc_ke %}
+    {% include "includes/alert.html" with level=message.level_tag text=message dismissible=True action_url=nut.url action_label=nut.nhan %}
+    {% endwith %}
   {% endfor %}
 </div>
 {% endif %}

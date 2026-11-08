@@ -4,6 +4,7 @@ from datetime import date, time, timedelta
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.core import mail
 from django.http import HttpResponse
 from django.test import TestCase, override_settings
 from django.urls import include, path, reverse
@@ -18,6 +19,7 @@ from reviews.models import DanhGia
 from schedule.models import LichKhaDung
 
 User = get_user_model()
+HOP_THU_GIA = {'default': {'BACKEND': 'django.core.mail.backends.locmem.EmailBackend'}}   # email chỉ vào mail.outbox, không gửi thật (P12)
 urlpatterns = [path('', include('reviews.urls')),              # bảng đường dẫn riêng cho test (không phụ thuộc config/urls.py)
                path('dang-nhap/', lambda request: HttpResponse('dang nhap'), name='login')]   # LOGIN_URL = 'login' cần có tên này
 NGAY_KE_TIEP = itertools.count(1)                              # mỗi Booking một ngày khác nhau để khung giờ không trùng
@@ -136,6 +138,15 @@ class NhacDanhGiaTests(_Nen):                                  # "Gửi thông b
         self.assertFalse(ThongBao.objects.exists())
 
 
+    @override_settings(MAILERS=HOP_THU_GIA)
+    def test_nhac_danh_gia_gui_ca_email(self):                       # P12: mời đánh giá -> web + email (TO-BE 12.1)
+        bk = self.tao_booking()
+        with self.captureOnCommitCallbacks(execute=True):
+            services.gui_nhac_danh_gia(bk)
+        self.assertEqual([m.to for m in mail.outbox], [['kh@x.vn']])
+        self.assertEqual(mail.outbox[0].subject, services.TIEU_DE_NHAC_DANH_GIA)
+
+
 class DanhGiaViewTests(_Nen):                                  # trang web
     def url(self, bk):
         return reverse('danh_gia_booking', args=[bk.pk])
@@ -221,6 +232,15 @@ class DanhGiaCongKhaiTests(_Nen):                              # hiển thị c�
         self.assertContains(r, 'Rất hài lòng')
         self.assertContains(r, 'Nguyễn')                       # tên khách hiện công khai
         self.assertNotContains(r, 'kh@x.vn')                   # nhưng không lộ email
+
+    def test_thanh_phan_bo_sao_dung_the_progress_khong_dung_style_inline(self):   # thanh phân bố sao: <progress>, không còn <span style="width:...">
+        services.tao_danh_gia(self.tao_booking().pk, self.kh, 5, '')   # 1 đánh giá 5 sao
+        services.tao_danh_gia(self.tao_booking().pk, self.kh, 4, '')   # 1 đánh giá 4 sao -> mỗi mức chiếm 50%
+        r = self.client.get(reverse('photographer_reviews', args=[self.nag.pk]))
+        self.assertContains(r, '<progress class="dg-phan-bo__thanh"', count=5)   # đủ 5 thanh, từ 5 sao đến 1 sao
+        self.assertContains(r, 'max="100" value="50" aria-label="5 sao"')        # 5 sao: 1/2 = 50%
+        self.assertContains(r, 'max="100" value="0" aria-label="1 sao"')         # 1 sao: chưa có = 0%
+        self.assertNotContains(r, 'style="width')                                # không còn style inline
 
     def test_chua_co_danh_gia(self):
         r = self.client.get(reverse('photographer_reviews', args=[self.nag.pk]))

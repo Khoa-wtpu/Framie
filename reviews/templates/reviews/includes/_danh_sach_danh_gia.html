@@ -12,7 +12,7 @@
       <ul class="dg-phan-bo">
         {% for dong in thong_ke.phan_bo %}
           <li><span>{{ dong.sao }} ★</span>
-            <span class="dg-phan-bo__thanh"><span style="width: {{ dong.phan_tram }}%"></span></span>
+            <progress class="dg-phan-bo__thanh" max="100" value="{{ dong.phan_tram }}" aria-label="{{ dong.sao }} sao"></progress>{# thanh phần trăm: màu và độ dài do trình duyệt vẽ, không dùng style inline #}
             <span class="muted">{{ dong.so }}</span></li>
         {% endfor %}
       </ul>

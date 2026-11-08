@@ -88,6 +88,7 @@ def chi_tiet(request, ma_thong_bao):  # SC9.2 Chi tiết thông báo
         'tb': thong_bao,  # thông báo đang xem
         'booking': thong_bao.MaBooking,  # Booking liên quan (None nếu không gắn)
         'url_booking': services.url_booking(thong_bao, request.user),  # link nút "Xem Booking" (None, '#' hoặc địa chỉ thật)
+        'hanh_dong': services.hanh_dong_thong_bao(thong_bao, request.user),  # P12: các nút hành động theo vai trò và trạng thái hiện tại
         'loi_cap_nhat_doc': not da_cap_nhat,  # True thì hiện hộp "Lỗi cập nhật đã đọc"
         'TB_LOI_DA_DOC': TB_LOI_DA_DOC,  # câu hiển thị trong hộp lỗi đó
         'quay_lai': _dia_chi_giu_trang_thai(request.path, request.GET),  # các nút POST quay về lại trang này, kèm giu=1

@@ -26,7 +26,7 @@ URL_NAMES = {
 # (nhãn, tên URL)
 MENUS = {
     GUEST: [("Trang chủ", "home"), ("Tìm nhiếp ảnh gia", "search"), ("Giới thiệu", "about")],
-    CUSTOMER: [("Tìm kiếm", "search"), ("Booking của tôi", "my_bookings"), ("Tin nhắn", "inbox")],
+    CUSTOMER: [("Hồ sơ của tôi", "customer_profile"), ("Tìm kiếm", "search"), ("Booking của tôi", "my_bookings"), ("Tin nhắn", "inbox")],
     PHOTOGRAPHER: [
         ("Hồ sơ của tôi", "photographer_profile"),
         ("Portfolio", "portfolio"),
@@ -45,8 +45,13 @@ MENUS = {
 }
 
 # Menu thả xuống của "Tài khoản" (chuông thông báo nằm riêng trên header)
-_ACCOUNT = [("Hồ sơ cá nhân", "account_profile"), ("Đổi mật khẩu", "change_password")]
-ACCOUNT_MENUS = {CUSTOMER: _ACCOUNT, PHOTOGRAPHER: _ACCOUNT, ADMIN: _ACCOUNT}
+# Mỗi vai trò có trang "Hồ sơ của tôi" riêng: Khách hàng -> customer_profile (accounts), Nhiếp ảnh gia -> photographer_profile (profiles)
+_DOI_MAT_KHAU = ("Đổi mật khẩu", "change_password")
+ACCOUNT_MENUS = {
+    CUSTOMER: [("Hồ sơ của tôi", "customer_profile"), _DOI_MAT_KHAU],
+    PHOTOGRAPHER: [("Hồ sơ của tôi", "photographer_profile"), _DOI_MAT_KHAU],
+    ADMIN: [("Hồ sơ của tôi", "account_profile"), _DOI_MAT_KHAU],  # Quản trị viên chưa có trang hồ sơ nên link tạm "#"
+}
 
 
 def resolve(url_name):

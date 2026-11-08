@@ -7,6 +7,7 @@ from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.core import mail
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import DatabaseError
@@ -27,6 +28,7 @@ from profiles.models import GoiDichVu, LoaiHinhChup, NhiepAnhGia
 from schedule.models import LichKhaDung
 
 User = get_user_model()
+HOP_THU_GIA = {'default': {'BACKEND': 'django.core.mail.backends.locmem.EmailBackend'}}   # email chỉ vào mail.outbox, không gửi thật (P12)
 
 urlpatterns = [path('', include('payments.urls')),                 # bảng đường dẫn riêng cho test (không phụ thuộc config/urls.py)
                path('dang-nhap/', lambda request: HttpResponse('dang nhap'), name='login')]   # LOGIN_URL = 'login' cần có tên này để chuyển hướng
@@ -367,6 +369,14 @@ class XacNhanCocTests(_NenXacNhanCoc):                         # nghiệp vụ U
         bk = self.tao_booking()
         with self.assertRaisesMessage(services.LoiXacNhanCoc, 'Khách hàng chưa tải minh chứng thanh toán tiền cọc.'):
             services.yeu_cau_bo_sung_minh_chung(bk.pk, self.nag_user, 'Cần bổ sung')
+
+
+    @override_settings(MAILERS=HOP_THU_GIA)
+    def test_xac_nhan_coc_gui_email_cho_khach(self):                 # P12: xác nhận cọc -> web + email (TO-BE 6.2.1)
+        bk = self.booking_da_co_minh_chung()
+        with self.captureOnCommitCallbacks(execute=True):
+            services.xac_nhan_thanh_toan_coc(bk.pk, self.nag_user)
+        self.assertEqual([m.to for m in mail.outbox], [['kh@x.vn']])
 
 
 class XacNhanCocViewTests(_NenXacNhanCoc):                     # view UC5.2: dùng assertContains để template và view luôn khớp nhau

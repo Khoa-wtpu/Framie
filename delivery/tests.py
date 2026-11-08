@@ -11,6 +11,7 @@ from unittest import mock
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.core import mail
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import HttpResponse
@@ -33,6 +34,7 @@ from profiles.models import GoiDichVu, LoaiHinhChup, NhiepAnhGia
 from schedule.models import LichKhaDung
 
 User = get_user_model()
+HOP_THU_GIA = {'default': {'BACKEND': 'django.core.mail.backends.locmem.EmailBackend'}}   # email chỉ vào mail.outbox, không gửi thật (P12)
 urlpatterns = [path('', include('delivery.urls')),            # bảng đường dẫn riêng cho test (không phụ thuộc config/urls.py)
                path('dang-nhap/', lambda request: HttpResponse('dang nhap'), name='login')]   # LOGIN_URL = 'login' cần có tên này để chuyển hướng
 NGAY_KE_TIEP = itertools.count(1)                            # mỗi Booking một ngày khác nhau để khung giờ không trùng
@@ -257,6 +259,32 @@ class TaiAnhTests(_NenAnh):                                    # N4 / UC5.3: ngh
         self.assertEqual(bk.TrangThai, TT.DA_CHUP)
 
 
+    @override_settings(MAILERS=HOP_THU_GIA)
+    def test_tai_anh_goc_goi_gioi_han_gui_email_cho_khach(self):     # P12: Chờ Khách hàng lựa chọn ảnh -> web + email
+        bk = self.tao_booking(self.goi_gh, TT.DA_CHUP)
+        with self.captureOnCommitCallbacks(execute=True):
+            services.tai_anh_len(bk.pk, self.nag_user, [tep_anh('a1.jpg')])
+        self.assertEqual([m.to for m in mail.outbox], [['kh@x.vn']])
+        self.assertEqual(mail.outbox[0].subject, 'Nhiếp ảnh gia đã tải ảnh lên')
+
+    @override_settings(MAILERS=HOP_THU_GIA)
+    def test_tai_anh_goc_goi_toan_bo_chi_gui_web(self):              # P12: Chờ hậu kỳ (TO-BE 9.2) chỉ báo trên web
+        bk = self.tao_booking(self.goi_tb, TT.DA_CHUP)
+        with self.captureOnCommitCallbacks(execute=True):
+            services.tai_anh_len(bk.pk, self.nag_user, [tep_anh('b1.jpg')])
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertEqual(ThongBao.objects.filter(MaNguoiNhan=self.kh, MaBooking=bk).count(), 1)
+
+    @override_settings(MAILERS=HOP_THU_GIA)
+    def test_tai_anh_hau_ky_gui_email_cho_khach(self):               # P12: Chờ Khách hàng kiểm tra -> web + email
+        bk = self.tao_booking(self.goi_tb, TT.DANG_HAU_KY)
+        with self.captureOnCommitCallbacks(execute=True):
+            services.tai_anh_len(bk.pk, self.nag_user, [tep_anh('h1.jpg')])
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, TT.CHO_KH_KIEM_TRA)
+        self.assertEqual([m.to for m in mail.outbox], [['kh@x.vn']])
+
+
 class TaiAnhViewTests(_NenAnh):
     def test_get_200_va_nhiep_anh_khac_404(self):
         bk = self.tao_booking(self.goi_gh, TT.DA_CHUP)
@@ -429,12 +457,16 @@ class BaoVeAnhTests(_NenAnh):                                  # N5: watermark v
         self.client.force_login(quan_tri)
         self.assertEqual(self.client.get(reverse('xem_anh', args=[anh.pk])).status_code, 403)
 
-    def test_chi_chuyen_anh_da_hau_ky(self):
+    def test_chuyen_ca_anh_khong_can_chinh_sua(self):
         bk = self.tao_booking(self.goi_gh, TT.CHO_KH_KIEM_TRA)
-        chua = self.tao_anh(bk, 'c1.jpg', loai=LoaiAnh.CHUA_HAU_KY)
-        self.assertEqual(services.chuyen_thanh_anh_hoan_chinh(bk), 0)               # không có ảnh Đã hậu kỳ thì không đổi gì
+        chua = self.tao_anh(bk, 'c1.jpg', loai=LoaiAnh.CHUA_HAU_KY, that=True)       # ảnh Khách không chọn sửa (giữ bản chụp)
+        da = self.tao_anh(bk, 'a1.jpg', loai=LoaiAnh.DA_HAU_KY, chon=1, that=True)   # ảnh đã chỉnh sửa
+        with self.captureOnCommitCallbacks(execute=True):
+            self.assertEqual(services.chuyen_thanh_anh_hoan_chinh(bk), 2)            # cả 2 ảnh đều thành Hoàn chỉnh
         chua.refresh_from_db()
-        self.assertEqual((chua.LoaiAnh, chua.CoWatermark), (LoaiAnh.CHUA_HAU_KY, 1))
+        da.refresh_from_db()
+        self.assertEqual((chua.LoaiAnh, chua.CoWatermark), (LoaiAnh.HOAN_CHINH, 0))
+        self.assertEqual((da.LoaiAnh, da.CoWatermark), (LoaiAnh.HOAN_CHINH, 0))
 
     def test_thieu_ban_goc_thi_bao_loi_va_khong_doi_gi(self):
         bk = self.tao_booking(self.goi_gh, TT.CHO_KH_KIEM_TRA)

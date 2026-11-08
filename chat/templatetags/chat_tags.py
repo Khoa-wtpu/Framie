@@ -5,7 +5,7 @@ from django import template  # thư viện thẻ template
 from django.utils import timezone  # đổi giờ UTC sang giờ địa phương (Asia/Ho_Chi_Minh)
 from django.contrib.auth.views import redirect_to_login  # tạo đường dẫn đăng nhập kèm ?next=
 
-from chat.services import la_khach_hang  # kiểm tra vai trò Khách hàng
+from chat.services import anh_het_han as _anh_het_han, la_khach_hang  # kiểm tra vai trò Khách hàng; kiểm ảnh đã quá 6 tháng chưa
 
 register = template.Library()  # nơi đăng ký thẻ
 
@@ -40,3 +40,8 @@ def gio_ds(gia_tri):
     if chenh < 7:  # trong tuần qua: hiện thứ
         return THU[luc.weekday()]
     return luc.strftime('%d/%m/%Y')  # xa hơn: ngày đầy đủ
+
+
+@register.filter  # cách dùng: {% if tin|anh_het_han %} - ảnh của tin đã quá 6 tháng lưu trữ
+def anh_het_han(tin):
+    return _anh_het_han(tin)  # True nếu tin gửi cách đây hơn 6 tháng
