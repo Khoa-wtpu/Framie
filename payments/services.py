@@ -13,7 +13,7 @@ from bookings.models import Booking                          # model Booking c�
 from bookings.services import chuyen_trang_thai_booking      # (N3) HÀM T2 của Tuyền: nơi DUY NHẤT được đổi trạng thái Booking
 from core.constants import (BenThucHien, LoaiThanhToan,      # hằng số, KHÔNG gõ chữ tiếng Việt trực tiếp
                             TrangThaiBooking, TrangThaiThanhToan, VaiTro)
-from notifications.services import gui_thong_bao            # hàm gửi thông báo dùng chung của Phanh
+from notifications.services import gui_thong_bao, gui_thong_bao_kem_email            # hàm gửi thông báo dùng chung của Phanh
 from payments.models import MinhChungThanhToan, ThanhToan, tinh_so_tien  # model + hàm tính 40%/60% của chính app
 
 DUOI_CHO_PHEP = ('jpg', 'jpeg', 'png')                       # chỉ nhận 3 đuôi này
@@ -162,7 +162,7 @@ def xac_nhan_thanh_toan_coc(ma_booking, nag_user):           # bước 4-5 của
     except DatabaseError:                                    # lỗi hệ thống khi ghi dữ liệu
         raise LoiXacNhanCoc('Không thể cập nhật trạng thái thanh toán, vui lòng thực hiện lại.')
 
-    gui_thong_bao(booking.MaKhachHang,                       # báo Khách hàng (hàm của Phanh, không ném lỗi ra ngoài)
+    gui_thong_bao_kem_email(booking.MaKhachHang,             # báo Khách hàng: web + email (TO-BE 6.2.1, P12)
                   'Nhiếp ảnh gia đã xác nhận tiền cọc',
                   f'Booking #{booking.pk} đã được chốt. Hẹn gặp bạn ở buổi chụp.',
                   booking=booking)

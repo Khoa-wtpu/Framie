@@ -23,7 +23,7 @@ from delivery.models import Anh, BanGiao, YeuCauChinhSua, YeuCauChinhSua_Anh   #
 from core.constants import LoaiThanhToan, TrangThaiThanhToan   # N8: loại và trạng thái của khoản thanh toán 60%
 from payments.models import ThanhToan, tinh_so_tien            # N8: bảng Thanh toán và hàm tính số tiền (cọc 40%, còn lại 60%)
 from delivery.watermark import GIOI_HAN_GIAY, chen_watermark   # chèn watermark (bước 6) và mốc 5 giây của N5
-from notifications.services import gui_thong_bao               # hàm thông báo dùng chung (của Phanh)
+from notifications.services import gui_thong_bao, gui_thong_bao_kem_email               # hàm thông báo dùng chung (của Phanh)
 
 DUOI_CHO_PHEP = ('jpg', 'jpeg', 'png')                         # chỉ nhận 3 đuôi này
 DUNG_LUONG_TOI_DA = 20 * 1024 * 1024                           # tối đa 20 MB mỗi ảnh (byte); đặc tả chưa ghi số, đổi ở đây
@@ -209,7 +209,10 @@ def tai_anh_len(ma_booking, nag_user, ds_tep):                 # bước 5-8 c�
     else:
         thong_bao = None                                       # mới tải một phần ảnh hậu kỳ, chưa báo Khách
     if thong_bao:
-        gui_thong_bao(khach, 'Nhiếp ảnh gia đã tải ảnh lên', thong_bao, booking=booking)
+        gui = (gui_thong_bao_kem_email                         # P12: TO-BE 9.1.1 và 9.4 yêu cầu thêm email ở hai trạng thái này
+               if trang_thai_moi in (TrangThaiBooking.CHO_KH_CHON_ANH, TrangThaiBooking.CHO_KH_KIEM_TRA)
+               else gui_thong_bao)                             # Chờ hậu kỳ (gói toàn bộ, TO-BE 9.2) chỉ báo trên web
+        gui(khach, 'Nhiếp ảnh gia đã tải ảnh lên', thong_bao, booking=booking)
     con_thieu = anh_can_hau_ky(booking).count() if giai_doan['loai'] == LoaiAnh.DA_HAU_KY else 0
     return {'so_anh': len(ds_tep), 'trang_thai_moi': trang_thai_moi, 'con_thieu': con_thieu}
 

@@ -15,7 +15,7 @@ from django.db.models import Avg, Count
 from bookings.models import Booking
 from core.constants import TrangThaiBooking
 from notifications.models import ThongBao
-from notifications.services import gui_thong_bao
+from notifications.services import gui_thong_bao_kem_email
 from reviews.models import DanhGia
 
 logger = logging.getLogger(__name__)
@@ -92,7 +92,7 @@ def gui_nhac_danh_gia(booking):                                # nhắc Khách �
         return None                                            # đã nhắc rồi
     nag_user = booking.MaNhiepAnhGia.MaTaiKhoan
     ten_nag = nag_user.get_full_name() or nag_user.username
-    return gui_thong_bao(                                      # gui_thong_bao của Phanh tự nuốt lỗi, không làm hỏng nghiệp vụ chính
+    return gui_thong_bao_kem_email(                            # web + email (TO-BE 12.1, P12); hàm của Phanh tự nuốt lỗi, không làm hỏng nghiệp vụ chính
         booking.MaKhachHang, TIEU_DE_NHAC_DANH_GIA,
         f'Booking #{booking.pk} đã hoàn thành. Hãy dành ít phút đánh giá nhiếp ảnh gia {ten_nag} '
         f'(chọn 1 đến 5 sao, nhận xét không bắt buộc) để giúp những khách hàng khác chọn đúng người.',
