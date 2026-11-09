@@ -1,4 +1,5 @@
 # Chạy: python manage.py test delivery.test_yeu_cau_chinh_sua      (N7: UC5.5 Khách hàng yêu cầu chỉnh sửa ảnh)
+import re                                                      # dùng regex để đếm đúng các ô input đã tick
 from datetime import timedelta                                 # khoảng thời gian (3 ngày...)
 from unittest import mock                                      # giả lập lỗi database / lỗi thông báo
 
@@ -154,7 +155,7 @@ class YeuCauChinhSuaViewTests(_NenYeuCau):                     # trang web của
         self.assertEqual(trang.status_code, 200)  # kiểm tra hai giá trị bằng nhau
         self.assertContains(trang, 'name="nhan_xet"')          # có ô nhận xét tổng quát
         self.assertContains(trang, 'name="anh"', count=3)      # có 3 ô tick ảnh
-        self.assertContains(trang, 'Còn <strong>3</strong> lần')   # bước 2: hiện số lần còn lại
+        self.assertContains(trang, 'Còn 3 lần chỉnh sửa')   # bước 2: hiện số lần còn lại
         khach_khac = User.objects.create_user('kh8', 'kh8@x.vn', 'p', so_dien_thoai='0900000098')  # tạo thêm một tài khoản để thử người khác
         self.client.force_login(khach_khac)  # đăng nhập bằng tài khoản cần thử
         self.assertEqual(self.client.get(self.url(bk)).status_code, 404)   # Booking của người khác
@@ -191,7 +192,7 @@ class YeuCauChinhSuaViewTests(_NenYeuCau):                     # trang web của
         phan_hoi = self.client.post(self.url(bk), {'nhan_xet': 'Tổng quát', 'anh': [a1], f'noi_dung_{a1}': ''})  # gửi yêu cầu tới trang
         self.assertEqual(phan_hoi.status_code, 200)  # kiểm tra hai giá trị bằng nhau
         self.assertContains(phan_hoi, 'Nội dung yêu cầu không hợp lệ')  # kiểm tra trang có hiện đoạn chữ mong đợi
-        self.assertContains(phan_hoi, 'checked', count=1)      # ô đã tick vẫn được giữ
+        self.assertEqual(len(re.findall(r'<input[^>]*\bchecked\b', phan_hoi.content.decode())), 1)   # ô đã tick vẫn được giữ (bỏ qua aria-checked)
         self.assertEqual(YeuCauChinhSua.objects.count(), 0)  # kiểm tra hai giá trị bằng nhau
 
     def test_het_3_lan_hien_thong_bao_va_khong_con_form(self):   # luồng 2a trên giao diện

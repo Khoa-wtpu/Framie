@@ -234,8 +234,9 @@ def mo_anh(user, ma_anh):                                      # dùng cho trang
 
 def chuyen_thanh_anh_hoan_chinh(booking):                      # N5: ảnh Hoàn chỉnh KHÔNG có watermark
     """Gọi khi Nhiếp ảnh gia xác nhận đủ 60% (UC5.7), trong cùng giao dịch với bước đó.
-    Ảnh 'Đã hậu kỳ' (bản chỉnh sửa mới nhất) VÀ ảnh 'Chưa hậu kỳ' (ảnh Khách không chọn sửa, giữ nguyên bản chụp)
+    CHỈ ảnh 'Đã hậu kỳ' (bản hậu kỳ mới nhất, gồm cả ảnh đã được chỉnh sửa theo yêu cầu)
     -> 'Hoàn chỉnh': đổi sang BẢN GỐC (không watermark), xóa bản có watermark.
+    Ảnh 'Chưa hậu kỳ' (ảnh Khách không chọn hậu kỳ) KHÔNG được giao, giữ nguyên và bị xóa khi hết hạn lưu trữ.
     Trả về số ảnh đã chuyển."""
     kho = kho_anh()
     xoa_sau = []
@@ -243,7 +244,7 @@ def chuyen_thanh_anh_hoan_chinh(booking):                      # N5: ảnh Hoàn
         with transaction.atomic():
             ds = list(Anh.objects.select_for_update().filter(
                 MaBooking=booking, TrangThaiLuuTru=LuuTruAnh.CON_LUU,
-                LoaiAnh__in=[LoaiAnh.DA_HAU_KY, LoaiAnh.CHUA_HAU_KY]))   # gồm cả ảnh không cần chỉnh sửa (C) + ảnh chỉnh sửa cuối (D, E)
+                LoaiAnh=LoaiAnh.DA_HAU_KY))                    # chỉ ảnh đã hậu kỳ (bản mới nhất); ảnh Chưa hậu kỳ không được giao cho Khách
             for anh in ds:
                 goc = duong_dan_goc(anh.DuongDanAnh)            # bản không watermark do UC5.3 đã lưu sẵn
                 if not kho.exists(goc):

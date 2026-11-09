@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.db import DatabaseError
 from django.test import override_settings
+from django.contrib.messages import get_messages           # đọc thông báo vừa được view ghi lại
 from django.urls import reverse
 from django.utils import timezone
 
@@ -216,21 +217,24 @@ class XacNhanConLaiViewTests(_NenConLai):                      # view UC5.7
     def test_post_xac_nhan_chuyen_trang_va_booking_hoan_thanh(self):
         bk, _ = self.booking_con_lai()
         self.client.force_login(self.nag_user)
-        r = self.client.post(self.url(bk), {'hanh_dong': 'xac_nhan'}, follow=True)
-        self.assertEqual(r.redirect_chain, [(self.url(bk), 302)])
-        self.assertContains(r, 'Đã xác nhận thanh toán phần còn lại. Booking đã hoàn thành.')
-        self.assertContains(r, 'Booking đã hoàn thành.')
-        self.assertNotContains(r, self.NUT_XAC_NHAN)
+        r = self.client.post(self.url(bk), {'hanh_dong': 'xac_nhan'})   # không follow: chỉ kiểm tra nơi chuyển tới
+        self.assertRedirects(r, reverse('chi_tiet_booking', args=[bk.pk]), fetch_redirect_response=False)   # chuyển về trang chi tiết Booking chung
+        self.assertTrue(any('Đã xác nhận thanh toán phần còn lại. Booking đã hoàn thành.' in str(m) for m in get_messages(r.wsgi_request)))
+        trang = self.client.get(self.url(bk))                           # mở lại trang xác nhận phần còn lại
+        self.assertContains(trang, 'Booking đã hoàn thành.')
+        self.assertNotContains(trang, self.NUT_XAC_NHAN)
         bk.refresh_from_db()
         self.assertEqual(bk.TrangThai, TT.HOAN_THANH)
 
     def test_post_bo_sung_co_ly_do_thanh_cong(self):
         bk, tt = self.booking_con_lai()
         self.client.force_login(self.nag_user)
-        r = self.client.post(self.url(bk), {'hanh_dong': 'bo_sung', 'ly_do': 'Ảnh bị mờ'}, follow=True)
-        self.assertContains(r, 'Đã gửi yêu cầu bổ sung minh chứng cho Khách hàng.')
-        self.assertContains(r, 'Ảnh bị mờ')
-        self.assertNotContains(r, self.NUT_XAC_NHAN)           # đang chờ khách nộp lại
+        r = self.client.post(self.url(bk), {'hanh_dong': 'bo_sung', 'ly_do': 'Ảnh bị mờ'})   # không follow
+        self.assertRedirects(r, reverse('chi_tiet_booking', args=[bk.pk]), fetch_redirect_response=False)   # chuyển về trang chi tiết Booking chung
+        self.assertTrue(any('Đã gửi yêu cầu bổ sung minh chứng cho Khách hàng.' in str(m) for m in get_messages(r.wsgi_request)))
+        trang = self.client.get(self.url(bk))                   # mở lại trang xác nhận phần còn lại
+        self.assertContains(trang, 'Ảnh bị mờ')
+        self.assertNotContains(trang, self.NUT_XAC_NHAN)        # đang chờ khách nộp lại
         tt.refresh_from_db()
         self.assertEqual(tt.LyDoTuChoi, 'Ảnh bị mờ')
 

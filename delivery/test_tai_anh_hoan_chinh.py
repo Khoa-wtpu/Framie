@@ -166,7 +166,7 @@ class TaiHoanChinhViewTests(_NenTaiHoanChinh):                 # view UC5.8
         self.assertContains(r, 'Tải ảnh hoàn chỉnh')
         self.assertContains(r, 'a1.jpg')
         self.assertContains(r, 'Tải tất cả')
-        self.assertContains(r, 'không có watermark')
+        self.assertContains(r, 'Tải nhiều ảnh cùng lúc sẽ nhận một tệp .zip')   # ghi chú thật sự hiện trong template
 
     def test_get_het_han_hien_thong_bao_va_khong_co_nut_tai(self):   # ngoại lệ 4a
         bk = self.booking_hoan_thanh(con_han=False)

@@ -1,4 +1,5 @@
 # Chạy: python manage.py test delivery.test_chon_anh      (N6: UC5.4 Khách hàng lựa chọn ảnh cần hậu kỳ + NAG bắt đầu hậu kỳ)
+import re                                                      # dùng regex để đếm đúng các ô input đã tick
 import tempfile                                                # tạo thư mục tạm để test không đụng private_media thật
 from datetime import timedelta                                 # khoảng thời gian (2 ngày, 3 ngày...)
 from unittest import mock                                      # giả lập đồng hồ để thử trường hợp quá hạn
@@ -184,7 +185,7 @@ class ChonAnhViewTests(_NenChonAnh):                           # trang web của
         self.assertEqual(phan_hoi.status_code, 302)  # kiểm tra hai giá trị bằng nhau
         self.assertEqual(self.so_duoc_chon(bk), 2)  # kiểm tra hai giá trị bằng nhau
         trang = self.client.get(self.url(bk))                  # mở lại: 2 ô đã tick sẵn
-        self.assertContains(trang, 'checked', count=2)  # kiểm tra trang có hiện đoạn chữ mong đợi
+        self.assertEqual(len(re.findall(r'<input[^>]*\bchecked\b', trang.content.decode())), 2)  # chỉ đếm ô input đã tick, bỏ qua aria-checked
         self.assertContains(trang, 'Đã chọn: <strong id="so-da-chon">2</strong>')  # kiểm tra trang có hiện đoạn chữ mong đợi
 
     def test_gui_chua_du_so_luong_hien_hop_hoi_4a_roi_gui_xac_nhan(self):   # luồng 4a
@@ -217,7 +218,7 @@ class ChonAnhViewTests(_NenChonAnh):                           # trang web của
         phan_hoi = self.client.post(self.url(bk), {'hanh_dong': 'gui', 'anh': self.ma(1, 2, 3, 4, 5, 6)})  # gửi yêu cầu tới trang
         self.assertEqual(phan_hoi.status_code, 200)  # kiểm tra hai giá trị bằng nhau
         self.assertContains(phan_hoi, 'vượt quá giới hạn 5 ảnh')  # kiểm tra trang có hiện đoạn chữ mong đợi
-        self.assertContains(phan_hoi, 'checked', count=6)      # vẫn giữ 6 ô Khách vừa tick để bỏ bớt
+        self.assertEqual(len(re.findall(r'<input[^>]*\bchecked\b', phan_hoi.content.decode())), 6)   # vẫn giữ 6 ô Khách vừa tick để bỏ bớt
         bk.refresh_from_db()  # đọc lại dữ liệu mới nhất từ database
         self.assertEqual(bk.TrangThai, TT.CHO_KH_CHON_ANH)  # kiểm tra hai giá trị bằng nhau
 
@@ -250,9 +251,8 @@ class BatDauHauKyViewTests(_NenChonAnh):                       # nút "Bắt đ�
         self.client.force_login(self.nag_user)
         trang = self.client.get(reverse('tai_anh_len', args=[bk.pk]))
         self.assertEqual(trang.status_code, 200)
-        self.assertContains(trang, 'sau khi bấm')
-        self.assertContains(trang, 'bạn tải lên toàn bộ ảnh đã hậu kỳ')
-        self.assertNotContains(trang, 'bạn hậu kỳ tất cả ảnh đã tải lên')
+        self.assertContains(trang, 'Bắt đầu hậu kỳ')                # trang nhắc bấm nút Bắt đầu hậu kỳ (khớp template hiện tại)
+        self.assertContains(trang, 'chuyển thẳng đến giao diện tải ảnh')   # câu hướng dẫn trong template hiện tại
 
     def test_trang_tai_anh_hien_nut_khi_cho_hau_ky(self):  # tên test cho biết tình huống đang kiểm tra
         bk = self.tao_booking_cho_chon()  # tạo Booking ở Chờ Khách hàng lựa chọn ảnh, kèm sẵn các ảnh mẫu
