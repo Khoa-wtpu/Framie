@@ -57,13 +57,15 @@ from django.views.decorators.http import require_GET, require_POST
 # Lấy thời lượng giữ chỗ và model GiuCho; thời lượng được cấu hình là 5 phút.
 from bookings.models import THOI_GIAN_GIU_CHO, GiuCho   # THOI_GIAN_GIU_CHO = 5 phút (BR4.1-1)
 # Import các hằng số trạng thái và vai trò dùng thống nhất trong toàn dự án.
-from core.constants import TrangThaiGiuCho, TrangThaiGoi, TrangThaiHoSo, TrangThaiSlot, VaiTro
+from core.constants import TrangThaiGiuCho, TrangThaiGoi, TrangThaiSlot, VaiTro
 # Import model hồ sơ nhiếp ảnh gia để tìm thông tin người cung cấp dịch vụ.
-from profiles.models import GoiDichVu, NhiepAnhGia
+from profiles.models import GoiDichVu
 # Import model lịch khả dụng của nhiếp ảnh gia.
 from schedule.models import LichKhaDung
 # Import hàm đổi trạng thái slot và hàm lấy danh sách khung giờ còn trống từ module schedule.
 from schedule.services import doi_trang_thai_khung_gio, khung_gio_trong
+# Nhiếp ảnh gia được công khai (hồ sơ 'Đã duyệt' VÀ tài khoản chưa bị khóa): dùng chung với tìm kiếm / hồ sơ công khai.
+from search.services import nhiep_anh_gia_cong_khai
 
 # Tạo logger riêng cho module này để ghi nhận lỗi khi xử lý giữ chỗ.
 logger = logging.getLogger(__name__)
@@ -71,6 +73,8 @@ logger = logging.getLogger(__name__)
 # Thông báo cho người dùng (đúng chữ trong đặc tả UC4.1).
 # Thông báo hiển thị khi slot khách chọn không còn trống hoặc không thể giữ.
 TB_SLOT_KHONG_KHA_DUNG = 'Slot không còn khả dụng'                                   # ngoại lệ 4a
+# Thông báo khi Nhiếp ảnh gia không còn công khai (bị khóa tài khoản hoặc hồ sơ không còn 'Đã duyệt').
+TB_NAG_KHONG_NHAN_BOOKING = 'Nhiếp ảnh gia này hiện không nhận Booking.'
 # Thông báo chung khi xảy ra lỗi hệ thống trong quá trình giữ chỗ.
 TB_LOI_HE_THONG = 'Không thể thực hiện yêu cầu, vui lòng thử lại sau.'               # ngoại lệ 4b
 # Thông báo hiển thị khi thời gian giữ chỗ đã hết.
@@ -252,6 +256,10 @@ def giu_cho_slot(khach_hang, ma_lich):
             except LichKhaDung.DoesNotExist:
                 # Chuyển lỗi không tìm thấy thành thông báo slot không còn khả dụng.
                 raise GiuChoLoi(TB_SLOT_KHONG_KHA_DUNG)
+
+            # Nhiếp ảnh gia bị khóa / hồ sơ không còn công khai: không giữ chỗ được nữa (kể cả khi Khách đang giữ đúng slot này).
+            if not nhiep_anh_gia_cong_khai().filter(pk=lich.MaNhiepAnhGia_id).exists():
+                raise GiuChoLoi(TB_NAG_KHONG_NHAN_BOOKING)
 
             # Ghi nhận thời điểm hiện tại để kiểm tra hạn của lượt giữ cũ.
             bay_gio = timezone.now()
@@ -464,7 +472,11 @@ def _ve_trang_lich(ma_nhiep_anh_gia):
     # Thử chuyển mã nhiếp ảnh gia sang số nguyên và tạo redirect đến trang lịch.
     try:
         # Chuyển người dùng về trang lịch của nhiếp ảnh gia tương ứng.
-        return redirect('lich_chon_slot', ma_nhiep_anh_gia=int(ma_nhiep_anh_gia))
+        ma = int(ma_nhiep_anh_gia)
+        # Nhiếp ảnh gia không còn công khai thì trang lịch trả 404 -> đưa Khách về trang tìm kiếm.
+        if not nhiep_anh_gia_cong_khai().filter(pk=ma).exists():
+            return redirect('search')
+        return redirect('lich_chon_slot', ma_nhiep_anh_gia=ma)
     # Bắt lỗi mã không hợp lệ hoặc tên URL lịch chưa tồn tại.
     except (TypeError, ValueError, NoReverseMatch):
         # Nếu không thể về trang lịch, thử chuyển về trang chủ.
@@ -486,9 +498,7 @@ def trang_lich_nhiep_anh_gia(request, ma_nhiep_anh_gia):
     # Docstring mô tả view hiển thị các slot còn trống theo đặc tả UC4.1.
     """Bước 1-2: trang lịch công khai, liệt kê các slot 'Lịch trống' của một nhiếp ảnh gia."""
     # Tìm hồ sơ nhiếp ảnh gia và tải sẵn tài khoản liên quan để giảm truy vấn.
-    nag = get_object_or_404(NhiepAnhGia.objects.select_related('MaTaiKhoan'), pk=ma_nhiep_anh_gia,
-                            # Chỉ cho phép hiển thị lịch công khai nếu hồ sơ nhiếp ảnh gia đã được duyệt.
-                            MaTaiKhoan__trang_thai_ho_so=TrangThaiHoSo.DA_DUYET)   # chỉ hồ sơ đã duyệt mới công khai
+    nag = get_object_or_404(nhiep_anh_gia_cong_khai().select_related('MaTaiKhoan'), pk=ma_nhiep_anh_gia)   # chỉ hồ sơ 'Đã duyệt' và tài khoản chưa bị khóa
     # Lấy lượt giữ chỗ hiện tại của khách để hiển thị thông tin khách đang giữ slot nào.
     giu_cho_hien_tai = lay_giu_cho_hien_tai(request.user)   # (đã nhả slot quá hạn) để hiện banner "bạn đang giữ"
 

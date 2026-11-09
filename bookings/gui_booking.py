@@ -78,6 +78,7 @@ from core.constants import (
 )
 from notifications.services import gui_thong_bao
 from profiles.models import GoiDichVu, KhuVuc, PhongCach
+from search.services import nhiep_anh_gia_cong_khai   # Nhiếp ảnh gia công khai = hồ sơ 'Đã duyệt' + tài khoản chưa bị khóa
 from schedule.models import LichKhaDung
 
 logger = logging.getLogger(__name__)
@@ -86,6 +87,7 @@ logger = logging.getLogger(__name__)
 TB_SLOT_HET_HAN_GIU = 'Slot đã hết thời gian giữ chỗ, vui lòng chọn lại'   # ngoại lệ 4a
 TB_DA_GUI = 'Yêu cầu Booking đã được gửi'                                   # bước 8
 TB_GIU_CHO_DA_DUNG = 'Lượt giữ chỗ này đã được dùng để gửi yêu cầu Booking.'
+TB_NAG_KHONG_NHAN_BOOKING = 'Nhiếp ảnh gia này hiện không nhận Booking.'   # Nhiếp ảnh gia bị khóa / hồ sơ không còn công khai
 TB_SLOT_DA_CO_BOOKING = 'Slot này đã gắn với một Booking đang có hiệu lực, vui lòng chọn lại.'   # BR4.2-3
 
 # Tên field của Booking (model) -> tên field của form. Dùng để đưa lỗi từ Booking.clean() về đúng ô nhập.
@@ -334,6 +336,8 @@ def _tao_booking(khach_hang, giu_cho, ma_goi, ngay_gio_chup, dia_diem, so_nguoi,
     # Khóa dòng slot rồi kiểm tra nó vẫn đang được giữ (BR4.2-3: một slot chỉ gắn một Booking còn hiệu lực).
     lich = (LichKhaDung.objects.select_for_update().select_related('MaNhiepAnhGia__MaTaiKhoan')
             .get(pk=giu_cho.MaLich_id))
+    if not nhiep_anh_gia_cong_khai().filter(pk=lich.MaNhiepAnhGia_id).exists():   # Nhiếp ảnh gia vừa bị khóa: không nhận Booking
+        raise GuiBookingLoi(TB_NAG_KHONG_NHAN_BOOKING, het_han=True)
     if lich.TrangThai != TrangThaiSlot.DANG_GIU:
         raise GuiBookingLoi(TB_SLOT_HET_HAN_GIU, het_han=True)
     if (Booking.objects.filter(MaLich=lich).exclude(TrangThai__in=TRANG_THAI_HET_HIEU_LUC).exists()):
@@ -435,6 +439,8 @@ def gui_yeu_cau_booking(khach_hang, ma_giu_cho, ma_goi, ngay_gio_chup, dia_diem,
 # PHẦN 4: VIEW VÀ URL
 # ---------------------------------------------------------------------
 def _ve_trang_lich(nag):
+    if not nhiep_anh_gia_cong_khai().filter(pk=nag.pk).exists():   # trang lịch sẽ 404 (Nhiếp ảnh gia bị khóa) -> về trang tìm kiếm
+        return redirect('search')
     return redirect('lich_chon_slot', ma_nhiep_anh_gia=nag.pk)
 
 
@@ -491,6 +497,9 @@ def gui_booking(request, ma_giu_cho):
     if giu_cho.TrangThai == TrangThaiGiuCho.DA_HOAN_TAT:   # đã gửi rồi (bấm lại / mở lại link cũ)
         messages.info(request, TB_GIU_CHO_DA_DUNG)
         return redirect('man_hinh_giu_cho', ma_giu_cho=giu_cho.pk)
+    if not nhiep_anh_gia_cong_khai().filter(pk=nag.pk).exists():   # Nhiếp ảnh gia bị khóa: không mở form gửi Booking
+        messages.error(request, TB_NAG_KHONG_NHAN_BOOKING)
+        return _ve_trang_lich(nag)
     if giu_cho.TrangThai != TrangThaiGiuCho.DANG_GIU or giu_cho.da_het_han:   # ngoại lệ 4a
         giai_phong_giu_cho_het_han()
         messages.error(request, TB_SLOT_HET_HAN_GIU)

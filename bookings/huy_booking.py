@@ -45,11 +45,11 @@ from bookings.services import DO_DAI_LY_DO_TOI_DA, chuyen_trang_thai_booking, gu
 # Dùng lại của UC4.3 - 4.5: loại lỗi nghiệp vụ, câu lỗi chung, định dạng tiền / tên / mô tả buổi chụp, gửi thông báo + Email.
 from bookings.tiep_nhan import (TB_LOI_HE_THONG, XuLyBookingLoi, _mo_ta_booking, _ten_hien_thi,  # câu lỗi hệ thống / loại lỗi nghiệp vụ / mô tả buổi chụp / tên hiển thị
                                 _thong_bao_khach, _tien)  # gửi thông báo cho Khách / định dạng tiền kiểu 1.500.000
-from core.constants import BenThucHien, LoaiThanhToan, TrangThaiBooking, VaiTro  # các hằng số dùng chung: bên thực hiện, loại thanh toán, trạng thái Booking, vai trò
+from core.constants import BenThucHien, LoaiThanhToan, TrangThaiBooking, TrangThaiThanhToan, VaiTro  # các hằng số dùng chung: bên thực hiện, loại thanh toán, trạng thái Booking, vai trò
 from core.constants import TrangThaiHoanTien as HangSoHoanTien      # cùng cách đặt tên với bookings/models.py
 from core.constants import XuLyTienCoc as HangSoXuLyTienCoc  # hằng số cách xử lý tiền cọc, đặt tên ngắn lại cho dễ gọi
 from notifications.services import gui_thong_bao  # hàm tạo một thông báo web cho người nhận
-from payments.models import tinh_so_tien  # hàm chia tiền 40% / 60% duy nhất của dự án
+from payments.models import ThanhToan, tinh_so_tien  # ThanhToan: tìm minh chứng cọc đang chờ; hàm chia tiền 40% / 60% duy nhất của dự án
 
 logger = logging.getLogger(__name__)  # tạo "cây bút ghi log" mang tên file này
 
@@ -64,6 +64,11 @@ BEN_THEO_VAI_TRO = {VaiTro.KHACH_HANG: BenThucHien.KHACH_HANG,  # vai trò Khác
 TB_THIEU_LY_DO = 'Vui lòng nhập lý do hủy'                        # UC4.6, ngoại lệ 4a
 TB_KHONG_THE_HUY = ('Chỉ Booking đang ở trạng thái "Chờ đặt cọc" hoặc "Chốt Booking" mới hủy được. '  # câu báo khi Booking không ở trạng thái được hủy (nửa đầu)
                     'Từ "Đã chụp" trở đi Booking không thể hủy.')  # (nửa sau của cùng câu)
+# Hủy khi đang "Chờ đặt cọc" nhưng đã có minh chứng cọc chờ xác nhận: vẫn cho hủy, XuLyTienCoc giữ "Không phát sinh", chỉ đổi câu hiển thị.
+TB_MINH_CHUNG_DANG_CHO_KHACH = ('Booking có minh chứng cọc đang chờ xác nhận. '
+                                'Nếu bạn đã chuyển khoản, hãy liên hệ Nhiếp ảnh gia để xử lý hoàn tiền.')
+TB_MINH_CHUNG_DANG_CHO_NAG = ('Booking có minh chứng cọc đang chờ xác nhận. '
+                              'Nếu Khách hàng đã chuyển khoản, hãy liên hệ Khách hàng để xử lý hoàn tiền.')
 TB_DA_HUY = 'Đã hủy Booking và trả khung giờ về lịch trống.'  # câu báo hủy thành công
 TB_KHONG_CO_HOAN_COC = 'Booking này không có khoản cọc nào cần hoàn lại.'  # câu báo khi bấm xác nhận hoàn tiền nhưng không có khoản nào để hoàn
 TB_DA_XAC_NHAN_HOAN_TIEN = 'Bạn đã xác nhận nhận lại tiền cọc của Booking này rồi.'  # câu báo khi bấm xác nhận lần thứ hai
@@ -116,10 +121,20 @@ def xac_dinh_xu_ly_tien_coc(trang_thai_luc_huy, ben):  # quyết định hệ qu
     return HangSoXuLyTienCoc.HOAN_COC                           # đã chốt (đã cọc) và Nhiếp ảnh gia hủy
 
 
+def co_minh_chung_coc_dang_cho(booking):  # Khách đã tải minh chứng cọc mà Nhiếp ảnh gia chưa xác nhận?
+    """True khi Booking có khoản cọc đang 'Chờ xác nhận thanh toán cọc' (Khách đã tải minh chứng, có thể đã chuyển khoản).
+    Khoản ThanhToan chỉ được tạo khi Khách tải minh chứng đầu tiên. Tính cả trường hợp Nhiếp ảnh gia đã yêu cầu bổ sung
+    (LyDoTuChoi có giá trị): Khách vẫn có thể đã chuyển tiền, nên vẫn cảnh báo."""
+    return ThanhToan.objects.filter(MaBooking=booking, LoaiThanhToan=LoaiThanhToan.TIEN_COC,
+                                    TrangThai=TrangThaiThanhToan.CHO_XAC_NHAN_COC).exists()
+
+
 def mo_ta_hau_qua(booking, ben):  # tạo câu giải thích hệ quả để hiện trước khi hủy
     """Câu giải thích hệ quả của việc hủy, hiện ở trang xác nhận (UC4.6 bước 3)."""
     xu_ly = xac_dinh_xu_ly_tien_coc(booking.TrangThai, ben)  # xác định hệ quả tiền cọc theo trạng thái hiện tại và bên hủy
     coc = _tien(tinh_so_tien(booking.TongGiaTri, LoaiThanhToan.TIEN_COC))  # tính số tiền cọc 40% rồi định dạng 1.500.000
+    if xu_ly == HangSoXuLyTienCoc.KHONG_PHAT_SINH and co_minh_chung_coc_dang_cho(booking):  # chưa chốt cọc nhưng Khách đã tải minh chứng
+        return TB_MINH_CHUNG_DANG_CHO_KHACH if ben == BenThucHien.KHACH_HANG else TB_MINH_CHUNG_DANG_CHO_NAG
     if xu_ly == HangSoXuLyTienCoc.KHONG_PHAT_SINH:  # trường hợp chưa cọc
         return 'Booking chưa đặt cọc nên việc hủy không phát sinh mất hoặc hoàn tiền cọc.'  # câu giải thích cho trường hợp chưa cọc
     if xu_ly == HangSoXuLyTienCoc.MAT_COC:  # trường hợp Khách hủy sau khi cọc
@@ -138,12 +153,15 @@ def co_the_xac_nhan_hoan_tien(yeu_cau):  # kiểm tra có hiện nút "Tôi đã
     return yeu_cau is not None and yeu_cau.TrangThaiHoanTien == HangSoHoanTien.CHO_HOAN_TIEN  # có yêu cầu hủy VÀ đang ở "Chờ hoàn tiền"
 
 
-def _noi_dung_huy(booking, ten_ben, ly_do, xu_ly):  # dựng nội dung thông báo hủy
-    """Nội dung thông báo web + Email gửi cho cả hai bên."""
+def _noi_dung_huy(booking, ten_ben, ly_do, xu_ly, co_minh_chung=False, cho_nag=False):  # dựng nội dung thông báo hủy
+    """Nội dung thông báo web + Email gửi cho cả hai bên. co_minh_chung = lúc hủy có minh chứng cọc đang chờ xác nhận
+    (chỉ xảy ra khi hủy ở 'Chờ đặt cọc'); cho_nag = nội dung gửi Nhiếp ảnh gia (câu về minh chứng đổi cho đúng người đọc)."""
     coc = _tien(tinh_so_tien(booking.TongGiaTri, LoaiThanhToan.TIEN_COC))  # số tiền cọc 40%, định dạng kiểu Việt Nam
     noi_dung = (f'{ten_ben} đã hủy Booking #{booking.pk} ({_mo_ta_booking(booking)}). Lý do: {ly_do}. '  # phần chung: ai hủy, Booking nào, lý do (nửa đầu)
                 'Khung giờ đã được trả về lịch trống.')  # phần chung: khung giờ đã trả về lịch trống (nửa sau)
-    if xu_ly == HangSoXuLyTienCoc.KHONG_PHAT_SINH:  # chưa cọc
+    if xu_ly == HangSoXuLyTienCoc.KHONG_PHAT_SINH and co_minh_chung:  # chưa chốt cọc nhưng Khách đã tải minh chứng
+        noi_dung += ' ' + (TB_MINH_CHUNG_DANG_CHO_NAG if cho_nag else TB_MINH_CHUNG_DANG_CHO_KHACH)  # nối câu cảnh báo minh chứng đang chờ
+    elif xu_ly == HangSoXuLyTienCoc.KHONG_PHAT_SINH:  # chưa cọc
         noi_dung += ' Booking chưa đặt cọc nên không phát sinh mất hoặc hoàn tiền cọc.'  # nối thêm câu về tiền cọc: không phát sinh
     elif xu_ly == HangSoXuLyTienCoc.MAT_COC:  # Khách hủy sau khi cọc
         noi_dung += f' Khách hàng mất 40% tiền cọc ({coc} VNĐ).'  # nối thêm câu: Khách mất cọc
@@ -171,10 +189,15 @@ def huy_booking(user, ma_booking, ly_do):  # hàm chính: thực hiện hủy Bo
     try:  # bắt lỗi cơ sở dữ liệu ở khối bên dưới
         with transaction.atomic():  # mở transaction: hoặc thành công TẤT CẢ, hoặc hoàn tác TẤT CẢ
             booking = lay_booking_cua_ben(user, vai_tro, ma_booking)  # lấy Booking của người này (của người khác -> lỗi 404)
-            if not co_the_huy(booking):                               # tiền điều kiện của UC4.6
+            # KHÓA dòng Booking rồi mới đọc TrangThai: nếu Nhiếp ảnh gia vừa xác nhận cọc đúng lúc Khách hủy thì ta phải thấy
+            # 'Chốt Booking' (mất cọc) chứ không phải bản 'Chờ đặt cọc' cũ. Từ đây trạng thái không đổi cho tới hết transaction.
+            Booking.objects.select_for_update().filter(pk=booking.pk).first()   # chỉ để khóa dòng (người khác phải chờ)
+            booking.refresh_from_db(fields=['TrangThai'])                       # đọc lại trạng thái mới nhất SAU khi khóa
+            if not co_the_huy(booking):                               # tiền điều kiện của UC4.6 (kiểm tra trên trạng thái mới nhất)
                 raise XuLyBookingLoi(TB_KHONG_THE_HUY)  # trạng thái không cho hủy -> báo lỗi
             trang_thai_luc_huy = booking.TrangThai  # nhớ lại trạng thái TRƯỚC khi hủy (để ghi vào Yêu cầu hủy)
             xu_ly = xac_dinh_xu_ly_tien_coc(trang_thai_luc_huy, ben)  # xác định hệ quả tiền cọc
+            co_minh_chung = (xu_ly == HangSoXuLyTienCoc.KHONG_PHAT_SINH and co_minh_chung_coc_dang_cho(booking))  # có minh chứng cọc đang chờ?
             try:  # bắt lỗi do bảng chuyển trạng thái từ chối
                 # Hàm chung: kiểm tra bước chuyển, ghi Lịch sử (bên hủy + lý do), trả slot về 'Lịch trống',
                 # và chặn trường hợp hai người cùng đổi một lúc.
@@ -186,10 +209,11 @@ def huy_booking(user, ma_booking, ly_do):  # hàm chính: thực hiện hủy Bo
                 TrangThaiBookingLucHuy=trang_thai_luc_huy, XuLyTienCoc=xu_ly)   # 'Hoàn cọc' tự mặc định 'Chờ hoàn tiền'
             # Bước 10-11: thông báo web + Email cho CẢ HAI bên (Email gửi sau khi commit).
             ten_ben = _ten_hien_thi(user)  # tên người hủy để đưa vào nội dung thông báo
-            noi_dung = _noi_dung_huy(booking, ten_ben, ly_do, xu_ly)  # dựng nội dung thông báo
+            noi_dung = _noi_dung_huy(booking, ten_ben, ly_do, xu_ly, co_minh_chung)  # nội dung gửi Khách
+            noi_dung_nag = _noi_dung_huy(booking, ten_ben, ly_do, xu_ly, co_minh_chung, cho_nag=True)  # nội dung gửi Nhiếp ảnh gia
             _thong_bao_khach(booking, f'Booking #{booking.pk} đã bị hủy', noi_dung)            # Khách hàng
             nag_user = booking.MaNhiepAnhGia.MaTaiKhoan  # tài khoản của Nhiếp ảnh gia thuộc Booking
-            _thong_bao_nguoi(nag_user, booking, f'Booking #{booking.pk} đã bị hủy', noi_dung)  # Nhiếp ảnh gia
+            _thong_bao_nguoi(nag_user, booking, f'Booking #{booking.pk} đã bị hủy', noi_dung_nag)  # Nhiếp ảnh gia
     except DatabaseError:  # lỗi cơ sở dữ liệu bất ngờ
         logger.exception('huy_booking: lỗi hệ thống (booking %s)', ma_booking)  # ghi log chi tiết lỗi cho lập trình viên
         raise XuLyBookingLoi(TB_LOI_HE_THONG)  # báo người dùng câu lỗi hệ thống chung
