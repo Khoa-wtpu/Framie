@@ -54,6 +54,7 @@ from django.views.decorators.http import require_GET  # nhãn: chỉ cho mở tr
 from accounts.permissions import lay_vai_tro, vai_tro_required  # biết vai trò người đăng nhập / nhãn chặn sai vai trò
 from bookings.huy_booking import co_the_huy, co_the_xac_nhan_hoan_tien, lay_yeu_cau_huy  # T9: nút Hủy + khối thông tin hủy
 from bookings.models import Booking  # bảng Booking trong cơ sở dữ liệu
+from bookings.the_thoi_tiet import lay_the_thoi_tiet, mo_tro_chuyen  # E8: thẻ "Dự báo thời tiết buổi chụp" + nút trò chuyện của Nhiếp ảnh gia
 # Hằng số tên trạng thái / vai trò dùng chung của nhóm (không tự gõ chữ tiếng Việt).
 from core.constants import LoaiThanhToan, TrangThaiBooking, TrangThaiThanhToan, VaiTro  # tên các trạng thái/vai trò dùng chung
 # tinh_so_tien: quy tắc chia 40% / 60% DUY NHẤT của dự án (cùng hàm Thanh toán dùng để thu tiền thật).
@@ -457,6 +458,7 @@ def _trang_chi_tiet(request, ma_booking, ten_url_danh_sach):  # phần chung c�
         'yeu_cau_huy': yeu_cau_huy,  # T9: khối "Thông tin hủy" (bên hủy, lý do, xử lý tiền cọc, hoàn tiền)
         'co_the_xac_nhan_hoan_tien': la_khach and co_the_xac_nhan_hoan_tien(yeu_cau_huy),  # T9: nút "Tôi đã nhận lại tiền cọc"
         'url_danh_sach': reverse(ten_url_danh_sach),  # địa chỉ của nút "Quay lại danh sách"
+        'the_thoi_tiet': lay_the_thoi_tiet(booking, la_khach, la_nag),  # E8: dữ liệu thẻ thời tiết (None thì template ẩn thẻ)
         # Nhiếp ảnh gia còn việc phải làm với Booking này ("Chờ xác nhận" / "Chốt Booking") -> link tới màn xử lý của T5/T8.
         'url_xu_ly': (reverse('chi_tiet_yeu_cau_booking', kwargs={'ma_booking': booking.pk})  # địa chỉ màn xử lý của Nhiếp ảnh gia...
                       if la_nag and booking.TrangThai in (TrangThaiBooking.CHO_XAC_NHAN,  # ...chỉ khi là Nhiếp ảnh gia VÀ Booking đang ở
@@ -530,6 +532,7 @@ def chi_tiet_quan_tri(request, ma_booking):  # view: Quản trị viên xem chi 
 urlpatterns = [  # danh sách địa chỉ của file này
     path('cua-toi/', danh_sach_cua_toi, name='my_bookings'),  # /bookings/cua-toi/ -> danh sách "Booking của tôi"
     path('cua-toi/<int:ma_booking>/', chi_tiet_cua_toi, name='chi_tiet_booking'),  # /bookings/cua-toi/7/ -> chi tiết Booking số 7
+    path('cua-toi/<int:ma_booking>/tro-chuyen/', mo_tro_chuyen, name='mo_tro_chuyen_booking'),  # E8: POST, Nhiếp ảnh gia mở cuộc trò chuyện với Khách của Booking
     path('quan-tri/', danh_sach_quan_tri, name='admin_bookings'),  # /bookings/quan-tri/ -> Quản trị viên xem tất cả
     path('quan-tri/<int:ma_booking>/', chi_tiet_quan_tri, name='admin_booking_detail'),  # /bookings/quan-tri/7/ -> Quản trị xem chi tiết
 ]

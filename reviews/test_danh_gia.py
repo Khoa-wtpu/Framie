@@ -21,6 +21,8 @@ from schedule.models import LichKhaDung
 User = get_user_model()
 HOP_THU_GIA = {'default': {'BACKEND': 'django.core.mail.backends.locmem.EmailBackend'}}   # email chỉ vào mail.outbox, không gửi thật (P12)
 urlpatterns = [path('', include('reviews.urls')),              # bảng đường dẫn riêng cho test (không phụ thuộc config/urls.py)
+               path('bookings/', include('bookings.theo_doi')),    # thêm tên 'chi_tiet_booking' để redirect của view tìm thấy
+               path('bookings/', include('bookings.tiep_nhan')),   # thêm tên 'chi_tiet_yeu_cau_booking' cho Nhiếp ảnh gia
                path('dang-nhap/', lambda request: HttpResponse('dang nhap'), name='login')]   # LOGIN_URL = 'login' cần có tên này
 NGAY_KE_TIEP = itertools.count(1)                              # mỗi Booking một ngày khác nhau để khung giờ không trùng
 

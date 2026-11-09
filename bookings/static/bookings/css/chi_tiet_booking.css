@@ -131,3 +131,8 @@
 .ct__dem-khung { margin-top: var(--space-4); }                    /* khoảng cách phía trên khu đồng hồ đếm ngược */
 .ct__o-nhan--khoi { display: block; }                             /* nhãn nhỏ chiếm cả dòng, số đếm nằm dòng dưới */
 .ct__o-phu--khong-le { margin: 0; }                               /* dòng phụ không lề (gợi ý khi chưa có lịch trống) */
+
+/* ---------- E8: thẻ dự báo thời tiết ---------- */
+.ct__nhac { display: grid; gap: var(--space-4); margin-top: var(--space-5); }  /* lời nhắc mưa cao + nút trò chuyện: cách đều nhau và cách danh sách thông số phía trên */
+.ct__nhac > .btn, .ct__nhac > form { justify-self: start; }  /* nút không bị kéo dãn hết chiều ngang */
+.ct__nhac .alert { margin: 0; }  /* bỏ lề của khung cảnh báo để khoảng cách do gap quyết định */

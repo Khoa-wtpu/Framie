@@ -177,6 +177,26 @@ class UC42(TestCase):
                                                     # Thiết lập hoặc tính toán mốc thời gian phục vụ tình huống kiểm thử.
                                                     ThoiDiemHetHan=bay_gio - timedelta(minutes=1))
 
+    # ---- Nhiếp ảnh gia bị khóa tài khoản ----
+    def test_nag_bi_khoa_khong_gui_duoc_booking(self):
+        # Khách giữ chỗ khi Nhiếp ảnh gia còn hoạt động, rồi Nhiếp ảnh gia bị khóa.
+        g = self.giu(self.a, self.s1)
+        User.objects.filter(pk=self.nag.MaTaiKhoan_id).update(is_active=False)
+        # Mở form gửi Booking: bị chặn, về trang tìm kiếm (trang lịch sẽ 404).
+        self.client.force_login(self.a)
+        r = self.client.get(self.url(g))
+        self.assertRedirects(r, reverse('search'), fetch_redirect_response=False)
+        # Gửi Booking bằng POST cũng không tạo được Booking.
+        self.gui(self.a, g)
+        self.assertEqual(Booking.objects.count(), 0)
+        # Hàm nghiệp vụ gửi Booking cũng từ chối (chống gọi thẳng / bị khóa giữa lúc gửi); lượt giữ không bị đóng.
+        gio_chup = timezone.make_aware(datetime(self.ngay.year, self.ngay.month, self.ngay.day, 9, 30))
+        with self.assertRaises(uc.GuiBookingLoi) as ctx:
+            uc.gui_yeu_cau_booking(self.a, g.pk, self.goi.pk, gio_chup, 'Hoàn Kiếm, Hồ Gươm', 2, 'Vintage', None)
+        self.assertEqual(ctx.exception.thong_bao, uc.TB_NAG_KHONG_NHAN_BOOKING)
+        self.assertEqual(Booking.objects.count(), 0)
+        self.assertEqual(GiuCho.objects.get(pk=g.pk).TrangThai, GC.DANG_GIU)
+
     # ---- Basic flow ----
     # Khai báo một trường hợp kiểm thử cho UC4.2.
     def test_luong_chinh(self):

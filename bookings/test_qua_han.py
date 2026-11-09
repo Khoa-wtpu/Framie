@@ -74,12 +74,36 @@ class HetHanDatCoc(QuaHanBase):
         self.assertEqual(bk.TrangThai, TT.CHO_DAT_COC)
 
     def test_khach_da_tai_minh_chung_coc_thi_khong_het_han(self):
+        """Minh chứng đang CHO_XAC_NHAN_COC và LyDoTuChoi rỗng (Nhiếp ảnh gia chưa xem): được miễn hết hạn."""
         bk = self.booking(TT.CHO_DAT_COC, HanDatCoc=self.bay_gio - timedelta(hours=1))
         ThanhToan.objects.create(MaBooking=bk, LoaiThanhToan=LoaiThanhToan.TIEN_COC, SoTien=400000,
-                                 TrangThai=TTT.CHO_XAC_NHAN_COC, NgayThanhToan=self.bay_gio - timedelta(hours=2))
+                                 TrangThai=TTT.CHO_XAC_NHAN_COC, NgayThanhToan=self.bay_gio - timedelta(hours=2),
+                                 LyDoTuChoi=None)
         self.assertEqual(qua_han.xu_ly_het_han_dat_coc(), 0)
         bk.refresh_from_db()
         self.assertEqual(bk.TrangThai, TT.CHO_DAT_COC)
+
+    def test_nag_yeu_cau_bo_sung_ma_khach_khong_nop_lai_thi_van_het_han(self):
+        """Nhiếp ảnh gia đã yêu cầu bổ sung (LyDoTuChoi có giá trị, trạng thái giữ nguyên CHO_XAC_NHAN_COC) mà Khách không
+        nộp lại: KHÔNG được giữ khung giờ vô thời hạn -> vẫn hết hạn, slot về 'Lịch trống'."""
+        bk = self.booking(TT.CHO_DAT_COC, HanDatCoc=self.bay_gio - timedelta(hours=1))
+        ThanhToan.objects.create(MaBooking=bk, LoaiThanhToan=LoaiThanhToan.TIEN_COC, SoTien=400000,
+                                 TrangThai=TTT.CHO_XAC_NHAN_COC, NgayThanhToan=self.bay_gio - timedelta(hours=2),
+                                 LyDoTuChoi='Ảnh chuyển khoản bị mờ, vui lòng gửi lại')
+        self.assertEqual(qua_han.xu_ly_het_han_dat_coc(), 1)
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, TT.HET_THOI_HAN_DAT_COC)
+        bk.MaLich.refresh_from_db()
+        self.assertEqual(bk.MaLich.TrangThai, TrangThaiSlot.TRONG)
+
+    def test_thong_bao_lay_so_ngay_tu_hang_so(self):
+        """Số ngày trong thông báo / lý do lấy từ bookings/services.py, không viết cứng trong qua_han.py."""
+        from bookings import services
+        self.assertEqual(qua_han.LY_DO_HET_HAN_COC, f'Quá {services.SO_NGAY_HAN_DAT_COC} ngày chưa đặt cọc')
+        bk = self.booking(TT.CHO_DAT_COC, HanDatCoc=self.bay_gio - timedelta(hours=1))
+        qua_han.xu_ly_het_han_dat_coc()
+        tb = ThongBao.objects.get(MaNguoiNhan=self.kh, MaBooking=bk)
+        self.assertIn(f'quá {services.SO_NGAY_HAN_DAT_COC} ngày chưa đặt cọc', tb.NoiDung)
 
     def test_chay_lai_khong_xu_ly_hai_lan(self):
         self.booking(TT.CHO_DAT_COC, HanDatCoc=self.bay_gio - timedelta(hours=1))
@@ -247,6 +271,38 @@ class KichHoat(QuaHanBase):
         self.client.get('/bookings/cua-toi/')      # chưa đăng nhập vẫn chạy middleware rồi mới chuyển hướng
         bk.refresh_from_db()
         self.assertEqual(bk.TrangThai, TT.HET_THOI_HAN_DAT_COC)
+
+    @override_settings(XU_LY_QUA_HAN_KHOANG_CACH_GIAY=45)   # bật lại giới hạn (khi chạy test mặc định là 0)
+    def test_middleware_gioi_han_tan_suat_hai_lan_lien_tiep_chi_quet_mot_lan(self):
+        from bookings import middleware
+        middleware.dat_lai_gioi_han_tan_suat()
+        self.addCleanup(middleware.dat_lai_gioi_han_tan_suat)
+        with mock.patch('bookings.middleware.xu_ly_qua_han') as quet:
+            self.client.get('/bookings/cua-toi/')
+            self.client.get('/bookings/cua-toi/')          # liền sau: bị giới hạn, không quét nữa
+        self.assertEqual(quet.call_count, 1)
+
+    @override_settings(XU_LY_QUA_HAN_KHOANG_CACH_GIAY=45)
+    def test_middleware_quet_lai_sau_khi_het_khoang_cach(self):
+        from bookings import middleware
+        middleware.dat_lai_gioi_han_tan_suat()
+        self.addCleanup(middleware.dat_lai_gioi_han_tan_suat)
+        with mock.patch('bookings.middleware.xu_ly_qua_han') as quet, \
+                mock.patch.object(middleware, 'time') as gia_time:
+            gia_time.monotonic.side_effect = [100.0, 110.0, 146.0]   # lần 1 chạy; lần 2 (+10s) bỏ qua; lần 3 (+46s) chạy
+            for _ in range(3):
+                self.client.get('/bookings/cua-toi/')
+        self.assertEqual(quet.call_count, 2)
+
+    @override_settings(XU_LY_QUA_HAN_KHOANG_CACH_GIAY=45)
+    def test_middleware_trang_khong_lien_quan_khong_tieu_hao_luot_quet(self):
+        from bookings import middleware
+        middleware.dat_lai_gioi_han_tan_suat()
+        self.addCleanup(middleware.dat_lai_gioi_han_tan_suat)
+        with mock.patch('bookings.middleware.xu_ly_qua_han') as quet:
+            self.client.get('/dang-nhap/')                 # không thuộc tiền tố liên quan
+            self.client.get('/bookings/cua-toi/')          # vẫn được quét
+        self.assertEqual(quet.call_count, 1)
 
     def test_trang_khong_lien_quan_khong_xu_ly(self):
         bk = self.booking(TT.CHO_DAT_COC, HanDatCoc=self.bay_gio - timedelta(hours=1))

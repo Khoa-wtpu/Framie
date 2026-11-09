@@ -93,12 +93,16 @@ BUOC_BAT_BUOC_LY_DO = {  # set (tập hợp) các cặp (cũ, mới) mà ngườ
     (TT.CHOT_BOOKING, TT.DA_HUY),      # hủy lúc đã chốt phải có lý do
 }
 
+# Số ngày của các hạn chót (một chỗ duy nhất; bookings/qua_han.py lấy số từ đây để ghi vào thông báo).
+SO_NGAY_HAN_DAT_COC = 1              # 4.2.2: 1 ngày kể từ lúc Nhiếp ảnh gia chấp nhận
+SO_NGAY_HAN_THANH_TOAN_CON_LAI = 2   # 9.5.2: 2 ngày kể từ lúc Khách xác nhận bàn giao
+
 # Hạn chót tự gán khi Booking VÀO trạng thái mới (trạng thái mới: (tên field của Booking, thời hạn)).
 DAT_HAN = {  # khi Booking vào trạng thái ở khóa, hệ thống gán luôn hạn chót tương ứng
-    TT.CHO_DAT_COC: ('HanDatCoc', timedelta(days=1)),                   # 4.2.2: 1 ngày kể từ lúc chấp nhận
+    TT.CHO_DAT_COC: ('HanDatCoc', timedelta(days=SO_NGAY_HAN_DAT_COC)),                   # 4.2.2: 1 ngày kể từ lúc chấp nhận
     TT.CHO_KH_CHON_ANH: ('HanChonAnh', timedelta(days=2)),              # 9.1.1: 2 ngày kể từ lúc tải ảnh
     TT.DANG_HAU_KY: ('HanHauKy', timedelta(days=3)),                    # 9.3: 3 ngày kể từ lúc Nhiếp ảnh gia bấm bắt đầu hậu kỳ (vào "Đang hậu kỳ"); Khách yêu cầu chỉnh sửa quay lại "Đang hậu kỳ" thì tính lại 3 ngày
-    TT.CHO_XAC_NHAN_THANH_TOAN: ('HanThanhToanConLai', timedelta(days=2)),  # 9.5.2: 2 ngày kể từ lúc Khách xác nhận bàn giao
+    TT.CHO_XAC_NHAN_THANH_TOAN: ('HanThanhToanConLai', timedelta(days=SO_NGAY_HAN_THANH_TOAN_CON_LAI)),  # 9.5.2: 2 ngày kể từ lúc Khách xác nhận bàn giao
 }
 
 # Trạng thái slot (MaLich) đi kèm khi Booking VÀO trạng thái mới (TO-BE mục 4.2.1, 5.1, 6.1, 6.2.1, 7).

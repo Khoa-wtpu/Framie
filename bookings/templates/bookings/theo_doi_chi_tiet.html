@@ -159,6 +159,30 @@
     {# ===== CỘT PHỤ ===== #}
     <aside class="ct__cot">{# các thẻ trong cột phụ xếp dọc cách đều #}
 
+      {# E8: dự báo thời tiết buổi chụp (chỉ Khách / Nhiếp ảnh gia, Booking còn hiệu lực, buổi chụp chưa diễn ra). Dữ liệu: bookings/the_thoi_tiet.py #}
+      {% if the_thoi_tiet %}
+      <section class="ct__the" aria-label="Dự báo thời tiết buổi chụp">
+        <h2 class="ct__the-tieu-de">Dự báo thời tiết buổi chụp</h2>
+        {% if the_thoi_tiet.du_bao %}{# E7 có dự báo #}
+        <dl class="ct__ds">
+          <div class="ct__dong"><dt>Thời tiết</dt><dd>{{ the_thoi_tiet.du_bao.mo_ta }}</dd></div>
+          <div class="ct__dong"><dt>Nhiệt độ</dt><dd>{{ the_thoi_tiet.du_bao.nhiet_do|floatformat:"-1" }}°C</dd></div>
+          <div class="ct__dong"><dt>Khả năng mưa</dt><dd>{{ the_thoi_tiet.du_bao.xac_suat_mua }}%</dd></div>
+        </dl>
+        {% if the_thoi_tiet.mua_cao %}{# mưa cao: nhắc trao đổi đổi lịch #}
+        <div class="ct__nhac">{# khung chứa lời nhắc + nút, CSS tạo khoảng cách #}
+          {% include "includes/alert.html" with level="warning" text=the_thoi_tiet.TB_NHAC_DOI_LICH %}
+          {% if the_thoi_tiet.url_chat %}{# Khách: UC8.1 của app chat; Nhiếp ảnh gia: mo_tro_chuyen_booking #}
+          <form method="post" action="{{ the_thoi_tiet.url_chat }}">{% csrf_token %}<button class="btn btn--secondary" type="submit">Trao đổi qua trò chuyện</button></form>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% else %}{# E7 trả rỗng #}
+        <p class="muted">{{ the_thoi_tiet.TB_CHUA_CO_DU_BAO }}</p>
+        {% endif %}
+      </section>
+      {% endif %}
+
       {# Thanh toán: hiện cạnh trạng thái để người xem thấy hai thứ đi cùng nhau (BR4.7-2). #}
       <section class="ct__the ct__the--noi-bat">{# thẻ thanh toán, viền đậm hơn để nổi bật #}
         <h2 class="ct__the-tieu-de">Thanh toán</h2>{# tiêu đề thẻ #}

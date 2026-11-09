@@ -62,7 +62,7 @@ from django.http import Http404
 # render: dựng trang HTML từ file giao diện (template). redirect: chuyển người dùng sang trang khác.
 from django.shortcuts import redirect, render
 # path: khai báo một đường dẫn (URL).
-from django.urls import path
+from django.urls import NoReverseMatch, path, reverse   # reverse: đổi tên URL thành địa chỉ; NoReverseMatch: lỗi khi chưa có tên URL đó
 # timezone: lấy giờ hiện tại và đổi giờ theo múi giờ Việt Nam.
 from django.utils import timezone
 # Các 'nhãn' giới hạn cách truy cập một trang: chỉ cho GET (chỉ xem), chỉ cho POST (gửi lệnh), hoặc cả hai.
@@ -78,7 +78,7 @@ from bookings.models import Booking
 # gui_email_sau_commit = hàm DÙNG CHUNG gửi Email sau khi lưu xong và ghi kết quả gửi vào thông báo web.
 from bookings.services import DO_DAI_LY_DO_TOI_DA, chuyen_trang_thai_booking, gui_email_sau_commit
 # Các hằng số tên trạng thái dùng chung toàn dự án (tránh gõ tay chữ 'Chờ xác nhận' ở nhiều nơi dễ sai chính tả).
-from core.constants import BenThucHien, LoaiThanhToan, TrangThaiBooking
+from core.constants import BenThucHien, LoaiThanhToan, TrangThaiBooking, TrangThaiThanhToan   # TrangThaiThanhToan: để biết khoản nào đang chờ Nhiếp ảnh gia xác nhận
 # gui_thong_bao: hàm của nhóm để tạo một thông báo trên web cho người nhận.
 from notifications.services import gui_thong_bao
 # tinh_so_tien: quy tắc tính tiền cọc 40% DUY NHẤT của dự án (Thanh toán dùng cùng hàm này để thu tiền thật).
@@ -430,6 +430,35 @@ def danh_sach_yeu_cau(request):
     })
 
 
+# Thông báo + nút cho Nhiếp ảnh gia khi Khách đã tải minh chứng thanh toán (cọc 40% hoặc phần còn lại 60%).
+def _nhac_xac_nhan_thanh_toan(booking):
+    """Trả dict {tieu_de, noi_dung, nhan, url} nếu Khách đã gửi minh chứng và khoản đó đang chờ Nhiếp ảnh gia xác nhận; không thì None."""
+    # Booking đang 'Chờ đặt cọc' -> khoản cần xem là tiền cọc 40%.
+    if booking.TrangThai == TrangThaiBooking.CHO_DAT_COC:
+        loai, cho, ten_url = LoaiThanhToan.TIEN_COC, TrangThaiThanhToan.CHO_XAC_NHAN_COC, 'xac_nhan_thanh_toan_coc'   # loại khoản, trạng thái chờ, tên trang xác nhận
+        tieu_de = 'Khách hàng đã tải lên minh chứng tiền cọc'   # dòng chữ đậm của hộp thông báo
+        nhan = 'Kiểm tra minh chứng cọc'                       # chữ trên nút
+    # Booking đang 'Chờ xác nhận thanh toán' -> khoản cần xem là phần còn lại 60%.
+    elif booking.TrangThai == TrangThaiBooking.CHO_XAC_NHAN_THANH_TOAN:
+        loai, cho, ten_url = LoaiThanhToan.PHAN_CON_LAI, TrangThaiThanhToan.CHO_XAC_NHAN_60, 'xac_nhan_thanh_toan_con_lai'
+        tieu_de = 'Khách hàng đã tải lên minh chứng thanh toán phần còn lại'
+        nhan = 'Kiểm tra minh chứng thanh toán'
+    # Trạng thái khác: không có khoản nào cần Nhiếp ảnh gia xác nhận.
+    else:
+        return None
+    # Khách chưa gửi minh chứng (khoản chưa ở trạng thái chờ xác nhận) thì không hiện gì.
+    if not booking.thanh_toans.filter(LoaiThanhToan=loai, TrangThai=cho).exists():
+        return None
+    # Lấy địa chỉ trang xác nhận của module Thanh toán; chưa có tên URL thì ẩn hộp thông báo, không báo lỗi.
+    try:
+        url = reverse(ten_url, kwargs={'ma_booking': booking.pk})
+    except NoReverseMatch:
+        return None
+    # Nội dung hộp thông báo: nói rõ việc cần làm (xác nhận hoặc gửi yêu cầu bổ sung).
+    return {'tieu_de': tieu_de, 'url': url, 'nhan': nhan,
+            'noi_dung': 'Vui lòng kiểm tra minh chứng để xác nhận đã nhận tiền, hoặc gửi yêu cầu bổ sung nếu minh chứng chưa hợp lệ.'}
+
+
 # Trang chi tiết: cũng chỉ Nhiếp ảnh gia đã duyệt, chỉ cho GET.
 @chi_nhiep_anh_gia_da_duyet
 @require_GET
@@ -468,6 +497,8 @@ def chi_tiet_yeu_cau(request, ma_booking):
         'tong_gia': _tien(booking.TongGiaTri),
         # Số tiền cọc 40% (tính bằng tinh_so_tien) đã định dạng, để báo trước cho Nhiếp ảnh gia.
         'tien_coc': _tien(tinh_so_tien(booking.TongGiaTri, LoaiThanhToan.TIEN_COC)),
+        # Hộp thông báo 'Khách đã tải minh chứng' + nút sang trang xác nhận (None nếu chưa có gì cần xác nhận).
+        'nhac_thanh_toan': _nhac_xac_nhan_thanh_toan(booking),
     })
 
 
@@ -562,6 +593,5 @@ urlpatterns = [
     # /bookings/quan-ly/<mã>/chap-nhan/  -> nút Chấp nhận (UC4.4).
     path('quan-ly/<int:ma_booking>/chap-nhan/', chap_nhan, name='chap_nhan_booking'),
     # /bookings/quan-ly/<mã>/tu-choi/  -> trang Từ chối (UC4.5).
-    path('quan-ly/<int:ma_booking>/tu-choi/', tu_choi, name='tu_choi_booking'),
     path('quan-ly/<int:ma_booking>/tu-choi/', tu_choi, name='tu_choi_booking'),
 ]
