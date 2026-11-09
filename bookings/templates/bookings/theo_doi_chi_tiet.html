@@ -172,10 +172,8 @@
         {% if the_thoi_tiet.mua_cao %}{# mưa cao: nhắc trao đổi đổi lịch #}
         <div class="ct__nhac">{# khung chứa lời nhắc + nút, CSS tạo khoảng cách #}
           {% include "includes/alert.html" with level="warning" text=the_thoi_tiet.TB_NHAC_DOI_LICH %}
-          {% if the_thoi_tiet.kieu_chat == 'post' %}
+          {% if the_thoi_tiet.url_chat %}{# Khách: UC8.1 của app chat; Nhiếp ảnh gia: mo_tro_chuyen_booking #}
           <form method="post" action="{{ the_thoi_tiet.url_chat }}">{% csrf_token %}<button class="btn btn--secondary" type="submit">Trao đổi qua trò chuyện</button></form>
-          {% elif the_thoi_tiet.kieu_chat == 'get' %}
-          <a class="btn btn--secondary" href="{{ the_thoi_tiet.url_chat }}">Trao đổi qua trò chuyện</a>
           {% endif %}
         </div>
         {% endif %}

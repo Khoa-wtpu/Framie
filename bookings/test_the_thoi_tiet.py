@@ -62,16 +62,31 @@ class TheThoiTietTest(TheThoiTietBase):
         self.assertContains(res, reverse('khoi_tao_cuoc_tro_chuyen', kwargs={'ma_nhiep_anh_gia': self.nag.pk}))
         self.assertContains(res, 'Trao đổi qua trò chuyện')
 
-    def test_mua_cao_nag_co_link_chat_khi_da_co_cuoc(self):  # trường hợp 3b: Nhiếp ảnh gia chỉ có nút khi đã có cuộc trò chuyện
+    def test_mua_cao_nag_co_nut_chat_ke_ca_khi_chua_nhan_tin(self):  # trường hợp 3b: Nhiếp ảnh gia luôn có nút, bấm thì tạo cuộc trò chuyện
         bk = self.tao_booking()
+        url = reverse('mo_tro_chuyen_booking', kwargs={'ma_booking': bk.pk})
         with mock.patch(MOCK, return_value=du_bao(90)):
-            res = self.mo(bk, self.nag.MaTaiKhoan)  # chưa có cuộc: có nhắc nhưng chưa có nút
+            res = self.mo(bk, self.nag.MaTaiKhoan)  # hai bên chưa từng nhắn
         self.assertContains(res, uc.TB_NHAC_DOI_LICH)
-        self.assertNotContains(res, 'Trao đổi qua trò chuyện')
-        cuoc = CuocTroChuyen.objects.create(MaKhachHang=self.khach, MaNhiepAnhGia=self.nag)
-        with mock.patch(MOCK, return_value=du_bao(90)):
-            res = self.mo(bk, self.nag.MaTaiKhoan)
-        self.assertContains(res, reverse('chi_tiet_cuoc_tro_chuyen', kwargs={'ma_cuoc': cuoc.pk}))
+        self.assertContains(res, 'Trao đổi qua trò chuyện')
+        self.assertContains(res, url)
+        self.assertFalse(CuocTroChuyen.objects.exists())  # mở trang chưa tạo gì
+        res = self.client.post(url)  # bấm nút
+        cuoc = CuocTroChuyen.objects.get(MaKhachHang=self.khach, MaNhiepAnhGia=self.nag)  # cuộc đã được tạo đúng cặp
+        self.assertRedirects(res, reverse('chi_tiet_cuoc_tro_chuyen', kwargs={'ma_cuoc': cuoc.pk}), fetch_redirect_response=False)
+        self.client.post(url)  # bấm lần nữa: mở lại cuộc cũ
+        self.assertEqual(CuocTroChuyen.objects.count(), 1)  # vẫn chỉ một cuộc cho mỗi cặp
+
+    def test_nut_chat_cua_nag_chi_dung_cho_booking_cua_minh(self):  # an toàn: sai người / sai vai trò / sai phương thức
+        bk = self.tao_booking()
+        url = reverse('mo_tro_chuyen_booking', kwargs={'ma_booking': bk.pk})
+        self.client.force_login(self.nag_khac.MaTaiKhoan)  # Nhiếp ảnh gia khác
+        self.assertEqual(self.client.post(url).status_code, 404)  # Booking của người khác -> 404, không tạo gì
+        self.client.force_login(self.khach)  # Khách hàng
+        self.assertEqual(self.client.post(url).status_code, 403)  # sai vai trò
+        self.client.force_login(self.nag.MaTaiKhoan)
+        self.assertEqual(self.client.get(url).status_code, 405)  # GET không được phép
+        self.assertFalse(CuocTroChuyen.objects.exists())
 
     def test_booking_het_hieu_luc_khong_hien_the(self):  # ẩn: Đã từ chối / Hết thời hạn đặt cọc / Đã hủy
         cac_ca = [(BK.DA_TU_CHOI, {'LyDoTuChoi': 'Bận'}),  # từ chối bắt buộc có lý do (ràng buộc của database)
@@ -100,11 +115,19 @@ class TheThoiTietTest(TheThoiTietBase):
         self.assertEqual(res.status_code, 200)
         self.assertNotContains(res, TIEU_DE)
 
-    def test_thu_khu_vuc_tiep_theo_khi_khu_vuc_dau_khong_co_du_bao(self):  # Nhiếp ảnh gia có 2 khu vực: lấy khu vực đầu tiên có dự báo
+    def test_dung_khu_vuc_khach_da_chon_trong_dia_diem(self):  # Khách chọn Hà Nội dù Nhiếp ảnh gia nhận cả Đà Nẵng và Hà Nội
         NhiepAnhGia_KhuVuc.objects.create(MaNhiepAnhGia=self.nag, MaKhuVuc=KhuVuc.objects.create(TenKhuVuc='Hà Nội'))
-        bk = self.tao_booking()
-        # lần gọi đầu (khu vực thứ nhất) trả rỗng, lần gọi thứ hai (khu vực thứ hai) có dự báo
-        with mock.patch(MOCK, side_effect=[{}, du_bao(10)]) as goi:
+        for dia_diem in ('Hà Nội', 'Hà Nội - 1 Tràng Tiền'):  # có và không có địa chỉ cụ thể
+            bk = self.tao_booking(DiaDiem=dia_diem, gio='09:00' if dia_diem == 'Hà Nội' else '13:00')
+            with mock.patch(MOCK, return_value=du_bao()) as goi:
+                self.mo(bk, self.khach)
+            goi.assert_called_once()  # chỉ tra đúng 1 khu vực
+            self.assertEqual(goi.call_args.args[0].TenKhuVuc, 'Hà Nội')  # đúng khu vực Khách chọn
+
+    def test_dia_diem_khong_khop_thi_dung_khu_vuc_cua_nag(self):  # Booking cũ / DiaDiem gõ tay: thử lần lượt khu vực Nhiếp ảnh gia khai
+        NhiepAnhGia_KhuVuc.objects.create(MaNhiepAnhGia=self.nag, MaKhuVuc=KhuVuc.objects.create(TenKhuVuc='Hà Nội'))
+        bk = self.tao_booking(DiaDiem='Hồ Gươm')
+        with mock.patch(MOCK, side_effect=[{}, du_bao(10)]) as goi:  # khu vực thứ nhất rỗng, thứ hai có dự báo
             res = self.mo(bk, self.khach)
         self.assertEqual(goi.call_count, 2)
         self.assertContains(res, 'Mưa rào nhẹ')

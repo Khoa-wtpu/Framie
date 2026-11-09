@@ -54,7 +54,7 @@ from django.views.decorators.http import require_GET  # nhãn: chỉ cho mở tr
 from accounts.permissions import lay_vai_tro, vai_tro_required  # biết vai trò người đăng nhập / nhãn chặn sai vai trò
 from bookings.huy_booking import co_the_huy, co_the_xac_nhan_hoan_tien, lay_yeu_cau_huy  # T9: nút Hủy + khối thông tin hủy
 from bookings.models import Booking  # bảng Booking trong cơ sở dữ liệu
-from bookings.the_thoi_tiet import lay_the_thoi_tiet  # E8: thẻ "Dự báo thời tiết buổi chụp"
+from bookings.the_thoi_tiet import lay_the_thoi_tiet, mo_tro_chuyen  # E8: thẻ "Dự báo thời tiết buổi chụp" + nút trò chuyện của Nhiếp ảnh gia
 # Hằng số tên trạng thái / vai trò dùng chung của nhóm (không tự gõ chữ tiếng Việt).
 from core.constants import LoaiThanhToan, TrangThaiBooking, TrangThaiThanhToan, VaiTro  # tên các trạng thái/vai trò dùng chung
 # tinh_so_tien: quy tắc chia 40% / 60% DUY NHẤT của dự án (cùng hàm Thanh toán dùng để thu tiền thật).
@@ -532,6 +532,7 @@ def chi_tiet_quan_tri(request, ma_booking):  # view: Quản trị viên xem chi 
 urlpatterns = [  # danh sách địa chỉ của file này
     path('cua-toi/', danh_sach_cua_toi, name='my_bookings'),  # /bookings/cua-toi/ -> danh sách "Booking của tôi"
     path('cua-toi/<int:ma_booking>/', chi_tiet_cua_toi, name='chi_tiet_booking'),  # /bookings/cua-toi/7/ -> chi tiết Booking số 7
+    path('cua-toi/<int:ma_booking>/tro-chuyen/', mo_tro_chuyen, name='mo_tro_chuyen_booking'),  # E8: POST, Nhiếp ảnh gia mở cuộc trò chuyện với Khách của Booking
     path('quan-tri/', danh_sach_quan_tri, name='admin_bookings'),  # /bookings/quan-tri/ -> Quản trị viên xem tất cả
     path('quan-tri/<int:ma_booking>/', chi_tiet_quan_tri, name='admin_booking_detail'),  # /bookings/quan-tri/7/ -> Quản trị xem chi tiết
 ]
