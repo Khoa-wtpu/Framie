@@ -24,11 +24,11 @@
       {% else %}
         {% if yeu_cau_moi %}{# N7: Khách đã yêu cầu chỉnh sửa -> không cần trùng tên, chỉ cần đủ số lượng #}
           <p>Chọn <strong>đúng {{ yeu_cau_anhs|length }} ảnh</strong> đã chỉnh sửa theo yêu cầu của Khách hàng (tên tệp tùy ý).{# nhắc số lượng cần tải #}
-            Hệ thống ghép theo thứ tự tên: tệp xếp thứ 1 (A-Z) thay cho ảnh số 1 trong danh sách bên dưới, tệp thứ 2 thay cho ảnh số 2, và tiếp tục như vậy.{# giải thích cách ghép #}
+            Hệ thống tự ghép từng ảnh mới với ảnh cần sửa dựa trên <strong>hình ảnh</strong> (không dựa vào tên tệp). Ảnh nào chưa ghép chắc chắn được sẽ hiện danh sách để bạn tự chọn ảnh tương ứng.{# giải thích cách ghép #}
             Khi đủ ảnh, Booking chuyển sang <strong>Chờ Khách hàng kiểm tra</strong>.</p>{# nhắc bước tiếp theo #}
         {% else %}{# lượt hậu kỳ đầu tiên #}
           <p>Chọn <strong>đúng {{ cho_hau_ky|length }} ảnh</strong> đã hậu kỳ (tên tệp tùy ý).
-            Hệ thống ghép theo thứ tự tên: tệp xếp thứ 1 (A-Z) thay cho ảnh số 1 trong danh sách bên dưới, tệp thứ 2 thay cho ảnh số 2, và tiếp tục như vậy.
+            Hệ thống tự ghép từng ảnh mới với ảnh cần sửa dựa trên <strong>hình ảnh</strong> (không dựa vào tên tệp). Ảnh nào chưa ghép chắc chắn được sẽ hiện danh sách để bạn tự chọn ảnh tương ứng.
             Khi đủ ảnh, Booking chuyển sang <strong>Chờ Khách hàng kiểm tra</strong>.</p>
         {% endif %}
         {% if cho_hau_ky %}
@@ -91,6 +91,11 @@
         </div>
         <div id="luoi-xem-truoc" class="tai-anh__luoi-xem-truoc"></div>{# lưới ảnh, JS thêm từng thẻ ảnh vào đây #}
       </div>
+      <section id="khung-chua-ghep" class="tai-anh__chua-ghep" hidden aria-live="polite">{# E10: ảnh chưa tự ghép được -> Nhiếp ảnh gia chọn tay ảnh tương ứng; JS điền nội dung #}
+        <h3 class="tai-anh__chua-ghep-tieu-de">Ảnh chưa ghép được</h3>
+        <p class="muted">Với mỗi ảnh bên dưới, chọn ảnh cần sửa tương ứng rồi bấm “Tải ảnh lên” lần nữa. Các ảnh đã ghép được sẽ không bị ảnh hưởng.</p>
+        <div id="ds-chua-ghep" class="tai-anh__chua-ghep-ds"></div>
+      </section>
       <div>
         <progress id="thanh-tien-trinh" class="tai-anh__tien-trinh" max="100" value="0" hidden aria-label="Tiến trình tải ảnh"></progress>
         <p id="chu-tien-trinh" class="muted" aria-live="polite"></p>

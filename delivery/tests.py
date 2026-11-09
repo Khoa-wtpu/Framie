@@ -48,9 +48,21 @@ def tep_anh(ten='a.jpg', dinh_dang='JPEG', kich_thuoc=(80, 60)):   # tạo tệp
     return SimpleUploadedFile(ten, bo_nho.getvalue())
 
 
+def _ghep_theo_ten_cho_test(kho, ds_tep, ds_can, ghep_tay):   # các test cũ dùng ảnh MỘT MÀU (không có hình để so) nên ghép theo thứ tự tên cho dễ dựng dữ liệu
+    thu_tu_tep = sorted(range(len(ds_tep)), key=lambda i: services._khoa_sap_xep(ds_tep[i].name))
+    thu_tu_can = sorted(range(len(ds_can)), key=lambda j: services._khoa_sap_xep(ds_can[j].TenAnh))
+    return dict(zip(thu_tu_tep, thu_tu_can)), [], {}           # (cặp, chưa ghép, gợi ý) giống kiểu trả về của services._ghep_hau_ky
+
+
 @override_settings(PRIVATE_MEDIA_ROOT=tempfile.mkdtemp(), ROOT_URLCONF='delivery.tests')   # tệp test ghi vào thư mục tạm, không đụng private_media
 class _NenAnh(TestCase):                                       # dữ liệu nền + hàm tạo Booking/ảnh dùng chung (không có test riêng)
+    GHEP_THEO_TEN = True                                       # True: dùng hàm ghép theo tên ở trên; test_ghep_anh.py đặt False để chạy ghép theo hình thật
+
     def setUp(self):
+        if self.GHEP_THEO_TEN:
+            ghep_ten = mock.patch('delivery.services._ghep_hau_ky', _ghep_theo_ten_cho_test)
+            ghep_ten.start()
+            self.addCleanup(ghep_ten.stop)
         self._thu_muc_anh = tempfile.TemporaryDirectory()
         self.addCleanup(self._thu_muc_anh.cleanup)
         self._cau_hinh_kho_anh = override_settings(PRIVATE_MEDIA_ROOT=self._thu_muc_anh.name)
@@ -214,7 +226,7 @@ class TaiAnhTests(_NenAnh):                                    # N4 / UC5.3: ngh
         with self.assertRaises(services.LoiTaiAnh):
             services.tai_anh_len(bk.pk, self.nag_user, [tep_anh('khong-co.jpg')])
 
-    def test_ban_hau_ky_thay_the_va_xoa_file_cu(self):
+    def test_ban_hau_ky_thay_the_giu_ban_truoc_va_xoa_ban_goc_cu(self):   # E9: đổi tên + đổi kỳ vọng (trước đây xóa luôn bản cũ)
         bk = self.booking_dang_hau_ky()
         p1 = Anh.objects.get(MaBooking=bk, TenAnh='p1.jpg')
         kho, cu = services.kho_anh(), p1.DuongDanAnh
@@ -223,8 +235,9 @@ class TaiAnhTests(_NenAnh):                                    # N4 / UC5.3: ngh
             services.tai_anh_len(bk.pk, self.nag_user, [tep_anh('p1.jpg'), tep_anh('p2.jpg')])   # tải đủ 2 ảnh theo quy tắc mới
         p1.refresh_from_db()
         self.assertNotEqual(p1.DuongDanAnh, cu)
-        self.assertFalse(kho.exists(cu))                                                   # chỉ giữ bản mới nhất: file cũ bị xóa
-        self.assertFalse(kho.exists(services.duong_dan_goc(cu)))
+        self.assertEqual(p1.DuongDanAnhTruoc, cu)                                          # E9: bản có watermark liền trước được GIỮ làm "bản trước"
+        self.assertTrue(kho.exists(cu))
+        self.assertFalse(kho.exists(services.duong_dan_goc(cu)))                           # bản gốc không watermark của bản cũ vẫn bị xóa
         self.assertTrue(kho.exists(p1.DuongDanAnh))
 
     def test_tai_lai_sau_yeu_cau_chinh_sua_tang_phien_ban(self):
