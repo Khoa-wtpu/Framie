@@ -1,5 +1,4 @@
 {% extends "base.html" %}{# K8 - UC2.1 + UC2.2: Tìm kiếm & lọc nhiếp ảnh gia (wireframe Module 2, SC2.1 và SC2.2). Không cần đăng nhập. #}
-{% load static ui %}
 {% load static ui tro_ly_tags %}
 {% block title %}Tìm kiếm Nhiếp ảnh gia{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{% static 'search/css/tim_kiem.css' %}">{% if user|la_khach_hang %}<link rel="stylesheet" href="{% static 'search/css/tro_ly.css' %}">{% endif %}{% endblock %}
@@ -17,7 +16,7 @@
       <h2 id="tro-ly-moi-tieu-de" class="tro-ly-moi__tieu-de">Chưa biết chọn ai?</h2>
       <p class="tro-ly-moi__mo-ta">Trả lời 5 câu hỏi ngắn, Trợ lý gợi ý nhiếp ảnh gia phù hợp kèm khung giờ trống.</p>
     </div>
-    <a class="btn btn--primary" href="{% url 'assistant' %}">Trợ lý chọn Nhiếp ảnh gia</a>
+    <a class="btn btn--secondary" href="{% url 'assistant' %}">Trợ lý chọn Nhiếp ảnh gia</a>
   </section>
   {% endif %}
 

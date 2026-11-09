@@ -60,10 +60,11 @@ class TruyCap(TongQuanBase):  # nhóm test: ai được vào / bị chuyển đi
         admin = tao_user('qt', VaiTro.QUAN_TRI_VIEN)  # tạo một Quản trị viên
         self.assertRedirects(self.mo(admin), reverse('admin_dashboard'), fetch_redirect_response=False)  # bị chuyển sang trang tổng quan riêng của Quản trị
 
-    def test_trang_dich_sau_dang_nhap_la_tong_quan(self):  # tình huống: đăng nhập xong đi đâu
+    def test_trang_dich_sau_dang_nhap(self):  # tình huống: đăng nhập xong đi đâu
         self.assertEqual(reverse('dashboard'), URL)  # tên url 'dashboard' trỏ đúng /tong-quan/
-        self.assertEqual(url_trang_chu(self.khach), URL)  # Khách đăng nhập xong vào trang này
-        self.assertEqual(url_trang_chu(self.nag.MaTaiKhoan), URL)  # Nhiếp ảnh gia cũng vậy
+        self.assertEqual(url_trang_chu(self.khach),
+                         reverse('home'))  # Khách hàng về Trang chủ (B8), không vào Tổng quan
+        self.assertEqual(url_trang_chu(self.nag.MaTaiKhoan), URL)  # Nhiếp ảnh gia vào Tổng quan
 
 
 class KhachHang(TongQuanBase):  # nhóm test: trang của Khách hàng

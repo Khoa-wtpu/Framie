@@ -32,10 +32,12 @@ def giu_cho_banner(request):
     lich = giu_cho.MaLich
     nag_user = lich.MaNhiepAnhGia.MaTaiKhoan
     con_lai = max(0, int((giu_cho.ThoiDiemHetHan - bay_gio).total_seconds()))
+    tong = int((giu_cho.ThoiDiemHetHan - giu_cho.ThoiDiemGiu).total_seconds())   # tổng thời gian giữ: để vẽ thanh tiến độ của ô đếm ngược
     return {'giu_cho_banner': {
         'khung_gio': f'{lich.Ngay:%d/%m/%Y} {lich.GioBatDau:%H:%M}–{lich.GioKetThuc:%H:%M}',
         'ten_nag': nag_user.get_full_name() or nag_user.username,
         'con_lai_giay': con_lai,
+        'tong_giay': max(tong, con_lai, 1),
         'con_lai_chu': f'{con_lai // 60:02d}:{con_lai % 60:02d}',
         'url_tiep_tuc': url_tiep_tuc,
         'url_trang_thai': url_trang_thai,

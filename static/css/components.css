@@ -111,7 +111,11 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
 .role-switch { margin: var(--space-2) 0 var(--space-4); } /* khoảng cách trên và dưới khối chọn vai trò */
 .role-switch__label { margin: 0 0 var(--space-2); } /* dòng chữ sát nút bên dưới */
 .role-switch__list { display: flex; flex-wrap: wrap; gap: var(--space-2); } /* 2 nút cạnh nhau, xuống hàng nếu màn hình hẹp */
-.role-switch .btn[aria-current="page"] { background: var(--color-gray-soft); border-color: var(--color-gray); } /* nút của trang đang mở: nền xám nhạt, viền xám (chỉ dùng token có sẵn) */
+/* Nút vai trò: nút chưa chọn = nền trong suốt + viền + chữ màu chữ chính (đọc rõ ở cả 2 giao diện); nút đang chọn = nền đặc tương phản mạnh + dấu tích, nên "sáng/nổi" nghĩa là đang chọn */
+.role-switch .btn { background: transparent; color: var(--color-text); border-color: var(--color-border-hover); box-shadow: none; }
+.role-switch .btn:hover { background: var(--color-surface-alt); color: var(--color-text); }
+.role-switch .btn[aria-current="page"] { background: var(--btn-primary-bg); color: var(--color-white); border-color: var(--color-text); font-weight: 600; }
+.role-switch .btn[aria-current="page"]::after { content: "\2713"; font-weight: 700; } /* ::before đã dùng cho hiệu ứng ánh sáng của .btn */
 .auth-switch-note { margin-top: var(--space-3); } /* dòng "Đã có tài khoản? Đăng nhập" dưới form đăng ký */
 
 
@@ -245,11 +249,51 @@ a.pagination__item:hover { background: var(--color-surface-alt); border-color: v
   .btn:hover, .card:hover, .loe-sang:hover { transform: none; }
 }
 
-/* ---------- Banner giữ chỗ (hiện trên mọi trang cho Khách đang giữ khung giờ; bookings/includes/banner_giu_cho.html) ---------- */
-.gc-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3) var(--space-5); margin-block: var(--space-3); padding: var(--space-3) var(--space-5); background: var(--surface-gradient); border: 1px solid var(--color-border); border-left: 4px solid var(--tone-amber-dot); border-radius: var(--radius-md); font-size: var(--text-sm); }
-.gc-banner__chu { margin: 0; }
-.gc-banner__dem { font-variant-numeric: tabular-nums; font-size: var(--text-lg); }
-.gc-banner.is-het-han { border-left-color: var(--tone-red-dot); }
+/* ---------- Ô đếm ngược giữ chỗ (bookings/includes/banner_giu_cho.html + js/banner_giu_cho.js) ----------
+   Nổi cố định ở góc TRÊN BÊN PHẢI (dưới header) nên lướt trang xuống vẫn thấy; điện thoại thì nằm sát đáy màn hình.
+   Giờ là phần LỚN NHẤT của ô. Màu nhấn đổi theo mức khẩn cấp: vàng -> cam (còn 60 giây) -> đỏ (còn 30 giây). */
+.gc-timer { --gc-mau: var(--tone-amber-dot); position: fixed; top: calc(var(--header-h) + var(--space-3)); right: var(--space-4); z-index: 40; width: 17.5rem; max-width: calc(100vw - 2 * var(--space-4)); padding: var(--space-3) var(--space-4) var(--space-4); background: var(--surface-gradient); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); color: var(--color-text); }
+.gc-timer [hidden] { display: none !important; } /* .btn--block đặt display nên phải ép thuộc tính hidden */
+.gc-timer.is-sap-het { --gc-mau: var(--tone-orange-dot); }
+.gc-timer.is-gap { --gc-mau: var(--tone-red-dot); border-color: var(--gc-mau); }
+.gc-timer.is-het-han { --gc-mau: var(--tone-red-dot); border-color: var(--gc-mau); }
+.gc-timer__dau { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.gc-timer__nhan { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-text-muted); }
+.gc-timer__cham { width: .5rem; height: .5rem; border-radius: 50%; background: var(--gc-mau); }
+.gc-timer__thu-gon { display: grid; place-items: center; width: 1.75rem; height: 1.75rem; padding: 0; border: 1px solid var(--color-border); border-radius: 50%; background: transparent; color: var(--color-text-muted); cursor: pointer; transition: transform .2s, color .2s, border-color .2s; }
+.gc-timer__thu-gon:hover { color: var(--color-text); border-color: var(--color-border-hover); }
+.gc-timer__thu-gon:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.gc-timer__than { margin-top: var(--space-2); }
+.gc-timer__dong-ho { display: flex; align-items: flex-start; justify-content: center; gap: var(--space-2); }
+.gc-timer__nhom { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); }
+.gc-timer__so { font-size: 3.5rem; font-weight: 600; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; } /* số giờ: to nhất ô */
+.gc-timer__hai-cham { font-size: 3rem; font-weight: 600; line-height: 1; color: var(--gc-mau); }
+.gc-timer__don-vi { font-size: var(--text-xs); letter-spacing: .1em; text-transform: uppercase; color: var(--color-text-muted); }
+.gc-timer__thanh { height: .375rem; margin-top: var(--space-3); border-radius: var(--radius-pill); background: color-mix(in srgb, var(--color-text) 14%, transparent); overflow: hidden; }
+.gc-timer__thanh-chay { display: block; width: var(--tien-do, 100%); height: 100%; border-radius: inherit; background: var(--gc-mau); transition: width 1s linear, background-color .4s; }
+.gc-timer__chu { margin: var(--space-3) 0; font-size: var(--text-sm); line-height: 1.5; color: var(--color-text-muted); overflow-wrap: anywhere; }
+.gc-timer__chu strong { color: var(--color-text); font-weight: 600; }
+.gc-timer.is-het-han .gc-timer__so { color: var(--color-text-muted); }
+.gc-timer.is-het-han .gc-timer__chu { color: var(--color-text); }
+/* Thu gọn: chỉ còn nhãn + giờ rút gọn + nút mở lại */
+.gc-timer__nho-gio { display: none; margin-left: auto; font-size: var(--text-lg); font-weight: 600; font-variant-numeric: tabular-nums; }
+.gc-timer.is-thu-gon { width: auto; padding: var(--space-2) var(--space-3); }
+.gc-timer.is-thu-gon .gc-timer__than { display: none; }
+.gc-timer.is-thu-gon .gc-timer__nho-gio { display: inline; }
+.gc-timer.is-thu-gon .gc-timer__thu-gon { transform: rotate(180deg); }
+@media (prefers-reduced-motion: no-preference) {
+  .gc-timer__cham { animation: gc-nhap 2s ease-in-out infinite; }
+  .gc-timer.is-gap .gc-timer__cham { animation-duration: .8s; }
+  @keyframes gc-nhap { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.75); } }
+}
+@media (prefers-reduced-motion: reduce) { .gc-timer__thanh-chay, .gc-timer__thu-gon { transition: none; } }
+@media (max-width: 640px) { /* điện thoại: nằm sát đáy, rộng gần hết màn hình, không che nội dung phía trên */
+  .gc-timer { top: auto; bottom: var(--space-3); left: var(--space-3); right: var(--space-3); width: auto; max-width: none; }
+  .gc-timer__so { font-size: 2.75rem; }
+  .gc-timer__hai-cham { font-size: 2.25rem; }
+  .gc-timer.is-thu-gon { left: auto; }
+}
+@media print { .gc-timer { display: none; } }
 
 /* Nút Đăng xuất trong popup: thêm viền */
 .btn--logout { border-color: var(--color-black); }

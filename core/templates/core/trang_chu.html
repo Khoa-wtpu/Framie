@@ -80,6 +80,15 @@
     </p>
     {# ▸ Kết thúc điều kiện "nếu có loại hình". #}
     {% endif %}
+    {% if not is_logged_in %}
+  <section class="tc-tro-ly" aria-labelledby="tc-tro-ly-tieu-de">
+    <div>
+      <h2 id="tc-tro-ly-tieu-de" class="tc-tro-ly__tieu-de">Chưa biết chọn ai?</h2>
+      <p class="tc-tro-ly__mo-ta">Trả lời 5 câu hỏi ngắn, Trợ lý gợi ý nhiếp ảnh gia phù hợp kèm khung giờ trống. Bạn cần đăng nhập để dùng.</p>
+    </div>
+    <a class="btn btn--secondary btn--lg" href="{% url 'login' %}?next={% url 'assistant' %}">Trợ lý chọn Nhiếp ảnh gia</a>
+  </section>
+  {% endif %}
   {# ▸ Đóng hộp nội dung banner. #}
   </div>
 {# ▸ Đóng khối banner. #}

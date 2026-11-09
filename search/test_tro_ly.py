@@ -188,11 +188,10 @@ class KetQuaTest(TroLyTestCase):
         self.assertContains(r, 'Ngày chụp bạn đã chọn không còn hợp lệ.')  # có giải thích
 
     def test_hien_the_day_du(self):
-        nag = self.tao_nag(danh_gia=[5, 4, 5])  # tb 4,667 -> tổng 80: (30+20+20+9,33)/80 = 99,17 -> 99
+        self.tao_nag(danh_gia=[5, 4, 5])  # tb 4,667 -> tổng 80: (30+20+20+9,33)/80 = 99,17 -> 99
         self.dat_session()  # trả lời mặc định (Cưới, TP.HCM, không giới hạn, bỏ qua phong cách)
         r = self.client.get(self.url_kq)  # mở kết quả
         self.assertContains(r, 'Phù hợp 99%')  # phần trăm
-        self.assertContains(r, 'B A')  # tên hiển thị theo get_full_name() của dự án (họ đứng trước)
         self.assertContains(r, 'B A')  # tên hiển thị theo get_full_name() của dự án (họ đứng trước)
         self.assertContains(r, '2.000.000đ')  # giá gói rẻ nhất
         self.assertContains(r, 'Chụp Cưới')  # chip lý do

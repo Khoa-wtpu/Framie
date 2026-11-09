@@ -1,13 +1,36 @@
-{% load static %}{# Banner giữ chỗ dùng chung: include trong templates/base.html. Dữ liệu từ bookings/context_processors.py #}
+{% load static %}{# Ô đếm ngược giữ chỗ dùng chung: include trong templates/base.html. Dữ liệu từ bookings/context_processors.py #}
 {% if giu_cho_banner %}
-<div class="container">
-  <div class="gc-banner" id="banner-giu-cho" role="status"
-       data-con-lai="{{ giu_cho_banner.con_lai_giay }}" data-url-trang-thai="{{ giu_cho_banner.url_trang_thai }}"
+{# position: fixed ở góc trên bên phải (CSS .gc-timer) nên lướt xuống ô vẫn ở đó; trên điện thoại thì nằm ở đáy màn hình #}
+<aside class="gc-timer" id="banner-giu-cho" aria-label="Giữ chỗ khung giờ chụp"
+       data-con-lai="{{ giu_cho_banner.con_lai_giay }}" data-tong="{{ giu_cho_banner.tong_giay }}"
+       data-url-trang-thai="{{ giu_cho_banner.url_trang_thai }}"
        data-het-han-chu="Thời gian giữ chỗ đã hết hạn. Khung giờ đã được trả về lịch trống.">
-    <p class="gc-banner__chu">Bạn đang giữ khung giờ <strong>{{ giu_cho_banner.khung_gio }}</strong> với <strong>{{ giu_cho_banner.ten_nag }}</strong>.
-      Còn lại <strong class="gc-banner__dem" data-gc-dem>{{ giu_cho_banner.con_lai_chu }}</strong></p>
-    <a class="btn btn--primary btn--sm gc-banner__nut" href="{{ giu_cho_banner.url_tiep_tuc }}">Tiếp tục đặt lịch</a>
+  <div class="gc-timer__dau">
+    <span class="gc-timer__nhan"><span class="gc-timer__cham" aria-hidden="true"></span>Đang giữ chỗ</span>
+    <span class="gc-timer__nho-gio" aria-hidden="true" data-gc-nho></span>{# chỉ hiện khi thu gọn #}
+    <button class="gc-timer__thu-gon" type="button" data-gc-thu-gon aria-expanded="true" aria-controls="gc-timer-than"
+            aria-label="Thu gọn ô đếm ngược" title="Thu gọn">
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
   </div>
-</div>
+
+  <div class="gc-timer__than" id="gc-timer-than">
+    {# Đồng hồ: phút : giây. aria-hidden để trình đọc màn hình không đọc lại mỗi giây; mốc 1 phút, 30 giây và hết giờ đọc ở .sr-only bên dưới #}
+    <div class="gc-timer__dong-ho" role="timer" aria-hidden="true" data-gc-dem>
+      <span class="gc-timer__nhom"><span class="gc-timer__so" data-gc-phut>{{ giu_cho_banner.con_lai_chu|slice:":2" }}</span><span class="gc-timer__don-vi">phút</span></span>
+      <span class="gc-timer__hai-cham">:</span>
+      <span class="gc-timer__nhom"><span class="gc-timer__so" data-gc-giay>{{ giu_cho_banner.con_lai_chu|slice:"3:" }}</span><span class="gc-timer__don-vi">giây</span></span>
+    </div>
+    <div class="gc-timer__thanh" aria-hidden="true"><span class="gc-timer__thanh-chay"></span></div>
+
+    <p class="gc-timer__chu" data-gc-chu>
+      Khung giờ <strong>{{ giu_cho_banner.khung_gio }}</strong> với <strong>{{ giu_cho_banner.ten_nag }}</strong>
+    </p>
+    <a class="btn btn--primary btn--sm btn--block gc-timer__nut" href="{{ giu_cho_banner.url_tiep_tuc }}">Tiếp tục đặt lịch</a>
+    <button class="btn btn--secondary btn--sm btn--block gc-timer__dong" type="button" data-gc-dong hidden>Đóng</button>
+  </div>
+
+  <p class="sr-only" role="status" aria-live="polite" data-gc-doc></p>
+</aside>
 <script src="{% static 'bookings/js/banner_giu_cho.js' %}" defer></script>
 {% endif %}

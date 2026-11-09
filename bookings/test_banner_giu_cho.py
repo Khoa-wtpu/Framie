@@ -88,3 +88,13 @@ class BannerGiuChoTests(TestCase):
         self.giu(self.a, self.s1)
         self.client.get(self.trang)
         self.assertEqual(LichKhaDung.objects.get(pk=self.s1.pk).TrangThai, SL.DANG_GIU)
+
+    def test_o_dem_nguoc_co_tong_giay_de_ve_thanh_tien_do(self):
+        self.giu(self.a, self.s1)
+        r = self.client.get(self.trang)
+        tong = int(THOI_GIAN_GIU_CHO.total_seconds())
+        self.assertContains(r, f'data-tong="{tong}"')
+        self.assertContains(r, 'class="gc-timer"')
+        self.assertContains(r, 'data-gc-phut')
+        self.assertContains(r, 'data-gc-giay')
+        self.assertGreaterEqual(r.context['giu_cho_banner']['tong_giay'], r.context['giu_cho_banner']['con_lai_giay'])

@@ -325,3 +325,12 @@
   .tc-dau-khoi, .tc-nag, .tc-buoc, .tc-loai { animation: none; }
 }
 @media (max-width: 40rem) { .tc-phim__khung { width: 7rem; } .tc-buoc__so { font-size: var(--text-3xl); } }
+
+/* khối "Chưa biết chọn ai?" trong banner (chỉ khách chưa đăng nhập) */
+.tc-tro-ly { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-4); margin-top: var(--space-6); padding: var(--space-5) var(--space-6); border: 1px solid color-mix(in srgb, var(--color-white) 24%, transparent); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--color-white) 6%, transparent); }
+.tc-tro-ly__tieu-de { margin: 0 0 var(--space-1); font-size: var(--text-xl); }
+.tc-tro-ly__mo-ta { margin: 0; max-width: 40rem; font-size: var(--text-sm); opacity: .8; }
+@media (max-width: 720px) {
+  .tc-tro-ly { padding: var(--space-4); }
+  .tc-tro-ly .btn { width: 100%; }
+}
