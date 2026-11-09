@@ -2,6 +2,7 @@
 # bookings/test_huy_booking.py - Test cho bookings/huy_booking.py (T9 / UC4.6)
 # Chạy:  python manage.py test bookings.test_huy_booking
 # =====================================================================
+from unittest import mock  # mock: thay thế tạm một hàm để dựng tình huống hai thao tác chạm nhau
 from datetime import timedelta  # timedelta: một khoảng thời gian (vd: 3 ngày) để cộng vào ngày
 
 from django.core import mail  # mail.outbox: hộp thư giả khi chạy test, để kiểm tra Email đã "gửi"
@@ -9,11 +10,15 @@ from django.test import TestCase, override_settings  # TestCase: lớp test có 
 from django.urls import reverse  # từ TÊN url suy ra địa chỉ thật
 from django.utils import timezone  # lấy ngày giờ có múi giờ
 
+from bookings import huy_booking as hb  # module nghiệp vụ hủy (để mock lay_booking_cua_ben)
+from bookings.services import chuyen_trang_thai_booking  # hàm đổi trạng thái chung (dùng để giả lập Nhiếp ảnh gia xác nhận cọc)
 from bookings.models import Booking, LichSuTrangThaiBooking, YeuCauHuy  # 3 bảng cần kiểm tra: Booking, Lịch sử trạng thái, Yêu cầu hủy
 from bookings.test_tiep_nhan import tao_nag, tao_user          # dựng tài khoản / Nhiếp ảnh gia mẫu của nhóm
 from core.constants import (BenThucHien, LoaiHauKy, TrangThaiBooking as BK, TrangThaiSlot as SL,  # các hằng số dùng chung, đặt tên ngắn: BK = trạng thái Booking, SL = trạng thái slot
                             VaiTro, XuLyTienCoc as XL, TrangThaiHoanTien as HT)  # VaiTro; XL = xử lý tiền cọc; HT = trạng thái hoàn tiền
 from notifications.models import ThongBao  # bảng thông báo web
+from core.constants import LoaiThanhToan, TrangThaiThanhToan  # loại / trạng thái thanh toán (minh chứng cọc đang chờ)
+from payments.models import ThanhToan  # bảng thanh toán
 from profiles.models import GoiDichVu, LoaiHinhChup  # bảng Gói dịch vụ và Loại hình chụp
 from schedule.models import LichKhaDung  # bảng lịch khả dụng (các slot giờ chụp)
 
@@ -322,3 +327,106 @@ class GiaoDienChiTiet(HuyBase):  # nhóm test: giao diện trang chi tiết
         self.client.force_login(self.nag.MaTaiKhoan)  # đăng nhập Nhiếp ảnh gia
         res = self.client.get(reverse('chi_tiet_yeu_cau_booking', kwargs={'ma_booking': bk.pk}))  # mở trang xử lý yêu cầu của Nhiếp ảnh gia
         self.assertContains(res, self.url_huy(bk))  # trang phải chứa link hủy
+
+
+# ---------------------------------------------------------------------
+# Hai thao tác chạm nhau: Nhiếp ảnh gia xác nhận cọc đúng lúc Khách hủy (phải đọc trạng thái SAU khi khóa dòng Booking)
+# ---------------------------------------------------------------------
+class HuyDuaTranhVoiXacNhanCoc(HuyBase):
+    def test_khach_huy_dung_luc_nag_xac_nhan_coc_thi_ghi_mat_coc(self):
+        bk = self.tao_booking(BK.CHO_DAT_COC)                       # trong DB đang "Chờ đặt cọc"
+        goc = hb.lay_booking_cua_ben
+
+        def lay_roi_nag_xac_nhan_coc(user, vai_tro, ma_booking):    # Khách đọc được bản "Chờ đặt cọc" CŨ ...
+            ban_cu = goc(user, vai_tro, ma_booking)
+            chuyen_trang_thai_booking(ma_booking, BK.CHOT_BOOKING, BenThucHien.NHIEP_ANH_GIA)   # ... rồi NAG xác nhận cọc xong
+            return ban_cu                                           # hàm vẫn trả bản cũ (TrangThai còn là "Chờ đặt cọc")
+
+        with mock.patch.object(hb, 'lay_booking_cua_ben', side_effect=lay_roi_nag_xac_nhan_coc):
+            with self.captureOnCommitCallbacks(execute=True):
+                hb.huy_booking(self.khach, bk.pk, LY_DO)
+        yc = YeuCauHuy.objects.get(MaBooking=bk)
+        self.assertEqual(yc.TrangThaiBookingLucHuy, BK.CHOT_BOOKING)            # phải ghi trạng thái THẬT lúc hủy
+        self.assertEqual(yc.XuLyTienCoc, XL.MAT_COC)                           # Khách hủy sau khi cọc -> mất cọc (không phải "Không phát sinh")
+        self.assertIsNone(yc.TrangThaiHoanTien)
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, BK.DA_HUY)
+        self.assertIn('mất 40% tiền cọc', ThongBao.objects.get(MaNguoiNhan=self.nag.MaTaiKhoan, MaBooking=bk).NoiDung)
+
+    def test_nag_huy_dung_luc_chot_thi_ghi_hoan_coc(self):
+        bk = self.tao_booking(BK.CHO_DAT_COC)
+        goc = hb.lay_booking_cua_ben
+
+        def lay_roi_chot(user, vai_tro, ma_booking):
+            ban_cu = goc(user, vai_tro, ma_booking)
+            chuyen_trang_thai_booking(ma_booking, BK.CHOT_BOOKING, BenThucHien.NHIEP_ANH_GIA)
+            return ban_cu
+
+        with mock.patch.object(hb, 'lay_booking_cua_ben', side_effect=lay_roi_chot):
+            with self.captureOnCommitCallbacks(execute=True):
+                hb.huy_booking(self.nag.MaTaiKhoan, bk.pk, LY_DO)
+        yc = YeuCauHuy.objects.get(MaBooking=bk)
+        self.assertEqual((yc.TrangThaiBookingLucHuy, yc.XuLyTienCoc, yc.TrangThaiHoanTien),
+                         (BK.CHOT_BOOKING, XL.HOAN_COC, HT.CHO_HOAN_TIEN))
+
+
+# ---------------------------------------------------------------------
+# Hủy khi "Chờ đặt cọc" nhưng Khách đã tải minh chứng cọc (đang chờ Nhiếp ảnh gia xác nhận): vẫn cho hủy,
+# XuLyTienCoc giữ "Không phát sinh", chỉ đổi câu hiển thị / thông báo
+# ---------------------------------------------------------------------
+class HuyKhiCoMinhChungDangCho(HuyBase):
+    CAU_KHACH = 'Booking có minh chứng cọc đang chờ xác nhận. Nếu bạn đã chuyển khoản, hãy liên hệ Nhiếp ảnh gia để xử lý hoàn tiền.'
+
+    def tao_minh_chung_dang_cho(self, bk, ly_do_bo_sung=None):
+        return ThanhToan.objects.create(MaBooking=bk, LoaiThanhToan=LoaiThanhToan.TIEN_COC, SoTien=600000,
+                                        TrangThai=TrangThaiThanhToan.CHO_XAC_NHAN_COC,
+                                        NgayThanhToan=timezone.now(), LyDoTuChoi=ly_do_bo_sung)
+
+    def test_trang_xac_nhan_cua_khach_hien_cau_minh_chung_dang_cho(self):
+        bk = self.tao_booking(BK.CHO_DAT_COC)
+        self.tao_minh_chung_dang_cho(bk)
+        self.client.force_login(self.khach)
+        res = self.client.get(self.url_huy(bk))
+        self.assertContains(res, self.CAU_KHACH)
+        self.assertNotContains(res, 'Booking chưa đặt cọc nên')
+
+    def test_trang_xac_nhan_cua_nag_hien_cau_danh_cho_nag(self):
+        bk = self.tao_booking(BK.CHO_DAT_COC)
+        self.tao_minh_chung_dang_cho(bk)
+        self.client.force_login(self.nag.MaTaiKhoan)
+        res = self.client.get(self.url_huy(bk))
+        self.assertContains(res, 'Booking có minh chứng cọc đang chờ xác nhận. Nếu Khách hàng đã chuyển khoản')
+
+    def test_khong_chan_huy_va_xu_ly_tien_coc_van_la_khong_phat_sinh(self):
+        bk = self.tao_booking(BK.CHO_DAT_COC)
+        self.tao_minh_chung_dang_cho(bk)
+        self.huy(self.khach, bk)
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, BK.DA_HUY)                              # không bị chặn
+        yc = YeuCauHuy.objects.get(MaBooking=bk)
+        self.assertEqual((yc.XuLyTienCoc, yc.TrangThaiHoanTien, yc.TrangThaiBookingLucHuy),
+                         (XL.KHONG_PHAT_SINH, None, BK.CHO_DAT_COC))
+
+    def test_thong_bao_ca_hai_ben_neu_ro_minh_chung_dang_cho(self):
+        bk = self.tao_booking(BK.CHO_DAT_COC)
+        self.tao_minh_chung_dang_cho(bk)
+        self.huy(self.khach, bk)
+        nd_khach = ThongBao.objects.get(MaNguoiNhan=self.khach, MaBooking=bk).NoiDung
+        nd_nag = ThongBao.objects.get(MaNguoiNhan=self.nag.MaTaiKhoan, MaBooking=bk).NoiDung
+        self.assertIn(self.CAU_KHACH, nd_khach)
+        self.assertIn('Booking có minh chứng cọc đang chờ xác nhận. Nếu Khách hàng đã chuyển khoản', nd_nag)   # Nhiếp ảnh gia cũng được báo rõ
+        for nd in (nd_khach, nd_nag):
+            self.assertNotIn('chưa đặt cọc nên không phát sinh', nd)
+
+    def test_nag_da_yeu_cau_bo_sung_van_hien_canh_bao(self):
+        bk = self.tao_booking(BK.CHO_DAT_COC)
+        self.tao_minh_chung_dang_cho(bk, ly_do_bo_sung='Ảnh mờ')                # Khách có thể đã chuyển khoản trước đó
+        self.client.force_login(self.khach)
+        self.assertContains(self.client.get(self.url_huy(bk)), self.CAU_KHACH)
+
+    def test_khong_co_minh_chung_thi_giu_cau_cu(self):
+        bk = self.tao_booking(BK.CHO_DAT_COC)
+        self.client.force_login(self.khach)
+        res = self.client.get(self.url_huy(bk))
+        self.assertContains(res, 'Booking chưa đặt cọc nên việc hủy không phát sinh mất hoặc hoàn tiền cọc.')
+        self.assertNotContains(res, 'minh chứng cọc đang chờ')

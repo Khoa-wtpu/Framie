@@ -18,12 +18,13 @@
 import logging
 
 from django.core.exceptions import ValidationError
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists, OuterRef, Q
 from django.utils import timezone
 
 from bookings.giu_cho import giai_phong_giu_cho_het_han
 from bookings.models import Booking
-from bookings.services import chuyen_trang_thai_booking, gui_email_sau_commit
+from bookings.services import (SO_NGAY_HAN_DAT_COC, SO_NGAY_HAN_THANH_TOAN_CON_LAI, chuyen_trang_thai_booking,
+                               gui_email_sau_commit)
 from core.constants import BenThucHien, LoaiThanhToan, LuuTruAnh, TrangThaiBooking, TrangThaiThanhToan
 from delivery.models import BanGiao
 from delivery.xoa_anh_het_han import xoa_anh_cua_booking
@@ -32,7 +33,7 @@ from payments.models import MinhChungThanhToan, ThanhToan
 
 logger = logging.getLogger(__name__)
 
-LY_DO_HET_HAN_COC = 'Quá 1 ngày chưa đặt cọc'
+LY_DO_HET_HAN_COC = f'Quá {SO_NGAY_HAN_DAT_COC} ngày chưa đặt cọc'   # số ngày lấy từ bookings/services.py
 LY_DO_QUA_GIO_CHUP = 'Quá giờ chụp mà Nhiếp ảnh gia chưa xác nhận'   # lý do ghi vào Lịch sử trạng thái khi hệ thống tự hủy
 
 
@@ -56,9 +57,12 @@ def xu_ly_giu_cho_het_han():
 # ---------------------------------------------------------------------
 def xu_ly_het_han_dat_coc(bay_gio=None):
     """Booking 'Chờ đặt cọc' đã quá HanDatCoc -> 'Hết thời hạn đặt cọc' (Hệ thống), slot về 'Lịch trống'.
-    Bỏ qua Booking mà Khách đã tải minh chứng cọc và đang chờ Nhiếp ảnh gia xác nhận (Khách đã đặt cọc rồi)."""
+    CHỈ miễn hết hạn khi minh chứng cọc đang 'Chờ xác nhận cọc' VÀ Nhiếp ảnh gia chưa yêu cầu bổ sung (LyDoTuChoi rỗng):
+    lúc đó Khách đã nộp và đang chờ Nhiếp ảnh gia xem. Nếu Nhiếp ảnh gia đã yêu cầu bổ sung (LyDoTuChoi có giá trị, trạng thái
+    giữ nguyên) mà Khách không nộp lại thì vẫn hết hạn bình thường, tránh giữ khung giờ vô thời hạn."""
     bay_gio = bay_gio or timezone.now()
     da_tai_minh_chung = ThanhToan.objects.filter(
+        Q(LyDoTuChoi__isnull=True) | Q(LyDoTuChoi=''),
         MaBooking=OuterRef('pk'), LoaiThanhToan=LoaiThanhToan.TIEN_COC,
         TrangThai=TrangThaiThanhToan.CHO_XAC_NHAN_COC)
     ds_ma = list(Booking.objects.filter(TrangThai=TrangThaiBooking.CHO_DAT_COC, HanDatCoc__lte=bay_gio)
@@ -74,8 +78,8 @@ def xu_ly_het_han_dat_coc(bay_gio=None):
         bk = Booking.objects.select_related('MaKhachHang', 'MaNhiepAnhGia__MaTaiKhoan').get(pk=ma)
         _bao_ca_hai_ben(
             bk, f'Booking #{ma} đã hết thời hạn đặt cọc',
-            f'Booking #{ma} đã bị hủy tự động vì quá 1 ngày chưa đặt cọc. Khung giờ đã được trả về lịch trống.',
-            f'Booking #{ma} đã hết thời hạn đặt cọc (quá 1 ngày). Khung giờ đã được trả về lịch trống của bạn.',
+            f'Booking #{ma} đã bị hủy tự động vì quá {SO_NGAY_HAN_DAT_COC} ngày chưa đặt cọc. Khung giờ đã được trả về lịch trống.',
+            f'Booking #{ma} đã hết thời hạn đặt cọc (quá {SO_NGAY_HAN_DAT_COC} ngày). Khung giờ đã được trả về lịch trống của bạn.',
             gui_email_khach=True)
         so += 1
     return so
@@ -106,9 +110,9 @@ def xu_ly_qua_han_thanh_toan(bay_gio=None):
         bk = tt.MaBooking
         _bao_ca_hai_ben(
             bk, f'Booking #{bk.pk}: quá hạn thanh toán',
-            f'Khoản thanh toán 60% còn lại của Booking #{bk.pk} đã quá hạn (quá 2 ngày). '
+            f'Khoản thanh toán 60% còn lại của Booking #{bk.pk} đã quá hạn (quá {SO_NGAY_HAN_THANH_TOAN_CON_LAI} ngày). '
             'Vui lòng liên hệ Nhiếp ảnh gia để được hỗ trợ.',
-            f'Khách hàng chưa thanh toán 60% còn lại của Booking #{bk.pk} trong 2 ngày, khoản này đã chuyển sang Quá hạn thanh toán.')
+            f'Khách hàng chưa thanh toán 60% còn lại của Booking #{bk.pk} trong {SO_NGAY_HAN_THANH_TOAN_CON_LAI} ngày, khoản này đã chuyển sang Quá hạn thanh toán.')
         so += 1
     return so
 
@@ -129,7 +133,7 @@ def xu_ly_xoa_anh_het_han(bay_gio=None):
         if so:
             tong += so
             gui_thong_bao(bk.MaKhachHang, f'Ảnh Booking #{bk.pk} đã hết hạn tải',
-                          f'Đã quá 3 ngày kể từ khi mở quyền tải, {so} ảnh của Booking #{bk.pk} đã được xóa khỏi hệ thống.',
+                          f'Đã hết thời hạn tải ảnh kể từ khi mở quyền tải, {so} ảnh của Booking #{bk.pk} đã được xóa khỏi hệ thống.',
                           booking=bk)
     return tong
 

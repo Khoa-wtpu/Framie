@@ -504,6 +504,24 @@ class UC41(TestCase):
         # Xác nhận trang lịch không được truy cập và trả HTTP 404 khi hồ sơ chưa được duyệt.
         self.assertEqual(self.client.get(reverse('lich_chon_slot', args=[self.nag.pk])).status_code, 404)
 
+    # Kiểm tra Nhiếp ảnh gia bị khóa tài khoản (is_active=False) thì không mở được lịch và không giữ chỗ được.
+    def test_nag_bi_khoa_khong_mo_lich_va_khong_giu_cho(self):
+        # Hồ sơ vẫn 'Đã duyệt' nhưng tài khoản bị khóa.
+        User.objects.filter(pk=self.nag_user.pk).update(is_active=False)
+        self.client.force_login(self.a)
+        # Trang lịch công khai trả 404.
+        self.assertEqual(self.client.get(reverse('lich_chon_slot', args=[self.nag.pk])).status_code, 404)
+        # Hàm giữ chỗ từ chối, slot vẫn trống, không có lượt giữ nào.
+        with self.assertRaises(uc.GiuChoLoi) as ctx:
+            uc.giu_cho_slot(self.a, self.s1.pk)
+        self.assertEqual(ctx.exception.thong_bao, uc.TB_NAG_KHONG_NHAN_BOOKING)
+        # Qua web (POST chọn slot): không giữ được, được đưa về trang tìm kiếm thay vì trang lịch 404.
+        r = self.chon(self.a, self.s1)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.redirect_chain[-1][0], reverse('search'))
+        self.assertEqual(self.trang_thai(self.s1), SL.TRONG)
+        self.assertFalse(GiuCho.objects.exists())
+
     # Kiểm tra giao diện xử lý đúng khi nhiếp ảnh gia chưa có khung giờ khả dụng.
     def test_trang_lich_rong(self):
         # Xóa toàn bộ lịch khả dụng trong dữ liệu kiểm thử để tạo trường hợp danh sách trống.

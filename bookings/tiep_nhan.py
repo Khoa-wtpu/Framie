@@ -594,5 +594,4 @@ urlpatterns = [
     path('quan-ly/<int:ma_booking>/chap-nhan/', chap_nhan, name='chap_nhan_booking'),
     # /bookings/quan-ly/<mã>/tu-choi/  -> trang Từ chối (UC4.5).
     path('quan-ly/<int:ma_booking>/tu-choi/', tu_choi, name='tu_choi_booking'),
-    path('quan-ly/<int:ma_booking>/tu-choi/', tu_choi, name='tu_choi_booking'),
 ]

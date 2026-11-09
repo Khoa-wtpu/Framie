@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import sys
 from pathlib import Path
 
 from django.contrib.messages import constants as messages
@@ -71,7 +72,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'bookings.middleware.XuLyQuaHanMiddleware',   # T10
+    'bookings.middleware.XuLyQuaHanMiddleware',   # T10 (giới hạn tần suất: xem XU_LY_QUA_HAN_KHOANG_CACH_GIAY bên dưới)
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -193,3 +194,9 @@ LOGIN_REDIRECT_URL = 'trang_tam'  # đích dự phòng (thực tế DangNhapView
 
 SESSION_COOKIE_AGE = 30 * 60  # phiên sống 30 phút, tính bằng giây
 SESSION_SAVE_EVERY_REQUEST = True  # mỗi lần thao tác lại gia hạn 30 phút => hết hạn sau 30 phút KHÔNG hoạt động
+
+
+# T10: middleware quá hạn (bookings/middleware.py) chỉ quét tối đa 1 lần mỗi N giây cho mỗi tiến trình web.
+# Khi chạy `manage.py test` đặt 0 (không giới hạn) để các test cũ vẫn thấy middleware chạy ở mỗi request;
+# test của giới hạn tần suất tự bật lại bằng override_settings.
+XU_LY_QUA_HAN_KHOANG_CACH_GIAY = 0 if sys.argv[1:2] == ['test'] else 45
