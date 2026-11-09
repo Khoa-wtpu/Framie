@@ -21,6 +21,10 @@
     </div>
   </header>
 
+  {% if nhac_thanh_toan %}{# Khách đã tải minh chứng thanh toán: nhắc Nhiếp ảnh gia kiểm tra để xác nhận hoặc yêu cầu bổ sung #}
+    {% include "includes/alert.html" with level="warning" title=nhac_thanh_toan.tieu_de text=nhac_thanh_toan.noi_dung action_url=nhac_thanh_toan.url action_label=nhac_thanh_toan.nhan %}
+  {% endif %}
+
   {# ===== DẢI THÔNG TIN CHÍNH (UC4.3 bước 4): chụp khi nào, ở đâu, mấy người ===== #}
   <section class="ct__dai" aria-label="Thông tin buổi chụp">{# thẻ lớn chia 3 ô #}
     <div class="ct__o">

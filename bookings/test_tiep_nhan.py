@@ -49,12 +49,13 @@ from bookings import services
 from bookings.models import Booking, LichSuTrangThaiBooking
 # Các hằng số trạng thái. Đặt tên ngắn: BK = trạng thái Booking, SL = trạng thái khung giờ (slot).
 from core.constants import (
-    BenThucHien, LoaiHauKy, LoaiThanhToan, TrangThaiBooking as BK, TrangThaiGuiEmail, TrangThaiHoSo, TrangThaiSlot as SL, VaiTro,
+    BenThucHien, LoaiHauKy, LoaiThanhToan, TrangThaiBooking as BK, TrangThaiGuiEmail, TrangThaiHoSo, TrangThaiSlot as SL,
+    TrangThaiThanhToan, VaiTro,
 )
 # Bảng thông báo trên web.
 from notifications.models import ThongBao
 # tinh_so_tien: hàm tính tiền cọc/phần còn lại dùng chung với module Thanh toán.
-from payments.models import tinh_so_tien
+from payments.models import ThanhToan, tinh_so_tien
 # Các bảng: Nhiếp ảnh gia, Gói dịch vụ, Loại hình chụp.
 from profiles.models import GoiDichVu, LoaiHinhChup, NhiepAnhGia
 # LichKhaDung: bảng khung giờ (slot) trong lịch của Nhiếp ảnh gia.
@@ -501,3 +502,46 @@ class UC45TuChoi(TiepNhanBase):
         with self.assertRaises(uc.XuLyBookingLoi) as ctx:
             uc.tu_choi_booking(self.nag.MaTaiKhoan, bk.pk, '   ')
         self.assertEqual(ctx.exception.thong_bao, uc.TB_THIEU_LY_DO)
+
+
+# ===== NHÓM TEST: hộp thông báo + nút "Kiểm tra minh chứng" khi Khách đã tải minh chứng thanh toán =====
+class NhacXacNhanThanhToan(TiepNhanBase):
+    TIEU_DE_COC = 'Khách hàng đã tải lên minh chứng tiền cọc'                    # chữ đậm của hộp thông báo (cọc)
+    TIEU_DE_60 = 'Khách hàng đã tải lên minh chứng thanh toán phần còn lại'      # chữ đậm của hộp thông báo (60%)
+
+    def tao_khoan(self, bk, loai, trang_thai):                                   # tạo một khoản thanh toán cho Booking
+        return ThanhToan.objects.create(MaBooking=bk, LoaiThanhToan=loai, SoTien=600000, TrangThai=trang_thai)
+
+    def test_coc_da_co_minh_chung_hien_hop_thong_bao_va_nut_sang_trang_xac_nhan(self):
+        bk = self.tao_booking(trang_thai=BK.CHO_DAT_COC)                           # Booking Chờ đặt cọc
+        self.tao_khoan(bk, LoaiThanhToan.TIEN_COC, TrangThaiThanhToan.CHO_XAC_NHAN_COC)   # Khách đã gửi minh chứng cọc
+        trang = self.client.get(self.url_chi_tiet(bk))                             # Nhiếp ảnh gia mở trang quan-ly
+        self.assertEqual(trang.status_code, 200)                                   # trang mở được
+        self.assertContains(trang, self.TIEU_DE_COC)                               # có hộp thông báo
+        self.assertContains(trang, reverse('xac_nhan_thanh_toan_coc', args=[bk.pk]))   # có nút/link sang trang xác nhận cọc
+
+    def test_coc_khach_chua_gui_minh_chung_thi_khong_hien_hop_thong_bao(self):
+        bk = self.tao_booking(trang_thai=BK.CHO_DAT_COC)                           # Booking Chờ đặt cọc, chưa có khoản nào
+        trang = self.client.get(self.url_chi_tiet(bk))
+        self.assertNotContains(trang, self.TIEU_DE_COC)                            # không có hộp thông báo
+        self.assertNotContains(trang, reverse('xac_nhan_thanh_toan_coc', args=[bk.pk]))
+
+    def test_coc_da_xac_nhan_roi_thi_khong_hien_hop_thong_bao(self):
+        bk = self.tao_booking(trang_thai=BK.CHO_DAT_COC)
+        ThanhToan.objects.create(MaBooking=bk, LoaiThanhToan=LoaiThanhToan.TIEN_COC, SoTien=600000,
+                                 TrangThai=TrangThaiThanhToan.DA_DAT_COC, NgayXacNhan=timezone.now())   # khoản cọc đã xác nhận
+        trang = self.client.get(self.url_chi_tiet(bk))
+        self.assertNotContains(trang, self.TIEU_DE_COC)                            # không còn gì cần kiểm tra
+
+    def test_phan_con_lai_da_co_minh_chung_hien_hop_thong_bao_va_nut(self):
+        bk = self.tao_booking(trang_thai=BK.CHO_XAC_NHAN_THANH_TOAN)              # Booking chờ xác nhận thanh toán 60%
+        self.tao_khoan(bk, LoaiThanhToan.PHAN_CON_LAI, TrangThaiThanhToan.CHO_XAC_NHAN_60)   # Khách đã gửi minh chứng 60%
+        trang = self.client.get(self.url_chi_tiet(bk))
+        self.assertContains(trang, self.TIEU_DE_60)                                # có hộp thông báo
+        self.assertContains(trang, reverse('xac_nhan_thanh_toan_con_lai', args=[bk.pk]))   # có nút sang trang xác nhận 60%
+
+    def test_booking_cho_xac_nhan_khong_hien_hop_thong_bao_thanh_toan(self):
+        bk = self.tao_booking()                                                    # Booking mới, chưa chấp nhận
+        trang = self.client.get(self.url_chi_tiet(bk))
+        self.assertNotContains(trang, self.TIEU_DE_COC)                            # chưa đến bước thanh toán
+        self.assertNotContains(trang, self.TIEU_DE_60)

@@ -36,6 +36,8 @@ from schedule.models import LichKhaDung
 User = get_user_model()
 HOP_THU_GIA = {'default': {'BACKEND': 'django.core.mail.backends.locmem.EmailBackend'}}   # email chỉ vào mail.outbox, không gửi thật (P12)
 urlpatterns = [path('', include('delivery.urls')),            # bảng đường dẫn riêng cho test (không phụ thuộc config/urls.py)
+               path('bookings/', include('bookings.theo_doi')),    # thêm tên 'chi_tiet_booking' để redirect của view tìm thấy
+               path('bookings/', include('bookings.tiep_nhan')),   # thêm tên 'chi_tiet_yeu_cau_booking' cho Nhiếp ảnh gia
                path('dang-nhap/', lambda request: HttpResponse('dang nhap'), name='login')]   # LOGIN_URL = 'login' cần có tên này để chuyển hướng
 NGAY_KE_TIEP = itertools.count(1)                            # mỗi Booking một ngày khác nhau để khung giờ không trùng
 
@@ -190,13 +192,13 @@ class TaiAnhTests(_NenAnh):                                    # N4 / UC5.3: ngh
 
     def test_hau_ky_tung_dot_den_khi_du_thi_chuyen_cho_khach_kiem_tra(self):
         bk = self.booking_dang_hau_ky()
-        kq = services.tai_anh_len(bk.pk, self.nag_user, [tep_anh('P1.JPG')])                # khớp tên không phân biệt hoa/thường
-        self.assertEqual((kq['trang_thai_moi'], kq['con_thieu']), (None, 1))
+        with self.assertRaises(services.LoiTaiAnh):                                         # quy tắc mới: tải thiếu (1/2 ảnh) bị chặn
+            services.tai_anh_len(bk.pk, self.nag_user, [tep_anh('P1.JPG')])
         bk.refresh_from_db()
-        self.assertEqual(bk.TrangThai, TT.DANG_HAU_KY)                                      # còn thiếu ảnh nên chưa chuyển
+        self.assertEqual(bk.TrangThai, TT.DANG_HAU_KY)                                      # bị chặn nên vẫn Đang hậu kỳ
         self.assertFalse(ThongBao.objects.filter(MaNguoiNhan=self.kh, MaBooking=bk).exists())
-        kq = services.tai_anh_len(bk.pk, self.nag_user, [tep_anh('p2.jpg')])
-        self.assertEqual(kq['trang_thai_moi'], TT.CHO_KH_KIEM_TRA)
+        kq = services.tai_anh_len(bk.pk, self.nag_user, [tep_anh('P1.JPG'), tep_anh('p2.jpg')])   # tải đủ 2 ảnh, tên không phân biệt hoa/thường
+        self.assertEqual((kq['trang_thai_moi'], kq['con_thieu']), (TT.CHO_KH_KIEM_TRA, 0))
         bk.refresh_from_db()
         self.assertEqual(bk.TrangThai, TT.CHO_KH_KIEM_TRA)
         p1, p3 = Anh.objects.get(MaBooking=bk, TenAnh__iexact='p1.jpg'), Anh.objects.get(MaBooking=bk, TenAnh='p3.jpg')
@@ -218,7 +220,7 @@ class TaiAnhTests(_NenAnh):                                    # N4 / UC5.3: ngh
         kho, cu = services.kho_anh(), p1.DuongDanAnh
         self.assertTrue(kho.exists(cu))
         with self.captureOnCommitCallbacks(execute=True):
-            services.tai_anh_len(bk.pk, self.nag_user, [tep_anh('p1.jpg')])
+            services.tai_anh_len(bk.pk, self.nag_user, [tep_anh('p1.jpg'), tep_anh('p2.jpg')])   # tải đủ 2 ảnh theo quy tắc mới
         p1.refresh_from_db()
         self.assertNotEqual(p1.DuongDanAnh, cu)
         self.assertFalse(kho.exists(cu))                                                   # chỉ giữ bản mới nhất: file cũ bị xóa
@@ -457,16 +459,17 @@ class BaoVeAnhTests(_NenAnh):                                  # N5: watermark v
         self.client.force_login(quan_tri)
         self.assertEqual(self.client.get(reverse('xem_anh', args=[anh.pk])).status_code, 403)
 
-    def test_chuyen_ca_anh_khong_can_chinh_sua(self):
+    def test_anh_khong_duoc_chon_hau_ky_khong_thanh_anh_hoan_chinh(self):   # chỉ giao ảnh Đã hậu kỳ
         bk = self.tao_booking(self.goi_gh, TT.CHO_KH_KIEM_TRA)
-        chua = self.tao_anh(bk, 'c1.jpg', loai=LoaiAnh.CHUA_HAU_KY, that=True)       # ảnh Khách không chọn sửa (giữ bản chụp)
-        da = self.tao_anh(bk, 'a1.jpg', loai=LoaiAnh.DA_HAU_KY, chon=1, that=True)   # ảnh đã chỉnh sửa
+        chua = self.tao_anh(bk, 'c1.jpg', loai=LoaiAnh.CHUA_HAU_KY, that=True)       # ảnh Khách không chọn hậu kỳ (chỉ có bản chụp)
+        da = self.tao_anh(bk, 'a1.jpg', loai=LoaiAnh.DA_HAU_KY, chon=1, that=True)   # ảnh đã hậu kỳ
         with self.captureOnCommitCallbacks(execute=True):
-            self.assertEqual(services.chuyen_thanh_anh_hoan_chinh(bk), 2)            # cả 2 ảnh đều thành Hoàn chỉnh
+            self.assertEqual(services.chuyen_thanh_anh_hoan_chinh(bk), 1)            # chỉ 1 ảnh (ảnh đã hậu kỳ) thành Hoàn chỉnh
         chua.refresh_from_db()
         da.refresh_from_db()
-        self.assertEqual((chua.LoaiAnh, chua.CoWatermark), (LoaiAnh.HOAN_CHINH, 0))
-        self.assertEqual((da.LoaiAnh, da.CoWatermark), (LoaiAnh.HOAN_CHINH, 0))
+        self.assertEqual((chua.LoaiAnh, chua.CoWatermark), (LoaiAnh.CHUA_HAU_KY, 1))   # ảnh chưa hậu kỳ giữ nguyên, không giao cho Khách
+        self.assertEqual((da.LoaiAnh, da.CoWatermark), (LoaiAnh.HOAN_CHINH, 0))        # ảnh đã hậu kỳ -> Hoàn chỉnh, không watermark
+        self.assertEqual(Anh.objects.filter(MaBooking=bk, LoaiAnh=LoaiAnh.HOAN_CHINH).count(), 1)   # danh sách Khách tải chỉ có 1 ảnh
 
     def test_thieu_ban_goc_thi_bao_loi_va_khong_doi_gi(self):
         bk = self.tao_booking(self.goi_gh, TT.CHO_KH_KIEM_TRA)

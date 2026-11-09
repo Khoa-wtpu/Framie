@@ -7,6 +7,7 @@ from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.contrib.messages import get_messages           # đọc thông báo vừa được view ghi lại
 from django.core import mail
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -31,6 +32,8 @@ User = get_user_model()
 HOP_THU_GIA = {'default': {'BACKEND': 'django.core.mail.backends.locmem.EmailBackend'}}   # email chỉ vào mail.outbox, không gửi thật (P12)
 
 urlpatterns = [path('', include('payments.urls')),                 # bảng đường dẫn riêng cho test (không phụ thuộc config/urls.py)
+               path('bookings/', include('bookings.theo_doi')),    # thêm tên 'chi_tiet_booking' để redirect của view tìm thấy
+               path('bookings/', include('bookings.tiep_nhan')),   # thêm tên 'chi_tiet_yeu_cau_booking' cho Nhiếp ảnh gia
                path('dang-nhap/', lambda request: HttpResponse('dang nhap'), name='login')]   # LOGIN_URL = 'login' cần có tên này để chuyển hướng
 
 CAU_SAI_DINH_DANG = 'Chỉ chấp nhận tệp JPG, JPEG hoặc PNG.'
@@ -234,9 +237,9 @@ class TaiLenMinhChungViewTests(_DuLieuNen):                    # view UC5.1: ph�
     def test_post_hop_le_chuyen_trang_va_co_thong_bao_thanh_cong(self):
         bk = self.tao_booking()
         self.client.force_login(self.kh)
-        phan_hoi = self.client.post(self.url(bk), {'tep': tep_anh('a.png', 'PNG')}, follow=True)
-        self.assertEqual(phan_hoi.redirect_chain, [(self.url(bk), 302)])
-        self.assertContains(phan_hoi, 'Đã gửi minh chứng')
+        phan_hoi = self.client.post(self.url(bk), {'tep': tep_anh('a.png', 'PNG')})   # không follow: chỉ kiểm tra nơi chuyển tới
+        self.assertRedirects(phan_hoi, reverse('chi_tiet_booking', args=[bk.pk]), fetch_redirect_response=False)   # chuyển về trang chi tiết Booking chung
+        self.assertTrue(any('Đã gửi minh chứng' in str(m) for m in get_messages(phan_hoi.wsgi_request)))   # có thông báo thành công
         self.assertEqual(MinhChungThanhToan.objects.count(), 1)
 
     def test_post_file_sai_o_lai_trang_va_khong_tao_minh_chung(self):
@@ -278,6 +281,7 @@ class XemMinhChungViewTests(_DuLieuNen):                       # trang xem ảnh
             self.assertEqual(phan_hoi.status_code, 200, nguoi.username)
             self.assertEqual(phan_hoi['Content-Type'], 'image/png')
             self.assertEqual(phan_hoi['X-Content-Type-Options'], 'nosniff')
+            phan_hoi.close()                                   # đóng tệp ảnh để Windows không khóa file tạm (hết WinError 32)
 
     def test_ma_khong_ton_tai_tra_404(self):
         self.client.force_login(self.kh)
@@ -380,7 +384,7 @@ class XacNhanCocTests(_NenXacNhanCoc):                         # nghiệp vụ U
 
 
 class XacNhanCocViewTests(_NenXacNhanCoc):                     # view UC5.2: dùng assertContains để template và view luôn khớp nhau
-    NUT_XAC_NHAN = 'Xác nhận đã nhận cọc'
+    NUT_XAC_NHAN = 'Đã nhận đủ tiền cọc'                        # chữ thật trên nút trong template hiện tại
 
     def url(self, bk):
         return reverse('xac_nhan_thanh_toan_coc', args=[bk.pk])
@@ -425,23 +429,25 @@ class XacNhanCocViewTests(_NenXacNhanCoc):                     # view UC5.2: dù
     def test_post_xac_nhan_chuyen_trang_va_booking_thanh_chot(self):   # (c)
         bk = self.booking_da_co_minh_chung()
         self.client.force_login(self.nag_user)
-        phan_hoi = self.client.post(self.url(bk), {'hanh_dong': 'xac_nhan'}, follow=True)
-        self.assertEqual(phan_hoi.redirect_chain, [(self.url(bk), 302)])
-        self.assertContains(phan_hoi, 'Đã xác nhận tiền cọc. Booking được chốt.')
-        self.assertContains(phan_hoi, 'Booking đã được chốt.')                           # dòng thân thiện khi đã chốt
-        self.assertNotContains(phan_hoi, self.NUT_XAC_NHAN)
+        phan_hoi = self.client.post(self.url(bk), {'hanh_dong': 'xac_nhan'})              # không follow: chỉ kiểm tra nơi chuyển tới
+        self.assertRedirects(phan_hoi, reverse('chi_tiet_booking', args=[bk.pk]), fetch_redirect_response=False)   # chuyển về trang chi tiết Booking chung
+        self.assertTrue(any('Đã xác nhận tiền cọc. Booking được chốt.' in str(m) for m in get_messages(phan_hoi.wsgi_request)))
+        trang = self.client.get(self.url(bk))                                            # mở lại trang xác nhận cọc
+        self.assertContains(trang, 'Booking đã được chốt.')                              # dòng thân thiện khi đã chốt
+        self.assertNotContains(trang, self.NUT_XAC_NHAN)
         bk.refresh_from_db()
         self.assertEqual(bk.TrangThai, TT.CHOT_BOOKING)
 
     def test_post_bo_sung_co_ly_do_thanh_cong(self):           # (d)
         bk = self.booking_da_co_minh_chung()
         self.client.force_login(self.nag_user)
-        phan_hoi = self.client.post(self.url(bk), {'hanh_dong': 'bo_sung', 'ly_do': 'Ảnh bị mờ'}, follow=True)
-        self.assertEqual(phan_hoi.redirect_chain, [(self.url(bk), 302)])
-        self.assertContains(phan_hoi, 'Đã gửi yêu cầu bổ sung minh chứng cho Khách hàng.')
-        self.assertContains(phan_hoi, 'Ảnh bị mờ')                                       # hộp "Đã yêu cầu Khách hàng bổ sung"
+        phan_hoi = self.client.post(self.url(bk), {'hanh_dong': 'bo_sung', 'ly_do': 'Ảnh bị mờ'})   # không follow
+        self.assertRedirects(phan_hoi, reverse('chi_tiet_booking', args=[bk.pk]), fetch_redirect_response=False)   # chuyển về trang chi tiết Booking chung
+        self.assertTrue(any('Đã gửi yêu cầu bổ sung minh chứng cho Khách hàng.' in str(m) for m in get_messages(phan_hoi.wsgi_request)))
         self.assertEqual(ThanhToan.objects.get(MaBooking=bk).LyDoTuChoi, 'Ảnh bị mờ')
-        self.assertNotContains(phan_hoi, self.NUT_XAC_NHAN)                              # đang chờ khách nộp lại
+        trang = self.client.get(self.url(bk))                                            # mở lại trang xác nhận cọc
+        self.assertContains(trang, 'Ảnh bị mờ')                                          # hộp "Đã yêu cầu Khách hàng bổ sung"
+        self.assertNotContains(trang, self.NUT_XAC_NHAN)                                 # đang chờ khách nộp lại
 
     def test_post_bo_sung_thieu_ly_do_o_lai_trang_va_hien_loi(self):
         bk = self.booking_da_co_minh_chung()
