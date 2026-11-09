@@ -1,12 +1,13 @@
 # delivery/views.py - N4 / UC5.3: Nhiếp ảnh gia tải ảnh lên Booking
 import io
+import json                                                 # đọc cặp ghép tay do trình duyệt gửi lên
 import mimetypes                                               # đoán loại tệp (image/jpeg...) khi trả ảnh về trình duyệt
 
 from PIL import Image
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.core.paginator import Paginator
 from django.db import DatabaseError                            # N8: bắt lỗi database khi tải ảnh (ngoại lệ 2a)
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
@@ -24,18 +25,43 @@ from delivery.models import Anh, YeuCauChinhSua, YeuCauChinhSua_Anh   # N7: bả
 from profiles.decorators import nhiep_anh_gia_da_duyet         # chỉ Nhiếp ảnh gia hồ sơ Đã duyệt (decorator chung của leader)
 
 
+def _doc_ghep_tay(request):                                    # ô ẩn 'ghep_tay' = JSON {"vị trí tệp": mã ảnh}; trả về dict {int: int} hoặc None nếu sai định dạng
+    tho = request.POST.get('ghep_tay')
+    if not tho:
+        return {}
+    try:
+        du_lieu = json.loads(tho)
+        if not isinstance(du_lieu, dict):
+            return None
+        return {int(k): int(v) for k, v in du_lieu.items()}
+    except (ValueError, TypeError):
+        return None
+
+
+def _du_lieu_chua_ghep(loi):                                   # gói thông tin "chưa ghép" trả cho JavaScript vẽ dropdown
+    return {'chua_ghep': loi.chua_ghep,
+            'ds_anh': [{**a, 'url': reverse('xem_anh', args=[a['ma']]) + '?nho=1'} for a in loi.ds_anh_can]}
+
+
 @nhiep_anh_gia_da_duyet                                        # decorator truyền thêm tham số nag (hồ sơ của người đang đăng nhập)
 def tai_anh_len(request, nag, ma_booking):
     booking = get_object_or_404(                               # bước 1: chỉ mở được Booking của chính mình
         Booking.objects.select_related('MaGoi', 'MaKhachHang'), pk=ma_booking, MaNhiepAnhGia=nag)
     la_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'   # JavaScript gửi để hiện thanh tiến trình
     form = TaiAnhForm()
+    thong_tin_chua_ghep = None                                 # có giá trị khi cần Nhiếp ảnh gia chọn tay ảnh chưa ghép được
 
     if request.method == 'POST':                               # bước 5: Nhiếp ảnh gia bấm tải
         form = TaiAnhForm(request.POST, request.FILES)
-        if form.is_valid():                                    # bước 4: kiểm tra định dạng, dung lượng, số lượng
+        ghep_tay = _doc_ghep_tay(request)
+        if ghep_tay is None:
+            form.add_error(None, 'Dữ liệu ghép ảnh không hợp lệ, vui lòng tải lại trang.')
+        elif form.is_valid():                                  # bước 4: kiểm tra định dạng, dung lượng, số lượng
             try:
-                ket_qua = services.tai_anh_len(booking.pk, request.user, form.cleaned_data['anh'])   # bước 6-8
+                ket_qua = services.tai_anh_len(booking.pk, request.user, form.cleaned_data['anh'], ghep_tay)   # bước 6-8
+            except services.LoiChuaGhep as loi:                # có ảnh chưa tự ghép được: chưa lưu gì, mời chọn tay
+                thong_tin_chua_ghep = _du_lieu_chua_ghep(loi)
+                form.add_error(None, str(loi))
             except services.LoiTaiAnh as loi:                  # lỗi nghiệp vụ hoặc lỗi lưu (7a)
                 form.add_error(None, str(loi))
             else:
@@ -47,7 +73,7 @@ def tai_anh_len(request, nag, ma_booking):
                 return JsonResponse({'ok': True, 'url': url}) if la_ajax else redirect(url)
         if la_ajax:                                            # trả lỗi cho JavaScript hiển thị
             loi = [str(e) for ds in form.errors.values() for e in ds]
-            return JsonResponse({'ok': False, 'loi': loi}, status=400)
+            return JsonResponse({'ok': False, 'loi': loi, **(thong_tin_chua_ghep or {})}, status=400)
 
     booking.refresh_from_db()                                  # đọc lại trạng thái mới nhất
     giai_doan = services.xac_dinh_giai_doan(booking)
@@ -77,19 +103,22 @@ def tai_anh_len(request, nag, ma_booking):
 
 @login_required
 def xem_anh(request, ma_anh):                                  # bước 7: hiển thị ảnh đã chèn watermark (chỉ người có quyền)
-    anh, kho = services.mo_anh(request.user, ma_anh)
+    ban_truoc = request.GET.get('truoc') == '1'                # E10: ?truoc=1 -> bản có watermark liền trước (chỉ Khách hàng và Nhiếp ảnh gia của Booking)
+    anh, kho = services.mo_anh(request.user, ma_anh, ban_truoc=ban_truoc)
     if anh is None:
         raise Http404
     if anh is False:
         raise PermissionDenied
+    duong_dan = anh.DuongDanAnhTruoc if ban_truoc else anh.DuongDanAnh
     try:
-        tep = kho.open(anh.DuongDanAnh, 'rb')
-    except OSError:
+        tep = kho.open(duong_dan, 'rb')
+    except (OSError, SuspiciousOperation):
         raise Http404
-    if request.GET.get('nho') == '1':
+    canh_toi_da = 400 if request.GET.get('nho') == '1' else (1400 if request.GET.get('vua') == '1' else None)   # nho: ảnh thu nhỏ; vua (E10): cỡ vừa cho slider
+    if canh_toi_da:
         try:
             with Image.open(tep) as hinh:
-                hinh.thumbnail((400, 400))
+                hinh.thumbnail((canh_toi_da, canh_toi_da))
                 hinh = hinh.convert('RGB')
                 dem = io.BytesIO()
                 hinh.save(dem, format='JPEG', quality=82, optimize=True)
@@ -99,7 +128,7 @@ def xem_anh(request, ma_anh):                                  # bước 7: hi�
         tep.close()
         phan_hoi = HttpResponse(dem.getvalue(), content_type='image/jpeg')
     else:
-        phan_hoi = FileResponse(tep, content_type=mimetypes.guess_type(anh.DuongDanAnh)[0] or 'application/octet-stream')
+        phan_hoi = FileResponse(tep, content_type=mimetypes.guess_type(duong_dan)[0] or 'application/octet-stream')
     phan_hoi['Content-Disposition'] = 'inline'                 # N5: chỉ cho XEM trên trang, trình duyệt không tự tải xuống
     phan_hoi['Cache-Control'] = 'private, no-store, max-age=0'  # không cho lưu bản sao vào bộ nhớ đệm / proxy
     phan_hoi['X-Content-Type-Options'] = 'nosniff'             # trình duyệt không đoán lại loại tệp
@@ -184,8 +213,12 @@ def xem_anh_hau_ky(request, ma_booking):
     booking.refresh_from_db()
     ly_do = services.ly_do_khong_xac_nhan_duoc(booking)
     anhs = list(services.anh_de_chinh_sua(booking)) if not ly_do else []
+    kho = services.kho_anh() if anhs else None
+    for a in anhs:                                             # E10: gắn cờ "có bản trước" để template hiện / ẩn nút So sánh trước/sau
+        a.co_ban_truoc = services.co_ban_truoc(a, kho)
     return render(request, 'delivery/xem_anh_hau_ky.html', {
         'booking': booking, 'anhs': anhs, 'ly_do': ly_do,
+        'co_so_sanh': any(a.co_ban_truoc for a in anhs),                         # E10: có ít nhất một ảnh có bản trước -> mới vẽ hộp so sánh
         'co_the_yeu_cau': services.ly_do_khong_yeu_cau_duoc(booking) is None,   # còn được yêu cầu chỉnh sửa không (hết 3 lần thì ẩn nút)
         'so_lan_con_lai': services.so_lan_chinh_sua_con_lai(booking),            # số lần yêu cầu chỉnh sửa còn lại
     })

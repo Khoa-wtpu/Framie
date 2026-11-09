@@ -15,6 +15,9 @@
   var DUNG_LUONG_TOI_DA = 20 * 1024 * 1024; // mỗi ảnh tối đa 20 MB (giống quy định phía server)
   var DUOI_HOP_LE = /\.(jpe?g|png)$/i; // chỉ nhận đuôi .jpg, .jpeg, .png
   var dsTep = []; // danh sách ảnh đã chọn, mỗi phần tử gồm: tep (File), url (đường dẫn xem trước), loi (chữ báo lỗi)
+  var khungChuaGhep = document.getElementById('khung-chua-ghep'); // khung "ảnh chưa ghép được" (ban đầu ẩn)
+  var dsChuaGhep = document.getElementById('ds-chua-ghep'); // nơi vẽ từng dòng chọn tay
+  var ghepTay = {}; // cặp đã chọn tay: { vị trí tệp trong danh sách : mã ảnh cần sửa }; gửi kèm ở mỗi lần tải
 
   function hienLoi(ds) { // hàm hiện một danh sách lỗi lên đầu form
     khungLoi.innerHTML = ''; // xóa các lỗi cũ
@@ -37,7 +40,14 @@
     return ''; // hợp lệ
   } // hết hàm kiemTraTep
 
+  function xoaChuaGhep() { // đổi danh sách ảnh thì vị trí tệp thay đổi -> bỏ hết lựa chọn tay cũ
+    ghepTay = {}; // quên các cặp đã chọn
+    if (khungChuaGhep) { khungChuaGhep.hidden = true; } // ẩn khung chọn tay
+    if (dsChuaGhep) { dsChuaGhep.innerHTML = ''; } // xóa các dòng cũ
+  } // hết hàm xoaChuaGhep
+
   function dongBoOTep() { // hàm ghi danh sách ảnh đang giữ ngược vào ô chọn tệp thật
+    xoaChuaGhep(); // danh sách đã đổi nên phải bỏ lựa chọn tay cũ
     var dt = new DataTransfer(); // tạo một "giỏ" tệp mới
     dsTep.forEach(function (m) { dt.items.add(m.tep); }); // bỏ từng ảnh vào giỏ
     oTep.files = dt.files; // gán giỏ cho ô chọn tệp, nhờ đó form gửi đúng các ảnh còn lại
@@ -125,6 +135,55 @@
     } // hết phần kéo thả
   } // hết phần xem trước
 
+  function hienChuaGhep(kq) { // server báo có ảnh chưa tự ghép được: vẽ danh sách thả xuống cho Nhiếp ảnh gia chọn
+    if (!khungChuaGhep || !dsChuaGhep) return; // thiếu khung thì thôi, vẫn hiện thông báo lỗi chung
+    var dsAnh = kq.ds_anh || []; // các ảnh cần sửa còn lại, dùng làm nội dung danh sách thả xuống
+    dsChuaGhep.innerHTML = ''; // xóa các dòng của lần trước
+    kq.chua_ghep.forEach(function (c) { // mỗi ảnh chưa ghép là một dòng
+      var m = dsTep[c.chi_so]; // ảnh người dùng đã chọn ở vị trí này
+      if (!m) return; // vị trí lạ thì bỏ qua
+      var dong = document.createElement('div'); // dòng: ảnh mới | danh sách thả xuống | ảnh cần sửa
+      dong.className = 'tai-anh__cg-dong';
+      var khungMoi = document.createElement('div'); // khối ảnh mới + tên tệp
+      var anhMoi = document.createElement('img');
+      anhMoi.className = 'tai-anh__cg-anh'; anhMoi.src = m.url; anhMoi.alt = m.tep.name; anhMoi.draggable = false;
+      var tenMoi = document.createElement('span');
+      tenMoi.className = 'tai-anh__cg-ten muted'; tenMoi.textContent = m.tep.name;
+      khungMoi.appendChild(anhMoi); khungMoi.appendChild(tenMoi);
+      var chon = document.createElement('select'); // danh sách thả xuống chọn ảnh cần sửa
+      chon.className = 'input tai-anh__cg-chon'; // dùng chung kiểu ô chọn của cả trang web (mũi tên, bo góc, màu nền)
+      chon.setAttribute('aria-label', 'Chọn ảnh cần sửa tương ứng với ' + m.tep.name);
+      var trong = document.createElement('option'); trong.value = ''; trong.textContent = '— Chọn ảnh cần sửa —'; chon.appendChild(trong);
+      var gocIds = {}; // nhớ ảnh nào đã là gợi ý để không lặp lại ở phần còn lại
+      (c.ung_vien || []).forEach(function (ma) { // gợi ý gần nhất đứng đầu
+        dsAnh.forEach(function (a) {
+          if (a.ma !== ma) return;
+          var op = document.createElement('option'); op.value = String(a.ma);
+          op.textContent = a.ten; chon.appendChild(op); gocIds[a.ma] = true;
+        });
+      });
+      dsAnh.forEach(function (a) { // các ảnh còn lại
+        if (gocIds[a.ma]) return;
+        var op = document.createElement('option'); op.value = String(a.ma); op.textContent = a.ten; chon.appendChild(op);
+      });
+      var anhCu = document.createElement('img'); // ảnh cần sửa đang chọn (hiện sau khi chọn)
+      anhCu.className = 'tai-anh__cg-anh'; anhCu.hidden = true; anhCu.alt = ''; anhCu.draggable = false;
+      chon.addEventListener('change', function () { // khi chọn một ảnh
+        if (chon.value) {
+          ghepTay[c.chi_so] = Number(chon.value); // ghi nhớ cặp này
+          var a = dsAnh.filter(function (x) { return String(x.ma) === chon.value; })[0];
+          anhCu.src = a ? a.url : ''; anhCu.alt = a ? a.ten : ''; anhCu.hidden = !a; // hiện ảnh cần sửa để so bằng mắt
+        } else {
+          delete ghepTay[c.chi_so]; anhCu.hidden = true; // bỏ chọn
+        }
+      });
+      dong.appendChild(khungMoi); dong.appendChild(chon); dong.appendChild(anhCu);
+      dsChuaGhep.appendChild(dong);
+    });
+    khungChuaGhep.hidden = false; // hiện khung
+    khungChuaGhep.scrollIntoView({ block: 'nearest' }); // cuộn tới khung nếu đang nằm ngoài màn hình
+  } // hết hàm hienChuaGhep
+
   form.addEventListener('submit', function (e) { // khi bấm "Tải ảnh lên"
     e.preventDefault(); // chặn gửi form kiểu thường, ta gửi bằng XMLHttpRequest để có thanh tiến trình
     var toiDa = Number(form.dataset.soAnhToiDa || 100); // số ảnh tối đa mỗi lần (server truyền xuống)
@@ -136,6 +195,11 @@
       hienLoi(['Hãy bỏ các ảnh viền đỏ (sai định dạng hoặc quá 20 MB) trước khi tải lên.']); // nhắc người dùng
       return; // dừng, không gửi
     } // hết kiểm tra ảnh lỗi
+    var daChon = Object.keys(ghepTay).map(function (k) { return ghepTay[k]; }); // các ảnh cần sửa đã được chọn tay
+    if (daChon.some(function (ma, i) { return daChon.indexOf(ma) !== i; })) { // hai tệp cùng chọn một ảnh
+      hienLoi(['Hai ảnh không thể cùng ghép với một ảnh cần sửa, vui lòng chọn lại.']); // báo lỗi
+      return; // dừng, không gửi
+    } // hết kiểm tra trùng
     var xhr = new XMLHttpRequest(); // tạo yêu cầu gửi dữ liệu
     xhr.open('POST', window.location.href); // gửi POST về chính trang này
     xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); // báo cho server biết đây là yêu cầu AJAX
@@ -150,6 +214,7 @@
       try { ketQua = JSON.parse(xhr.responseText); } catch (err) { ketQua = null; } // đọc JSON, lỗi thì để null
       if (ketQua && ketQua.ok) { window.location.href = ketQua.url; return; } // thành công thì chuyển sang trang server chỉ định
       hienLoi(ketQua && ketQua.loi ? ketQua.loi : ['Không thể tải ảnh lên, vui lòng thử lại.']); // thất bại thì hiện lỗi
+      if (ketQua && ketQua.chua_ghep && ketQua.chua_ghep.length) { hienChuaGhep(ketQua); } // có ảnh chưa ghép được thì mời chọn tay
       thanh.hidden = true; chu.textContent = ''; nut.disabled = false; // ẩn tiến trình và mở lại nút
     }; // hết onload
     xhr.onerror = function () { // khi mất kết nối
@@ -158,6 +223,8 @@
     }; // hết onerror
     khungLoi.innerHTML = ''; // xóa lỗi cũ trước khi gửi
     thanh.hidden = false; thanh.value = 0; nut.disabled = true; // hiện thanh tiến trình và khóa nút để khỏi bấm 2 lần
-    xhr.send(new FormData(form)); // gửi toàn bộ form (gồm các ảnh đã chọn)
+    var duLieu = new FormData(form); // toàn bộ form (gồm các ảnh đã chọn)
+    if (daChon.length) { duLieu.append('ghep_tay', JSON.stringify(ghepTay)); } // kèm các cặp đã chọn tay
+    xhr.send(duLieu); // gửi đi
   }); // hết xử lý submit
 })(); // gọi chạy hàm tự chạy

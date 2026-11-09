@@ -174,3 +174,41 @@
   flex: 1; /* chiếm phần còn lại của dòng */
   min-width: 12.5rem; /* hẹp quá thì rớt xuống dòng */
 } /* hết quy tắc nội dung */
+
+/* ===== Ghép ảnh hậu kỳ theo hình ảnh: danh sách "ảnh chưa ghép được" để Nhiếp ảnh gia chọn tay ===== */
+.tai-anh__chua-ghep { /* khung chứa các dòng chọn tay */
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+}
+.tai-anh__chua-ghep[hidden] { display: none; } /* thuộc tính hidden thắng display: grid */
+.tai-anh__chua-ghep-tieu-de { margin: 0; font-size: var(--text-base); }
+.tai-anh__chua-ghep-ds { display: grid; gap: var(--space-3); }
+.tai-anh__cg-dong { /* một dòng: ảnh mới | danh sách thả xuống | ảnh cần sửa đã chọn */
+  display: flex;
+  flex-wrap: wrap; /* màn hình hẹp thì xuống dòng */
+  align-items: center;
+  gap: var(--space-3);
+}
+.tai-anh__cg-anh { /* ảnh thu nhỏ ở hai đầu dòng */
+  display: block;
+  width: 7.5rem;
+  height: 5rem;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted, transparent);
+}
+.tai-anh__cg-anh[hidden] { display: none; }
+.tai-anh__cg-ten { display: block; max-width: 7.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-xs); }
+.tai-anh__cg-chon { /* ô danh sách thả xuống: hình chữ nhật cao, bo góc nhẹ */
+  flex: 1;
+  min-width: 12rem;
+  max-width: 32rem; /* không kéo dài hết cả dòng trên màn hình rộng */
+  min-height: 3.5rem; /* cao hơn ô nhập thường để không bị dẹt */
+  padding-block: var(--space-3);
+  border-radius: var(--radius-md); /* bo góc vừa phải */
+  font-weight: 500;
+  cursor: pointer;
+}

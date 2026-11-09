@@ -13,11 +13,19 @@
   {% else %}
     <div class="gallery-hau-ky__grid" aria-label="Ảnh sau hậu kỳ">
       {% for a in anhs %}
-        <button class="gallery-hau-ky__item" type="button"
-                data-full="{% url 'xem_anh' a.pk %}" data-alt="{{ a.TenAnh|escape }}"
-                aria-label="Xem ảnh {{ forloop.counter }}">
-          <img src="{% url 'xem_anh' a.pk %}?nho=1" alt="{{ a.TenAnh }}" loading="lazy">
-        </button>
+        <figure class="gallery-hau-ky__the">{# E10: bọc ảnh + nút so sánh (hai nút không được lồng nhau) #}
+          <button class="gallery-hau-ky__item" type="button"
+                  data-full="{% url 'xem_anh' a.pk %}" data-alt="{{ a.TenAnh|escape }}"
+                  aria-label="Xem ảnh {{ forloop.counter }}">
+            <img src="{% url 'xem_anh' a.pk %}?nho=1" alt="{{ a.TenAnh }}" loading="lazy">
+          </button>
+          {% if a.co_ban_truoc %}{# E10: chỉ ảnh có bản liền trước mới có nút; không có thì ẩn #}
+            <button class="btn btn--secondary btn--sm so-sanh-mo" type="button"
+                    data-so-sanh-truoc="{% url 'xem_anh' a.pk %}?truoc=1&amp;vua=1"
+                    data-so-sanh-sau="{% url 'xem_anh' a.pk %}?vua=1"
+                    data-so-sanh-ten="{{ a.TenAnh }}">So sánh trước/sau</button>
+          {% endif %}
+        </figure>
       {% empty %}
         <p class="muted">Chưa có ảnh sau hậu kỳ để hiển thị.</p>
       {% endfor %}
@@ -36,10 +44,30 @@
       <button class="gallery-hau-ky__close" type="button" aria-label="Đóng">×</button>
       <img id="gallery-lightbox-image" alt="">
     </dialog>
+    {% if co_so_sanh %}{# E10: hộp so sánh trước/sau (dùng chung cho mọi ảnh, JS nạp ảnh khi bấm nút) #}
+    <dialog class="so-sanh" id="so-sanh-hop" aria-labelledby="so-sanh-tieu-de">
+      <button class="so-sanh__dong" type="button" aria-label="Đóng">×</button>
+      <h2 class="so-sanh__tieu-de" id="so-sanh-tieu-de">So sánh trước/sau</h2>
+      <p class="muted so-sanh__ten" id="so-sanh-ten"></p>
+      <div class="so-sanh__khung" id="so-sanh-khung">
+        <img class="so-sanh__anh so-sanh__anh--sau" alt="Ảnh sau (bản mới nhất)" draggable="false">
+        <img class="so-sanh__anh so-sanh__anh--truoc" alt="Ảnh trước (bản liền trước)" draggable="false">
+        <span class="so-sanh__nhan so-sanh__nhan--truoc" aria-hidden="true">Trước</span>
+        <span class="so-sanh__nhan so-sanh__nhan--sau" aria-hidden="true">Sau</span>
+        <span class="so-sanh__vach" aria-hidden="true"></span>
+        <span class="so-sanh__nut" aria-hidden="true"></span>
+        <input class="so-sanh__thanh" id="so-sanh-thanh" type="range" min="0" max="100" step="1" value="50"
+               aria-label="Kéo ngang để so sánh ảnh trước và ảnh sau">
+      </div>
+      <p class="so-sanh__loi" id="so-sanh-loi" role="alert" hidden>Không tải được ảnh để so sánh, vui lòng thử lại.</p>
+      <p class="muted so-sanh__goi-y">Kéo thanh ngang (hoặc bấm phím ← →) để so sánh. Bên trái là ảnh Trước, bên phải là ảnh Sau.</p>
+    </dialog>
+    {% endif %}
   {% endif %}
 </main>
 {% endblock %}
 {% block extra_head %}
+<link rel="stylesheet" href="{% static 'delivery/css/so_sanh_truoc_sau.css' %}">{# E10: CSS riêng của thanh kéo so sánh #}
 <style>
 .gallery-hau-ky { padding-block: var(--space-6); }
 .gallery-hau-ky__grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:var(--space-4); }
@@ -75,4 +103,5 @@
   dialog.addEventListener('close', function () { image.removeAttribute('src'); });
 })();
 </script>
+<script src="{% static 'delivery/js/so_sanh_truoc_sau.js' %}" defer></script>{# E10: JS riêng của thanh kéo so sánh #}
 {% endblock %}

@@ -3,7 +3,7 @@
 # File RIÊNG để không đụng delivery/services.py của Nguyên. Dùng lại đúng hàm của Nguyên:
 #   kho_anh()        : kho ảnh riêng (PRIVATE_MEDIA_ROOT), không công khai
 #   duong_dan_goc()  : đường dẫn bản GỐC (không watermark) đi kèm mỗi ảnh
-# Mỗi ảnh có 2 file (bản đang dùng + bản gốc trong thư mục "goc") nên xóa cả hai.
+# Mỗi ảnh có 2 file (bản đang dùng + bản gốc trong thư mục "goc"), cộng thêm bản liền trước (E9) nếu có: xóa hết.
 # =====================================================================
 import logging
 
@@ -26,6 +26,8 @@ def xoa_anh_cua_booking(booking):
         ds_tep = [anh.DuongDanAnh]
         if '/' in anh.DuongDanAnh:
             ds_tep.append(duong_dan_goc(anh.DuongDanAnh))     # bản gốc không watermark
+        if anh.DuongDanAnhTruoc:                               # E9: bản có watermark liền trước (không có bản gốc đi kèm) cũng phải xóa
+            ds_tep.append(anh.DuongDanAnhTruoc)
         try:
             for duong_dan in ds_tep:
                 kho.delete(duong_dan)                          # file không tồn tại thì storage bỏ qua, không lỗi

@@ -1,0 +1,115 @@
+/* delivery/static/delivery/css/so_sanh_truoc_sau.css - E10: thanh kéo so sánh ảnh trước/sau (Khách hàng kiểm tra ảnh).
+   Không dùng thư viện. Hai ảnh xếp chồng; ảnh "Trước" nằm trên và bị cắt bằng clip-path theo biến --vi-tri.
+   JS (so_sanh_truoc_sau.js) chỉ gán biến CSS: --vi-tri (vị trí thanh kéo) và --ti-le (tỉ lệ khung theo ảnh Sau). */
+
+.gallery-hau-ky__the { /* ô gồm ảnh + nút so sánh */
+  display: flex; /* xếp dọc: ảnh rồi nút */
+  flex-direction: column;
+  gap: var(--space-2); /* khoảng cách ảnh - nút */
+  margin: 0; /* bỏ lề mặc định của figure */
+}
+
+.so-sanh { /* hộp so sánh (dialog) */
+  width: min(96vw, 1000px); /* điện thoại: gần hết chiều ngang */
+  max-width: none;
+  max-height: 96vh;
+  padding: 3.5rem var(--space-4) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  color: var(--color-text);
+  overflow: auto; /* màn hình thấp thì cuộn trong hộp */
+}
+.so-sanh::backdrop { background: rgba(0, 0, 0, .88); }
+.so-sanh__dong { /* nút đóng ở góc */
+  position: absolute; top: .75rem; right: .75rem;
+  width: 2.5rem; height: 2.5rem;
+  border: 1px solid var(--color-border); border-radius: 50%;
+  background: var(--color-surface); color: var(--color-text);
+  font-size: 1.5rem; line-height: 1; cursor: pointer;
+}
+.so-sanh__tieu-de { position: absolute; top: .9rem; left: var(--space-4); margin: 0; font-size: var(--text-lg); }
+.so-sanh__ten { margin: 0 0 var(--space-3); overflow-wrap: anywhere; }
+.so-sanh__goi-y { margin: var(--space-3) 0 0; font-size: var(--text-sm); }
+.so-sanh__loi { margin: var(--space-3) 0 0; color: var(--color-text); }
+
+.so-sanh__khung { /* khung chung của hai ảnh: cùng một tỉ lệ */
+  --vi-tri: 50%; /* JS gán khi kéo: phần ảnh Trước được hiện từ mép trái */
+  --ti-le: 1.5; /* rộng / cao; JS gán theo ảnh Sau khi ảnh tải xong */
+  --tay-cam: 2.75rem; /* kích thước nút tròn ở giữa và vùng chạm của ô range */
+  position: relative;
+  aspect-ratio: var(--ti-le);
+  width: min(100%, calc((96vh - 11rem) * var(--ti-le))); /* ảnh dọc không cao quá màn hình */
+  margin-inline: auto;
+  border-radius: var(--radius-md);
+  background: var(--color-input-bg);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.so-sanh__anh { /* cả hai ảnh phủ kín khung */
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: contain; /* lệch tỉ lệ thì co vào khung, không méo */
+  border-radius: var(--radius-md);
+  pointer-events: none; /* thao tác dành cho ô range */
+}
+.so-sanh__anh--truoc { /* ảnh Trước nằm trên, chỉ hiện phần bên trái vạch */
+  background: var(--color-input-bg); /* nếu lệch tỉ lệ, phần thừa là nền đặc để thấy rõ */
+  clip-path: inset(0 calc(100% - var(--vi-tri)) 0 0);
+}
+
+.so-sanh__nhan { /* chữ "Trước" / "Sau" */
+  position: absolute; top: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: rgba(0, 0, 0, .6); color: #fff; /* chữ trắng trên nền đen mờ: luôn đọc được trên ảnh */
+  font-size: var(--text-sm); line-height: 1.2;
+  pointer-events: none;
+}
+.so-sanh__nhan--truoc { left: var(--space-3); }
+.so-sanh__nhan--sau { right: var(--space-3); }
+
+.so-sanh__vach { /* vạch dọc tại vị trí kéo */
+  position: absolute; top: 0; bottom: 0;
+  left: var(--vi-tri); width: 2px;
+  transform: translateX(-50%);
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .45);
+  pointer-events: none;
+}
+.so-sanh__nut { /* nút tròn có hai mũi tên ở giữa vạch */
+  position: absolute; top: 50%; left: var(--vi-tri);
+  width: var(--tay-cam); height: var(--tay-cam);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #fff; color: #111; /* nút sáng, mũi tên tối: nổi trên cả ảnh sáng và tối */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .5);
+  display: grid; place-items: center;
+  pointer-events: none;
+}
+.so-sanh__nut::before { content: "\25C0\00a0\25B6"; font-size: .8rem; letter-spacing: -.1em; } /* ◀ ▶ */
+
+.so-sanh__thanh { /* ô range trong suốt phủ cả khung: nhận chuột, cảm ứng và bàn phím */
+  position: absolute; top: 0;
+  left: calc(var(--tay-cam) / -2); /* rộng hơn khung đúng một nút để tâm nút khớp với vạch ở hai đầu */
+  width: calc(100% + var(--tay-cam)); height: 100%;
+  margin: 0; padding: 0;
+  opacity: 0; /* chỉ để điều khiển; hình ảnh do vạch và nút vẽ */
+  cursor: ew-resize;
+  touch-action: pan-y; /* điện thoại: kéo ngang là kéo thanh, vuốt dọc vẫn cuộn trang */
+  -webkit-appearance: none; appearance: none;
+}
+.so-sanh__thanh::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: var(--tay-cam); height: var(--tay-cam); }
+.so-sanh__thanh::-moz-range-thumb { width: var(--tay-cam); height: var(--tay-cam); border: 0; }
+.so-sanh__khung:has(.so-sanh__thanh:focus-visible) .so-sanh__nut { /* bàn phím: hiện viền focus quanh nút */
+  outline: 3px solid var(--color-focus); outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .so-sanh { padding-inline: var(--space-2); }
+  .so-sanh__tieu-de { left: var(--space-2); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .so-sanh__nut { transition: transform .12s; }
+  .so-sanh__khung:active .so-sanh__nut { transform: translate(-50%, -50%) scale(1.08); }
+}
