@@ -1,5 +1,6 @@
 # Chạy: python manage.py test bookings   # lệnh chạy toàn bộ test của app "bookings"
 from datetime import date, time, timedelta  # date: ngày; time: giờ; timedelta: khoảng thời gian để cộng/trừ
+from unittest import mock  # mock.patch: giả lập hàm bị lỗi trong test
 
 from django.contrib.auth import get_user_model  # lấy class User mà dự án đang dùng (có thể là User tự tạo)
 from django.core.exceptions import ValidationError  # loại lỗi mà hàm services ném ra, test sẽ bắt lỗi này
@@ -231,12 +232,21 @@ class ChuyenTrangThaiBookingTests(TestCase):  # nhóm test cho hàm chuyen_trang
             chuyen_trang_thai_booking(bk, moi, ben, 'lý do')  # truyền 'lý do' cho đủ, bước không cần thì bị bỏ qua
             self.assertEqual(LichKhaDung.objects.get(pk=bk.MaLich_id).TrangThai, slot_mong_doi, (truoc, moi))  # so sánh slot thực tế; (truoc, moi) in ra khi fail để biết ca nào sai
 
-    def test_slot_sai_trang_thai_thi_rollback_ca_booking(self):  # test: slot lỗi thì hoàn tác cả Booking lẫn lịch sử
-        bk = self.tao_booking(TT.CHO_DAT_COC)
-        LichKhaDung.objects.filter(pk=bk.MaLich_id).update(TrangThai=TrangThaiSlot.TRONG)  # dữ liệu lệch: Trống -> Đã đặt bị cấm
-        with self.assertRaises(ValidationError):  # hàm của Khoa từ chối đổi slot Trống -> Đã đặt
-            chuyen_trang_thai_booking(bk, TT.CHOT_BOOKING, BEN.NHIEP_ANH_GIA)
-        bk.refresh_from_db()
+    def test_slot_bi_nha_nham_duoc_tu_khoi_phuc_khi_chot(self):  # test: slot bị nhả nhầm (Trống) thì chốt Booking vẫn thành công
+        bk = self.tao_booking(TT.CHO_DAT_COC)  # tạo Booking đang Chờ đặt cọc
+        LichKhaDung.objects.filter(pk=bk.MaLich_id).update(TrangThai=TrangThaiSlot.TRONG)  # dữ liệu lệch: slot bị nhả về Trống
+        chuyen_trang_thai_booking(bk, TT.CHOT_BOOKING, BEN.NHIEP_ANH_GIA)  # chốt Booking: hàm tự đặt slot lại Đang giữ rồi mới sang Đã đặt
+        bk.refresh_from_db()  # nạp lại Booking từ database
+        self.assertEqual(bk.TrangThai, TT.CHOT_BOOKING)  # Booking đã chuyển sang Chốt Booking
+        self.assertEqual(LichKhaDung.objects.get(pk=bk.MaLich_id).TrangThai, TrangThaiSlot.DA_DAT)  # slot cuối cùng là Đã đặt lịch
+
+    def test_slot_loi_thi_rollback_ca_booking(self):  # test: đổi slot báo lỗi thì hoàn tác cả Booking lẫn lịch sử
+        bk = self.tao_booking(TT.CHO_DAT_COC)  # tạo Booking đang Chờ đặt cọc
+        with mock.patch('bookings.services.doi_trang_thai_khung_gio',  # giả lập hàm đổi slot của Khoa bị lỗi
+                        side_effect=ValidationError('Lỗi slot giả lập.')):  # hàm giả ném ValidationError
+            with self.assertRaises(ValidationError):  # chốt Booking phải báo lỗi theo
+                chuyen_trang_thai_booking(bk, TT.CHOT_BOOKING, BEN.NHIEP_ANH_GIA)  # thử chốt Booking
+        bk.refresh_from_db()  # nạp lại Booking từ database
         self.assertEqual(bk.TrangThai, TT.CHO_DAT_COC)  # Booking vẫn như cũ (đã rollback)
         self.assertEqual(LichSuTrangThaiBooking.objects.count(), 0)  # lịch sử cũng không được ghi
 
