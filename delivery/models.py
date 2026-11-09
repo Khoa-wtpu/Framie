@@ -34,6 +34,10 @@ class Anh(models.Model):
     # Đường dẫn dạng chữ: ảnh gốc không để ở thư mục media công khai;
     # view tự lưu file vào thư mục riêng rồi ghi đường dẫn (UC5.3).
     DuongDanAnh = models.CharField('đường dẫn ảnh', max_length=500)
+    # E2 (tính năng Slider so sánh trước/sau): đường dẫn bản CÓ watermark liền trước của ảnh hậu kỳ.
+    # Chỉ giữ MỘT bản trước. NULL = ảnh chưa có bản trước (nút so sánh bị ẩn). Không có bản gốc không watermark đi kèm.
+    DuongDanAnhTruoc = models.CharField('đường dẫn ảnh bản trước', max_length=500,
+                                        null=True, blank=True)
     DinhDangAnh = models.CharField('định dạng ảnh', max_length=10,
                                    choices=HangSoDinhDang.CHOICES)
     KichThuocAnh = models.IntegerField('kích thước ảnh')
