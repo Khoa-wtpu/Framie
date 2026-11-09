@@ -1,5 +1,7 @@
 /* accounts/static/accounts/css/tai_khoan.css - Hồ sơ của tôi (Khách hàng), Cập nhật hồ sơ, Đổi mật khẩu. Chỉ dùng token trong tokens.css. Tiền tố tk__ và mk-. */
 .tk { padding-block: var(--space-6) var(--space-8); }
+.container.tk--vua { max-width: 48rem; }  /* trang có form vừa (Cập nhật hồ sơ); chọn .container.tk--vua để thắng .container của base mà không cần style inline */
+.container.tk--hep { max-width: 36rem; }  /* trang có form hẹp (Đổi mật khẩu) */
 .tk__dau { margin-bottom: var(--space-5); }
 .tk__dau h1 { margin: 0 0 var(--space-2); }
 .tk__dau p { margin: 0; color: var(--color-text-muted); }
