@@ -24,7 +24,7 @@
         <button class="hop-thu__ba-cham" type="button" data-chat-menu-nut aria-haspopup="menu" aria-expanded="false" aria-label="Tùy chọn cuộc trò chuyện với {{ c.ten }}">···</button>
         <div class="hop-thu__menu-ds" role="menu" hidden>
           {% if not chi_an %}{# tab thường: có Ghim và Đánh dấu chưa đọc; tab Đã ẩn chỉ có Bỏ ẩn và Xóa #}
-          <button type="button" role="menuitem" data-chat-hanh-dong="ghim" data-url="{% url 'doi_ghim' c.ma %}">{% if c.da_ghim %}Bỏ ghim{% else %}Ghim tin nhắn{% endif %}</button>
+          <button type="button" role="menuitem" data-chat-hanh-dong="ghim" data-url="{% url 'doi_ghim' c.ma %}">{% if c.da_ghim %}Bỏ ghim cuộc trò chuyện{% else %}Ghim cuộc trò chuyện{% endif %}</button>
           <button type="button" role="menuitem" data-chat-hanh-dong="chua_doc" data-url="{% url 'doi_chua_doc' c.ma %}">{% if c.chua_doc %}Đánh dấu đã đọc{% else %}Đánh dấu chưa đọc{% endif %}</button>
           {% endif %}
           <button type="button" role="menuitem" data-chat-hanh-dong="an" data-url="{% url 'doi_an' c.ma %}">{% if chi_an %}Bỏ ẩn cuộc trò chuyện{% else %}Ẩn cuộc trò chuyện{% endif %}</button>{# ẩn: có tin mới thì tự hiện lại #}
@@ -57,4 +57,3 @@
   </div>
   {% endif %}
   {% endif %}
-

@@ -60,8 +60,6 @@ def danh_sach_tai_khoan(request):  # P7: trang /quan-tri/tai-khoan/
         'hang': [ql.mo_ta_tai_khoan(request.user, u) for u in page_obj],  # mỗi tài khoản kèm thông tin được phép làm gì
         'page_obj': page_obj,  # đối tượng trang, includes/pagination.html đọc biến này để vẽ thanh chuyển trang
         'tim': tim, 'vai_tro_loc': vai_tro, 'trang_thai_loc': trang_thai,  # giữ lại giá trị trên các ô lọc
-        'cac_vai_tro': (VaiTro.KHACH_HANG, VaiTro.NHIEP_ANH_GIA, VaiTro.QUAN_TRI_VIEN),  # lựa chọn của ô lọc vai trò
-        'vai_tro_cho_doi': ql.VAI_TRO_CHO_DOI,  # lựa chọn của ô đổi vai trò từng dòng
         'nut_vai_tro': nut_vai_tro, 'nut_trang_thai': nut_trang_thai,  # nhóm nút lọc vai trò và nhóm nút lọc trạng thái
         'quay_lai': request.get_full_path(),  # sau khi đổi/khóa thì quay lại đúng trang và bộ lọc này
     }  # hết dict

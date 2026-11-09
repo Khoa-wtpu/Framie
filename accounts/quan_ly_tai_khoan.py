@@ -64,13 +64,15 @@ def mo_ta_tai_khoan(nguoi_thuc_hien, user):  # cho template biết dòng này đ
     la_toi = user.pk == nguoi_thuc_hien.pk  # chính Quản trị viên đang đăng nhập
     vai_tro = vai_tro_cua(user)  # vai trò hiện tại
     thao_tac_duoc = not la_toi and not user.is_superuser  # không tự đổi/khóa mình; không đụng tài khoản hệ thống
+    doi_duoc = thao_tac_duoc and vai_tro != VaiTro.NHIEP_ANH_GIA  # Nhiếp ảnh gia không đổi vai trò ở đây
     return {  # gói thông tin cho template
         'user': user,  # chính tài khoản
         'vai_tro': vai_tro,  # vai trò hiện tại
         'la_toi': la_toi,  # có phải mình không
         'chu_cai_dau': _chu_cai_dau(user),  # chữ cái trong ảnh đại diện tròn
         'he_thong': user.is_superuser,  # có phải superuser không
-        'doi_duoc_vai_tro': thao_tac_duoc and vai_tro != VaiTro.NHIEP_ANH_GIA,  # Nhiếp ảnh gia không đổi vai trò ở đây
+        'doi_duoc_vai_tro': doi_duoc,  # có hiện nút đổi vai trò không
+        'cac_vai_tro_doi': VAI_TRO_CHO_DOI if doi_duoc else (),  # các vai trò hiện trong ô chọn khi bấm Sửa (template không tự gõ tên vai trò)
         'khoa_duoc': thao_tac_duoc,  # có hiện nút Khóa/Mở không
     }  # hết dict
 

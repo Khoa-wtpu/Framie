@@ -1,4 +1,4 @@
-# chat/admin.py - đăng ký bảng để xem dữ liệu thử trong /admin/. TinNhan và ThamGia CHỈ ĐỌC (Quản trị viên xem khi có tranh chấp, không sửa nội dung).
+# chat/admin.py - đăng ký bảng để xem dữ liệu thử trong /admin/. CẢ 4 bảng (cuộc trò chuyện, tin nhắn, trạng thái từng người, ảnh đính kèm) đều CHỈ ĐỌC (Quản trị viên xem khi có tranh chấp, không thêm, sửa, xóa).
 from django.contrib import admin  # trang quản trị của Django
 
 from chat.models import CuocTroChuyen, DinhKemTinNhan, ThamGia, TinNhan  # các bảng của Module 8
@@ -16,7 +16,7 @@ class ChiXemAdmin(admin.ModelAdmin):  # lớp cha: chặn thêm, sửa, xóa
 
 
 @admin.register(CuocTroChuyen)  # đăng ký bảng cuộc trò chuyện
-class CuocTroChuyenAdmin(admin.ModelAdmin):  # cách hiển thị trong admin
+class CuocTroChuyenAdmin(ChiXemAdmin):  # chỉ xem: chặn thêm, sửa, xóa (xóa cuộc trò chuyện sẽ mất cả tin nhắn)
     list_display = ('MaCuocTroChuyen', 'MaKhachHang', 'MaNhiepAnhGia', 'NgayTao')  # các cột hiện trong danh sách
 
 

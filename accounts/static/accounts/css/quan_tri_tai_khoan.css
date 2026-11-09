@@ -1,0 +1,14 @@
+/* accounts/static/accounts/css/quan_tri_tai_khoan.css - P7: hàng chỉnh sửa vai trò ngay trong bảng tài khoản. Chỉ dùng token trong tokens.css. */
+.tk-bang [hidden] { display: none !important; }  /* thuộc tính hidden luôn thắng display của lớp khác (admin-inline-form, admin-table...) */
+.tk-bang th:nth-child(3), .tk-bang td.tk-vai-tro { text-align: center; }  /* cột Vai trò căn giữa cả tiêu đề lẫn chữ (Khách hàng, Nhiếp ảnh gia, Quản trị viên) */
+.tk-vai-tro__bam { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }  /* chữ vai trò là nút bấm nhưng trông như chữ thường */
+.tk-vai-tro__bam:hover { text-decoration: underline; }
+.tk-bang tr:has([data-sua-vai-tro]) { cursor: pointer; }  /* dòng Khách hàng/QTV bấm được */
+.tk-bang tr.is-editing > td,
+.tk-bang tr.tk-sua-hang > td { background: color-mix(in srgb, var(--color-text) 6%, transparent); }  /* dòng đang sửa và hàng chỉnh sửa cùng một nền nhạt để nhìn liền khối */
+.tk-sua { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.tk-sua__nhan { color: var(--color-text-muted); }
+.tk-sua__chon { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.tk-sua__chon .tk-chip { cursor: pointer; }
+.tk-sua__chon .tk-chip:focus-within { box-shadow: 0 0 0 3px var(--ring-focus); }  /* bàn phím: ô radio ẩn nên viền focus vẽ lên nhãn */
+.tk-sua__nut { display: flex; gap: var(--space-2); margin-left: auto; }  /* Hủy + Lưu vai trò dạt về bên phải */

@@ -164,6 +164,28 @@ class DoiVaiTroTests(NenTest):  # luật đổi vai trò
     def test_khong_dung_get_de_doi_vai_tro(self):  # đổi dữ liệu phải bằng POST
         self.assertEqual(self.client.get(self.url_role(self.khach)).status_code, 405)  # GET bị từ chối
 
+    def test_giao_dien_chi_hien_nut_doi_vai_tro_dung_dong(self):  # UC7.3 bước 4: nút phải có trên giao diện, và chỉ với dòng được phép
+        r = self.client.get(self.url_ds)  # mở danh sách bằng Quản trị viên
+        for user in (self.khach, self.admin2):  # Khách hàng và Quản trị viên khác: đổi được
+            self.assertContains(r, f'action="{self.url_role(user)}"')  # có form đổi vai trò
+        for user in (self.admin, self.nag, self.root):  # chính mình, Nhiếp ảnh gia, superuser: không đổi được
+            self.assertNotContains(r, f'action="{self.url_role(user)}"')  # không có form
+
+    def test_nut_sua_o_cot_vai_tro_va_o_chon_vai_tro(self):  # đổi vai trò nằm ở cột Vai trò: nút Sửa + hàng chọn vai trò + Lưu/Hủy
+        r = self.client.get(self.url_ds)  # mở danh sách
+        self.assertContains(r, f'data-sua-vai-tro="tk-sua-{self.khach.pk}"')  # dòng Khách hàng có nút Sửa
+        for user in (self.admin, self.nag, self.root):  # chính mình, Nhiếp ảnh gia, superuser
+            self.assertNotContains(r, f'data-sua-vai-tro="tk-sua-{user.pk}"')  # không có nút Sửa
+        self.assertContains(r, f'name="vai_tro" value="{VaiTro.QUAN_TRI_VIEN}"')  # ô chọn Quản trị viên
+        self.assertContains(r, f'name="vai_tro" value="{VaiTro.KHACH_HANG}" checked')  # vai trò hiện tại được chọn sẵn
+        self.assertContains(r, 'Vai trò chính')  # nhãn hàng chỉnh sửa
+        self.assertContains(r, 'Lưu vai trò')  # nút lưu
+        self.assertContains(r, 'data-xac-nhan-form="Đổi vai trò của khach@example.com sang {vai_tro}')  # có câu hỏi xác nhận (JS thay {vai_tro})
+
+    def test_cot_thao_tac_chi_con_nut_khoa(self):  # nút đổi vai trò không còn nằm ở cột Thao tác
+        r = self.client.get(self.url_ds)  # mở danh sách
+        self.assertNotContains(r, 'Đổi thành')  # không còn nút "Đổi thành ..."
+
     def test_tai_khoan_khong_ton_tai_tra_404(self):  # pk sai
         self.assertEqual(self.client.post(reverse('admin_account_role', args=[999999]), {'vai_tro': VaiTro.KHACH_HANG}).status_code, 404)  # không có tài khoản
 
