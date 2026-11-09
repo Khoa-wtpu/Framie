@@ -131,3 +131,9 @@ class TheThoiTietTest(TheThoiTietBase):
             res = self.mo(bk, self.khach)
         self.assertEqual(goi.call_count, 2)
         self.assertContains(res, 'Mưa rào nhẹ')
+
+    def test_truyen_thoi_luong_goi_cho_du_bao(self):
+        bk = self.tao_booking(trang_thai=BK.CHO_DAT_COC)
+        with mock.patch(MOCK, return_value=du_bao(20)) as gia:
+            self.mo(bk, self.khach)
+        gia.assert_called_with(mock.ANY, bk.NgayGioChup, bk.MaGoi.ThoiLuongChup)

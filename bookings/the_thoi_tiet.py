@@ -45,7 +45,7 @@ def _khu_vuc_can_tra(booking):  # danh sách khu vực dùng để tra dự báo
 
 def _lay_du_bao_theo_khu_vuc(booking):  # lấy dự báo đầu tiên có theo thứ tự ưu tiên của _khu_vuc_can_tra
     for khu_vuc in _khu_vuc_can_tra(booking):
-        du_bao = lay_du_bao_thoi_tiet(khu_vuc, booking.NgayGioChup)  # E7: không bao giờ ném lỗi
+        du_bao = lay_du_bao_thoi_tiet(khu_vuc, booking.NgayGioChup, booking.MaGoi.ThoiLuongChup)   # E7: không bao giờ ném lỗi
         if du_bao:  # có dự báo
             return du_bao
     return {}  # không khu vực nào có dự báo
