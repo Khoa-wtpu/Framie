@@ -47,9 +47,10 @@ MENUS = {
 # Menu thả xuống của "Tài khoản" (chuông thông báo nằm riêng trên header)
 # Mỗi vai trò có trang "Hồ sơ của tôi" riêng: Khách hàng -> customer_profile (accounts), Nhiếp ảnh gia -> photographer_profile (profiles)
 _DOI_MAT_KHAU = ("Đổi mật khẩu", "change_password")
+_TONG_QUAN = ("Tổng quan", "dashboard")  # trang "Xin chào, <tên>" (sau đăng nhập); luôn có lối quay lại từ menu avatar
 ACCOUNT_MENUS = {
-    CUSTOMER: [("Hồ sơ của tôi", "customer_profile"), _DOI_MAT_KHAU],
-    PHOTOGRAPHER: [("Hồ sơ của tôi", "photographer_profile"), _DOI_MAT_KHAU],
+    CUSTOMER: [_TONG_QUAN, ("Hồ sơ của tôi", "customer_profile"), _DOI_MAT_KHAU],
+    PHOTOGRAPHER: [_TONG_QUAN, ("Hồ sơ của tôi", "photographer_profile"), _DOI_MAT_KHAU],
     ADMIN: [("Hồ sơ của tôi", "account_profile"), _DOI_MAT_KHAU],  # Quản trị viên chưa có trang hồ sơ nên link tạm "#"
 }
 

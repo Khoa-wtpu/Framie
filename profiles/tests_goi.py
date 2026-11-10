@@ -212,8 +212,19 @@ class GoiDichVuTestCase(TestCase):
         self.assertEqual(GoiDichVu.objects.count(), so_goi_truoc)      # không tạo thêm gói nào
 
     def test_gia_khong_hop_le(self):
-        for gia in ('0', '-5', 'abc', '1500000.5'):
+        for gia in ('0', '-5', 'abc', '1500000.5', '1', '999'):     # dưới 1.000đ cũng bị chặn
             self.kiem_tra_loi('Gia', Gia=gia)
+
+    def test_gia_toi_thieu_1000_hop_le(self):
+        from profiles.forms_goi import GoiForm
+        f = GoiForm(self.du_lieu(Gia='1000'), nag=self.nag)
+        self.assertTrue(f.is_valid(), f.errors)
+
+    def test_mo_ta_bat_buoc_va_co_dau_sao(self):
+        from profiles.forms_goi import GoiForm
+        f = GoiForm(nag=self.nag)
+        self.assertTrue(f.fields['MoTa'].required)
+        self.kiem_tra_loi('MoTa', MoTa='   ')
 
     def test_thoi_luong_khong_hop_le(self):
         for phut in ('0', '-1', '1441', 'x'):

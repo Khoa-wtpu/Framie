@@ -100,7 +100,7 @@ class DangKyQuanTriTests(TestCase):  # trang người được mời đăng ký
     def setUp(self):
         self.token = tao_token_loi_moi_qtv(EMAIL_MOI)
         self.url = reverse('register_admin', args=[self.token])
-        self.du_lieu = {'ho_ten': 'Trần Thị Bình', 'so_dien_thoai': '0911111111', 'mat_khau': MAT_KHAU}
+        self.du_lieu = {'ho_ten': 'Trần Thị Bình', 'so_dien_thoai': '0911111111', 'mat_khau': MAT_KHAU, 'mat_khau_xac_nhan': MAT_KHAU}
 
     def test_get_hien_form_voi_email_khoa(self):
         r = self.client.get(self.url)
@@ -159,7 +159,7 @@ class DangKyQuanTriTests(TestCase):  # trang người được mời đăng ký
         self.assertContains(r, 'Số điện thoại gồm 10 chữ số và bắt đầu bằng 0.')
 
     def test_mat_khau_yeu_bi_tu_choi(self):
-        r = self.client.post(self.url, {**self.du_lieu, 'mat_khau': 'abc'})
+        r = self.client.post(self.url, {**self.du_lieu, 'mat_khau': 'abc', 'mat_khau_xac_nhan': 'abc'})
         self.assertEqual(r.status_code, 200)
         self.assertFalse(User.objects.filter(email=EMAIL_MOI).exists())
 
