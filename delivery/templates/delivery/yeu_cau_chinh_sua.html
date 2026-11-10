@@ -54,11 +54,11 @@
           {% for a in anhs %}
             <article class="yc-sua__the{% if a.da_tick %} yc-sua__the--chon{% endif %}">
               <label class="yc-sua__anh">
-                <input type="checkbox" name="anh" value="{{ a.pk }}"{% if a.da_tick %} checked{% endif %}>
+                <input type="checkbox" name="anh" value="{{ a.pk }}" id="yc-tick-{{ a.pk }}"{% if a.da_tick %} checked{% endif %}>
                 <span class="yc-sua__tick" aria-hidden="true">✓</span>
                 <img src="{% url 'xem_anh' a.pk %}?nho=1" alt="{{ a.TenAnh }}" loading="lazy" draggable="false">
               </label>
-              <a class="yc-sua__xem-lon" href="{% url 'xem_anh' a.pk %}" target="_blank" rel="noopener">Xem lớn</a>
+              <a class="xal-nut-zoom xal-nut-zoom--tren-anh" href="{% url 'xem_anh' a.pk %}" data-xem-lon data-xem-lon-ghi-chu="nd-{{ a.pk }}" data-xem-lon-tick="yc-tick-{{ a.pk }}" data-ten="{{ a.TenAnh }}" target="_blank" rel="noopener" title="Phóng to ảnh và nhập nhận xét" aria-label="Phóng to ảnh {{ a.TenAnh }}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m15 15 6 6"/><path d="m15 9 6-6"/><path d="M21 16.2V21h-4.8"/><path d="M21 7.8V3h-4.8"/><path d="M3 16.2V21h4.8"/><path d="m3 21 6-6"/><path d="M3 7.8V3h4.8"/><path d="M9 9 3 3"/></svg></a>{# nút biểu tượng phóng to; mở cửa sổ chia 2/1: ảnh bên trái, ô nhận xét riêng của ảnh bên phải (đồng bộ với ô trong thẻ) #}
 
               <div class="yc-sua__the-body">
                 <p class="yc-sua__ten" title="{{ a.TenAnh }}">{{ a.TenAnh }}</p>
@@ -99,9 +99,11 @@
 {% endblock %}
 
 {% block extra_head %}
+<link rel="stylesheet" href="{% static 'delivery/css/xem_anh_lightbox.css' %}">{# CSS cửa sổ phóng to ảnh dùng chung #}
 <link rel="stylesheet" href="{% static 'delivery/css/yeu_cau_chinh_sua.css' %}">
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'delivery/js/xem_anh_lightbox.js' %}" defer></script>{# JS cửa sổ phóng to ảnh dùng chung (bấm ảnh có data-xem-lon) #}
 <script src="{% static 'delivery/js/yeu_cau_chinh_sua.js' %}" defer></script>
 {% endblock %}

@@ -168,6 +168,21 @@ class TaiHoanChinhViewTests(_NenTaiHoanChinh):                 # view UC5.8
         self.assertContains(r, 'Tải tất cả')
         self.assertContains(r, 'Tải nhiều ảnh cùng lúc sẽ nhận một tệp .zip')   # ghi chú thật sự hiện trong template
 
+    def test_get_co_nut_phong_to_tung_anh_va_xem_truoc_co_vua(self):   # nút phóng to cạnh nút Tải; ?vua=1 trả ảnh cỡ vừa
+        bk = self.booking_hoan_thanh()
+        from PIL import Image                                  # tạo ảnh JPEG thật để trang xem trước thu nhỏ được
+        dem = io.BytesIO()                                     # bộ nhớ tạm chứa ảnh
+        Image.new('RGB', (80, 60), (10, 200, 10)).save(dem, format='JPEG')   # ảnh xanh 80x60
+        a1 = self.anh_hoan_chinh(bk, 'a1.jpg', noi_dung=dem.getvalue())   # lưu ảnh thật làm ảnh hoàn chỉnh
+        self.client.force_login(self.kh)
+        duong_dan = reverse('xem_truoc_anh_hoan_chinh', args=[bk.pk, a1.pk])
+        r = self.client.get(self.url(bk))
+        self.assertContains(r, f'data-xem-lon="{duong_dan}"')  # nút phóng to trỏ tới ảnh xem trước của chính ảnh này
+        self.assertContains(r, 'xem_anh_lightbox.js')          # trang nạp JS cửa sổ phóng to
+        for tham_so in ('', '?vua=1'):                         # cả ảnh thu nhỏ (danh sách) và cỡ vừa (phóng to)
+            ph = self.client.get(duong_dan + tham_so)
+            self.assertEqual((ph.status_code, ph['Content-Type']), (200, 'image/jpeg'))
+
     def test_get_het_han_hien_thong_bao_va_khong_co_nut_tai(self):   # ngoại lệ 4a
         bk = self.booking_hoan_thanh(con_han=False)
         self.anh_hoan_chinh(bk, 'a1.jpg')
