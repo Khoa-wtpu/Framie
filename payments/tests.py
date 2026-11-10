@@ -18,6 +18,7 @@ from django.urls import include, path, reverse
 from django.utils import timezone
 from PIL import Image
 
+from bookings import qua_han                               # xử lý tự động quá hạn (kiểm tra hết hạn sau yêu cầu bổ sung)
 from bookings.models import Booking, LichSuTrangThaiBooking
 from core.constants import (BenThucHien, LoaiHauKy, LoaiThanhToan, TrangThaiBooking as TT,
                             TrangThaiHoSo, TrangThaiSlot, TrangThaiThanhToan, VaiTro)
@@ -357,6 +358,29 @@ class XacNhanCocTests(_NenXacNhanCoc):                         # nghiệp vụ U
         services.xac_nhan_thanh_toan_coc(bk.pk, self.nag_user)                            # giờ xác nhận được
         bk.refresh_from_db()
         self.assertEqual(bk.TrangThai, TT.CHOT_BOOKING)
+
+    def test_yeu_cau_bo_sung_tinh_lai_han_1_ngay_roi_khach_khong_nop_thi_tu_huy(self):   # NAG yêu cầu bổ sung -> Khách có 1 ngày, quá hạn thì tự hủy
+        bk = self.booking_da_co_minh_chung()                   # Khách đã tải minh chứng cọc, đang chờ Nhiếp ảnh gia xem
+        Booking.objects.filter(pk=bk.pk).update(NgayTao=timezone.now() - timedelta(days=10),   # lùi ngày tạo về quá khứ (DB bắt HanDatCoc phải SAU NgayTao)
+                                                HanDatCoc=timezone.now() - timedelta(hours=5))   # giả lập hạn cọc ban đầu đã qua (Khách được miễn vì đã nộp)
+        self.assertEqual(qua_han.xu_ly_het_han_dat_coc(), 0)   # đang chờ Nhiếp ảnh gia xem nên chưa bị hủy
+        services.yeu_cau_bo_sung_minh_chung(bk.pk, self.nag_user, 'Ảnh bị mờ, sai số tiền')   # Nhiếp ảnh gia yêu cầu bổ sung
+        bk.refresh_from_db()                                   # đọc lại Booking
+        self.assertAlmostEqual((bk.HanDatCoc - timezone.now()).total_seconds(), 86400, delta=120)   # hạn mới = bây giờ + 1 ngày
+        self.assertEqual(qua_han.xu_ly_het_han_dat_coc(), 0)   # vừa yêu cầu xong thì CHƯA bị hủy (không bị hủy ngay vì hạn cũ)
+        self.assertEqual(qua_han.xu_ly_het_han_dat_coc(timezone.now() + timedelta(hours=25)), 1)   # sau hơn 1 ngày Khách không nộp lại -> tự hủy
+        bk.refresh_from_db()                                   # đọc lại Booking
+        self.assertEqual(bk.TrangThai, TT.HET_THOI_HAN_DAT_COC)   # Booking bị hủy do hết hạn đặt cọc
+        bk.MaLich.refresh_from_db()                            # đọc lại khung giờ
+        self.assertEqual(bk.MaLich.TrangThai, TrangThaiSlot.TRONG)   # khung giờ được trả về lịch trống
+
+    def test_yeu_cau_bo_sung_khach_nop_lai_trong_han_thi_khong_bi_huy(self):   # Khách nộp lại kịp -> không bị hủy
+        bk = self.booking_da_co_minh_chung()                   # Khách đã tải minh chứng cọc
+        services.yeu_cau_bo_sung_minh_chung(bk.pk, self.nag_user, 'Ảnh bị mờ')   # Nhiếp ảnh gia yêu cầu bổ sung
+        services.tai_len_minh_chung(bk.pk, self.kh, tep_anh('lan-2.png'))   # Khách nộp lại trong hạn
+        self.assertEqual(qua_han.xu_ly_het_han_dat_coc(timezone.now() + timedelta(days=3)), 0)   # đang chờ Nhiếp ảnh gia xem lại nên không bị hủy
+        bk.refresh_from_db()                                   # đọc lại Booking
+        self.assertEqual(bk.TrangThai, TT.CHO_DAT_COC)         # Booking vẫn còn chờ Nhiếp ảnh gia xác nhận
 
     def test_yeu_cau_bo_sung_phai_co_ly_do(self):
         bk = self.booking_da_co_minh_chung()

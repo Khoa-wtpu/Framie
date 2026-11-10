@@ -67,6 +67,7 @@
                   <label class="field__label" for="nd-{{ a.pk }}">Nội dung cần chỉnh</label>
                   <textarea class="input" id="nd-{{ a.pk }}" name="noi_dung_{{ a.pk }}" rows="2" maxlength="500"
                             placeholder="Ví dụ: làm sáng hơn, xóa vết bẩn ở góc phải...">{{ a.noi_dung_nhap }}</textarea>
+                  <p class="yc-sua__loi-the" data-loi-cho="nd-{{ a.pk }}" role="alert" hidden>Vui lòng nhập nhận xét</p>{# dòng đỏ: chỉ hiện khi ảnh đã chọn mà chưa nhập nội dung (JS bật/tắt) #}
                   <span class="yc-sua__dem muted" data-dem-cho="nd-{{ a.pk }}" data-toi-da="500">0/500</span>
                 </div>
               </div>
@@ -81,7 +82,7 @@
           <div class="yc-sua__so-chon"><strong id="yc-so-chon">0</strong><span>/ {{ anhs|length }} ảnh được chọn</span></div>
 
           <div class="field">
-            <label class="field__label" for="nhan-xet">Nhận xét tổng quát <span class="field__req" aria-hidden="true">*</span></label>
+            <label class="field__label" for="nhan-xet">Nhận xét tổng quát <span class="muted">(không bắt buộc)</span></label>{# bỏ dấu * vì nhận xét tổng quát không còn bắt buộc #}
             <textarea class="input" id="nhan-xet" name="nhan_xet" rows="4" maxlength="1000"
                       placeholder="Ví dụ: Tổng thể ổn, mình muốn tông màu ấm hơn...">{{ nhan_xet }}</textarea>
             <span class="yc-sua__dem muted" data-dem-cho="nhan-xet" data-toi-da="1000">0/1000</span>

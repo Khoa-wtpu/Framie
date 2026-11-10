@@ -13,6 +13,8 @@
   function tick(t) { return t.querySelector('input[type="checkbox"]'); }
   function noiDung(t) { return t.querySelector('textarea'); }
 
+  function dongLoi(t) { return t.querySelector('.yc-sua__loi-the'); } // dòng chữ đỏ "Vui lòng nhập nhận xét" của ô ảnh
+
   function capNhatDem(o) { // đếm ký tự cho ô textarea
     var dem = form.querySelector('[data-dem-cho="' + o.id + '"]');
     if (dem) dem.textContent = o.value.length + '/' + dem.getAttribute('data-toi-da');
@@ -24,9 +26,14 @@
     var thieu = [];
     if (daChon.length === 0) thieu.push('chọn ít nhất 1 ảnh');
     if (thieuNoiDung.length > 0) thieu.push('nhập nội dung chỉnh sửa cho ' + thieuNoiDung.length + ' ảnh đã chọn');
-    if (nhanXet.value.trim() === '') thieu.push('nhập nhận xét tổng quát');
+    // nhận xét tổng quát không còn bắt buộc nên không đưa vào danh sách "thiếu" nữa
 
-    the.forEach(function (t) { t.classList.toggle('yc-sua__the--chon', tick(t).checked); });
+    the.forEach(function (t) {
+      var dangChon = tick(t).checked; // ô ảnh này có đang được tick không
+      var chuaNhap = noiDung(t).value.trim() === ''; // ô nội dung của ảnh này còn trống không
+      t.classList.toggle('yc-sua__the--chon', dangChon); // đổi nền tick + viền sang xanh lá khi được chọn
+      dongLoi(t).hidden = !(dangChon && chuaNhap); // hiện dòng đỏ khi đã chọn mà chưa nhập, ngược lại ẩn
+    });
     soChon.textContent = daChon.length;
     nutTatCa.textContent = (daChon.length === the.length) ? 'Bỏ chọn tất cả' : 'Chọn tất cả';
 

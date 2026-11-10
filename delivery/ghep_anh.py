@@ -9,6 +9,12 @@
 #   4. Ghép TOÀN CỤC: sắp mọi cặp theo khoảng cách tăng dần, chọn tham lam, mỗi ảnh chỉ ghép một lần.
 #      Chỉ nhận cặp khi đủ gần (ngưỡng) VÀ cách xa ứng viên tốt thứ hai (độ chênh).
 #   5. Cặp không đạt -> trả về trong danh sách "chưa ghép" để Nhiếp ảnh gia chọn tay.
+#
+# HAI GIỚI HẠN CẦN BIẾT (đưa vào báo cáo):
+#   - Ảnh hậu kỳ bị cắt làm đổi tỉ lệ khung hình quá 5% (ví dụ cắt sang 4:5) thì bị loại ở bước 3,
+#     nên toàn bộ các ảnh đó chuyển sang cho Nhiếp ảnh gia chọn tay (không ghép nhầm).
+#   - Ảnh quá giống nhau (chụp liên tiếp cùng một cảnh) khó phân biệt, không đạt điều kiện "hơn hẳn ứng viên thứ hai"
+#     ở bước 4, nên có thể phải chọn tay (hệ thống thà không ghép còn hơn ghép sai).
 from PIL import Image, ImageOps
 
 KICH_THUOC = 16                      # ảnh xám thu nhỏ KICH_THUOC x KICH_THUOC để so sánh tương quan

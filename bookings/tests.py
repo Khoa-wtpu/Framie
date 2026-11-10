@@ -196,7 +196,6 @@ class ChuyenTrangThaiBookingTests(TestCase):  # nhóm test cho hàm chuyen_trang
     def test_gan_han_theo_to_be(self):  # test: vào trạng thái nào thì gán đúng hạn chót và đúng số ngày
         cac_ca = [  # (trạng thái trước, gói, trạng thái mới, bên làm, tên cột hạn, số ngày)
             (TT.CHO_XAC_NHAN, None, TT.CHO_DAT_COC, BEN.NHIEP_ANH_GIA, 'HanDatCoc', 1),  # chấp nhận -> hạn cọc 1 ngày
-            (TT.DA_CHUP, self.goi_gioi_han, TT.CHO_KH_CHON_ANH, BEN.NHIEP_ANH_GIA, 'HanChonAnh', 2),  # chờ chọn ảnh -> hạn 2 ngày
             (TT.CHO_HAU_KY, None, TT.DANG_HAU_KY, BEN.NHIEP_ANH_GIA, 'HanHauKy', 3),  # hạn hậu kỳ tính từ lúc vào "Đang hậu kỳ"
             (TT.CHO_KH_KIEM_TRA, None, TT.DANG_HAU_KY, BEN.KHACH_HANG, 'HanHauKy', 3),  # Khách yêu cầu chỉnh sửa: tính lại 3 ngày
             (TT.CHO_KH_KIEM_TRA, None, TT.CHO_XAC_NHAN_THANH_TOAN, BEN.KHACH_HANG, 'HanThanhToanConLai', 2),  # chờ thanh toán 60% -> 2 ngày
@@ -208,6 +207,13 @@ class ChuyenTrangThaiBookingTests(TestCase):  # nhóm test cho hàm chuyen_trang
             bk.refresh_from_db()
             ls = LichSuTrangThaiBooking.objects.get(MaBooking=bk)  # lấy thời điểm đổi từ lịch sử
             self.assertEqual(getattr(bk, ten_han), ls.ThoiDiemThayDoi + timedelta(days=ngay))  # hạn = thời điểm đổi + số ngày quy định
+
+    def test_vao_cho_chon_anh_khong_gan_han(self):  # test: vào "Chờ Khách hàng lựa chọn ảnh" thì KHÔNG gán hạn chọn ảnh (không giới hạn thời gian)
+        bk = self.tao_booking(TT.DA_CHUP, self.goi_gioi_han)  # Booking gói giới hạn số ảnh vừa chụp xong
+        chuyen_trang_thai_booking(bk, TT.CHO_KH_CHON_ANH, BEN.NHIEP_ANH_GIA)  # Nhiếp ảnh gia gửi ảnh cho Khách chọn
+        bk.refresh_from_db()  # đọc lại từ database
+        self.assertEqual(bk.TrangThai, TT.CHO_KH_CHON_ANH)  # đã sang bước Khách chọn ảnh
+        self.assertIsNone(bk.HanChonAnh)  # không có hạn chót nào được gán
 
     def test_vao_cho_hau_ky_chua_gan_han_hau_ky(self):  # test: vào "Chờ hậu kỳ" thì CHƯA tính hạn 3 ngày (chỉ tính khi vào "Đang hậu kỳ")
         for truoc, goi, ben in ((TT.CHO_KH_CHON_ANH, None, BEN.KHACH_HANG),  # đường gói giới hạn: Khách chọn ảnh xong

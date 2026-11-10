@@ -21,7 +21,7 @@
           </button>
           {% if a.co_ban_truoc %}{# E10: chỉ ảnh có bản liền trước mới có nút; không có thì ẩn #}
             <button class="btn btn--secondary btn--sm so-sanh-mo" type="button"
-                    data-so-sanh-truoc="{% url 'xem_anh' a.pk %}?truoc=1&amp;vua=1"
+                    data-so-sanh-truoc="{% url 'xem_anh_truoc' a.pk %}?vua=1"
                     data-so-sanh-sau="{% url 'xem_anh' a.pk %}?vua=1"
                     data-so-sanh-ten="{{ a.TenAnh }}">So sánh trước/sau</button>
           {% endif %}
@@ -68,18 +68,7 @@
 {% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'delivery/css/so_sanh_truoc_sau.css' %}">{# E10: CSS riêng của thanh kéo so sánh #}
-<style>
-.gallery-hau-ky { padding-block: var(--space-6); }
-.gallery-hau-ky__grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:var(--space-4); }
-.gallery-hau-ky__item { display:block; padding:0; overflow:hidden; border:1px solid var(--color-border); border-radius:var(--radius-lg); background:var(--surface-gradient); cursor:zoom-in; }
-.gallery-hau-ky__item img { display:block; width:100%; aspect-ratio:4/3; object-fit:cover; transition:transform .2s; }
-.gallery-hau-ky__item:hover img { transform:scale(1.035); }
-.gallery-hau-ky__nut { display:flex; flex-wrap:wrap; gap:var(--space-3); }
-.gallery-hau-ky__dialog { width:min(92vw,1100px); max-width:none; max-height:92vh; padding:3.5rem 1rem 1rem; border:1px solid var(--color-border); border-radius:var(--radius-lg); background:var(--color-bg); }
-.gallery-hau-ky__dialog::backdrop { background:rgba(0,0,0,.88); }
-.gallery-hau-ky__dialog img { display:block; max-width:100%; max-height:calc(92vh - 5rem); margin:auto; object-fit:contain; }
-.gallery-hau-ky__close { position:absolute; top:.75rem; right:.75rem; width:2.5rem; height:2.5rem; border:1px solid var(--color-border); border-radius:50%; background:var(--color-surface); color:var(--color-text); font-size:1.5rem; cursor:pointer; }
-</style>
+<link rel="stylesheet" href="{% static 'delivery/css/xem_anh_hau_ky.css' %}">{# CSS của trang xem ảnh sau hậu kỳ (trước đây viết trong thẻ style) #}
 {% endblock %}
 {% block extra_js %}
 <script>

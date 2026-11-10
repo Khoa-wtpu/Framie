@@ -1,5 +1,6 @@
 # payments/services.py - N2 / UC5.1 (Khách hàng tải minh chứng) và N3 / UC5.2 (Nhiếp ảnh gia xác nhận cọc) (Nguyên)
 import uuid                                                  # tạo tên tệp ngẫu nhiên, không trùng, không lộ tên gốc
+from datetime import timedelta                               # cộng thêm số ngày vào hạn đặt cọc mới
 from pathlib import Path                                     # tách phần đuôi (.png) khỏi tên tệp
 
 from django.conf import settings                             # đọc BASE_DIR và (nếu có) MINH_CHUNG_ROOT
@@ -10,7 +11,7 @@ from django.utils import timezone                            # giờ hiện tạ
 
 from accounts.permissions import lay_vai_tro                 # vai trò của User (đã có sẵn của Phanh)
 from bookings.models import Booking                          # model Booking của Tuyền
-from bookings.services import chuyen_trang_thai_booking      # (N3) HÀM T2 của Tuyền: nơi DUY NHẤT được đổi trạng thái Booking
+from bookings.services import SO_NGAY_HAN_DAT_COC, chuyen_trang_thai_booking   # (N3) HÀM T2 của Tuyền: nơi DUY NHẤT được đổi trạng thái Booking; SO_NGAY_HAN_DAT_COC = số ngày hạn đặt cọc (1 ngày)
 from core.constants import (BenThucHien, LoaiThanhToan,      # hằng số, KHÔNG gõ chữ tiếng Việt trực tiếp
                             TrangThaiBooking, TrangThaiThanhToan, VaiTro)
 from notifications.services import gui_thong_bao, gui_thong_bao_kem_email            # hàm gửi thông báo dùng chung của Phanh
@@ -180,11 +181,14 @@ def yeu_cau_bo_sung_minh_chung(ma_booking, nag_user, ly_do):  # nhánh 4a: minh 
             booking, thanh_toan = _lay_booking_va_khoan_coc(ma_booking, nag_user)
             thanh_toan.LyDoTuChoi = ly_do                    # có giá trị = đang chờ khách nộp lại; TrangThai GIỮ NGUYÊN
             thanh_toan.save(update_fields=['LyDoTuChoi'])
+            han_moi = timezone.now() + timedelta(days=SO_NGAY_HAN_DAT_COC)   # hạn nộp lại = lúc yêu cầu bổ sung + 1 ngày (tính lại, không dùng hạn cọc cũ)
+            Booking.objects.filter(pk=booking.pk).update(HanDatCoc=han_moi)   # ghi hạn mới; quá hạn này mà Khách chưa nộp lại thì hệ thống tự hủy (bookings/qua_han.py)
     except DatabaseError:
         raise LoiXacNhanCoc('Không thể cập nhật trạng thái thanh toán, vui lòng thực hiện lại.')
 
     gui_thong_bao(booking.MaKhachHang,                       # báo Khách hàng tải lại / bổ sung
                   'Nhiếp ảnh gia yêu cầu bổ sung minh chứng',
-                  f'Booking #{booking.pk}: {ly_do}',
+                  f'Booking #{booking.pk}: {ly_do}. Vui lòng tải lại minh chứng trước {timezone.localtime(han_moi):%H:%M %d/%m/%Y}, '
+                  'quá hạn Booking sẽ bị hủy tự động.',      # nói rõ hạn mới cho Khách biết
                   booking=booking)
     return thanh_toan

@@ -74,7 +74,7 @@ CHUYEN_HOP_LE = {  # dict (từ điển): mỗi cặp (cũ, mới) -> tập các
     # --- Chọn ảnh (chỉ gói "Giới hạn số lượng ảnh") / vào hậu kỳ ---
     (TT.DA_CHUP, TT.CHO_KH_CHON_ANH): {NAG},           # chỉ gói giới hạn số ảnh (kiểm tra thêm ở bước 6 trong hàm)
     (TT.DA_CHUP, TT.CHO_HAU_KY): {NAG},                # mục 9.2: gói hậu kỳ toàn bộ, Nhiếp ảnh gia tự hậu kỳ sau "Đã chụp", bỏ qua bước chọn ảnh
-    (TT.CHO_KH_CHON_ANH, TT.CHO_HAU_KY): {KH},         # mục 9.1.2: Khách chọn xong (TO-BE không có bước tự động khi quá 2 ngày)
+    (TT.CHO_KH_CHON_ANH, TT.CHO_HAU_KY): {KH},         # mục 9.1.2: Khách chọn xong và gửi danh sách thì tự chuyển (không có hạn chót, không có bước tự động theo thời gian)
 
     # --- Hậu kỳ ---
     (TT.CHO_HAU_KY, TT.DANG_HAU_KY): {NAG},            # Nhiếp ảnh gia bắt đầu hậu kỳ
@@ -100,7 +100,7 @@ SO_NGAY_HAN_THANH_TOAN_CON_LAI = 2   # 9.5.2: 2 ngày kể từ lúc Khách xác
 # Hạn chót tự gán khi Booking VÀO trạng thái mới (trạng thái mới: (tên field của Booking, thời hạn)).
 DAT_HAN = {  # khi Booking vào trạng thái ở khóa, hệ thống gán luôn hạn chót tương ứng
     TT.CHO_DAT_COC: ('HanDatCoc', timedelta(days=SO_NGAY_HAN_DAT_COC)),                   # 4.2.2: 1 ngày kể từ lúc chấp nhận
-    TT.CHO_KH_CHON_ANH: ('HanChonAnh', timedelta(days=2)),              # 9.1.1: 2 ngày kể từ lúc tải ảnh
+    # TT.CHO_KH_CHON_ANH: KHÔNG gán hạn chót - Khách chọn ảnh hậu kỳ không giới hạn thời gian (đã bỏ hạn 2 ngày); Khách gửi danh sách cho Nhiếp ảnh gia thì tự chuyển sang "Chờ hậu kỳ"
     TT.DANG_HAU_KY: ('HanHauKy', timedelta(days=3)),                    # 9.3: 3 ngày kể từ lúc Nhiếp ảnh gia bấm bắt đầu hậu kỳ (vào "Đang hậu kỳ"); Khách yêu cầu chỉnh sửa quay lại "Đang hậu kỳ" thì tính lại 3 ngày
     TT.CHO_XAC_NHAN_THANH_TOAN: ('HanThanhToanConLai', timedelta(days=SO_NGAY_HAN_THANH_TOAN_CON_LAI)),  # 9.5.2: 2 ngày kể từ lúc Khách xác nhận bàn giao
 }

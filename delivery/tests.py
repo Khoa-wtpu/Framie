@@ -123,7 +123,7 @@ class TaiAnhTests(_NenAnh):                                    # N4 / UC5.3: ngh
         self.assertEqual(kq['so_anh'], 3)
         bk.refresh_from_db()
         self.assertEqual(bk.TrangThai, TT.CHO_KH_CHON_ANH)                                  # gói giới hạn: Khách chọn ảnh
-        self.assertAlmostEqual((bk.HanChonAnh - timezone.now()).total_seconds(), 2 * 86400, delta=120)   # hạn 2 ngày
+        self.assertIsNone(bk.HanChonAnh)                                                    # Khách chọn ảnh không giới hạn thời gian (đã bỏ hạn 2 ngày)
         kho = services.kho_anh()
         anhs = list(Anh.objects.filter(MaBooking=bk))
         self.assertEqual(len(anhs), 3)

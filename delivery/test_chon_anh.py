@@ -23,8 +23,6 @@ User = get_user_model()                                        # lấy model Use
 class _NenChonAnh(_NenAnh):                                    # lớp nền riêng của N6 (không có test riêng)
     def tao_booking_cho_chon(self, so_anh=7, goi=None):        # Booking ở "Chờ Khách hàng lựa chọn ảnh" có sẵn so_anh ảnh chưa hậu kỳ
         bk = self.tao_booking(goi or self.goi_gh, TT.CHO_KH_CHON_ANH)   # tạo Booking đúng trạng thái
-        Booking.objects.filter(pk=bk.pk).update(HanChonAnh=timezone.now() + timedelta(days=2))   # hạn chọn 2 ngày (giống hàm của Tuyền)
-        bk.refresh_from_db()                                   # đọc lại để có HanChonAnh
         self.ds_anh = [self.tao_anh(bk, f'a{i}.jpg') for i in range(1, so_anh + 1)]   # tạo ảnh a1.jpg, a2.jpg...
         return bk                                              # trả Booking
 
@@ -82,15 +80,16 @@ class ChonAnhServiceTests(_NenChonAnh):                        # nghiệp vụ c
         bk2 = self.tao_booking(self.goi_gh, TT.DA_CHUP)        # chưa đến bước chọn
         self.assertIn('chưa đến lúc', services.ly_do_khong_chon_duoc(bk2))  # kiểm tra câu báo có chứa đoạn chữ mong đợi
 
-    def test_qua_han_2_ngay_bi_chan(self):                     # chỉ được chọn trong hạn
+    def test_khong_gioi_han_thoi_gian_chon_anh(self):          # Khách chọn ảnh hậu kỳ không còn hạn 2 ngày
         bk = self.tao_booking_cho_chon()  # tạo Booking ở Chờ Khách hàng lựa chọn ảnh, kèm sẵn các ảnh mẫu
-        sau_han = timezone.now() + timedelta(days=3)           # giả lập đã qua 3 ngày
-        with mock.patch('delivery.services.timezone.now', return_value=sau_han):  # giả lập giờ hiện tại đã qua hạn
-            self.assertIn('quá hạn', services.ly_do_khong_chon_duoc(bk))  # kiểm tra câu báo có chứa đoạn chữ mong đợi
-            with self.assertRaises(services.LoiChonAnh):  # mong đợi hàm này báo lỗi
-                services.luu_lua_chon(bk.pk, self.kh, self.ma(1))  # gọi hàm lưu lựa chọn ảnh
-            with self.assertRaises(services.LoiChonAnh):  # mong đợi hàm này báo lỗi
-                services.gui_danh_sach_hau_ky(bk.pk, self.kh)  # gọi hàm gửi danh sách ảnh cho Nhiếp ảnh gia
+        self.assertIsNone(bk.HanChonAnh)                       # hệ thống không còn gán hạn chọn ảnh
+        sau_lau = timezone.now() + timedelta(days=30)          # giả lập đã qua 30 ngày
+        with mock.patch('delivery.services.timezone.now', return_value=sau_lau):  # giả lập giờ hiện tại rất xa sau đó
+            self.assertIsNone(services.ly_do_khong_chon_duoc(bk))  # vẫn được chọn ảnh bình thường
+            self.assertEqual(services.luu_lua_chon(bk.pk, self.kh, self.ma(1)), 1)  # lưu lựa chọn thành công
+            services.gui_danh_sach_hau_ky(bk.pk, self.kh)      # Khách xác nhận gửi cho Nhiếp ảnh gia thành công
+        bk.refresh_from_db()                                   # đọc lại trạng thái mới nhất
+        self.assertEqual(bk.TrangThai, TT.CHO_HAU_KY)          # hệ thống tự chuyển sang giai đoạn tiếp theo
 
     def test_goi_hau_ky_toan_bo_khong_co_buoc_chon(self):      # chỉ gói giới hạn mới có bước chọn
         bk = self.tao_booking(self.goi_tb, TT.CHO_HAU_KY)  # tạo Booking ở trạng thái cần thử

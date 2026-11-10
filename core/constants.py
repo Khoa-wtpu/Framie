@@ -36,7 +36,7 @@ class TrangThaiBooking:
     CHO_DAT_COC = 'Chờ đặt cọc'                   # đã chấp nhận, Khách có 1 ngày để đặt cọc 40%
     CHOT_BOOKING = 'Chốt Booking'                 # Nhiếp ảnh gia xác nhận đủ cọc, chờ buổi chụp
     DA_CHUP = 'Đã chụp'                           # buổi chụp xong (từ đây không hủy được nữa)
-    CHO_KH_CHON_ANH = 'Chờ Khách hàng lựa chọn ảnh'   # chỉ gói giới hạn số ảnh, hạn 2 ngày
+    CHO_KH_CHON_ANH = 'Chờ Khách hàng lựa chọn ảnh'   # chỉ gói giới hạn số ảnh, không giới hạn thời gian chọn
     CHO_HAU_KY = 'Chờ hậu kỳ'                     # chờ Nhiếp ảnh gia bắt đầu hậu kỳ
     DANG_HAU_KY = 'Đang hậu kỳ'                   # đang hậu kỳ, hạn 3 ngày
     CHO_KH_KIEM_TRA = 'Chờ Khách hàng kiểm tra'   # Khách xem ảnh đã hậu kỳ

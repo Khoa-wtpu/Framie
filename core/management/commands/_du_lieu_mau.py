@@ -219,8 +219,7 @@ def _bk(ma, nag, khach, gioi_han, cuoi, tao, chup, t, **kw):
     s.update(kw)
     if TT.CHO_DAT_COC in t:
         s['han_coc'] = t[TT.CHO_DAT_COC] + timedelta(days=1)
-    if gioi_han and TT.CHO_KH_CHON_ANH in t:
-        s['han_chon'] = t[TT.CHO_KH_CHON_ANH] + timedelta(days=2)
+    # han_chon luôn None: Khách chọn ảnh hậu kỳ không còn hạn 2 ngày
     if TT.DANG_HAU_KY in t:
         s['han_hau_ky'] = t[TT.DANG_HAU_KY] + timedelta(days=3)
     if TT.CHO_XAC_NHAN_THANH_TOAN in t:

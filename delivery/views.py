@@ -103,7 +103,15 @@ def tai_anh_len(request, nag, ma_booking):
 
 @login_required
 def xem_anh(request, ma_anh):                                  # bước 7: hiển thị ảnh đã chèn watermark (chỉ người có quyền)
-    ban_truoc = request.GET.get('truoc') == '1'                # E10: ?truoc=1 -> bản có watermark liền trước (chỉ Khách hàng và Nhiếp ảnh gia của Booking)
+    return _tra_ve_anh(request, ma_anh, ban_truoc=False)       # ảnh hiện tại (bản mới nhất)
+
+
+@login_required
+def xem_anh_truoc(request, ma_anh):                            # E10 (E1 mục 4.3): đường dẫn riêng anh/<mã>/xem-ban-truoc/ cho ảnh bản trước (có watermark)
+    return _tra_ve_anh(request, ma_anh, ban_truoc=True)        # quyền xem do services.mo_anh kiểm tra (Khách hàng, Nhiếp ảnh gia của Booking, Quản trị viên)
+
+
+def _tra_ve_anh(request, ma_anh, ban_truoc):                   # phần dùng chung của hai trang xem ảnh: kiểm tra quyền, mở tệp, thu nhỏ (nếu cần), trả về trình duyệt
     anh, kho = services.mo_anh(request.user, ma_anh, ban_truoc=ban_truoc)
     if anh is None:
         raise Http404

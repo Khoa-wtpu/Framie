@@ -27,7 +27,6 @@
     <section class="panel stack">{# khung hướng dẫn #}
       <p>Gói <strong>{{ booking.MaGoi.TenGoi }}</strong> cho phép chọn tối đa <strong>{{ so_toi_da }}</strong> ảnh để hậu kỳ.
         Bạn xem ảnh (có watermark) rồi tick vào các ảnh muốn hậu kỳ.</p>{# hướng dẫn #}
-      {% if booking.HanChonAnh %}<p class="muted">Hạn lựa chọn ảnh: {{ booking.HanChonAnh|date:"d/m/Y H:i" }}</p>{% endif %}{# hạn chót 2 ngày #}
       <p>Đã chọn: <strong id="so-da-chon">{{ so_da_chon }}</strong> / {{ so_toi_da }} ảnh</p>{# bộ đếm, JavaScript cập nhật khi tick #}
       <p id="canh-bao-vuot" class="field__error" hidden>Bạn đã chọn vượt quá số ảnh cho phép, vui lòng bỏ bớt ảnh.</p>{# JavaScript hiện khi vượt giới hạn #}
     </section>

@@ -187,12 +187,11 @@
       </section>
 
       {# Hạn chót: chỉ hiện khi Booking đã có ít nhất một hạn (hệ thống gán khi vào trạng thái tương ứng). #}
-      {% if booking.HanDatCoc or booking.HanChonAnh or booking.HanHauKy or booking.HanThanhToanConLai %}
+      {% if booking.HanDatCoc or booking.HanHauKy or booking.HanThanhToanConLai %}
       <section class="ct__the">{# thẻ hạn chót #}
         <h2 class="ct__the-tieu-de">Hạn chót</h2>{# tiêu đề thẻ #}
         <dl class="ct__ds">
           {% if booking.HanDatCoc %}<div class="ct__dong"><dt>Đặt cọc</dt><dd>{{ booking.HanDatCoc|date:"H:i d/m/Y" }}</dd></div>{% endif %}{# hạn đặt cọc #}
-          {% if booking.HanChonAnh %}<div class="ct__dong"><dt>Chọn ảnh</dt><dd>{{ booking.HanChonAnh|date:"H:i d/m/Y" }}</dd></div>{% endif %}{# hạn Khách chọn ảnh #}
           {% if booking.HanHauKy %}<div class="ct__dong"><dt>Hậu kỳ</dt><dd>{{ booking.HanHauKy|date:"H:i d/m/Y" }}</dd></div>{% endif %}{# hạn hoàn tất hậu kỳ #}
           {% if booking.HanThanhToanConLai %}<div class="ct__dong"><dt>Thanh toán còn lại</dt><dd>{{ booking.HanThanhToanConLai|date:"H:i d/m/Y" }}</dd></div>{% endif %}{# hạn trả 60% còn lại #}
         </dl>
