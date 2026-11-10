@@ -6,7 +6,7 @@
 
 {% block title %}Booking #{{ booking.pk }}{% endblock %}{# chữ trên tab trình duyệt, kèm mã Booking #}
 
-{% block extra_head %}<link rel="stylesheet" href="{% static 'bookings/css/chi_tiet_booking.css' %}">{% endblock %}{# nạp CSS dùng chung của các trang Booking #}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'bookings/css/chi_tiet_booking.css' %}"><link rel="stylesheet" href="{% static 'bookings/css/nag_chi_tiet.css' %}">{% endblock %}{# nạp CSS dùng chung của các trang Booking #}
 
 {% block content %}{# nội dung chính #}
 <div class="container ct">{# khung giữa trang, các khối con cách đều nhau nhờ CSS #}
@@ -19,14 +19,13 @@
       <div class="ct__tieu-de"><h1>Booking #{{ booking.pk }}</h1>{% status_badge booking.TrangThai %}</div>{# mã Booking + nhãn trạng thái (nhãn đặt NGOÀI h1 để không mất chữ) #}
       <p class="ct__gui-luc">Gửi lúc {{ booking.NgayTao|date:"H:i d/m/Y" }}</p>{# thời điểm khách gửi yêu cầu #}
     </div>
+    {% include "bookings/includes/the_thoi_tiet.html" with gon=True %}{# E8: thẻ dự báo thời tiết dạng gọn, nằm cùng hàng với tiêu đề #}
   </header>
 
-  {% if nhac_thanh_toan %}{# Khách đã tải minh chứng thanh toán: nhắc Nhiếp ảnh gia kiểm tra để xác nhận hoặc yêu cầu bổ sung #}
-    {% include "includes/alert.html" with level="warning" title=nhac_thanh_toan.tieu_de text=nhac_thanh_toan.noi_dung action_url=nhac_thanh_toan.url action_label=nhac_thanh_toan.nhan %}
-  {% endif %}
+  {% include "bookings/includes/the_thoi_tiet_nhac.html" %}{# E8: dải nhắc đổi lịch (chỉ hiện khi khả năng mưa cao) #}
 
   {# ===== DẢI THÔNG TIN CHÍNH (UC4.3 bước 4): chụp khi nào, ở đâu, mấy người ===== #}
-  <section class="ct__dai" aria-label="Thông tin buổi chụp">{# thẻ lớn chia 3 ô #}
+  <section class="ct__dai ct__dai--4" aria-label="Thông tin buổi chụp">{# thẻ lớn chia 4 ô: ngày giờ | địa điểm | số người | giá trị #}
     <div class="ct__o">
       <p class="ct__o-nhan">Ngày giờ chụp</p>
       <div class="ct__ngay"><span class="ct__ngay-so">{{ booking.NgayGioChup|date:"d" }}</span><span class="ct__ngay-thang">Tháng {{ booking.NgayGioChup|date:"n" }} · {{ booking.NgayGioChup|date:"Y" }}</span></div>{# số ngày to + tháng/năm #}
@@ -40,10 +39,14 @@
       <p class="ct__o-nhan">Số người</p>
       <p class="ct__so-nguoi">{{ booking.SoNguoi }}</p>{# số người tham gia #}
     </div>
+    <div class="ct__o">{# ô giá trị Booking (trước đây là thẻ riêng ở cột phụ) #}
+      <p class="ct__o-nhan">Giá trị Booking</p>
+      <p class="ct__tong">{{ tong_gia }}<small>VNĐ</small></p>{# tổng giá trị theo giá gói #}
+      <p class="ct__o-phu">Tiền cọc 40%: {{ tien_coc }} VNĐ</p>{# số tiền cọc khách sẽ phải đặt #}
+    </div>
   </section>
 
-  <div class="ct__than">{# thân trang: cột chính (trái) + cột phụ (phải) #}
-    <div class="ct__cot">{# cột chính #}
+  <div class="ct__than ct__than--hai">{# thân trang: 2 thẻ thông tin cạnh nhau, cao bằng nhau #}
 
       <section class="ct__the">{# thẻ: khách và gói dịch vụ #}
         <h2 class="ct__the-tieu-de">Khách hàng và dịch vụ</h2>
@@ -64,57 +67,53 @@
           {% if booking.LyDoTuChoi %}<div class="ct__dong"><dt>Lý do từ chối</dt><dd>{{ booking.LyDoTuChoi }}</dd></div>{% endif %}{# chỉ hiện khi đã từ chối #}
         </dl>
       </section>
+  </div>{# hết thân trang #}
+
+  {# Khối xử lý chỉ hiện khi Booking đang "Chờ xác nhận"; đã xử lý xong thì ẩn hết để khỏi bấm nhầm. #}
+  {% if co_the_xu_ly %}
+  <section class="ct__the ct__ngang">{# thẻ xử lý yêu cầu, dạng ngang: chữ bên trái, nút bên phải #}
+    <div class="ct__ngang-chu">
+      <h2 class="ct__the-tieu-de">Xử lý yêu cầu</h2>
+      {% if da_qua_gio_chup %}{# giờ chụp đã qua: cảnh báo, chỉ còn từ chối #}
+        {% include "includes/alert.html" with level="warning" text="Đã quá giờ chụp của Booking này nên không thể chấp nhận. Hệ thống sẽ tự động hủy Booking và trả khung giờ về lịch trống." %}
+      {% else %}{# giờ chụp chưa qua: giải thích hậu quả của hai lựa chọn #}
+      <p class="ct__luu-y">Nếu chấp nhận, Khách hàng có 1 ngày để đặt cọc 40% giá trị buổi chụp ({{ tien_coc }} VNĐ). Nếu từ chối, bạn phải nhập lý do và khung giờ được trả về lịch trống ngay.</p>
+      {% endif %}
     </div>
-
-    <aside class="ct__cot">{# cột phụ: giá trị + các nút xử lý #}
-
-      <section class="ct__the ct__the--noi-bat">{# thẻ giá trị Booking, viền đậm #}
-        <h2 class="ct__the-tieu-de">Giá trị Booking</h2>
-        <p class="ct__tong">{{ tong_gia }}<small>VNĐ</small></p>{# tổng giá trị theo giá gói #}
-        <p class="ct__ghi-chu">Tiền cọc 40%: {{ tien_coc }} VNĐ</p>{# số tiền cọc khách sẽ phải đặt #}
-      </section>
-
-      {# Khối nút xử lý chỉ hiện khi Booking đang "Chờ xác nhận"; đã xử lý xong thì ẩn hết để khỏi bấm nhầm. #}
-      {% if co_the_xu_ly %}
-      <section class="ct__the">{# thẻ xử lý yêu cầu #}
-        <h2 class="ct__the-tieu-de">Xử lý yêu cầu</h2>
-        {% if da_qua_gio_chup %}{# giờ chụp đã qua: cảnh báo, chỉ còn từ chối #}
-          {% include "includes/alert.html" with level="warning" text="Đã quá giờ chụp của Booking này nên không thể chấp nhận. Hệ thống sẽ tự động hủy Booking và trả khung giờ về lịch trống." %}
-        {% else %}{# giờ chụp chưa qua: giải thích hậu quả của hai lựa chọn #}
-        <p class="ct__luu-y">Nếu chấp nhận, Khách hàng có 1 ngày để đặt cọc 40% giá trị buổi chụp ({{ tien_coc }} VNĐ). Nếu từ chối, bạn phải nhập lý do và khung giờ được trả về lịch trống ngay.</p>
-        {% endif %}
-        <div class="ct__nut">{# hàng nút Chấp nhận / Từ chối #}
-          {% if not da_qua_gio_chup %}{# nút Chấp nhận chỉ hiện khi giờ chụp CHƯA qua #}
-          <form method="post" action="{% url 'chap_nhan_booking' ma_booking=booking.pk %}">{# gửi lệnh bằng POST để không ai chấp nhận nhầm chỉ bằng cách mở một địa chỉ #}
-            {% csrf_token %}{# mã chống giả mạo yêu cầu #}
-            <button class="btn btn--primary" type="submit">Chấp nhận Booking</button>{# UC4.4 #}
-          </form>
-          {% endif %}
-          <a class="btn btn--danger" href="{% url 'tu_choi_booking' ma_booking=booking.pk %}">Từ chối Booking</a>{# UC4.5: mở trang nhập lý do; dùng được cả khi đã quá giờ chụp #}
-        </div>
-      </section>
+    <div class="ct__nut ct__nut--phai">{# hàng nút Chấp nhận / Từ chối #}
+      {% if not da_qua_gio_chup %}{# nút Chấp nhận chỉ hiện khi giờ chụp CHƯA qua #}
+      <form method="post" action="{% url 'chap_nhan_booking' ma_booking=booking.pk %}">{# gửi lệnh bằng POST để không ai chấp nhận nhầm chỉ bằng cách mở một địa chỉ #}
+        {% csrf_token %}{# mã chống giả mạo yêu cầu #}
+        <button class="btn btn--primary" type="submit">Chấp nhận Booking</button>{# UC4.4 #}
+      </form>
       {% endif %}
+      <a class="btn btn--danger" href="{% url 'tu_choi_booking' ma_booking=booking.pk %}">Từ chối Booking</a>{# UC4.5: mở trang nhập lý do; dùng được cả khi đã quá giờ chụp #}
+    </div>
+  </section>
+  {% endif %}
 
-      {# T8: Booking đang "Chốt Booking" -> Nhiếp ảnh gia bấm "Đã chụp" sau khi buổi chụp diễn ra. #}
-      {% if dang_chot_booking %}{# khóa dang_chot_booking do tiep_nhan.py truyền vào #}
-      <section class="ct__the">{# thẻ sau buổi chụp #}
-        <h2 class="ct__the-tieu-de">Sau buổi chụp</h2>
-        {% if da_den_gio_chup %}{# buổi chụp đã tới giờ #}
-          <p class="ct__luu-y">Sau khi chụp xong, bấm "Đã chụp". Gói Giới hạn số lượng ảnh: bạn tải ảnh lên để Khách hàng chọn. Gói Hậu kỳ toàn bộ ảnh: Booking sang thẳng "Chờ hậu kỳ".</p>{# hướng dẫn 2 nhánh theo loại gói #}
-          <form method="post" action="{% url 'da_chup_booking' ma_booking=booking.pk %}">{# form POST tới da_chup_booking #}
-            {% csrf_token %}
-            <button class="btn btn--primary" type="submit">Đã chụp</button>{# nút "Đã chụp" #}
-          </form>
-        {% else %}{# chưa tới giờ chụp #}
-          {% include "includes/alert.html" with level="info" text="Buổi chụp chưa diễn ra nên chưa thể bấm Đã chụp." %}
-        {% endif %}
-        {# T9 / UC4.6: Nhiếp ảnh gia có thể hủy khi Booking đang "Chốt Booking". #}
-        <p class="ct__luu-y ct__luu-y--huy">Cần hủy buổi chụp? Nếu hủy sau khi Khách đã đặt cọc, bạn có trách nhiệm hoàn lại 40% tiền cọc ({{ tien_coc }} VNĐ) cho Khách hàng.</p>{# nhắc hậu quả khi hủy #}
-        <a class="btn btn--danger" href="{% url 'huy_booking' ma_booking=booking.pk %}">Hủy Booking</a>{# nút đỏ dẫn tới trang nhập lý do + xác nhận hủy #}
-      </section>
+  {# T8: Booking đang "Chốt Booking" -> Nhiếp ảnh gia bấm "Đã chụp" sau khi buổi chụp diễn ra. #}
+  {% if dang_chot_booking %}{# khóa dang_chot_booking do tiep_nhan.py truyền vào #}
+  <section class="ct__the ct__ngang ct__ngang--hai">{# thẻ sau buổi chụp, dạng ngang: 2 ô cạnh nhau (Đã chụp | Hủy) #}
+    <div class="ct__ngang-o">
+      <h2 class="ct__the-tieu-de">Sau buổi chụp</h2>
+      {% if da_den_gio_chup %}{# buổi chụp đã tới giờ #}
+        <p class="ct__luu-y">Sau khi chụp xong, bấm "Đã chụp". Gói Giới hạn số lượng ảnh: bạn tải ảnh lên để Khách hàng chọn. Gói Hậu kỳ toàn bộ ảnh: Booking sang thẳng "Chờ hậu kỳ".</p>{# hướng dẫn 2 nhánh theo loại gói #}
+        <form method="post" action="{% url 'da_chup_booking' ma_booking=booking.pk %}">{# form POST tới da_chup_booking #}
+          {% csrf_token %}
+          <button class="btn btn--primary" type="submit">Đã chụp</button>{# nút "Đã chụp" #}
+        </form>
+      {% else %}{# chưa tới giờ chụp #}
+        {% include "includes/alert.html" with level="info" text="Buổi chụp chưa diễn ra nên chưa thể bấm Đã chụp." %}
       {% endif %}
+    </div>
+    <div class="ct__ngang-o">{# T9 / UC4.6: Nhiếp ảnh gia có thể hủy khi Booking đang "Chốt Booking". #}
+      <h2 class="ct__the-tieu-de">Hủy buổi chụp</h2>
+      <p class="ct__luu-y">Cần hủy buổi chụp? Nếu hủy sau khi Khách đã đặt cọc, bạn có trách nhiệm hoàn lại 40% tiền cọc ({{ tien_coc }} VNĐ) cho Khách hàng.</p>{# nhắc hậu quả khi hủy #}
+      <a class="btn btn--danger" href="{% url 'huy_booking' ma_booking=booking.pk %}">Hủy Booking</a>{# nút đỏ dẫn tới trang nhập lý do + xác nhận hủy #}
+    </div>
+  </section>
+  {% endif %}
 
-    </aside>
-  </div>
 </div>
 {% endblock %}

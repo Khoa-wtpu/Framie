@@ -1,0 +1,35 @@
+/* bookings/static/bookings/css/nag_chi_tiet.css - bố cục riêng của trang /bookings/quan-ly/<id>/ (Nhiếp ảnh gia). Chỉ dùng biến trong tokens.css. */
+/* Dải thông tin 4 ô: ngày giờ | địa điểm | số người | giá trị Booking */
+.ct__dai--4 { grid-template-columns: 1.2fr 1.4fr .7fr 1.2fr; }
+.ct__dai--4 .ct__tong { width: fit-content; max-width: 100%; font-size: var(--text-2xl); line-height: 1.15; letter-spacing: -.01em; background: var(--text-gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }  /* số tiền: to hơn, chữ đổ gradient xám-đen (nền sáng) / trắng-xám (nền tối) giống tiêu đề trang */
+.ct__dai--4 .ct__tong small { font-size: var(--text-sm); -webkit-text-fill-color: var(--color-text-muted); }  /* "VNĐ" giữ màu xám nhỏ, không đổ gradient */
+
+/* Thân trang: 2 thẻ thông tin cạnh nhau, cao bằng nhau (hết lệch hàng) */
+.ct__than--hai { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
+
+/* Thẻ ngang (Xử lý yêu cầu, Sau buổi chụp) */
+.ct__ngang { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-5) var(--space-6); }
+.ct__ngang .ct__the-tieu-de { margin-bottom: var(--space-3); }
+.ct__ngang .ct__luu-y { margin: 0; }
+.ct__ngang .alert { margin: 0; }
+.ct__ngang .ct__nut { margin-top: 0; }
+.ct__nut--phai { justify-content: flex-end; }
+.ct__ngang--hai { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: var(--space-6); }
+.ct__ngang--hai .ct__ngang-o { display: grid; align-content: start; gap: var(--space-4); }
+.ct__ngang--hai .ct__ngang-o .ct__the-tieu-de { margin-bottom: 0; }
+.ct__ngang--hai .ct__ngang-o form, .ct__ngang--hai .ct__ngang-o .btn { justify-self: start; }
+.ct__ngang--hai .ct__ngang-o + .ct__ngang-o { border-left: 1px solid var(--color-border); padding-left: var(--space-6); }  /* đường kẻ dọc ngăn 2 ô */
+
+@media (max-width: 60rem) {
+  .ct__dai--4 { grid-template-columns: 1fr 1fr; }
+  .ct__dai--4 .ct__o:nth-child(3) { border-left: 0; }
+  .ct__dai--4 .ct__o:nth-child(n+3) { border-top: 1px solid var(--color-border); }
+  .ct__than--hai { grid-template-columns: 1fr; }
+  .ct__ngang, .ct__ngang--hai { grid-template-columns: 1fr; }
+  .ct__nut--phai { justify-content: flex-start; }
+  .ct__ngang--hai .ct__ngang-o + .ct__ngang-o { border-left: 0; padding-left: 0; border-top: 1px solid var(--color-border); padding-top: var(--space-5); }
+}
+@media (max-width: 40rem) {
+  .ct__dai--4 { grid-template-columns: 1fr; }
+  .ct__dai--4 .ct__o + .ct__o { border-left: 0; border-top: 1px solid var(--color-border); }
+}

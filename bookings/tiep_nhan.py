@@ -83,6 +83,7 @@ from core.constants import BenThucHien, LoaiThanhToan, TrangThaiBooking, TrangTh
 from notifications.services import gui_thong_bao
 # tinh_so_tien: quy tắc tính tiền cọc 40% DUY NHẤT của dự án (Thanh toán dùng cùng hàm này để thu tiền thật).
 from payments.models import tinh_so_tien
+from bookings.the_thoi_tiet import lay_the_thoi_tiet
 
 # Tạo 'sổ ghi lỗi' riêng cho file này; mỗi dòng log mang tên file nên dễ tìm.
 logger = logging.getLogger(__name__)
@@ -495,6 +496,7 @@ def chi_tiet_yeu_cau(request, ma_booking):
         'dang_chot_booking': booking.TrangThai == TrangThaiBooking.CHOT_BOOKING,   # True nếu Booking đang 'Chốt Booking' -> template hiện khối nút 'Đã chụp'
         # Tổng giá trị Booking đã định dạng (ví dụ 1.500.000).
         'tong_gia': _tien(booking.TongGiaTri),
+        'the_thoi_tiet': lay_the_thoi_tiet(booking, False, True),  # E8: thẻ dự báo thời tiết cho Nhiếp ảnh gia
         # Số tiền cọc 40% (tính bằng tinh_so_tien) đã định dạng, để báo trước cho Nhiếp ảnh gia.
         'tien_coc': _tien(tinh_so_tien(booking.TongGiaTri, LoaiThanhToan.TIEN_COC)),
         # Hộp thông báo 'Khách đã tải minh chứng' + nút sang trang xác nhận (None nếu chưa có gì cần xác nhận).
