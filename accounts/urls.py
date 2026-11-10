@@ -4,6 +4,7 @@ from . import views  # các view vừa viết
 from . import views_mat_khau  # P6: 3 bước quên mật khẩu
 from . import views_quan_tri  # B7: view trang tổng quan khu Quản trị
 from . import views_khach_hang  # Hồ sơ của tôi (Khách hàng) và Đổi mật khẩu
+from . import views_moi_quan_tri  # Mời và đăng ký Quản trị viên bằng link có chữ ký
 
 urlpatterns = [  # danh sách đường dẫn của app accounts
     path('dang-nhap/', views.DangNhapView.as_view(), name='login'),  # name='login' khớp core/navigation.py và header
@@ -25,6 +26,8 @@ urlpatterns = [  # danh sách đường dẫn của app accounts
     # P7: đổi vai trò (chỉ POST)
     path('quan-tri/tai-khoan/<int:pk>/khoa-mo/', views_quan_tri.khoa_mo_tai_khoan, name='admin_account_toggle'),
     # P7: khóa/mở (chỉ POST)
+    path('quan-tri/tai-khoan/moi-quan-tri/', views_moi_quan_tri.moi_quan_tri_vien, name='admin_invite'),  # admin nhập email người được mời
+    path('dang-ky/quan-tri/<str:token>/', views_moi_quan_tri.dang_ky_quan_tri, name='register_admin'),  # người được mời mở link trong email
     path('ho-so/khach-hang/', views_khach_hang.ho_so_khach_hang, name='customer_profile'),  # Hồ sơ của tôi (Khách hàng); name khớp core/navigation.py
     path('ho-so/khach-hang/cap-nhat/', views_khach_hang.cap_nhat_ho_so_khach_hang, name='customer_profile_update'),  # Cập nhật hồ sơ (Khách hàng)
     path('tai-khoan/doi-mat-khau/', views_khach_hang.doi_mat_khau, name='change_password'),  # Đổi mật khẩu (mọi vai trò đã đăng nhập); name khớp menu avatar
