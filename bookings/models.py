@@ -269,7 +269,7 @@ class Booking(models.Model):  # bảng BOOKING
        default=TrangThaiBooking.CHO_XAC_NHAN,  # Booking mới tạo luôn là "Chờ xác nhận"
    )
    HanDatCoc = models.DateTimeField(null=True, blank=True)  # hạn chót khách đặt cọc 40% (1 ngày)
-   HanChonAnh = models.DateTimeField(null=True, blank=True)  # hạn chót khách chọn ảnh (2 ngày)
+   HanChonAnh = models.DateTimeField(null=True, blank=True)  # KHÔNG CÒN DÙNG: Khách chọn ảnh không giới hạn thời gian (giữ cột để khỏi phải migration, luôn để trống)
    HanHauKy = models.DateTimeField(null=True, blank=True)  # hạn chót nhiếp ảnh gia hậu kỳ xong (3 ngày)
    HanThanhToanConLai = models.DateTimeField(null=True, blank=True)  # hạn chót trả 60% còn lại
    TongGiaTri = models.DecimalField(max_digits=12, decimal_places=0, blank=True)  # tổng tiền (VNĐ); form được để trống, khi đó tự lấy giá của gói (xem clean() và save())

@@ -86,8 +86,6 @@ class YeuCauChinhSuaServiceTests(_NenYeuCau):                  # nghiệp vụ c
     def test_noi_dung_khong_hop_le_bi_chan_va_khong_doi_gi(self):   # ngoại lệ 4b
         bk = self.tao_booking_cho_kiem_tra()  # tạo Booking Chờ Khách hàng kiểm tra kèm ảnh đã hậu kỳ
         _, ds = self.du_lieu(1)  # lấy dữ liệu mẫu để gửi
-        with self.assertRaises(services.LoiYeuCauChinhSua):    # nhận xét tổng quát trống
-            services.gui_yeu_cau_chinh_sua(bk.pk, self.kh, '   ', ds)  # gọi hàm gửi yêu cầu chỉnh sửa
         with self.assertRaises(services.LoiYeuCauChinhSua):    # nhận xét quá 1000 ký tự
             services.gui_yeu_cau_chinh_sua(bk.pk, self.kh, 'x' * 1001, ds)  # gọi hàm gửi yêu cầu chỉnh sửa
         with self.assertRaises(services.LoiYeuCauChinhSua):    # ảnh đã chọn nhưng thiếu nội dung
@@ -97,6 +95,14 @@ class YeuCauChinhSuaServiceTests(_NenYeuCau):                  # nghiệp vụ c
         self.assertEqual(YeuCauChinhSua.objects.count(), 0)    # không lưu gì
         bk.refresh_from_db()  # đọc lại dữ liệu mới nhất từ database
         self.assertEqual(bk.TrangThai, TT.CHO_KH_KIEM_TRA)     # trạng thái không đổi
+
+    def test_nhan_xet_tong_quat_de_trong_van_gui_duoc(self):   # nhận xét tổng quát không còn bắt buộc
+        bk = self.tao_booking_cho_kiem_tra()  # tạo Booking Chờ Khách hàng kiểm tra kèm ảnh đã hậu kỳ
+        _, ds = self.du_lieu(1)  # lấy dữ liệu mẫu (chỉ dùng phần nội dung từng ảnh)
+        kq = services.gui_yeu_cau_chinh_sua(bk.pk, self.kh, '   ', ds)  # gửi với nhận xét tổng quát toàn khoảng trắng
+        self.assertEqual(kq['so_lan'], 1)                      # vẫn gửi thành công, tính là lần 1
+        yc = YeuCauChinhSua.objects.get(MaBooking=bk)          # đọc yêu cầu vừa lưu
+        self.assertEqual(yc.NoiDung, services.NHAN_XET_MAC_DINH)   # lưu câu mặc định thay cho nhận xét trống
 
     def test_ma_anh_la_hoac_anh_chua_hau_ky_bi_chan(self):     # không tin mã ảnh gửi lên
         bk = self.tao_booking_cho_kiem_tra(so_anh=1)  # tạo Booking Chờ Khách hàng kiểm tra kèm ảnh đã hậu kỳ
@@ -147,6 +153,13 @@ class YeuCauChinhSuaServiceTests(_NenYeuCau):                  # nghiệp vụ c
 class YeuCauChinhSuaViewTests(_NenYeuCau):                     # trang web của UC5.5
     def url(self, bk):                                         # đường dẫn trang yêu cầu chỉnh sửa
         return reverse('yeu_cau_chinh_sua', args=[bk.pk])  # trả kết quả
+
+    def test_trang_co_dong_do_vui_long_nhap_nhan_xet_trong_moi_o(self):   # mỗi ô ảnh có sẵn dòng đỏ (JS bật/tắt)
+        bk = self.tao_booking_cho_kiem_tra()  # tạo Booking Chờ Khách hàng kiểm tra kèm ảnh đã hậu kỳ
+        self.client.force_login(self.kh)  # đăng nhập bằng tài khoản cần thử
+        trang = self.client.get(self.url(bk))  # mở trang yêu cầu chỉnh sửa
+        self.assertContains(trang, 'Vui lòng nhập nhận xét', count=3)   # 3 ảnh -> 3 dòng đỏ
+        self.assertNotContains(trang, 'field__req')            # ô nhận xét tổng quát không còn dấu * bắt buộc
 
     def test_get_khach_200_va_nguoi_khac_bi_chan(self):  # tên test cho biết tình huống đang kiểm tra
         bk = self.tao_booking_cho_kiem_tra()  # tạo Booking Chờ Khách hàng kiểm tra kèm ảnh đã hậu kỳ

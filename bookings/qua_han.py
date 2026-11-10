@@ -59,7 +59,9 @@ def xu_ly_het_han_dat_coc(bay_gio=None):
     """Booking 'Chờ đặt cọc' đã quá HanDatCoc -> 'Hết thời hạn đặt cọc' (Hệ thống), slot về 'Lịch trống'.
     CHỈ miễn hết hạn khi minh chứng cọc đang 'Chờ xác nhận cọc' VÀ Nhiếp ảnh gia chưa yêu cầu bổ sung (LyDoTuChoi rỗng):
     lúc đó Khách đã nộp và đang chờ Nhiếp ảnh gia xem. Nếu Nhiếp ảnh gia đã yêu cầu bổ sung (LyDoTuChoi có giá trị, trạng thái
-    giữ nguyên) mà Khách không nộp lại thì vẫn hết hạn bình thường, tránh giữ khung giờ vô thời hạn."""
+    giữ nguyên) mà Khách không nộp lại thì vẫn hết hạn bình thường, tránh giữ khung giờ vô thời hạn.
+    Lúc Nhiếp ảnh gia yêu cầu bổ sung, payments/services.py đã tính lại HanDatCoc = lúc yêu cầu + 1 ngày,
+    nên Khách luôn có đủ 1 ngày để nộp lại (kể cả khi hạn cọc ban đầu đã qua trong lúc chờ Nhiếp ảnh gia xem)."""
     bay_gio = bay_gio or timezone.now()
     da_tai_minh_chung = ThanhToan.objects.filter(
         Q(LyDoTuChoi__isnull=True) | Q(LyDoTuChoi=''),

@@ -142,9 +142,32 @@ class XoaCaHaiBanTests(_NenSoSanh):                            # N10: hết hạ
         self.assertFalse(services.kho_anh().exists(a.DuongDanAnh))
 
 
+class HoanChinhXoaBanTruocTests(_NenSoSanh):                   # E9 (E1 mục 4.2): chuyển sang ảnh Hoàn chỉnh thì bỏ bản trước
+    def test_co_ban_truoc_chuyen_hoan_chinh_thi_cot_ve_null_va_tep_mat(self):
+        bk = self.tao_booking(self.goi_gh, TT.CHO_KH_KIEM_TRA)
+        a = self.anh_hau_ky(bk, 'a1.jpg', truoc=True)                              # ảnh Đã hậu kỳ có đủ bản hiện tại, bản gốc, bản trước
+        duong_dan_truoc, kho = a.DuongDanAnhTruoc, services.kho_anh()
+        self.assertTrue(kho.exists(duong_dan_truoc))                               # trước khi chuyển: tệp bản trước còn
+        with self.captureOnCommitCallbacks(execute=True):                          # chạy cả việc xóa tệp hẹn sau commit
+            self.assertEqual(services.chuyen_thanh_anh_hoan_chinh(bk), 1)
+        a.refresh_from_db()
+        self.assertEqual(a.LoaiAnh, LoaiAnh.HOAN_CHINH)                            # đã thành ảnh Hoàn chỉnh
+        self.assertIsNone(a.DuongDanAnhTruoc)                                      # cột bản trước về NULL
+        self.assertFalse(kho.exists(duong_dan_truoc))                              # tệp bản trước (có watermark) đã bị xóa
+
+    def test_khong_co_ban_truoc_chuyen_hoan_chinh_van_binh_thuong(self):
+        bk = self.tao_booking(self.goi_gh, TT.CHO_KH_KIEM_TRA)
+        a = self.anh_hau_ky(bk, 'a1.jpg', truoc=False)                             # ảnh chưa có bản trước
+        with self.captureOnCommitCallbacks(execute=True):
+            self.assertEqual(services.chuyen_thanh_anh_hoan_chinh(bk), 1)
+        a.refresh_from_db()
+        self.assertEqual((a.LoaiAnh, a.DuongDanAnhTruoc), (LoaiAnh.HOAN_CHINH, None))
+
+
 class XemBanTruocTests(_NenSoSanh):                            # E10: ai được xem ảnh bản trước
-    def url(self, anh, **tham_so):
-        return reverse('xem_anh', args=[anh.pk]) + '?' + '&'.join(f'{k}={v}' for k, v in {'truoc': 1, **tham_so}.items())
+    def url(self, anh, **tham_so):                             # đường dẫn riêng anh/<mã>/xem-ban-truoc/ (name xem_anh_truoc), tham số như vua=1 đặt sau dấu ?
+        goc = reverse('xem_anh_truoc', args=[anh.pk])
+        return goc + ('?' + '&'.join(f'{k}={v}' for k, v in tham_so.items()) if tham_so else '')
 
     def test_khach_va_nhiep_anh_gia_cua_booking_xem_duoc(self):
         bk = self.booking_kiem_tra()
@@ -164,12 +187,19 @@ class XemBanTruocTests(_NenSoSanh):                            # E10: ai đượ
         self.assertEqual(phan_hoi.status_code, 200)
         self.assertEqual(phan_hoi['Content-Type'], 'image/jpeg')
 
-    def test_nguoi_ngoai_quan_tri_vien_va_khach_vang_lai_khong_xem_duoc(self):
+    def test_quan_tri_vien_xem_duoc_ban_truoc(self):           # E1 mục 4.3: quyền giống mo_anh, Quản trị viên được xem để xử lý tranh chấp
         self.booking_kiem_tra()
         quan_tri = User.objects.create_user('admin_ss', 'admin_ss@x.vn', 'p', so_dien_thoai='0900000071')
         quan_tri.groups.add(Group.objects.get_or_create(name=VaiTro.QUAN_TRI_VIEN)[0])
+        self.client.force_login(quan_tri)
+        phan_hoi = self.client.get(self.url(self.a1))
+        self.assertEqual(phan_hoi.status_code, 200)
+        self.assertEqual(b''.join(phan_hoi.streaming_content), self.doc(self.a1.DuongDanAnhTruoc))   # đúng tệp bản trước
+
+    def test_nguoi_ngoai_booking_va_khach_vang_lai_khong_xem_duoc(self):
+        self.booking_kiem_tra()
         khach_khac = User.objects.create_user('kh_khac', 'kh_khac@x.vn', 'p', so_dien_thoai='0900000072')
-        for nguoi in (self.nag_khac, quan_tri, khach_khac):                        # NAG khác, Quản trị viên, Khách khác Booking
+        for nguoi in (self.nag_khac, khach_khac):                                  # NAG khác Booking, Khách khác Booking
             self.client.force_login(nguoi)
             self.assertEqual(self.client.get(self.url(self.a1)).status_code, 403)
         self.client.logout()
@@ -203,8 +233,8 @@ class SliderTrangKiemTraTests(_NenSoSanh):                     # E10: hiển th�
         self.assertEqual(trang.status_code, 200)
         self.assertContains(trang, '>So sánh trước/sau</button>', count=1)         # đúng 1 nút hiển thị chữ này
         self.assertContains(trang, 'data-so-sanh-truoc=', count=1)                 # đúng 1 nút: ảnh a1 (a2 không có bản trước thì ẩn nút)
-        self.assertContains(trang, reverse('xem_anh', args=[self.a1.pk]) + '?truoc=1&amp;vua=1')
-        self.assertNotContains(trang, reverse('xem_anh', args=[self.a2.pk]) + '?truoc=1')
+        self.assertContains(trang, reverse('xem_anh_truoc', args=[self.a1.pk]) + '?vua=1')   # nút trỏ tới đường dẫn riêng xem_anh_truoc
+        self.assertNotContains(trang, reverse('xem_anh_truoc', args=[self.a2.pk]))   # ảnh a2 không có bản trước nên không có link
         self.assertContains(trang, 'id="so-sanh-hop"')
         self.assertContains(trang, 'type="range"')                                 # ô range, dùng được bằng bàn phím
         self.assertContains(trang, 'Trước')
@@ -229,6 +259,12 @@ class SliderTrangKiemTraTests(_NenSoSanh):                     # E10: hiển th�
         bk = self.tao_booking(self.goi_tb, TT.DANG_HAU_KY)
         services.tai_anh_len(bk.pk, self.nag_user, [tep_anh('z1.jpg')])           # Booking sang Chờ Khách hàng kiểm tra
         self.assertNotContains(self.trang(bk), 'data-so-sanh-truoc')
+
+    def test_trang_khong_con_khoi_style_noi_tuyen(self):       # E1: CSS của trang nằm ở tệp riêng, không còn thẻ <style>
+        bk = self.booking_kiem_tra()
+        html = self.trang(bk).content.decode()
+        self.assertNotIn('<style', html)                                           # không còn khối style nội tuyến
+        self.assertIn('delivery/css/xem_anh_hau_ky.css', html)                     # CSS được nạp từ tệp riêng
 
     def test_trang_khong_viet_style_inline_cho_slider(self):
         bk = self.booking_kiem_tra()

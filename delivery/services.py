@@ -289,7 +289,8 @@ def mo_anh(user, ma_anh, ban_truoc=False):                     # dùng cho trang
         return None, None
     bk = anh.MaBooking
     if ban_truoc:                                              # E9: ảnh "bản trước" (slider so sánh)
-        if user.pk not in (bk.MaKhachHang_id, bk.MaNhiepAnhGia.MaTaiKhoan_id):   # chỉ Khách hàng và Nhiếp ảnh gia CỦA Booking (Quản trị viên và người ngoài: 403)
+        if (user.pk not in (bk.MaKhachHang_id, bk.MaNhiepAnhGia.MaTaiKhoan_id)   # Khách hàng và Nhiếp ảnh gia CỦA Booking được xem
+                and lay_vai_tro(user) != VaiTro.QUAN_TRI_VIEN):                  # Quản trị viên cũng được xem (xử lý tranh chấp, giống quyền xem ảnh chính); người ngoài: 403
             return False, None
         if (anh.LoaiAnh != LoaiAnh.DA_HAU_KY or not anh.DuongDanAnhTruoc   # chỉ ảnh Đã hậu kỳ mới có bản trước; chưa có bản trước thì 404
                 or anh.TrangThaiLuuTru != LuuTruAnh.CON_LUU):
@@ -317,7 +318,7 @@ def co_ban_truoc(anh, kho=None):                               # E10: ảnh có 
 def chuyen_thanh_anh_hoan_chinh(booking):                      # N5: ảnh Hoàn chỉnh KHÔNG có watermark
     """Gọi khi Nhiếp ảnh gia xác nhận đủ 60% (UC5.7), trong cùng giao dịch với bước đó.
     CHỈ ảnh 'Đã hậu kỳ' (bản hậu kỳ mới nhất, gồm cả ảnh đã được chỉnh sửa theo yêu cầu)
-    -> 'Hoàn chỉnh': đổi sang BẢN GỐC (không watermark), xóa bản có watermark.
+    -> 'Hoàn chỉnh': đổi sang BẢN GỐC (không watermark), xóa bản có watermark và xóa luôn bản trước (cột DuongDanAnhTruoc về NULL).
     Ảnh 'Chưa hậu kỳ' (ảnh Khách không chọn hậu kỳ) KHÔNG được giao, giữ nguyên và bị xóa khi hết hạn lưu trữ.
     Trả về số ảnh đã chuyển."""
     kho = kho_anh()
@@ -332,6 +333,9 @@ def chuyen_thanh_anh_hoan_chinh(booking):                      # N5: ảnh Hoàn
                 if not kho.exists(goc):
                     raise LoiTaiAnh(f'Không tìm thấy bản gốc của ảnh {anh.TenAnh}.')
                 xoa_sau.append(anh.DuongDanAnh)                 # bản có watermark sẽ bị xóa sau khi lưu thành công
+                if anh.DuongDanAnhTruoc:                        # E9 (E1 mục 4.2): ảnh có bản trước (có watermark)
+                    xoa_sau.append(anh.DuongDanAnhTruoc)        # thì xóa luôn tệp bản trước sau khi lưu thành công
+                    anh.DuongDanAnhTruoc = None                 # và đặt cột về NULL vì ảnh Hoàn chỉnh không còn watermark / không còn so sánh
                 anh.DuongDanAnh, anh.KichThuocAnh = goc, kho.size(goc)
                 anh.LoaiAnh, anh.CoWatermark = LoaiAnh.HOAN_CHINH, 0   # CHECK của bảng: Hoàn chỉnh <=> không watermark
                 anh.save()
@@ -374,8 +378,6 @@ def ly_do_khong_chon_duoc(booking):                            # trả về câu
         return 'Danh sách ảnh cần hậu kỳ đã được gửi cho Nhiếp ảnh gia, bạn không thể chọn lại.'  # báo: danh sách đã gửi rồi
     if booking.TrangThai != TrangThaiBooking.CHO_KH_CHON_ANH:  # chưa đến bước chọn ảnh (hoặc Booking đã hủy...)
         return f'Booking đang ở trạng thái "{booking.TrangThai}", chưa đến lúc lựa chọn ảnh.'  # báo: chưa đến bước chọn ảnh
-    if booking.HanChonAnh and timezone.now() > booking.HanChonAnh:   # N6: chỉ được chọn trong hạn 2 ngày
-        return 'Đã quá hạn lựa chọn ảnh (2 ngày kể từ khi ảnh được tải lên), không thể chọn thêm.'  # báo: đã quá hạn 2 ngày
     return None                                                # mọi điều kiện đều ổn: được chọn
 
 
@@ -385,7 +387,7 @@ def _lay_booking_de_chon(ma_booking, khach):                   # khóa Booking c
                    .get(pk=ma_booking, MaKhachHang=khach))     # phải là Booking của chính Khách này
     except Booking.DoesNotExist:                               # không có hoặc của người khác
         raise LoiChonAnh('Booking không tồn tại hoặc không thuộc về bạn.')  # báo: Booking không tồn tại hoặc của người khác
-    ly_do = ly_do_khong_chon_duoc(booking)                     # kiểm tra trạng thái, gói, hạn chót
+    ly_do = ly_do_khong_chon_duoc(booking)                     # kiểm tra trạng thái, gói (không còn hạn chót chọn ảnh)
     if ly_do:                                                  # có lý do cấm
         raise LoiChonAnh(ly_do)                                # báo lỗi và dừng
     return booking                                             # hợp lệ: trả Booking đã khóa
@@ -408,7 +410,7 @@ def _ghi_lua_chon(booking, ds_ma_anh):                         # bước 4: ghi 
 def luu_lua_chon(ma_booking, khach, ds_ma_anh):                # bước 3-4: lưu lựa chọn (chưa gửi cho Nhiếp ảnh gia); trả về số ảnh đã chọn
     try:                                                       # bắt lỗi hệ thống để báo cho Khách
         with transaction.atomic():                             # 1 giao dịch: lỗi ở đâu thì hoàn tác hết
-            booking = _lay_booking_de_chon(ma_booking, khach)  # khóa Booking và kiểm tra quyền, trạng thái, hạn
+            booking = _lay_booking_de_chon(ma_booking, khach)  # khóa Booking và kiểm tra quyền, trạng thái
             return _ghi_lua_chon(booking, ds_ma_anh)           # ghi lựa chọn và trả số ảnh
     except DatabaseError:                                      # lỗi database
         raise LoiChonAnh('Không thể lưu danh sách ảnh được lựa chọn, vui lòng thực hiện lại thao tác.')   # ngoại lệ 6a
@@ -417,7 +419,7 @@ def luu_lua_chon(ma_booking, khach, ds_ma_anh):                # bước 3-4: l�
 def gui_danh_sach_hau_ky(ma_booking, khach):                   # bước 5-6: Khách xác nhận, gửi danh sách ĐÃ LƯU cho Nhiếp ảnh gia
     try:                                                       # bắt lỗi hệ thống để báo cho Khách
         with transaction.atomic():                             # 1 giao dịch: đổi trạng thái + ghi lịch sử cùng thành công hoặc cùng hủy
-            booking = _lay_booking_de_chon(ma_booking, khach)  # khóa Booking và kiểm tra quyền, trạng thái, hạn
+            booking = _lay_booking_de_chon(ma_booking, khach)  # khóa Booking và kiểm tra quyền, trạng thái
             so_chon = anh_de_chon(booking).filter(DuocChonHauKy=1).count()   # đếm ảnh đã lưu là "được chọn"
             if so_chon == 0:                                   # chưa chọn ảnh nào
                 raise LoiChonAnh('Vui lòng chọn ít nhất một ảnh cần hậu kỳ.')  # báo: chưa chọn ảnh nào
@@ -454,6 +456,7 @@ def bat_dau_hau_ky(ma_booking, nag_user):                      # Nhiếp ảnh g
 SO_LAN_CHINH_SUA_TOI_DA = 3                                    # BR5.5-1: tối đa 03 lần yêu cầu chỉnh sửa cho mỗi Booking
 DO_DAI_NHAN_XET_TOI_DA = 1000                                  # nhận xét tổng quát tối đa 1000 ký tự (cột NoiDung của YEUCAUCHINHSUA)
 DO_DAI_NOI_DUNG_ANH_TOI_DA = 500                               # nội dung sửa của mỗi ảnh tối đa 500 ký tự (cột NoiDungChinhSua)
+NHAN_XET_MAC_DINH = 'Khách hàng không nhập nhận xét tổng quát.'   # nhận xét tổng quát không bắt buộc; cột NoiDung không cho để trống nên ghi câu này khi Khách bỏ trống
 
 
 class LoiYeuCauChinhSua(Exception):                            # lỗi nghiệp vụ của UC5.5: view bắt lại để hiện cho Khách hàng
@@ -507,8 +510,8 @@ def gui_yeu_cau_chinh_sua(ma_booking, khach, nhan_xet, ds_anh):   # bước 4-6 
             booking = _lay_booking_de_yeu_cau(ma_booking, khach)   # khóa Booking và kiểm tra quyền, trạng thái, số lần
             if not chuan:                                      # ngoại lệ 4a: chưa chọn ảnh nào
                 raise LoiYeuCauChinhSua('Vui lòng chọn ít nhất một ảnh cần chỉnh sửa.')
-            if not nhan_xet:                                   # ngoại lệ 4b: nhận xét tổng quát trống
-                raise LoiYeuCauChinhSua('Nội dung yêu cầu không hợp lệ: vui lòng nhập nhận xét tổng quát.')
+            if not nhan_xet:                                   # nhận xét tổng quát không bắt buộc: để trống thì dùng câu mặc định
+                nhan_xet = NHAN_XET_MAC_DINH                   # thay bằng câu mặc định để lưu được vào cột NoiDung (không được rỗng)
             if len(nhan_xet) > DO_DAI_NHAN_XET_TOI_DA:         # ngoại lệ 4b: nhận xét quá dài
                 raise LoiYeuCauChinhSua(f'Nội dung yêu cầu không hợp lệ: nhận xét tổng quát tối đa {DO_DAI_NHAN_XET_TOI_DA} ký tự.')
             ten_anh = dict(anh_de_chinh_sua(booking).filter(pk__in=chuan).values_list('pk', 'TenAnh'))   # {mã: tên} của các ảnh hợp lệ
