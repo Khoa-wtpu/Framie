@@ -28,9 +28,6 @@
 
   {% include "bookings/includes/the_thoi_tiet_nhac.html" %}{# E8: dải nhắc đổi lịch (chỉ hiện khi khả năng mưa cao) #}
 
-  {% if nhac_thanh_toan %}{# Khách đã tải minh chứng thanh toán: nhắc Nhiếp ảnh gia kiểm tra để xác nhận hoặc yêu cầu bổ sung #}
-    {% include "includes/alert.html" with level="warning" title=nhac_thanh_toan.tieu_de text=nhac_thanh_toan.noi_dung action_url=nhac_thanh_toan.url action_label=nhac_thanh_toan.nhan %}
-  {% endif %}
 
   {# ===== DẢI THÔNG TIN CHÍNH (UC4.3 bước 4): chụp khi nào, ở đâu, mấy người ===== #}
   <section class="ct__dai ct__dai--4" aria-label="Thông tin buổi chụp">{# thẻ lớn chia 4 ô: ngày giờ | địa điểm | số người | giá trị #}
