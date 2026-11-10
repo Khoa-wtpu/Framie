@@ -14,3 +14,11 @@ def la_khach_hang(user):  # True nếu là Khách hàng đã đăng nhập
     if not getattr(user, 'is_authenticated', False):  # chưa đăng nhập (hoặc không phải user)
         return False  # không hiện nút
     return user.groups.filter(name=VaiTro.KHACH_HANG).exists()  # cùng quy tắc với khach_hang_required: phải thuộc nhóm Khách hàng, tránh hiện nút rồi bị 403
+
+
+
+@register.filter  # đăng ký bộ lọc thứ hai
+def hien_tro_ly(user):  # True nếu nên hiện khối "Chưa biết chọn ai?": khách chưa đăng nhập HOẶC Khách hàng
+    if not getattr(user, 'is_authenticated', False):  # chưa đăng nhập: vẫn hiện (nút sẽ dẫn sang trang đăng nhập)
+        return True  # hiện khối
+    return la_khach_hang(user)  # đã đăng nhập: chỉ Khách hàng thấy; Nhiếp ảnh gia và Quản trị viên thì không
