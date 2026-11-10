@@ -1,5 +1,6 @@
 # chat/services.py - P10 (UC8.1), P11 (UC8.2, UC8.3) và nâng cấp chat (bước 1 đến 6): logic nghiệp vụ. View và template chỉ gọi các hàm ở đây.
 import os  # lấy tên file an toàn
+import re  # tìm đường link trong tin nhắn (góp ý C2)
 import unicodedata  # tách dấu tiếng Việt khỏi chữ cái để tìm không dấu (bước 7)
 from datetime import timedelta  # tính mốc 6 tháng lưu ảnh
 import uuid  # đặt tên file ảnh ngẫu nhiên, không lộ tên gốc và không trùng
@@ -207,21 +208,25 @@ def gui_tin_nhan(cuoc, nguoi_gui, noi_dung, ds_anh=None, ma_tra_loi=None):  # UC
         tra_loi = TinNhan.objects.filter(pk=ma_tra_loi, MaCuocTroChuyen=cuoc, DaThuHoi=False).first()  # phải cùng cuộc và chưa thu hồi
         if tra_loi is None:  # không hợp lệ
             raise ValidationError('Không thể trả lời tin nhắn này.')  # báo lỗi
-    tin = TinNhan(MaCuocTroChuyen=cuoc, MaNguoiGui=nguoi_gui, NoiDung=noi_dung, MaTinTraLoi=tra_loi)  # dựng tin nhắn (chưa lưu)
-    tin.full_clean()  # gọi clean() của model: người gửi phải là Khách hàng hoặc Nhiếp ảnh gia của cuộc này
+    tin_anh = TinNhan(MaCuocTroChuyen=cuoc, MaNguoiGui=nguoi_gui, NoiDung='', MaTinTraLoi=tra_loi) if ds_anh else None  # tin chứa ảnh (không có chữ); đang trả lời một tin thì phần trích dẫn gắn vào tin này (góp ý C1)
+    tin_chu = TinNhan(MaCuocTroChuyen=cuoc, MaNguoiGui=nguoi_gui, NoiDung=noi_dung, MaTinTraLoi=None if ds_anh else tra_loi) if noi_dung else None  # tin chứa chữ; nếu đã có tin ảnh đi kèm thì KHÔNG gắn trích dẫn lần nữa
+    cac_tin = [t for t in (tin_anh, tin_chu) if t is not None]  # vừa ảnh vừa chữ thì TÁCH thành hai tin riêng (ảnh trước, chữ sau) để trả lời và thu hồi được từng phần
+    for t in cac_tin:  # kiểm tra từng tin
+        t.full_clean()  # gọi clean() của model: người gửi phải là Khách hàng hoặc Nhiếp ảnh gia của cuộc này
     kho = kho_anh_chat()  # kho ảnh
     da_luu = []  # các file đã ghi ra ổ đĩa (để xóa nếu giao dịch lỗi)
     try:  # lưu tin và ảnh
         with transaction.atomic():  # gói trong giao dịch
             for nguoi in (cuoc.MaKhachHang, cuoc.MaNhiepAnhGia.MaTaiKhoan):  # đảm bảo CẢ HAI người có hàng THAMGIA TRƯỚC khi có tin mới (cuộc cũ chưa có thì tin cũ coi như đã đọc)
                 lay_tham_gia(cuoc, nguoi)  # tạo nếu chưa có
-            tin.save()  # INSERT, ThoiGianGui do Django tự điền
+            for t in cac_tin:  # lưu lần lượt; mã tin tăng dần nên tin ảnh luôn đứng trước tin chữ
+                t.save()  # INSERT, ThoiGianGui do Django tự điền
             for tep, dd in zip(ds_anh, duoi):  # lưu từng ảnh
                 ten_luu = kho.save(f'chat/{cuoc.pk}/{uuid.uuid4().hex}{dd}', tep)  # tên file ngẫu nhiên trong thư mục của cuộc
                 da_luu.append(ten_luu)  # nhớ để dọn nếu lỗi
-                DinhKemTinNhan.objects.create(MaTinNhan=tin, DuongDanFile=ten_luu, TenGoc=os.path.basename(tep.name or 'anh')[:255], KichThuoc=tep.size)  # ghi vào DB
+                DinhKemTinNhan.objects.create(MaTinNhan=tin_anh, DuongDanFile=ten_luu, TenGoc=os.path.basename(tep.name or 'anh')[:255], KichThuoc=tep.size)  # ghi vào DB
             ThamGia.objects.filter(MaCuocTroChuyen=cuoc).update(DaAn=False)  # có tin mới thì cuộc trò chuyện đang ẩn của cả hai bên tự hiện lại
-            ThamGia.objects.filter(MaCuocTroChuyen=cuoc, MaNguoiDung=nguoi_gui).update(MaTinDaXemCuoi=tin.pk, DanhDauChuaDoc=False)  # người gửi coi như đã xem tới tin của chính mình
+            ThamGia.objects.filter(MaCuocTroChuyen=cuoc, MaNguoiDung=nguoi_gui).update(MaTinDaXemCuoi=cac_tin[-1].pk, DanhDauChuaDoc=False)  # người gửi coi như đã xem tới tin của chính mình
     except Exception:  # bất kỳ lỗi nào: DB đã tự hoàn tác, còn file thì phải tự xóa
         for ten_luu in da_luu:  # các file đã ghi
             try:  # xóa từng file
@@ -229,7 +234,7 @@ def gui_tin_nhan(cuoc, nguoi_gui, noi_dung, ds_anh=None, ma_tra_loi=None):  # UC
             except OSError:  # không xóa được thì bỏ qua
                 pass
         raise  # báo lỗi lên view
-    return tin  # trả về tin vừa lưu
+    return cac_tin[-1]  # trả về tin cuối cùng vừa lưu (view chỉ cần mã này; chat.js sẽ lấy cả hai tin bằng polling)
 
 
 def ngu_canh_danh_sach(user, chi_an=False):  # dữ liệu cột trái mà MỌI trang chat đều phải có: hộp thư và chi tiết dùng chung, tránh quên truyền biến
@@ -434,6 +439,42 @@ def nhom_anh_theo_thang(ds_anh):  # chia danh sách ảnh (mới nhất trước
             nhom.append({'khoa': khoa, 'nhan': nhan, 'anh': []})  # nhóm trống
         nhom[-1]['anh'].append(dk)  # xếp ảnh vào nhóm cuối
     return nhom  # hết
+
+
+# ----- góp ý kiểm thử chéo D2, case C2: link bấm được trong tin và mục "Liên kết" ở cột phải -----
+MAU_LIEN_KET = re.compile(r'(?<!\w)(?:https?://|www\.)[^\s<>"\']+', re.IGNORECASE)  # chuỗi bắt đầu bằng http://, https:// hoặc www. và chạy tới khi gặp khoảng trắng hoặc < > " '
+KY_TU_CUOI_LIEN_KET = '.,;:!?)]}'  # dấu câu dính ở cuối (vd "xem https://a.com.") không thuộc về link
+TOI_DA_LIEN_KET = 100  # cột phải hiện tối đa 100 liên kết
+TOI_DA_QUET_LIEN_KET = 300  # mỗi lần chỉ quét 300 tin có chứa link gần nhất
+
+
+def tim_lien_ket(noi_dung):  # tìm các link trong một tin; trả về [{bat_dau, ket_thuc, href, hien_thi}] theo thứ tự xuất hiện
+    ket_qua = []  # danh sách link tìm được
+    for khop in MAU_LIEN_KET.finditer(noi_dung or ''):  # duyệt từng chuỗi giống link
+        chu = khop.group(0).rstrip(KY_TU_CUOI_LIEN_KET)  # bỏ dấu câu dính cuối
+        if chu.lower() in ('http://', 'https://', 'www.'):  # chỉ còn phần mở đầu thì không phải link
+            continue  # bỏ qua
+        href = chu if chu.lower().startswith('http') else 'https://' + chu  # www.abc.com thì thêm https:// (chỉ http, https mới được bấm, không có javascript:)
+        hien_thi = re.sub(r'^https?://', '', chu, flags=re.IGNORECASE).rstrip('/')  # chữ ngắn gọn cho cột phải, bỏ http(s)://
+        ket_qua.append({'bat_dau': khop.start(), 'ket_thuc': khop.start() + len(chu), 'href': href, 'hien_thi': hien_thi})  # ghi vị trí để template cắt đúng chỗ
+    return ket_qua  # trả về danh sách
+
+
+def lay_lien_ket_chia_se(cuoc, sau_ma=0, gioi_han=TOI_DA_LIEN_KET):  # link hiện ở cột phải: mới nhất trước, bỏ tin đã thu hồi và phần đã xóa phía mình, mỗi link chỉ một lần
+    truy_van = cuoc.tin_nhan.filter(DaThuHoi=False, MaTinNhan__gt=sau_ma).filter(  # đúng cuộc, chưa thu hồi, chưa xóa phía mình
+        Q(NoiDung__icontains='http') | Q(NoiDung__icontains='www.')  # chỉ lấy tin có thể chứa link cho nhẹ
+    ).order_by('-MaTinNhan').values_list('MaTinNhan', 'NoiDung')[:TOI_DA_QUET_LIEN_KET]  # mới nhất trước, chỉ 2 cột
+    da_co = set()  # các link đã lấy (không lặp)
+    ket_qua = []  # danh sách đưa cho template
+    for ma, noi_dung in truy_van:  # duyệt từ tin mới đến cũ
+        for lk in tim_lien_ket(noi_dung):  # từng link trong tin
+            if lk['href'] in da_co:  # đã có link này (ở tin mới hơn)
+                continue  # bỏ qua
+            da_co.add(lk['href'])  # ghi nhớ
+            ket_qua.append({'ma_tin': ma, 'url': lk['href'], 'hien_thi': lk['hien_thi']})  # ma_tin để chat.js gỡ link khi tin bị thu hồi
+            if len(ket_qua) >= gioi_han:  # đủ số lượng
+                return ket_qua  # dừng
+    return ket_qua  # trả về danh sách
 
 
 def mo_anh_chat(user, ma_dinh_kem):  # trang xem ảnh: chỉ hai người trong cuộc, không xem được ảnh đã thu hồi hoặc đã xóa phía mình
