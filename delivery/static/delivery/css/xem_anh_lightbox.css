@@ -41,8 +41,10 @@
 .xal__nho--chon { border-color: var(--xal-cam); opacity: 1; }
 
 /* ===== Bảng nhận xét riêng của ảnh (chỉ hiện ở trang "Yêu cầu chỉnh sửa") ===== */
-/* Quy tắc giao diện cho: .xal__ghi-chu (cột bên phải, xếp dọc, cuộn được khi màn hình thấp) */
-.xal__ghi-chu { grid-column: 2; grid-row: 1; min-height: 0; display: flex; flex-direction: column; gap: .75rem; padding: 4rem 1.5rem 1rem; border-left: 1px solid rgba(255, 255, 255, .15); background: rgba(255, 255, 255, .04); overflow-y: auto; }
+/* Quy tắc giao diện cho: .xal__ghi-chu (cột bên phải chạy hết chiều cao cả 2 hàng, xếp dọc, cuộn được khi màn hình thấp) */
+.xal__ghi-chu { grid-column: 2; grid-row: 1 / -1; min-height: 0; display: flex; flex-direction: column; gap: .75rem; padding: 4rem 1.5rem 1rem; border-left: 1px solid rgba(255, 255, 255, .15); background: rgba(255, 255, 255, .04); overflow-y: auto; }
+/* Quy tắc giao diện cho: .xal--co-ghi-chu .xal__dai (chế độ nhận xét: dải ảnh nhỏ chỉ nằm dưới phần ảnh 2/3 bên trái nên căn giữa phần ảnh, không đè sang bảng nhận xét) */
+.xal--co-ghi-chu .xal__dai { grid-column: 1; }
 /* Quy tắc giao diện cho: .xal__ghi-chu-tieu-de (tiêu đề "Nội dung cần chỉnh") */
 .xal__ghi-chu-tieu-de { margin: 0; font-size: 1.125rem; font-weight: 700; color: #FFFFFF; }
 /* Quy tắc giao diện cho: .xal__ghi-chu-ten (tên ảnh đang xem) */
