@@ -25,6 +25,9 @@
         <a href="{% url 'man_hinh_giu_cho' giu_cho_hien_tai.pk %}">Xem thời gian còn lại</a>.{# link tới màn hình đếm ngược #}
         Chọn khung giờ khác bên dưới sẽ thay thế khung giờ này.{# giải thích: chọn slot khác sẽ thay thế lượt giữ hiện tại #}
       </span>
+      <form method="post" action="{% url 'huy_giu_cho' giu_cho_hien_tai.pk %}">{% csrf_token %}{# nhả slot đang giữ, không cần chọn slot khác #}
+        <button class="btn btn--ghost" type="submit">Hủy giữ chỗ</button>
+      </form>
     </div>
   </div>
   {% endif %}
