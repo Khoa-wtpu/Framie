@@ -42,7 +42,7 @@
   </div>
 
   {# Form nhập thông tin buổi chụp và gửi yêu cầu Booking #}
-  <form id="form-gui-booking" class="ct__the" method="post" novalidate>{# form POST #}
+  <form id="form-gui-booking" class="ct__the" method="post" novalidate data-giu-tiep>{# form POST #}
     <h2 class="ct__the-tieu-de">Thông tin buổi chụp</h2>{# tiêu đề thẻ form #}
     {% csrf_token %}{# mã CSRF chống giả mạo yêu cầu #}
     {% for loi in form.non_field_errors %}{# lỗi chung không gắn với ô nào #}
@@ -74,9 +74,11 @@
 
     <div class="ct__nut">{# hàng nút #}
       <button id="nut-gui" class="btn btn--primary" type="submit">Gửi yêu cầu Booking</button>{# gửi dữ liệu form lên máy chủ bằng POST #}
-      <a class="btn btn--ghost" href="{{ url_lich }}">Chọn khung giờ khác</a>{# quay lại trang lịch #}
+      <button class="btn btn--ghost" type="submit" form="form-huy-giu-cho">Chọn khung giờ khác</button>{# nhả slot đang giữ ngay rồi quay lại trang lịch #}
     </div>
   </form>
+  {# Form ẩn nhả giữ chỗ (nút trên + nha_giu_cho.js khi rời trang). Nằm NGOÀI form-gui-booking. KHÔNG đổi id. #}
+  <form id="form-huy-giu-cho" method="post" action="{% url 'huy_giu_cho' giu_cho.pk %}" hidden>{% csrf_token %}</form>
 </div>
 {% endblock %}
 
@@ -86,4 +88,5 @@
 {% block extra_js %}
 <script src="{% static 'bookings/js/dem_nguoc.js' %}" defer></script>
 <script src="{% static 'bookings/js/gui_booking.js' %}" defer></script>
+<script src="{% static 'bookings/js/nha_giu_cho.js' %}" defer></script>
 {% endblock %}

@@ -40,10 +40,12 @@
     <p class="ct__ghi-chu">Hãy gửi yêu cầu Booking trong thời gian còn lại. Hết giờ, khung giờ sẽ được trả về lịch trống.</p>{# hướng dẫn khách #}
     <div class="ct__nut ct__nut--giua">{# hàng nút căn giữa #}
       {% if url_gui_booking %}{# chỉ hiện nếu view đã tạo được URL sang UC4.2 #}
-        <a class="btn btn--primary" href="{{ url_gui_booking }}">Tiếp tục gửi yêu cầu Booking</a>{# chuyển sang trang gửi yêu cầu, kèm mã lượt giữ chỗ #}
+        <a class="btn btn--primary" href="{{ url_gui_booking }}" data-giu-tiep>Tiếp tục gửi yêu cầu Booking</a>{# chuyển sang trang gửi yêu cầu, kèm mã lượt giữ chỗ #}
       {% endif %}
-      <a class="btn btn--ghost" href="{{ url_lich }}">Chọn khung giờ khác</a>{# quay lại trang lịch #}
+      <button class="btn btn--ghost" type="submit" form="form-huy-giu-cho">Chọn khung giờ khác</button>{# nhả slot đang giữ ngay (không còn đếm ngược) rồi quay lại trang lịch #}
     </div>
+    {# Form ẩn: nút trên submit vào đây; nha_giu_cho.js cũng dùng nó để nhả slot khi Khách rời trang. KHÔNG đổi id. #}
+    <form id="form-huy-giu-cho" method="post" action="{% url 'huy_giu_cho' giu_cho.pk %}" hidden>{% csrf_token %}</form>
   </section>
 
   {# --- Hết hạn (ngoại lệ 5b): mặc định chỉ hiện khi da_het_han là True. --- #}
@@ -67,5 +69,6 @@
 
 {# JS đếm ngược dùng chung với gui_booking.html: bookings/static/bookings/js/dem_nguoc.js #}
 {% block extra_js %}
-{% if dang_giu %}<script src="{% static 'bookings/js/dem_nguoc.js' %}" defer></script>{% endif %}{# chỉ nạp đồng hồ nếu lượt giữ chỗ còn hiệu lực #}
+{% if dang_giu %}<script src="{% static 'bookings/js/dem_nguoc.js' %}" defer></script>
+<script src="{% static 'bookings/js/nha_giu_cho.js' %}" defer></script>{% endif %}{# chỉ nạp đồng hồ nếu lượt giữ chỗ còn hiệu lực #}
 {% endblock %}

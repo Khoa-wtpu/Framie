@@ -44,7 +44,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 # Import lỗi database và công cụ transaction để nhóm nhiều thao tác thành một giao dịch an toàn.
 from django.db import DatabaseError, IntegrityError, transaction
 # Import JsonResponse để trả dữ liệu JSON cho JavaScript cập nhật đồng hồ đếm ngược.
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 # Import các hàm lấy dữ liệu, chuyển trang và render template.
 from django.shortcuts import get_object_or_404, redirect, render
 # Import công cụ xử lý URL: path để khai báo đường dẫn, reverse để tìm URL theo tên.
@@ -347,6 +347,23 @@ def giu_cho_slot(khach_hang, ma_lich):
         raise GiuChoLoi(TB_LOI_HE_THONG)
 
 
+# Định nghĩa hàm cho Khách chủ động bỏ lượt giữ chỗ (bấm "Chọn khung giờ khác" hoặc rời khỏi trang đặt lịch).
+def huy_giu_cho(khach_hang, ma_giu_cho):
+    """Khách chủ động bỏ lượt giữ: lượt -> 'Hết hạn', slot -> 'Lịch trống' ngay, không đợi hết 5 phút.
+    Chỉ nhả lượt CỦA CHÍNH KHÁCH và còn 'Đang giữ chỗ' (đã gửi Booking = 'Đã hoàn tất' thì không đụng vào).
+    Trả True nếu đã nhả; False nếu không có gì để nhả hoặc có lỗi (không báo lỗi ra ngoài: gọi nhiều lần vẫn an toàn)."""
+    try:
+        with transaction.atomic():
+            giu_cho = (GiuCho.objects.select_for_update()
+                       .filter(pk=ma_giu_cho, MaKhachHang=khach_hang, TrangThai=TrangThaiGiuCho.DANG_GIU).first())
+            if giu_cho is None:
+                return False
+            return _ket_thuc_luot_giu(giu_cho)
+    except (ValidationError, DatabaseError):
+        logger.exception('huy_giu_cho: không nhả được lượt %s (khách %s)', ma_giu_cho, khach_hang.pk)
+        return False
+
+
 # Định nghĩa hàm UC4.1 cung cấp cho UC4.2 để xác nhận khách gửi Booking trong thời hạn giữ chỗ.
 def hoan_tat_giu_cho(khach_hang, ma_giu_cho):
     # Docstring nhấn mạnh hàm phải nằm cùng transaction với thao tác tạo Booking.
@@ -558,6 +575,24 @@ def chon_slot(request, ma_lich):
     return redirect(f'{url}?{urlencode({"goi": goi.pk})}' if goi is not None else url)
 
 
+# Áp dụng kiểm tra quyền Khách hàng cho view hủy giữ chỗ.
+@khach_hang_required
+# Chỉ cho phép POST vì đây là thao tác làm thay đổi trạng thái dữ liệu.
+@require_POST
+# Định nghĩa view nhả lượt giữ chỗ: dùng cho nút "Chọn khung giờ khác" và cho sendBeacon khi Khách rời trang.
+def huy_giu_cho_view(request, ma_giu_cho):
+    """Khách bấm "Chọn khung giờ khác"/"Hủy giữ chỗ" -> nhả slot rồi về trang lịch của Nhiếp ảnh gia.
+    nha_giu_cho.js gửi thêm nhanh=1 (sendBeacon khi rời trang) -> chỉ trả 204, không chuyển hướng, không thông báo."""
+    giu_cho = get_object_or_404(GiuCho.objects.select_related('MaLich'),
+                                pk=ma_giu_cho, MaKhachHang=request.user)   # chỉ thao tác với lượt của chính mình
+    da_nha = huy_giu_cho(request.user, giu_cho.pk)
+    if request.POST.get('nhanh') == '1':
+        return HttpResponse(status=204)
+    if da_nha:
+        messages.info(request, 'Đã hủy giữ chỗ. Khung giờ đã được trả về lịch trống.')
+    return _ve_trang_lich(giu_cho.MaLich.MaNhiepAnhGia_id)
+
+
 # Áp dụng kiểm tra quyền Khách hàng cho màn hình giữ chỗ.
 @khach_hang_required
 # Chỉ cho phép GET vì view chỉ hiển thị thông tin.
@@ -655,5 +690,7 @@ urlpatterns = [
     path('giu-cho/<int:ma_giu_cho>/', man_hinh_giu_cho, name='man_hinh_giu_cho'),
     # Khai báo URL API trả trạng thái và thời gian còn lại của lượt giữ.
     path('giu-cho/<int:ma_giu_cho>/trang-thai/', trang_thai_giu_cho, name='trang_thai_giu_cho'),
+    # Khai báo URL nhả lượt giữ chỗ (Khách chọn khung giờ khác hoặc rời trang đặt lịch).
+    path('giu-cho/<int:ma_giu_cho>/huy/', huy_giu_cho_view, name='huy_giu_cho'),
 # Đóng danh sách URL của module.
 ]

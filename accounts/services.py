@@ -6,6 +6,7 @@ import logging  # ghi cảnh báo ra Terminal khi gửi email lỗi, thay vì l�
 import secrets  # sinh số ngẫu nhiên an toàn cho mã xác thực (random thường có thể đoán được)
 from datetime import timedelta  # khoảng thời gian, dùng cho hiệu lực 10 phút của mã
 
+from django.core import signing  # ký và kiểm tra chữ ký token (chống sửa link, có hạn dùng)
 from django.contrib.auth.models import Group  # bảng nhóm quyền của Django (vai trò)
 from django.core.mail import send_mail  # hàm gửi email; khi làm thử chỉ in ra Terminal (xem MAILERS trong settings.py)
 from django.db import transaction  # transaction.atomic: tạo User và gán nhóm là một khối, lỗi thì hoàn tác cả hai
@@ -140,3 +141,51 @@ def dat_lai_mat_khau(yeu_cau, mat_khau_moi):  # đổi mật khẩu; trả True 
         yeu_cau.TrangThai = TT.DA_DAT_LAI  # lượt này đã hoàn tất
         yeu_cau.save(update_fields=['TrangThai'])  # chỉ lưu cột này
     return True  # đổi thành công
+
+
+# =====================================================================
+# Mời Quản trị viên mới: link có chữ ký + hạn dùng, KHÔNG cần model hay migration
+# =====================================================================
+SALT_LOI_MOI_QTV = 'accounts.loi_moi_quan_tri_vien'  # "muối" riêng: token này không dùng nhầm cho việc khác
+HIEU_LUC_LOI_MOI_QTV = timedelta(hours=48)  # link mời có hiệu lực 48 giờ
+
+
+class LoiMoiQuanTriKhongHopLe(Exception):  # lỗi tự đặt; nội dung là câu tiếng Việt hiện cho người mở link
+    pass  # không cần thêm gì, chỉ cần có tên
+
+
+def tao_token_loi_moi_qtv(email):  # tạo token chứa email người được mời, có chữ ký + giờ tạo
+    return signing.dumps({'email': email.strip().lower()}, salt=SALT_LOI_MOI_QTV)  # ký bằng SECRET_KEY; token KHÔNG chứa mật khẩu
+
+
+def doc_token_loi_moi_qtv(token, hieu_luc=None):  # kiểm tra token, trả về email; sai/hết hạn thì ném LoiMoiQuanTriKhongHopLe
+    if hieu_luc is None:  # không truyền thì dùng hạn mặc định (đọc lúc gọi để test thay được)
+        hieu_luc = HIEU_LUC_LOI_MOI_QTV  # 48 giờ
+    try:  # giải mã và kiểm tra chữ ký + hạn
+        du_lieu = signing.loads(token, salt=SALT_LOI_MOI_QTV, max_age=hieu_luc.total_seconds())  # max_age tính bằng giây
+    except signing.SignatureExpired:  # chữ ký đúng nhưng quá hạn (phải bắt TRƯỚC BadSignature vì là lớp con)
+        raise LoiMoiQuanTriKhongHopLe('Link mời đã hết hạn. Vui lòng nhờ Quản trị viên gửi lại lời mời.')  # báo hết hạn
+    except signing.BadSignature:  # link bị sửa, cắt thiếu hoặc không phải token của hệ thống
+        raise LoiMoiQuanTriKhongHopLe('Link mời không hợp lệ. Vui lòng mở đúng link trong email mời.')  # báo không hợp lệ
+    email = du_lieu.get('email') if isinstance(du_lieu, dict) else None  # lấy email trong token
+    if not email:  # token đúng chữ ký nhưng thiếu email (không xảy ra với token do hệ thống tạo)
+        raise LoiMoiQuanTriKhongHopLe('Link mời không hợp lệ. Vui lòng mở đúng link trong email mời.')  # báo không hợp lệ
+    return email  # email người được mời
+
+
+def gui_email_loi_moi_qtv(email, link, nguoi_moi):  # gửi mail mời; True nếu gửi được, False nếu lỗi (view sẽ hiện link cho admin gửi tay)
+    gio = int(HIEU_LUC_LOI_MOI_QTV.total_seconds() // 3600)  # số giờ hiệu lực, để câu chữ luôn khớp hằng số
+    tieu_de = 'Lời mời làm Quản trị viên FRAMIE'  # tiêu đề email
+    noi_dung = (  # nội dung dạng chữ thường, KHÔNG ghi mật khẩu
+        'Xin chào,\n\n'  # lời chào (chưa có họ tên vì người nhận chưa có tài khoản)
+        f'{nguoi_moi.get_full_name() or nguoi_moi.email} mời bạn làm Quản trị viên của FRAMIE.\n'  # ai mời
+        f'Mở link sau để tạo tài khoản (link dùng được một lần, có hiệu lực {gio} giờ):\n{link}\n\n'  # link đăng ký
+        'Nếu bạn không mong đợi lời mời này, vui lòng bỏ qua email.\n\n'  # phòng trường hợp gửi nhầm
+        'FRAMIE'  # chữ ký
+    )  # hết nội dung
+    try:  # bọc lại vì máy chủ email có thể lỗi
+        send_mail(tieu_de, noi_dung, None, [email])  # None = dùng DEFAULT_FROM_EMAIL
+    except Exception:  # noqa: BLE001  # bắt mọi lỗi gửi (mất mạng, sai cấu hình SMTP...)
+        logger.exception('Gửi email mời Quản trị viên thất bại (%s)', email)  # ghi lỗi đầy đủ ra Terminal
+        return False  # view sẽ hiện link để admin copy gửi tay
+    return True  # gửi thành công
