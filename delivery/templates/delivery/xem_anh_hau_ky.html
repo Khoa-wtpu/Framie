@@ -15,7 +15,7 @@
       {% for a in anhs %}
         <figure class="gallery-hau-ky__the">{# E10: bọc ảnh + nút so sánh (hai nút không được lồng nhau) #}
           <button class="gallery-hau-ky__item" type="button"
-                  data-full="{% url 'xem_anh' a.pk %}" data-alt="{{ a.TenAnh|escape }}"
+                  data-xem-lon="{% url 'xem_anh' a.pk %}" data-ten="{{ a.TenAnh }}"
                   aria-label="Xem ảnh {{ forloop.counter }}">
             <img src="{% url 'xem_anh' a.pk %}?nho=1" alt="{{ a.TenAnh }}" loading="lazy">
           </button>
@@ -40,10 +40,6 @@
       </div>
       {% if not co_the_yeu_cau %}<p class="muted">Bạn đã dùng hết số lần yêu cầu chỉnh sửa cho Booking này.</p>{% endif %}
     </section>
-    <dialog class="gallery-hau-ky__dialog" id="gallery-lightbox" aria-label="Xem ảnh kích thước lớn">
-      <button class="gallery-hau-ky__close" type="button" aria-label="Đóng">×</button>
-      <img id="gallery-lightbox-image" alt="">
-    </dialog>
     {% if co_so_sanh %}{# E10: hộp so sánh trước/sau (dùng chung cho mọi ảnh, JS nạp ảnh khi bấm nút) #}
     <dialog class="so-sanh" id="so-sanh-hop" aria-labelledby="so-sanh-tieu-de">
       <button class="so-sanh__dong" type="button" aria-label="Đóng">×</button>
@@ -68,29 +64,10 @@
 {% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'delivery/css/so_sanh_truoc_sau.css' %}">{# E10: CSS riêng của thanh kéo so sánh #}
+<link rel="stylesheet" href="{% static 'delivery/css/xem_anh_lightbox.css' %}">{# CSS cửa sổ phóng to ảnh dùng chung #}
 <link rel="stylesheet" href="{% static 'delivery/css/xem_anh_hau_ky.css' %}">{# CSS của trang xem ảnh sau hậu kỳ (trước đây viết trong thẻ style) #}
 {% endblock %}
 {% block extra_js %}
-<script>
-(function () {
-  const dialog = document.getElementById('gallery-lightbox');
-  const image = document.getElementById('gallery-lightbox-image');
-  if (!dialog || !image) return;
-  document.querySelectorAll('.gallery-hau-ky__item').forEach(function (item) {
-    item.addEventListener('click', function () {
-      image.src = item.dataset.full;
-      image.alt = item.dataset.alt || 'Ảnh sau hậu kỳ';
-      dialog.showModal();
-    });
-  });
-  dialog.querySelector('.gallery-hau-ky__close').addEventListener('click', function () {
-    dialog.close();
-  });
-  dialog.addEventListener('click', function (event) {
-    if (event.target === dialog) dialog.close();
-  });
-  dialog.addEventListener('close', function () { image.removeAttribute('src'); });
-})();
-</script>
+<script src="{% static 'delivery/js/xem_anh_lightbox.js' %}" defer></script>{# JS cửa sổ phóng to ảnh dùng chung (bấm ảnh có data-xem-lon) #}
 <script src="{% static 'delivery/js/so_sanh_truoc_sau.js' %}" defer></script>{# E10: JS riêng của thanh kéo so sánh #}
 {% endblock %}

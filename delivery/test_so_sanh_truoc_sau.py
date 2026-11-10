@@ -260,6 +260,15 @@ class SliderTrangKiemTraTests(_NenSoSanh):                     # E10: hiển th�
         services.tai_anh_len(bk.pk, self.nag_user, [tep_anh('z1.jpg')])           # Booking sang Chờ Khách hàng kiểm tra
         self.assertNotContains(self.trang(bk), 'data-so-sanh-truoc')
 
+    def test_anh_bam_de_phong_to_ngay_trong_trang(self):       # bấm ảnh mở cửa sổ phóng to dùng chung, không mở tab / trang mới
+        bk = self.booking_kiem_tra()
+        html = self.trang(bk).content.decode()
+        self.assertIn(f'data-xem-lon="{reverse("xem_anh", args=[self.a1.pk])}"', html)   # ảnh a1 gắn thuộc tính phóng to
+        self.assertIn(f'data-xem-lon="{reverse("xem_anh", args=[self.a2.pk])}"', html)   # ảnh a2 cũng thuộc cùng nhóm để bấm < > chuyển qua lại
+        self.assertIn('delivery/js/xem_anh_lightbox.js', html)                      # nạp JS dùng chung
+        self.assertIn('delivery/css/xem_anh_lightbox.css', html)                    # nạp CSS dùng chung
+        self.assertNotIn('gallery-lightbox', html)                                  # hộp xem ảnh cũ (không có < >) đã bỏ
+
     def test_trang_khong_con_khoi_style_noi_tuyen(self):       # E1: CSS của trang nằm ở tệp riêng, không còn thẻ <style>
         bk = self.booking_kiem_tra()
         html = self.trang(bk).content.decode()

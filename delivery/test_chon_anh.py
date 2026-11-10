@@ -237,6 +237,14 @@ class ChonAnhViewTests(_NenChonAnh):                           # trang web của
         self.assertNotContains(trang, 'name="anh"')            # không còn ô tick
         self.assertContains(trang, 'Ảnh bạn đã chọn (5)')  # kiểm tra trang có hiện đoạn chữ mong đợi
 
+    def test_nut_phong_to_dang_bieu_tuong_thay_chu_xem_lon(self):   # nút zoom dạng biểu tượng, không còn chữ "Xem lớn"
+        bk = self.tao_booking_cho_chon()  # tạo Booking ở Chờ Khách hàng lựa chọn ảnh, kèm sẵn các ảnh mẫu
+        self.client.force_login(self.kh)  # đăng nhập bằng tài khoản cần thử
+        trang = self.client.get(self.url(bk))  # mở trang chọn ảnh
+        self.assertContains(trang, 'xal-nut-zoom--tren-anh')   # có nút biểu tượng phóng to đè trên ảnh
+        self.assertContains(trang, 'aria-label="Phóng to ảnh')   # nút có nhãn cho người dùng đọc màn hình
+        self.assertNotContains(trang, 'Xem lớn')               # không còn chữ "Xem lớn"
+
     def test_hanh_dong_la_hien_thong_bao_loi(self):  # tên test cho biết tình huống đang kiểm tra
         bk = self.tao_booking_cho_chon()  # tạo Booking ở Chờ Khách hàng lựa chọn ảnh, kèm sẵn các ảnh mẫu
         self.client.force_login(self.kh)  # đăng nhập bằng tài khoản cần thử

@@ -16,7 +16,7 @@
         <div class="chon-anh__luoi">{# lưới ảnh #}
           {% for a in anhs %}{# duyệt từng ảnh đã chọn #}
             <figure class="chon-anh__the">{# một ô ảnh #}
-              <img src="{% url 'xem_anh' a.pk %}?nho=1" alt="{{ a.TenAnh }}" loading="lazy" draggable="false">{# ảnh thu nhỏ có watermark #}
+              <a href="{% url 'xem_anh' a.pk %}" data-xem-lon target="_blank" rel="noopener"><img src="{% url 'xem_anh' a.pk %}?nho=1" alt="{{ a.TenAnh }}" loading="lazy" draggable="false"></a>{# ảnh thu nhỏ có watermark, bấm để phóng to trong trang #}
               <figcaption class="muted chon-anh__chu-thich">{{ a.TenAnh }}</figcaption>{# tên ảnh #}
             </figure>
           {% endfor %}
@@ -54,7 +54,7 @@
               <input type="checkbox" name="anh" value="{{ a.pk }}"{% if a.pk in ds_tick %} checked{% endif %}>{# ô tick, gửi mã ảnh lên server #}
               <img src="{% url 'xem_anh' a.pk %}?nho=1" alt="{{ a.TenAnh }}" loading="lazy" draggable="false">{# ảnh thu nhỏ có watermark #}
               <span class="muted chon-anh__chu-thich">{{ a.TenAnh }}</span>{# tên ảnh #}
-              <a class="chon-anh__xem-lon" href="{% url 'xem_anh' a.pk %}" target="_blank" rel="noopener">Xem lớn</a>{# mở ảnh lớn (vẫn có watermark) ở tab mới #}
+              <a class="xal-nut-zoom xal-nut-zoom--tren-anh" href="{% url 'xem_anh' a.pk %}" data-xem-lon data-ten="{{ a.TenAnh }}" target="_blank" rel="noopener" title="Phóng to ảnh" aria-label="Phóng to ảnh {{ a.TenAnh }}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m15 15 6 6"/><path d="m15 9 6-6"/><path d="M21 16.2V21h-4.8"/><path d="M21 7.8V3h-4.8"/><path d="M3 16.2V21h4.8"/><path d="m3 21 6-6"/><path d="M3 7.8V3h4.8"/><path d="M9 9 3 3"/></svg></a>{# nút biểu tượng phóng to ở góc trên bên phải ảnh; bấm mở cửa sổ phóng to ngay trong trang (nếu JS lỗi thì mở tab mới) #}
             </label>
           {% endfor %}
         </div>
@@ -71,9 +71,11 @@
 {% endblock %}
 
 {% block extra_head %}
+<link rel="stylesheet" href="{% static 'delivery/css/xem_anh_lightbox.css' %}">{# CSS cửa sổ phóng to ảnh dùng chung #}
 <link rel="stylesheet" href="{% static 'delivery/css/chon_anh.css' %}">{# CSS riêng của trang #}
 {% endblock %}
 
 {% block extra_js %}
+<script src="{% static 'delivery/js/xem_anh_lightbox.js' %}" defer></script>{# JS cửa sổ phóng to ảnh dùng chung (bấm ảnh có data-xem-lon) #}
 <script src="{% static 'delivery/js/chon_anh.js' %}" defer></script>{# JavaScript đếm số ảnh đã tick #}
 {% endblock %}
