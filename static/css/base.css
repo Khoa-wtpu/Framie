@@ -110,3 +110,12 @@ ul { margin: 0; padding: 0; list-style: none; }
 .site-footer__bottom { padding-block: var(--space-4); border-top: 1px solid var(--color-border); font-size: var(--text-xs); color: var(--color-text-muted); }
 @media (min-width: 720px) { .site-footer__grid { grid-template-columns: 2fr 1fr 1fr; } }
 .flash { padding-top: var(--space-4); display: grid; gap: var(--space-2); }
+
+/* 960-1099px: menu Nhiếp ảnh gia có 7 mục (kèm "Giới thiệu") nên rất chật. Ẩn tên + vai trò cạnh ảnh đại diện để menu đủ chỗ; bấm ảnh vẫn mở menu tài khoản. */
+@media (min-width: 960px) and (max-width: 1099px) {
+  .account-btn__text { display: none; }
+  .account-btn { padding-right: var(--space-2); }
+}
+@media (min-width: 960px) and (max-width: 1019px) {
+  .site-nav__link { padding-inline: .3rem; letter-spacing: 0; }
+}

@@ -19,6 +19,7 @@ URL_NAMES = {
     "register": "register",
     "notifications": "notifications",
     "about": "about",   # B10 Giới thiệu
+    "search": "search", # trang Tìm kiếm (footer)
     "terms": "terms",   # B10 Điều khoản sử dụng
     "logout_confirm": "logout_confirm",  # SC7.5 Xác nhận đăng xuất
 }
@@ -26,7 +27,7 @@ URL_NAMES = {
 # (nhãn, tên URL)
 MENUS = {
     GUEST: [("Trang chủ", "home"), ("Tìm nhiếp ảnh gia", "search"), ("Giới thiệu", "about")],
-    CUSTOMER: [("Hồ sơ của tôi", "customer_profile"), ("Tìm kiếm", "search"), ("Booking của tôi", "my_bookings"), ("Tin nhắn", "inbox")],
+    CUSTOMER: [("Hồ sơ của tôi", "customer_profile"), ("Tìm kiếm", "search"), ("Booking của tôi", "my_bookings"), ("Tin nhắn", "inbox"), ("Giới thiệu", "about")],
     PHOTOGRAPHER: [
         ("Hồ sơ của tôi", "photographer_profile"),
         ("Portfolio", "portfolio"),
@@ -34,6 +35,7 @@ MENUS = {
         ("Lịch của tôi", "my_calendar"),
         ("Quản lý Booking", "manage_bookings"),
         ("Tin nhắn", "inbox"),
+        ("Giới thiệu", "about"),
     ],
     # Menu Quản trị viên: chỉnh lại cho đúng danh sách màn hình admin của nhóm
     ADMIN: [
