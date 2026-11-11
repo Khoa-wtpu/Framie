@@ -186,10 +186,13 @@ class CoSoAnh(CoSoTest):  # lớp cha: dùng thư mục ảnh tạm thay cho pri
         self.addCleanup(ghi_de.disable)  # tắt sau test
 
     def tin_anh(self, nguoi=None, noi_dung='', so_ngay=0):  # tạo tin có 1 ảnh; so_ngay > 0 thì lùi giờ gửi về quá khứ
-        tin = services.gui_tin_nhan(self.cuoc, nguoi or self.khach, noi_dung, ds_anh=[_tao_anh()])  # lưu thật qua services
+        truoc = services.ma_tin_cuoi(self.cuoc)  # mã tin cuối trước khi gửi, để biết những tin nào là mới
+        services.gui_tin_nhan(self.cuoc, nguoi or self.khach, noi_dung, ds_anh=[_tao_anh()])  # lưu thật qua services (có chữ thì tách thành tin ảnh + tin chữ)
+        moi = list(TinNhan.objects.filter(MaCuocTroChuyen=self.cuoc, pk__gt=truoc))  # các tin vừa tạo
         if so_ngay:  # lùi giờ gửi (ThoiGianGui là auto_now_add nên phải dùng update)
-            TinNhan.objects.filter(pk=tin.pk).update(ThoiGianGui=timezone.now() - timedelta(days=so_ngay))  # sửa giờ
-            tin.refresh_from_db()  # nạp lại
+            TinNhan.objects.filter(pk__in=[m.pk for m in moi]).update(ThoiGianGui=timezone.now() - timedelta(days=so_ngay))  # sửa giờ của mọi tin vừa tạo
+        tin = next(m for m in moi if m.dinh_kem.exists())  # trả về tin chứa ảnh
+        tin.refresh_from_db()  # nạp lại
         return tin  # trả về tin
 
     def xem(self, dinh_kem, user=None, nho=False):  # gọi view xem ảnh

@@ -21,4 +21,13 @@
     </div>
     <div class="chat-muc__rong" data-chat-anh-rong{% if anh_theo_thang %} hidden{% endif %}><strong>Chưa có file phương tiện nào</strong><span>Ảnh gửi trong cuộc trò chuyện sẽ hiển thị tại đây.</span></div>
   </div>
+  <div class="chat-muc">{# mục Liên kết (góp ý C2): link gửi trong cuộc trò chuyện, mới nhất trên cùng; chat.js thêm khi có tin mới và gỡ khi tin bị thu hồi #}
+    <h2 class="chat-muc__tieu-de">Liên kết</h2>
+    <ul class="chat-lien-ket" data-chat-lien-ket{% if not lien_ket %} hidden{% endif %}>{# danh sách link #}
+      {% for lk in lien_ket %}
+      <li class="chat-lien-ket__muc" data-chat-lk data-ma-tin="{{ lk.ma_tin }}" data-url="{{ lk.url }}"><a href="{{ lk.url }}" target="_blank" rel="noopener noreferrer nofollow" title="{{ lk.url }}">{{ lk.hien_thi }}</a></li>{# data-ma-tin: để gỡ khi tin bị thu hồi #}
+      {% endfor %}
+    </ul>
+    <div class="chat-muc__rong" data-chat-lk-rong{% if lien_ket %} hidden{% endif %}><strong>Chưa có liên kết nào</strong><span>Liên kết gửi trong cuộc trò chuyện sẽ hiển thị tại đây.</span></div>{# hiện khi chưa có link #}
+  </div>
 </aside>

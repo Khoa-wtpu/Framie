@@ -4,8 +4,10 @@ import datetime  # so sánh ngày
 from django import template  # thư viện thẻ template
 from django.utils import timezone  # đổi giờ UTC sang giờ địa phương (Asia/Ho_Chi_Minh)
 from django.contrib.auth.views import redirect_to_login  # tạo đường dẫn đăng nhập kèm ?next=
+from django.utils.html import escape, format_html  # escape chữ thường; format_html gắn thẻ <a> an toàn
+from django.utils.safestring import mark_safe  # đánh dấu chuỗi đã tự escape xong
 
-from chat.services import anh_het_han as _anh_het_han, la_khach_hang  # kiểm tra vai trò Khách hàng; kiểm ảnh đã quá 6 tháng chưa
+from chat.services import anh_het_han as _anh_het_han, la_khach_hang, tim_lien_ket  # kiểm tra vai trò Khách hàng; kiểm ảnh đã quá 6 tháng chưa
 
 register = template.Library()  # nơi đăng ký thẻ
 
@@ -45,3 +47,16 @@ def gio_ds(gia_tri):
 @register.filter  # cách dùng: {% if tin|anh_het_han %} - ảnh của tin đã quá 6 tháng lưu trữ
 def anh_het_han(tin):
     return _anh_het_han(tin)  # True nếu tin gửi cách đây hơn 6 tháng
+
+
+@register.filter  # cách dùng: {{ tin.NoiDung|lien_ket }} - biến link http, https, www trong chữ thành thẻ <a> bấm được (góp ý C2)
+def lien_ket(noi_dung):
+    goc = noi_dung or ''  # chữ gốc của tin
+    manh = []  # các đoạn đã escape
+    vi_tri = 0  # đã xử lý tới đâu
+    for lk in tim_lien_ket(goc):  # từng link tìm được
+        manh.append(escape(goc[vi_tri:lk['bat_dau']]))  # chữ trước link: escape để chống XSS
+        manh.append(format_html('<a class="tn__lien-ket" href="{}" target="_blank" rel="noopener noreferrer nofollow">{}</a>', lk['href'], goc[lk['bat_dau']:lk['ket_thuc']]))  # link: mở tab mới; format_html tự escape cả href lẫn chữ
+        vi_tri = lk['ket_thuc']  # nhảy qua link
+    manh.append(escape(goc[vi_tri:]))  # chữ sau link cuối
+    return mark_safe(''.join(manh))  # mọi đoạn đều đã escape nên đánh dấu an toàn

@@ -303,3 +303,17 @@ mark.tn__tim { padding: 0 .125rem; border-radius: .25rem; background: var(--colo
 .chat__tim-ai { flex: none; color: var(--color-text-muted); } /* chữ "Bạn:" */
 .chat__tim-trich { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* đoạn trích một dòng */
 .chat__tim-luc { flex: none; color: var(--color-text-muted); font-size: var(--text-xs); } /* giờ gửi */
+
+/* ===== Sửa theo góp ý kiểm thử chéo D2 (C2, C3, C4): chỉ THÊM luật mới ở cuối file, không sửa luật cũ ===== */
+.hop-thu__chu { grid-template-columns: minmax(0, 1fr); } /* C3: cột lưới không bị chữ dài liền nhau (không có dấu cách) đẩy rộng ra, nên dấu ... mới hiện */
+.hop-thu__hang { min-width: 0; } /* C3: hàng flex nằm trong lưới cũng được phép co lại */
+.chat__trong-lon-tieu-de, .chat__trong-lon-mo-ta { text-wrap: balance; } /* C4: chia dòng đều tay, không để lẻ một chữ "gia." xuống dòng dưới */
+.tn__noi-dung a.tn__lien-ket { color: inherit; text-decoration: underline; text-underline-offset: 2px; } /* C2: link trong tin có gạch chân, cùng màu chữ của bong bóng */
+.tn__noi-dung a.tn__lien-ket:hover { text-decoration-thickness: 2px; } /* rê chuột: gạch chân đậm hơn */
+.tn__noi-dung a.tn__lien-ket:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; } /* dùng phím Tab vẫn thấy đang chọn link nào */
+.chat-lien-ket { display: grid; gap: var(--space-1); margin: 0; padding: 0; list-style: none; } /* C2: danh sách liên kết ở cột phải */
+.chat-lien-ket[hidden] { display: none; } /* luật hidden riêng vì display: grid ở trên */
+.chat-lien-ket__muc { min-width: 0; } /* cho phép cắt chữ link dài */
+.chat-lien-ket__muc a { display: block; overflow: hidden; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); color: inherit; font-size: var(--text-sm); text-decoration: none; text-overflow: ellipsis; white-space: nowrap; } /* mỗi link một dòng, dài quá thì cắt ... */
+.chat-lien-ket__muc a:hover { background: var(--color-surface-alt); text-decoration: underline; } /* rê chuột: nền nhạt, gạch chân */
+.chat-lien-ket__muc a:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; } /* dùng phím Tab vẫn thấy đang chọn link nào */
