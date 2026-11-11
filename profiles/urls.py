@@ -14,5 +14,4 @@ urlpatterns = [
     path('goi-dich-vu/<int:pk>/sua/', views_goi.goi_sua, name='goi_sua'),
     path('goi-dich-vu/<int:pk>/<slug:hanh_dong>/', views_goi.goi_hanh_dong, name='goi_hanh_dong'),
     path('ho-so/cap-nhat/', views.cap_nhat_ho_so, name='cap_nhat_ho_so'),  # K4: cập nhật hồ sơ (trang thật)
-    path('thu-quyen/tao-ho-so/', views.tao_ho_so_thu, name='tao_ho_so_thu'),  # TRANG THỬ K3 (xóa sau)
 ]
