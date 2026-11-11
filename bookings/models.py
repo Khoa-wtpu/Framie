@@ -498,10 +498,11 @@ class YeuCauHuy(models.Model):
    )
    BenYeuCau = models.CharField(max_length=20, choices=BEN_YEU_CAU_HUY_CHOICES)  # bên gửi yêu cầu: Khách hàng / Nhiếp ảnh gia
    LyDo = models.CharField(max_length=500)  # lý do hủy (bắt buộc)
-   # Chỉ được hủy khi Booking đang ở "Chờ đặt cọc" hoặc "Chốt Booking" (quy tắc BR4.6-1)
+   # Chỉ được hủy khi Booking đang ở "Chờ xác nhận" (chỉ Khách hàng), "Chờ đặt cọc" hoặc "Chốt Booking" (quy tắc BR4.6-1)
    TrangThaiBookingLucHuy = models.CharField(
        max_length=30,
-       choices=[  # chỉ cho chọn 2 trạng thái này
+       choices=[  # chỉ cho chọn 3 trạng thái này
+           (TrangThaiBooking.CHO_XAC_NHAN, TrangThaiBooking.CHO_XAC_NHAN),  # Khách rút yêu cầu khi Nhiếp ảnh gia chưa phản hồi
            (TrangThaiBooking.CHO_DAT_COC, TrangThaiBooking.CHO_DAT_COC),
            (TrangThaiBooking.CHOT_BOOKING, TrangThaiBooking.CHOT_BOOKING),
        ],
@@ -532,7 +533,8 @@ class YeuCauHuy(models.Model):
            ),
            models.CheckConstraint(
                condition=Q(
-                   TrangThaiBookingLucHuy__in=[  # chỉ 2 trạng thái được phép hủy
+                   TrangThaiBookingLucHuy__in=[  # chỉ 3 trạng thái được phép hủy
+                       TrangThaiBooking.CHO_XAC_NHAN,
                        TrangThaiBooking.CHO_DAT_COC,
                        TrangThaiBooking.CHOT_BOOKING,
                    ]
@@ -558,12 +560,12 @@ class YeuCauHuy(models.Model):
                ),
                name="ck_yeucauhuy_ben_xulytiencoc",
            ),
-           # Hủy lúc "Chờ đặt cọc" (chưa có tiền) => Không phát sinh
+           # Hủy lúc "Chờ xác nhận" hoặc "Chờ đặt cọc" (chưa có tiền) => Không phát sinh
            # Hủy lúc "Chốt Booking" (đã cọc) => Mất cọc hoặc Hoàn cọc
            models.CheckConstraint(
                condition=(
                    (
-                       Q(TrangThaiBookingLucHuy=TrangThaiBooking.CHO_DAT_COC)
+                       Q(TrangThaiBookingLucHuy__in=[TrangThaiBooking.CHO_XAC_NHAN, TrangThaiBooking.CHO_DAT_COC])
                        & Q(XuLyTienCoc=HangSoXuLyTienCoc.KHONG_PHAT_SINH)
                    )
                    | (

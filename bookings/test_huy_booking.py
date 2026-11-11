@@ -176,7 +176,7 @@ class LyDoVaTrangXacNhan(HuyBase):  # nhóm test: kiểm tra lý do và trang x�
 # ---------------------------------------------------------------------
 class KhongHuyDuoc(HuyBase):  # nhóm test: các trường hợp không được hủy
     def test_tu_da_chup_tro_di_va_cac_trang_thai_khac_khong_huy_duoc(self):  # mọi trạng thái ngoài 2 trạng thái cho phép đều bị chặn
-        for tt in (BK.CHO_XAC_NHAN, BK.DA_CHUP, BK.CHO_KH_CHON_ANH, BK.CHO_HAU_KY, BK.DANG_HAU_KY, BK.CHO_KH_KIEM_TRA,  # danh sách các trạng thái không được hủy (phần 1)
+        for tt in (BK.DA_CHUP, BK.CHO_KH_CHON_ANH, BK.CHO_HAU_KY, BK.DANG_HAU_KY, BK.CHO_KH_KIEM_TRA,  # danh sách các trạng thái không được hủy (phần 1)
                    BK.CHO_XAC_NHAN_THANH_TOAN, BK.HOAN_THANH, BK.DA_TU_CHOI, BK.HET_THOI_HAN_DAT_COC, BK.DA_HUY):  # (phần 2)
             with self.subTest(trang_thai=tt):  # mỗi trạng thái là một "test con", lỗi sẽ chỉ rõ trạng thái nào
                 bk = self.tao_booking(tt)  # tạo Booking ở trạng thái đang thử
@@ -188,6 +188,25 @@ class KhongHuyDuoc(HuyBase):  # nhóm test: các trường hợp không được
                 bk.refresh_from_db()  # nạp lại Booking
                 self.assertEqual(bk.TrangThai, tt)                            # không đổi
                 self.assertFalse(YeuCauHuy.objects.filter(MaBooking=bk).exists())  # không có Yêu cầu hủy nào được tạo
+
+    def test_nag_khong_huy_duoc_o_cho_xac_nhan_nhung_khach_thi_duoc(self):  # C1: lúc "Chờ xác nhận" Nhiếp ảnh gia dùng "Từ chối"; Khách được rút yêu cầu
+        bk = self.tao_booking(BK.CHO_XAC_NHAN)  # Booking vừa gửi, Nhiếp ảnh gia chưa phản hồi
+        self.client.force_login(self.nag.MaTaiKhoan)  # đăng nhập Nhiếp ảnh gia
+        self.assertRedirects(self.client.get(self.url_huy(bk)),  # mở trang hủy -> bị chuyển về trang chi tiết
+                             reverse('chi_tiet_booking', kwargs={'ma_booking': bk.pk}), fetch_redirect_response=False)
+        self.client.post(self.url_huy(bk), {'ly_do': LY_DO})  # cố hủy bằng POST
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, BK.CHO_XAC_NHAN)  # không đổi
+        self.assertFalse(YeuCauHuy.objects.filter(MaBooking=bk).exists())  # không có Yêu cầu hủy
+        self.huy(self.khach, bk)  # Khách hủy -> được
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, BK.DA_HUY)  # đã hủy
+        yc = YeuCauHuy.objects.get(MaBooking=bk)  # có Yêu cầu hủy
+        self.assertEqual((yc.BenYeuCau, yc.TrangThaiBookingLucHuy, yc.XuLyTienCoc),  # bên hủy = Khách, lúc hủy = Chờ xác nhận, tiền cọc = Không phát sinh
+                         (BenThucHien.KHACH_HANG, BK.CHO_XAC_NHAN, XL.KHONG_PHAT_SINH))
+        self.assertIsNone(yc.TrangThaiHoanTien)  # không có theo dõi hoàn tiền
+        bk.MaLich.refresh_from_db()
+        self.assertEqual(bk.MaLich.TrangThai, SL.TRONG)  # slot trả về "Lịch trống"
 
     def test_huy_hai_lan_chi_ghi_mot_yeu_cau(self):  # hủy lần 2 không ghi thêm gì
         bk = self.tao_booking(BK.CHOT_BOOKING)  # tạo Booking đã chốt
@@ -290,11 +309,14 @@ class GiaoDienChiTiet(HuyBase):  # nhóm test: giao diện trang chi tiết
         return self.client.get(reverse('chi_tiet_booking', kwargs={'ma_booking': bk.pk}))  # mở trang chi tiết, trả về phản hồi
 
     def test_nut_huy_hien_dung_trang_thai(self):  # nút Hủy chỉ hiện ở đúng trạng thái
-        for tt, co in ((BK.CHO_DAT_COC, True), (BK.CHOT_BOOKING, True), (BK.DA_CHUP, False),  # (trạng thái, có nút hay không): 2 trạng thái đầu có nút...
-                       (BK.HOAN_THANH, False), (BK.DA_HUY, False)):  # ...các trạng thái còn lại không có
+        # (trạng thái, Khách có nút?, Nhiếp ảnh gia có nút?): Khách có thêm "Chờ xác nhận" (C1); Nhiếp ảnh gia có từ "Chờ đặt cọc" (C3)
+        for tt, co_khach, co_nag in ((BK.CHO_XAC_NHAN, True, False), (BK.CHO_DAT_COC, True, True), (BK.CHOT_BOOKING, True, True),
+                                     (BK.DA_CHUP, False, False), (BK.HOAN_THANH, False, False), (BK.DA_HUY, False, False)):
             bk = self.tao_booking(tt)  # tạo Booking ở trạng thái đang thử
-            for user in (self.khach, self.nag.MaTaiKhoan):  # thử với cả Khách và Nhiếp ảnh gia
-                res = self.chi_tiet(user, bk)  # mở trang chi tiết
+            for user, co in ((self.khach, co_khach), (self.nag.MaTaiKhoan, co_nag)):  # thử với cả Khách và Nhiếp ảnh gia
+                self.client.force_login(user)  # đăng nhập người này
+                # follow=True: Nhiếp ảnh gia mở "cua-toi/<mã>/" được chuyển sang trang xử lý riêng (C5) - nút Hủy nằm ở trang đó
+                res = self.client.get(reverse('chi_tiet_booking', kwargs={'ma_booking': bk.pk}), follow=True)  # mở trang chi tiết
                 self.assertEqual(self.url_huy(bk) in res.content.decode(), co, (tt, user.username))  # link hủy có trong trang đúng khi mong đợi (nội dung kèm theo giúp biết ca nào sai)
 
     def test_quan_tri_khong_thay_nut_huy(self):  # Quản trị viên không thấy nút Hủy

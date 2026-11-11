@@ -142,16 +142,25 @@ class ChuyenTrangThaiBookingTests(TestCase):  # nhóm test cho hàm chuyen_trang
         chuyen_trang_thai_booking(bk, TT.HET_THOI_HAN_DAT_COC, BEN.HE_THONG, 'Quá 1 ngày chưa đặt cọc')  # Hệ thống làm thì được
         self.assertEqual(LichSuTrangThaiBooking.objects.get().BenThucHien, BEN.HE_THONG)  # lịch sử ghi bên thực hiện là Hệ thống
 
-    def test_cho_xac_nhan_chi_he_thong_tu_huy(self):  # test: "Chờ xác nhận -> Đã hủy" chỉ Hệ thống được làm (quá giờ chụp mà chưa xác nhận)
+    def test_cho_xac_nhan_khach_va_he_thong_huy_duoc_nag_thi_khong(self):  # test (C1): "Chờ xác nhận -> Đã hủy": Khách (rút yêu cầu) và Hệ thống (quá giờ chụp) được; Nhiếp ảnh gia dùng "Từ chối" nên không được
         bk = self.tao_booking(TT.CHO_XAC_NHAN)
-        for ben in (BEN.KHACH_HANG, BEN.NHIEP_ANH_GIA):  # Khách và Nhiếp ảnh gia không được hủy ở bước này
-            with self.assertRaises(ValidationError):
-                chuyen_trang_thai_booking(bk, TT.DA_HUY, ben, 'Bận')
+        with self.assertRaises(ValidationError):  # Nhiếp ảnh gia không được "Hủy" ở bước này (đã có nút Từ chối)
+            chuyen_trang_thai_booking(bk, TT.DA_HUY, BEN.NHIEP_ANH_GIA, 'Bận')
+        with self.assertRaises(ValidationError):  # Khách hủy mà không có lý do -> bị chặn
+            chuyen_trang_thai_booking(bk, TT.DA_HUY, BEN.KHACH_HANG)
         chuyen_trang_thai_booking(bk, TT.DA_HUY, BEN.HE_THONG, 'Quá giờ chụp mà Nhiếp ảnh gia chưa xác nhận')  # Hệ thống làm thì được
         bk.refresh_from_db()
         self.assertEqual(bk.TrangThai, TT.DA_HUY)  # đã ở "Đã hủy"
         self.assertIsNone(bk.LyDoTuChoi)  # đây là hủy chứ không phải từ chối nên không lưu LyDoTuChoi
         self.assertEqual(LichSuTrangThaiBooking.objects.get().BenThucHien, BEN.HE_THONG)  # lịch sử ghi bên thực hiện là Hệ thống
+
+    def test_khach_huy_o_cho_xac_nhan_co_ly_do(self):  # test (C1): Khách hủy có lý do -> Đã hủy, lịch sử ghi bên Khách hàng
+        bk = self.tao_booking(TT.CHO_XAC_NHAN)
+        chuyen_trang_thai_booking(bk, TT.DA_HUY, BEN.KHACH_HANG, 'Đổi kế hoạch')
+        bk.refresh_from_db()
+        self.assertEqual(bk.TrangThai, TT.DA_HUY)  # đã ở "Đã hủy"
+        ls = LichSuTrangThaiBooking.objects.get()
+        self.assertEqual((ls.BenThucHien, ls.LyDo), (BEN.KHACH_HANG, 'Đổi kế hoạch'))  # lịch sử ghi đúng bên hủy và lý do
 
     def test_goi_gioi_han_phai_qua_buoc_chon_anh(self):  # test: gói giới hạn không được bỏ qua bước chọn ảnh
         bk = self.tao_booking(TT.DA_CHUP, self.goi_gioi_han)

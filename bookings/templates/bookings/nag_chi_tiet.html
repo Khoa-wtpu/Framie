@@ -8,6 +8,8 @@
 
 {% block extra_head %}<link rel="stylesheet" href="{% static 'bookings/css/chi_tiet_booking.css' %}"><link rel="stylesheet" href="{% static 'bookings/css/nag_chi_tiet.css' %}">{% endblock %}{# nạp CSS dùng chung của các trang Booking #}
 
+{% block extra_js %}<script src="{% static 'bookings/js/han_dat_coc.js' %}" defer></script>{% endblock %}{# C2: JS thanh đếm ngược hạn đặt cọc #}
+
 {% block content %}{# nội dung chính #}
 <div class="container ct">{# khung giữa trang, các khối con cách đều nhau nhờ CSS #}
 
@@ -28,23 +30,24 @@
 
   {% include "bookings/includes/the_thoi_tiet_nhac.html" %}{# E8: dải nhắc đổi lịch (chỉ hiện khi khả năng mưa cao) #}
 
+  {% include "bookings/includes/dem_nguoc_han_coc.html" with cho_khach=False %}{# C2: thanh đếm ngược hạn đặt cọc (chỉ hiện khi Booking đang "Chờ đặt cọc") #}
 
   {# ===== DẢI THÔNG TIN CHÍNH (UC4.3 bước 4): chụp khi nào, ở đâu, mấy người ===== #}
   <section class="ct__dai ct__dai--4" aria-label="Thông tin buổi chụp">{# thẻ lớn chia 4 ô: ngày giờ | địa điểm | số người | giá trị #}
-    <div class="ct__o">
+    <div class="ct__o ct__o--ngay">{# tông xanh dương #}
       <p class="ct__o-nhan">Ngày giờ chụp</p>
       <div class="ct__ngay"><span class="ct__ngay-so">{{ booking.NgayGioChup|date:"d" }}</span><span class="ct__ngay-thang">Tháng {{ booking.NgayGioChup|date:"n" }} · {{ booking.NgayGioChup|date:"Y" }}</span></div>{# số ngày to + tháng/năm #}
       <p class="ct__o-phu">{{ booking.NgayGioChup|date:"l" }} · {{ booking.NgayGioChup|date:"H:i" }}</p>{# thứ + giờ #}
     </div>
-    <div class="ct__o">
+    <div class="ct__o ct__o--dia-diem">{# tông tím #}
       <p class="ct__o-nhan">Địa điểm</p>
       <p class="ct__o-chinh">{{ booking.DiaDiem }}</p>{# địa điểm chụp #}
     </div>
-    <div class="ct__o">
+    <div class="ct__o ct__o--so-nguoi">{# tông xanh ngọc #}
       <p class="ct__o-nhan">Số người</p>
       <p class="ct__so-nguoi">{{ booking.SoNguoi }}</p>{# số người tham gia #}
     </div>
-    <div class="ct__o">{# ô giá trị Booking (trước đây là thẻ riêng ở cột phụ) #}
+    <div class="ct__o ct__o--gia">{# ô giá trị Booking, tông xanh lá = tiền (trước đây là thẻ riêng ở cột phụ) #}
       <p class="ct__o-nhan">Giá trị Booking</p>
       <p class="ct__tong">{{ tong_gia }}<small>VNĐ</small></p>{# tổng giá trị theo giá gói #}
       <p class="ct__o-phu">Tiền cọc 40%: {{ tien_coc }} VNĐ</p>{# số tiền cọc khách sẽ phải đặt #}
@@ -53,7 +56,7 @@
 
   <div class="ct__than ct__than--hai">{# thân trang: 2 thẻ thông tin cạnh nhau, cao bằng nhau #}
 
-      <section class="ct__the">{# thẻ: khách và gói dịch vụ #}
+      <section class="ct__the ct__the--mau ct__the--xanh-duong">{# thẻ: khách và gói dịch vụ (tông xanh dương) #}
         <h2 class="ct__the-tieu-de">Khách hàng và dịch vụ</h2>
         <dl class="ct__ds">
           <div class="ct__dong"><dt>Khách hàng</dt><dd>{{ ten_khach }}</dd></div>{# tên khách đã đặt #}
@@ -63,7 +66,7 @@
         </dl>
       </section>
 
-      <section class="ct__the">{# thẻ: mong muốn của khách #}
+      <section class="ct__the ct__the--mau ct__the--tim">{# thẻ: mong muốn của khách (tông tím) #}
         <h2 class="ct__the-tieu-de">Yêu cầu của Khách hàng</h2>
         <dl class="ct__ds">
           <div class="ct__dong"><dt>Concept</dt><dd>{{ booking.Concept|linebreaksbr }}</dd></div>{# linebreaksbr giữ chỗ xuống dòng khách đã gõ #}
@@ -76,7 +79,7 @@
 
   {# Khối xử lý chỉ hiện khi Booking đang "Chờ xác nhận"; đã xử lý xong thì ẩn hết để khỏi bấm nhầm. #}
   {% if co_the_xu_ly %}
-  <section class="ct__the ct__ngang">{# thẻ xử lý yêu cầu, dạng ngang: chữ bên trái, nút bên phải #}
+  <section class="ct__the ct__the--mau ct__the--vang ct__ngang">{# thẻ xử lý yêu cầu (tông vàng = việc đang chờ), dạng ngang: chữ bên trái, nút bên phải #}
     <div class="ct__ngang-chu">
       <h2 class="ct__the-tieu-de">Xử lý yêu cầu</h2>
       {% if da_qua_gio_chup %}{# giờ chụp đã qua: cảnh báo, chỉ còn từ chối #}
@@ -97,9 +100,22 @@
   </section>
   {% endif %}
 
+  {# C3: Booking đang "Chờ đặt cọc" -> Nhiếp ảnh gia vẫn có quyền "Hủy Booking" (chưa có tiền cọc nên không phát sinh hoàn tiền). #}
+  {% if dang_cho_dat_coc and co_the_huy %}{# khóa do tiep_nhan.py truyền vào #}
+  <section class="ct__the ct__the--mau ct__the--vang ct__ngang">{# thẻ dạng ngang: chữ bên trái, nút bên phải #}
+    <div class="ct__ngang-chu">
+      <h2 class="ct__the-tieu-de">Chờ Khách hàng đặt cọc</h2>
+      <p class="ct__luu-y">Khách hàng cần đặt cọc 40% ({{ tien_coc }} VNĐ) trước hạn. Nếu bạn không thể thực hiện buổi chụp, hãy hủy và nhập lý do: khung giờ được trả về lịch trống, chưa có tiền cọc nên không phát sinh hoàn tiền.</p>{# nhắc hậu quả khi hủy lúc chưa cọc #}
+    </div>
+    <div class="ct__nut ct__nut--phai">
+      <a class="btn btn--danger" href="{% url 'huy_booking' ma_booking=booking.pk %}">Hủy Booking</a>{# nút đỏ dẫn tới trang nhập lý do + xác nhận hủy #}
+    </div>
+  </section>
+  {% endif %}
+
   {# T8: Booking đang "Chốt Booking" -> Nhiếp ảnh gia bấm "Đã chụp" sau khi buổi chụp diễn ra. #}
   {% if dang_chot_booking %}{# khóa dang_chot_booking do tiep_nhan.py truyền vào #}
-  <section class="ct__the ct__ngang ct__ngang--hai">{# thẻ sau buổi chụp, dạng ngang: 2 ô cạnh nhau (Đã chụp | Hủy) #}
+  <section class="ct__the ct__the--mau ct__the--xanh-la ct__ngang ct__ngang--hai">{# thẻ sau buổi chụp (tông xanh lá), dạng ngang: 2 ô cạnh nhau (Đã chụp | Hủy) #}
     <div class="ct__ngang-o">
       <h2 class="ct__the-tieu-de">Sau buổi chụp</h2>
       {% if da_den_gio_chup %}{# buổi chụp đã tới giờ #}

@@ -61,12 +61,12 @@ CHUYEN_HOP_LE = {  # dict (từ điển): mỗi cặp (cũ, mới) -> tập các
     (TT.CHO_DAT_COC, TT.CHOT_BOOKING): {NAG},          # Chờ đặt cọc -> Chốt Booking: Nhiếp ảnh gia xác nhận đã nhận đủ cọc
     (TT.CHO_DAT_COC, TT.HET_THOI_HAN_DAT_COC): {HT},   # Chờ đặt cọc -> Hết hạn cọc: chỉ Hệ thống tự làm (quá 1 ngày chưa cọc)
 
-    # --- Hủy (chỉ ở Chờ đặt cọc hoặc Chốt Booking, BR4.6-1) ---
+    # --- Hủy (chỉ ở Chờ xác nhận [chỉ Khách], Chờ đặt cọc hoặc Chốt Booking, BR4.6-1) ---
     (TT.CHO_DAT_COC, TT.DA_HUY): {KH, NAG},            # Hủy khi đang chờ cọc: cả Khách và Nhiếp ảnh gia đều được (bắt buộc lý do)
     (TT.CHOT_BOOKING, TT.DA_HUY): {KH, NAG},           # Hủy khi đã chốt: cả hai bên đều được (bắt buộc lý do)
 
-    # --- Hệ thống tự hủy khi quá giờ chụp mà Nhiếp ảnh gia chưa xác nhận ---
-    (TT.CHO_XAC_NHAN, TT.DA_HUY): {HT},                # Chờ xác nhận -> Đã hủy: CHỈ Hệ thống tự làm (đã quá giờ chụp mà Nhiếp ảnh gia chưa chấp nhận/từ chối); Khách và Nhiếp ảnh gia không có quyền hủy ở bước này
+    # --- Hủy khi Nhiếp ảnh gia CHƯA phản hồi (C1) ---
+    (TT.CHO_XAC_NHAN, TT.DA_HUY): {KH, HT},            # Chờ xác nhận -> Đã hủy: Khách rút yêu cầu (có lý do) HOẶC Hệ thống tự hủy khi quá giờ chụp; Nhiếp ảnh gia dùng "Từ chối" thay vì "Hủy"
 
     # --- Buổi chụp ---
     (TT.CHOT_BOOKING, TT.DA_CHUP): {NAG},              # mục 8.1: Nhiếp ảnh gia cập nhật "Đã chụp" sau buổi chụp
@@ -89,6 +89,7 @@ CHUYEN_HOP_LE = {  # dict (từ điển): mỗi cặp (cũ, mới) -> tập các
 # Các bước chuyển BẮT BUỘC có lý do (ghi vào LyDo của Lịch sử).
 BUOC_BAT_BUOC_LY_DO = {  # set (tập hợp) các cặp (cũ, mới) mà người dùng phải nhập lý do
     (TT.CHO_XAC_NHAN, TT.DA_TU_CHOI),  # từ chối thì phải nói vì sao
+    (TT.CHO_XAC_NHAN, TT.DA_HUY),      # Khách rút yêu cầu lúc chờ xác nhận phải có lý do (hệ thống tự hủy quá giờ cũng truyền sẵn lý do)
     (TT.CHO_DAT_COC, TT.DA_HUY),       # hủy lúc chờ cọc phải có lý do
     (TT.CHOT_BOOKING, TT.DA_HUY),      # hủy lúc đã chốt phải có lý do
 }
@@ -133,6 +134,17 @@ def _khoi_phuc_slot_dang_giu(bk):
             .exclude(TrangThai__in=TRANG_THAI_HET_HIEU_LUC).exists()):
         raise ValidationError('Khung giờ này đã gắn với một Booking khác, không thể chốt.')
     LichKhaDung.objects.filter(pk=lich.pk, TrangThai=TrangThaiSlot.TRONG).update(TrangThai=TrangThaiSlot.DANG_GIU)
+
+
+def dem_nguoc_han_dat_coc(booking):  # dữ liệu cho thanh đếm ngược hạn đặt cọc (dùng chung trang Khách và trang Nhiếp ảnh gia)
+    """Booking đang 'Chờ đặt cọc' và có HanDatCoc -> dict {han, con_lai, tong} (giây, tính theo đồng hồ SERVER); không thì None.
+    Quá hạn thì con_lai = 0 (hiện 'Đã hết hạn'); hệ thống tự chuyển 'Hết thời hạn đặt cọc' ở lần truy cập kế tiếp (bookings/qua_han.py)."""
+    if booking.TrangThai != TT.CHO_DAT_COC or not booking.HanDatCoc:  # chỉ hiện khi đang chờ cọc và đã có hạn
+        return None  # trạng thái khác: không có thanh đếm ngược
+    con_lai = int((booking.HanDatCoc - timezone.now()).total_seconds())  # số giây từ bây giờ tới hạn chót (âm nếu đã quá hạn)
+    return {'han': booking.HanDatCoc,  # mốc hạn chót để in ra chữ
+            'con_lai': max(0, con_lai),  # số giây còn lại, không âm
+            'tong': SO_NGAY_HAN_DAT_COC * 24 * 60 * 60}  # tổng thời hạn (giây) để tính phần trăm thanh tiến trình
 
 
 def chuyen_trang_thai_booking(booking, trang_thai_moi, ben_thuc_hien, ly_do=None):  # khai báo hàm; ly_do mặc định None (không bắt buộc)

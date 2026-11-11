@@ -17,19 +17,27 @@
   </header>
 
   {% if giu_cho_hien_tai %}{# chỉ hiện khi khách đang có một lượt giữ chỗ #}
-  <div class="alert alert--info" role="status">{# khung thông tin xanh #}
+  {# Đồng hồ đếm ngược chạy tiếp khi Khách quay lại trang lịch (dem_nguoc.js đọc các id/data-* dưới đây: KHÔNG đổi). #}
+  <div id="khoi-dang-giu" class="alert alert--info" role="status">{# khung thông tin xanh #}
     <div class="alert__body">
       <strong class="alert__title">Bạn đang giữ chỗ một khung giờ</strong>{# tiêu đề thông báo #}
       <span class="alert__text">
         {{ giu_cho_hien_tai.MaLich.Ngay|date:"d/m/Y" }}, {{ giu_cho_hien_tai.MaLich.GioBatDau|time:"H:i" }}–{{ giu_cho_hien_tai.MaLich.GioKetThuc|time:"H:i" }}.{# ngày + giờ của slot đang giữ #}
-        <a href="{% url 'man_hinh_giu_cho' giu_cho_hien_tai.pk %}">Xem thời gian còn lại</a>.{# link tới màn hình đếm ngược #}
+        <a href="{% url 'man_hinh_giu_cho' giu_cho_hien_tai.pk %}">Tiếp tục gửi yêu cầu Booking</a>.{# link tới màn hình giữ chỗ #}
         Chọn khung giờ khác bên dưới sẽ thay thế khung giờ này.{# giải thích: chọn slot khác sẽ thay thế lượt giữ hiện tại #}
       </span>
+      <div id="dem-nguoc" role="timer" aria-label="Thời gian giữ chỗ còn lại"
+           data-con-lai="{{ con_lai_giay }}" data-url="{{ url_trang_thai }}"
+           data-an="khoi-dang-giu" data-hien="khoi-het-han">
+        Còn lại: <strong id="dem-nguoc-so">--:--</strong>
+        <progress id="dem-nguoc-thanh" max="{{ tong_giay }}" value="{{ con_lai_giay }}"></progress>
+      </div>
       <form method="post" action="{% url 'huy_giu_cho' giu_cho_hien_tai.pk %}">{% csrf_token %}{# nhả slot đang giữ, không cần chọn slot khác #}
-        <button class="btn btn--ghost" type="submit">Hủy giữ chỗ</button>
+        <button class="btn btn--ghost" type="submit">Chọn khung giờ khác</button>
       </form>
     </div>
   </div>
+  <div id="khoi-het-han" class="alert alert--warning" role="alert" hidden>Khung giờ bạn đang giữ đã hết hạn và được trả về lịch trống. Vui lòng chọn lại.</div>
   {% endif %}
 
   {% for ngay, slots in lich_theo_ngay %}{# lặp qua từng ngày (view đã gom slot theo ngày) #}
@@ -57,3 +65,4 @@
   {% endfor %}
 </div>
 {% endblock %}
+{% block extra_js %}{% if giu_cho_hien_tai %}<script src="{% static 'bookings/js/dem_nguoc.js' %}" defer></script>{% endif %}{% endblock %}

@@ -110,7 +110,8 @@ class UC47NhiepAnhGia(TheoDoiBase):  # nhóm test: Nhiếp ảnh gia xem Booking
         bk = self.tao_booking()  # Booking "Chờ xác nhận"
         self.dang_nhap(self.nag.MaTaiKhoan)  # đăng nhập Nhiếp ảnh gia
         res = self.client.get(reverse('chi_tiet_booking', kwargs={'ma_booking': bk.pk}))  # mở chi tiết
-        self.assertContains(res, reverse('chi_tiet_yeu_cau_booking', kwargs={'ma_booking': bk.pk}))  # trang có link sang màn xử lý (T5)
+        # C5: Nhiếp ảnh gia được chuyển thẳng sang màn xử lý (T5) - nơi có đủ nút - thay vì ở lại trang chung thiếu nút
+        self.assertRedirects(res, reverse('chi_tiet_yeu_cau_booking', kwargs={'ma_booking': bk.pk}), fetch_redirect_response=False)
 
 
 @override_settings(PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])  # băm mật khẩu nhanh cho test
@@ -284,6 +285,10 @@ class UC47NutBanGiaoAnh(TheoDoiBase):  # nhóm test: nút dẫn sang các trang 
             with self.subTest(trang_thai=trang_thai):  # báo lỗi riêng cho từng trạng thái
                 bk = self.tao_booking(trang_thai=trang_thai, gio=g)  # Booking ở trạng thái đang thử
                 res = self.mo_chi_tiet(self.nag.MaTaiKhoan, bk)  # Nhiếp ảnh gia mở chi tiết
+                if res.status_code == 302:  # C5: "Chốt Booking" được chuyển sang trang xử lý riêng; trang đó cũng không có nút tải ảnh
+                    res = self.client.get(res['Location'])  # đi theo link chuyển hướng
+                    self.assertNotContains(res, self.NHAN_TAI_ANH)  # không có nút
+                    continue  # sang trạng thái kế tiếp
                 self.assertIsNone(res.context['url_tai_anh'])  # không có địa chỉ
                 self.assertNotContains(res, self.NHAN_TAI_ANH)  # không có nút
 
