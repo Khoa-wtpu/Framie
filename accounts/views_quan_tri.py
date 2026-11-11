@@ -1,5 +1,5 @@
 # =====================================================================
-# accounts/views_quan_tri.py  -  B7: trang tổng quan khu Quản trị; P7: quản lý tài khoản và vai trò
+# accounts/views_quan_tri.py  -  B7: trang tổng quan khu Quản trị; P7: danh sách và khóa/mở tài khoản
 # =====================================================================
 from django.contrib import messages  # thông báo ngắn hiện ở đầu trang (includes/messages.html)
 from django.contrib.auth import get_user_model  # lấy class User của dự án
@@ -13,7 +13,7 @@ from django.views.decorators.http import require_POST  # chỉ nhận phương t
 from core.constants import VaiTro  # tên 3 vai trò
 from core.navigation import resolve  # đổi tên URL thành đường dẫn (chưa có thì "#")
 
-from . import quan_ly_tai_khoan as ql  # P7: luật nghiệp vụ đổi vai trò, khóa/mở
+from . import quan_ly_tai_khoan as ql  # P7: luật nghiệp vụ khóa/mở tài khoản
 from .permissions import chi_quan_tri_vien  # decorator: chỉ Quản trị viên được vào (người khác bị 403)
 from .quan_tri import thong_ke_tong_quan  # hàm tính số liệu
 
@@ -61,7 +61,7 @@ def danh_sach_tai_khoan(request):  # P7: trang /quan-tri/tai-khoan/
         'page_obj': page_obj,  # đối tượng trang, includes/pagination.html đọc biến này để vẽ thanh chuyển trang
         'tim': tim, 'vai_tro_loc': vai_tro, 'trang_thai_loc': trang_thai,  # giữ lại giá trị trên các ô lọc
         'nut_vai_tro': nut_vai_tro, 'nut_trang_thai': nut_trang_thai,  # nhóm nút lọc vai trò và nhóm nút lọc trạng thái
-        'quay_lai': request.get_full_path(),  # sau khi đổi/khóa thì quay lại đúng trang và bộ lọc này
+        'quay_lai': request.get_full_path(),  # sau khi khóa/mở thì quay lại đúng trang và bộ lọc này
     }  # hết dict
     return render(request, 'accounts/quan_tri/tai_khoan.html', boi_canh)  # hiện trang
 
@@ -71,19 +71,6 @@ def _trang_quay_lai(request):  # đường dẫn quay lại sau khi xử lý POS
     if dich and url_has_allowed_host_and_scheme(dich, allowed_hosts={request.get_host()}):  # chỉ chấp nhận đường dẫn cùng website (chống chuyển hướng ra trang lạ)
         return dich  # an toàn thì dùng
     return reverse('admin_accounts')  # không thì về danh sách
-
-
-@chi_quan_tri_vien  # lớp 1: chỉ Quản trị viên (người khác bị 403 kể cả khi tự gửi POST)
-@require_POST  # lớp 2: chỉ nhận POST (đổi dữ liệu không được làm bằng link GET)
-def doi_vai_tro(request, pk):  # P7: đổi vai trò của tài khoản có khóa chính pk
-    user = get_object_or_404(User, pk=pk)  # không có tài khoản này thì trả 404
-    try:  # bọc lại để bắt lỗi nghiệp vụ
-        ql.doi_vai_tro(request.user, user, request.POST.get('vai_tro', ''))  # gọi luật nghiệp vụ
-    except ql.LoiQuanLyTaiKhoan as loi:  # sai luật
-        messages.error(request, str(loi))  # hiện câu lỗi tiếng Việt ở đầu trang
-    else:  # đổi thành công
-        messages.success(request, f'Đã đổi vai trò của {user.email} thành {request.POST.get("vai_tro")}.')  # báo thành công
-    return redirect(_trang_quay_lai(request))  # quay lại danh sách (kiểu POST-redirect-GET, F5 không gửi lại form)
 
 
 @chi_quan_tri_vien  # lớp 1: chỉ Quản trị viên

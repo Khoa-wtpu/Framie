@@ -7,10 +7,9 @@ import re  # tìm link chuyển trang trong HTML
 from urllib.parse import parse_qs, urljoin, urlsplit  # ghép đường dẫn trang với phần ?... của link; đọc các tham số trong link nút lọc
 
 from django.test import TestCase  # mỗi test chạy trên database tạm
-from django.urls import reverse  # đổi tên URL thành đường dẫn
+from django.urls import NoReverseMatch, reverse  # đổi tên URL thành đường dẫn
 
 from accounts.models import User  # model User
-from accounts.permissions import lay_vai_tro  # hàm lấy vai trò chính, để kiểm tra kết quả đổi
 from accounts.services import tao_tai_khoan  # hàm tạo tài khoản của P4
 from core.constants import TrangThaiHoSo, VaiTro  # tên vai trò và trạng thái hồ sơ
 
@@ -27,9 +26,6 @@ class NenTest(TestCase):  # lớp cha: tạo sẵn các tài khoản dùng chung
         self.root = User.objects.create_superuser('root', 'root@example.com', MAT_KHAU, so_dien_thoai='0900000005')  # tài khoản hệ thống (createsuperuser)
         self.url_ds = reverse('admin_accounts')  # trang danh sách
         self.client.force_login(self.admin)  # mặc định đăng nhập bằng Quản trị viên
-
-    def url_role(self, user):  # đường dẫn đổi vai trò của một tài khoản
-        return reverse('admin_account_role', args=[user.pk])  # ghép pk vào đường dẫn
 
     def url_toggle(self, user):  # đường dẫn khóa/mở của một tài khoản
         return reverse('admin_account_toggle', args=[user.pk])  # ghép pk vào đường dẫn
@@ -116,78 +112,19 @@ class DanhSachTaiKhoanTests(NenTest):  # quyền xem và bộ lọc của trang 
         self.assertEqual(tham_so(tat_ca)['trang_thai'], ['bi_khoa'])  # nhưng giữ lọc trạng thái
 
 
-class DoiVaiTroTests(NenTest):  # luật đổi vai trò
-    def test_khach_hang_len_quan_tri_vien_chi_con_dung_mot_nhom(self):  # đổi thành công
-        self.client.post(self.url_role(self.khach), {'vai_tro': VaiTro.QUAN_TRI_VIEN})  # đổi Khách hàng -> Quản trị viên
-        self.assertEqual(self.nhom_cua(self.khach), [VaiTro.QUAN_TRI_VIEN])  # chỉ còn đúng 1 nhóm, không còn nhóm Khách hàng
-        self.assertEqual(lay_vai_tro(User.objects.get(pk=self.khach.pk)), VaiTro.QUAN_TRI_VIEN)  # hàm kiểm quyền cũng thấy vai trò mới
-
-    def test_quan_tri_vien_ha_xuong_khach_hang(self):  # đổi chiều ngược lại
-        self.client.post(self.url_role(self.admin2), {'vai_tro': VaiTro.KHACH_HANG})  # hạ Quản trị viên thứ hai
-        self.assertEqual(self.nhom_cua(self.admin2), [VaiTro.KHACH_HANG])  # chỉ còn nhóm Khách hàng
-
-    def test_khong_doi_vai_tro_cua_chinh_minh(self):  # chống tự mất quyền
-        r = self.client.post(self.url_role(self.admin), {'vai_tro': VaiTro.KHACH_HANG}, follow=True)  # tự hạ mình
-        self.assertContains(r, 'chính mình')  # hiện câu báo lỗi
-        self.assertEqual(self.nhom_cua(self.admin), [VaiTro.QUAN_TRI_VIEN])  # vai trò không đổi
-
-    def test_khong_doi_vai_tro_nhiep_anh_gia(self):  # Nhiếp ảnh gia chỉ khóa được
-        r = self.client.post(self.url_role(self.nag), {'vai_tro': VaiTro.KHACH_HANG}, follow=True)  # thử đổi
-        self.assertContains(r, 'Không đổi vai trò của Nhiếp ảnh gia')  # hiện câu báo lỗi
-        self.assertEqual(self.nhom_cua(self.nag), [VaiTro.NHIEP_ANH_GIA])  # vai trò không đổi
-        self.assertEqual(User.objects.get(pk=self.nag.pk).trang_thai_ho_so, TrangThaiHoSo.DA_DUYET)  # hồ sơ cũng không bị đụng
-
-    def test_khong_doi_vai_tro_superuser(self):  # tài khoản hệ thống
-        r = self.client.post(self.url_role(self.root), {'vai_tro': VaiTro.KHACH_HANG}, follow=True)  # thử đổi
-        self.assertContains(r, 'Tài khoản hệ thống')  # hiện câu báo lỗi
-        self.assertEqual(lay_vai_tro(User.objects.get(pk=self.root.pk)), VaiTro.QUAN_TRI_VIEN)  # vẫn là Quản trị viên
-
-    def test_khong_gan_vai_tro_la_hoac_nhiep_anh_gia(self):  # người dùng tự sửa form gửi vai trò không cho phép
-        for gia_tri in ('Hacker', VaiTro.NHIEP_ANH_GIA, ''):  # vai trò lạ, Nhiếp ảnh gia (phải qua P5), rỗng
-            with self.subTest(vai_tro=gia_tri):  # báo riêng từng ca
-                r = self.client.post(self.url_role(self.khach), {'vai_tro': gia_tri}, follow=True)  # gửi giá trị này
-                self.assertContains(r, 'Vai trò mới không hợp lệ')  # bị từ chối
-                self.assertEqual(self.nhom_cua(self.khach), [VaiTro.KHACH_HANG])  # không đổi
-
-    def test_doi_cung_vai_tro_bao_loi_nhe(self):  # đổi sang đúng vai trò đang có
-        r = self.client.post(self.url_role(self.khach), {'vai_tro': VaiTro.KHACH_HANG}, follow=True)  # Khách hàng -> Khách hàng
-        self.assertContains(r, 'đã ở vai trò này')  # báo không có gì để đổi
-
-    def test_nguoi_khong_phai_quan_tri_bi_403_va_khong_doi_duoc(self):  # chỉ Quản trị viên được thay đổi vai trò
-        for user in (self.khach, self.nag):  # thử Khách hàng và Nhiếp ảnh gia
-            with self.subTest(user=user.email):  # báo riêng
-                self.client.force_login(user)  # đăng nhập bằng họ
-                r = self.client.post(self.url_role(self.khach), {'vai_tro': VaiTro.QUAN_TRI_VIEN})  # tự nâng quyền / nâng quyền người khác
-                self.assertEqual(r.status_code, 403)  # bị từ chối
-                self.assertEqual(self.nhom_cua(self.khach), [VaiTro.KHACH_HANG])  # vai trò không đổi
-
-    def test_khong_dung_get_de_doi_vai_tro(self):  # đổi dữ liệu phải bằng POST
-        self.assertEqual(self.client.get(self.url_role(self.khach)).status_code, 405)  # GET bị từ chối
-
-    def test_giao_dien_chi_hien_nut_doi_vai_tro_dung_dong(self):  # UC7.3 bước 4: nút phải có trên giao diện, và chỉ với dòng được phép
+class KhongConDoiVaiTroTests(NenTest):  # đổi vai trò ngay trên trang đã bỏ; Quản trị viên mới chỉ tạo bằng link mời hoặc createsuperuser
+    def test_trang_khong_con_giao_dien_doi_vai_tro(self):  # danh sách không còn nút/hàng chỉnh sửa vai trò
         r = self.client.get(self.url_ds)  # mở danh sách bằng Quản trị viên
-        for user in (self.khach, self.admin2):  # Khách hàng và Quản trị viên khác: đổi được
-            self.assertContains(r, f'action="{self.url_role(user)}"')  # có form đổi vai trò
-        for user in (self.admin, self.nag, self.root):  # chính mình, Nhiếp ảnh gia, superuser: không đổi được
-            self.assertNotContains(r, f'action="{self.url_role(user)}"')  # không có form
+        for dau_hieu in ('data-sua-vai-tro', 'data-form-vai-tro', 'Lưu vai trò', 'Vai trò chính'):  # các dấu vết của giao diện cũ
+            with self.subTest(dau_hieu=dau_hieu):  # báo riêng từng dấu vết
+                self.assertNotContains(r, dau_hieu)  # không còn trong HTML
 
-    def test_nut_sua_o_cot_vai_tro_va_o_chon_vai_tro(self):  # đổi vai trò nằm ở cột Vai trò: nút Sửa + hàng chọn vai trò + Lưu/Hủy
-        r = self.client.get(self.url_ds)  # mở danh sách
-        self.assertContains(r, f'data-sua-vai-tro="tk-sua-{self.khach.pk}"')  # dòng Khách hàng có nút Sửa
-        for user in (self.admin, self.nag, self.root):  # chính mình, Nhiếp ảnh gia, superuser
-            self.assertNotContains(r, f'data-sua-vai-tro="tk-sua-{user.pk}"')  # không có nút Sửa
-        self.assertContains(r, f'name="vai_tro" value="{VaiTro.QUAN_TRI_VIEN}"')  # ô chọn Quản trị viên
-        self.assertContains(r, f'name="vai_tro" value="{VaiTro.KHACH_HANG}" checked')  # vai trò hiện tại được chọn sẵn
-        self.assertContains(r, 'Vai trò chính')  # nhãn hàng chỉnh sửa
-        self.assertContains(r, 'Lưu vai trò')  # nút lưu
-        self.assertContains(r, 'data-xac-nhan-form="Đổi vai trò của khach@example.com sang {vai_tro}')  # có câu hỏi xác nhận (JS thay {vai_tro})
-
-    def test_cot_thao_tac_chi_con_nut_khoa(self):  # nút đổi vai trò không còn nằm ở cột Thao tác
-        r = self.client.get(self.url_ds)  # mở danh sách
-        self.assertNotContains(r, 'Đổi thành')  # không còn nút "Đổi thành ..."
-
-    def test_tai_khoan_khong_ton_tai_tra_404(self):  # pk sai
-        self.assertEqual(self.client.post(reverse('admin_account_role', args=[999999]), {'vai_tro': VaiTro.KHACH_HANG}).status_code, 404)  # không có tài khoản
+    def test_khong_con_duong_dan_doi_vai_tro(self):  # POST thẳng vào đường dẫn cũ cũng không đổi được gì
+        with self.assertRaises(NoReverseMatch):  # tên URL đã bị xóa
+            reverse('admin_account_role', args=[self.khach.pk])  # phải báo không tìm thấy
+        r = self.client.post(f'/quan-tri/tai-khoan/{self.khach.pk}/doi-vai-tro/', {'vai_tro': VaiTro.QUAN_TRI_VIEN})  # tự ghép đường dẫn cũ
+        self.assertEqual(r.status_code, 404)  # không còn đường dẫn
+        self.assertEqual(self.nhom_cua(self.khach), [VaiTro.KHACH_HANG])  # vai trò không đổi
 
 
 class KhoaMoTaiKhoanTests(NenTest):  # luật khóa và mở tài khoản
