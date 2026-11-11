@@ -1,0 +1,60 @@
+{% extends "accounts/quan_tri/khung.html" %}{# dùng khung Quản trị (khung có sẵn menu, admin.css) #}
+{% load static %}{# static: lấy file JS #}
+{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'accounts/css/quan_tri_tai_khoan.css' %}">{% endblock %}{# giữ admin.css của khung (block.super) rồi nạp thêm CSS của trang tài khoản #}
+{% block admin_title_tab %}Tài khoản và vai trò{% endblock %}{# chữ trên tab trình duyệt #}
+{% block admin_eyebrow %}<p class="admin-caption">Quản trị · {{ page_obj.paginator.count }} tài khoản</p>{% endblock %}{# dòng nhỏ phía trên tiêu đề; số này là số tài khoản khớp bộ lọc hiện tại #}
+{% block admin_tieu_de %}<span class="tk-tieu-de">Tài khoản<br>và vai trò</span>{% endblock %}{# tiêu đề hai dòng, khớp mục menu; chữ gradient lấy từ h1 của khung #}
+{% block admin_hanh_dong %}<a class="btn btn--primary tk-nut-moi" href="{% url 'admin_invite' %}">Tạo tài khoản quản trị viên</a>{% endblock %}{# nút mời Quản trị viên mới, cùng hàng với tiêu đề (CSS lưới ở quan_tri_tai_khoan.css) #}
+{% block admin_noi_dung %}{# nội dung trang #}
+<div class="tk-thanh">{# hàng lọc: ô tìm kiếm + nhóm nút lọc vai trò + nhóm nút lọc trạng thái #}
+  <form class="tk-tim" method="get" action="{% url 'admin_accounts' %}" role="search">{# form tìm kiếm dùng GET để link copy được, F5 không hỏi gửi lại #}
+    <input class="input" type="search" name="q" value="{{ tim }}" placeholder="Tìm theo tên, email, số điện thoại" aria-label="Tìm tài khoản">{# ô tìm kiếm, giữ lại chữ đã gõ; bấm Enter để tìm #}
+    {% if vai_tro_loc %}<input type="hidden" name="vai_tro" value="{{ vai_tro_loc }}">{% endif %}{# đang lọc vai trò thì giữ lại khi tìm #}
+    {% if trang_thai_loc %}<input type="hidden" name="trang_thai" value="{{ trang_thai_loc }}">{% endif %}{# đang lọc trạng thái thì giữ lại khi tìm #}
+    <button class="sr-only" type="submit">Tìm</button>{# nút ẩn cho người dùng đọc màn hình; mắt thường dùng phím Enter #}
+  </form>
+  <nav class="tk-chips" aria-label="Lọc theo vai trò">{# nhóm 1: chọn một vai trò hoặc Tất cả vai trò #}
+    {% for n in nut_vai_tro %}<a class="tk-chip{% if n.dang_chon %} is-active{% endif %}" href="{{ n.url }}"{% if n.dang_chon %} aria-current="true"{% endif %}>{{ n.nhan }}</a>{% endfor %}{# link do view tạo, đã giữ các bộ lọc khác #}
+  </nav>
+  <nav class="tk-chips tk-chips--tt" aria-label="Lọc theo trạng thái">{# nhóm 2: Hoạt động / Đã khóa, kết hợp được với nhóm vai trò; bấm lần nữa để bỏ chọn #}
+    {% for n in nut_trang_thai %}<a class="tk-chip{% if n.dang_chon %} is-active{% endif %}" href="{{ n.url }}"{% if n.dang_chon %} aria-current="true"{% endif %}>{{ n.nhan }}</a>{% endfor %}
+  </nav>
+</div>
+
+<section class="tk-cuon" aria-label="Danh sách tài khoản">{# khung bảng có viền bo góc giống trang Duyệt hồ sơ; hẹp thì cuộn ngang #}
+  <table class="admin-table tk-bang">{# bảng tài khoản; tk-bang chỉ áp cho trang này, không ảnh hưởng bảng khác #}
+    <thead><tr>{# hàng tiêu đề: mỗi ô một nền gradient, giống trang Duyệt hồ sơ #}
+      <th scope="col">Họ và tên</th><th scope="col">Số điện thoại</th><th scope="col">Vai trò</th><th scope="col">Trạng thái</th>{# 4 cột thông tin #}
+      <th scope="col"><span class="sr-only">Thao tác</span></th>{# cột nút: không hiện chữ, người đọc màn hình vẫn nghe được #}
+    </tr></thead>
+    <tbody>
+    {% for h in hang %}{# mỗi phần tử là một tài khoản kèm quyền thao tác #}
+    <tr>{# một dòng tài khoản #}
+      <td class="tk-cot-ten">{# ô họ tên: ảnh chữ cái + tên + email #}
+        <div class="tk-nguoi">
+          <span class="tk-nguoi__av" aria-hidden="true">{{ h.chu_cai_dau }}</span>{# hai chữ cái đầu của tên (chỉ trang trí) #}
+          <div class="tk-nguoi__chu">
+            <b class="tk-nguoi__ten">{{ h.user.get_full_name|default:"(chưa có tên)" }}{% if h.la_toi %} <span class="card__meta">(Bạn)</span>{% endif %}</b>{# họ tên; thêm "(Bạn)" cho tài khoản đang đăng nhập #}
+            <span class="tk-nguoi__email" title="{{ h.user.email }}">{{ h.user.email }}</span>{# email, quá dài thì cắt bằng dấu ba chấm #}
+          </div>
+        </div>
+      </td>
+      <td>{{ h.user.so_dien_thoai }}</td>{# số điện thoại #}
+      <td class="tk-vai-tro">{{ h.vai_tro }}{% if h.he_thong %} <span class="card__meta">(hệ thống)</span>{% endif %}</td>{# vai trò hiện tại; tài khoản superuser ghi thêm "(hệ thống)" #}
+      <td><span class="tk-trang-thai {% if h.user.is_active %}tk-trang-thai--hoat-dong{% else %}tk-trang-thai--khoa{% endif %}">{% if h.user.is_active %}Hoạt động{% else %}Đã khóa{% endif %}</span></td>{# chấm màu + chữ; màu chấm lấy từ tokens #}
+      <td class="admin-table__actions">{# ô nút, canh phải #}
+        {% if h.khoa_duoc %}{# chỉ hiện nút khóa/mở khi được phép #}
+        {% include "accounts/quan_tri/_khoa_mo.html" %}
+        {% else %}<span class="card__meta">Không thao tác được</span>{% endif %}{# chính mình hoặc tài khoản hệ thống #}
+      </td>
+    </tr>
+    {% empty %}{# không có tài khoản nào khớp bộ lọc #}
+    <tr><td colspan="5" class="tk-trong">Không có tài khoản nào khớp bộ lọc.</td></tr>{# dòng báo trống #}
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% include "includes/pagination.html" with page_obj=page_obj %}{# phân trang dùng chung của nhóm: tự ẩn khi chỉ có 1 trang, tự giữ bộ lọc trên link #}
+{% endblock %}{# hết nội dung #}
+{% block extra_js %}<script src="{% static 'accounts/js/quan_tri_tai_khoan.js' %}" defer></script>{% endblock %}{# nạp JS xác nhận (JS phải nằm trong file tĩnh, không viết trong HTML) #}

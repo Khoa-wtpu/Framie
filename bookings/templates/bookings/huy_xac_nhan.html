@@ -1,0 +1,43 @@
+{# UC4.6 bước 3-4: nhập lý do + xác nhận hủy Booking. Dùng bởi bookings/huy_booking.py (view huy) #}
+{# GIAO DIỆN: trang dạng form hẹp, cùng phong cách trang chi tiết Booking (bookings/css/chi_tiet_booking.css). #}
+{% extends "base.html" %}{# dùng khung trang chung #}
+{% load static %}{# để gọi CSS #}
+{% block title %}Hủy Booking #{{ booking.pk }}{% endblock %}{# chữ trên tab trình duyệt #}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'bookings/css/chi_tiet_booking.css' %}">{% endblock %}{# nạp CSS dùng chung #}
+{% block content %}
+<div class="container ct ct--hep">{# khung hẹp giữa trang #}
+
+  <a class="ct__quay-lai" href="{% url 'chi_tiet_booking' ma_booking=booking.pk %}"><span aria-hidden="true">←</span> Quay lại chi tiết Booking</a>{# về trang chi tiết của đúng Booking này #}
+
+  <header>
+    <p class="ct__nhan-nho">Hủy Booking</p>{# dòng nhỏ viết hoa #}
+    <h1>Hủy Booking #{{ booking.pk }}</h1>{# tiêu đề kèm mã Booking #}
+    <p class="ct__mo-ta">Sau khi hủy, Booking không thể khôi phục và khung giờ được trả về lịch trống ngay.</p>{# nhắc hủy là không quay lại được #}
+  </header>
+
+  <section class="ct__the">{# thẻ nhắc lại Booking đang hủy để không hủy nhầm #}
+    <h2 class="ct__the-tieu-de">Booking đang xử lý</h2>
+    <dl class="ct__ds">
+      <div class="ct__dong"><dt>{% if la_khach %}Nhiếp ảnh gia{% else %}Khách hàng{% endif %}</dt><dd>{% if la_khach %}{{ ten_nag }}{% else %}{{ ten_khach }}{% endif %}</dd></div>{# Khách đang hủy thì hiện tên Nhiếp ảnh gia; ngược lại hiện tên Khách (người còn lại) #}
+      <div class="ct__dong"><dt>Gói</dt><dd>{{ booking.MaGoi.TenGoi }}, {{ booking.NgayGioChup|date:"H:i d/m/Y" }}</dd></div>{# tên gói + giờ chụp #}
+      <div class="ct__dong"><dt>Trạng thái hiện tại</dt><dd>{{ booking.TrangThai }}</dd></div>{# trạng thái trước khi hủy #}
+    </dl>
+  </section>
+
+  {# Hệ quả về tiền cọc (BR4.6-2/3/4). #}
+  {% include "includes/alert.html" with level="warning" title="Trước khi hủy" text=hau_qua %}{# cảnh báo vàng; nội dung hau_qua do view huy_booking.py tính (mất cọc / hoàn cọc / không phát sinh) #}
+
+  {# novalidate: để máy chủ hiện đúng câu "Vui lòng nhập lý do hủy" (ngoại lệ 4a) thay vì cửa sổ của trình duyệt #}
+  <form class="ct__the" method="post" novalidate>{# form gửi bằng POST #}
+    {% csrf_token %}{# mã chống giả mạo yêu cầu #}
+    {% for loi in form.non_field_errors %}{# lỗi chung của form #}
+      {% include "includes/alert.html" with level="danger" text=loi %}{# hộp cảnh báo đỏ #}
+    {% endfor %}
+    {% include "includes/form_field.html" with field=form.ly_do %}{# ô nhập "Lý do hủy" #}
+    <div class="ct__nut">
+      <button class="btn btn--danger" type="submit">Xác nhận hủy Booking</button>{# nút đỏ: hủy thật #}
+      <a class="btn btn--ghost" href="{% url 'chi_tiet_booking' ma_booking=booking.pk %}">Không hủy</a>{# bỏ qua, quay về chi tiết #}
+    </div>
+  </form>
+</div>
+{% endblock %}

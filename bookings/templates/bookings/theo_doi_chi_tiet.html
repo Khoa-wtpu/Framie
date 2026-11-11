@@ -1,0 +1,237 @@
+{# UC4.7 bước 3-4: chi tiết Booking + dòng thời gian lịch sử đổi trạng thái. Dùng bởi bookings/theo_doi.py (view _trang_chi_tiet) #}
+{# BỐ CỤC MỚI (sang trọng, dễ nhìn cho Khách hàng): đầu trang → dải thông tin chính (ngày | địa điểm | số người) → cột chính (dịch vụ, yêu cầu, lịch sử) + cột phụ (thanh toán, hạn chót, hủy) #}
+{# CSS: bookings/css/chi_tiet_booking.css, mọi class bắt đầu bằng "ct". Dữ liệu và tên biến KHÔNG đổi so với bản cũ nên view không cần sửa. #}
+
+{% extends "base.html" %}{# dùng khung trang chung của dự án (header, menu, footer) #}
+{% load ui static %}{# ui: thẻ status_badge (nhãn trạng thái có màu thống nhất); static: gọi file CSS #}
+
+{% block title %}Booking #{{ booking.pk }}{% endblock %}{# chữ trên tab trình duyệt, ví dụ "Booking #7" #}
+
+{% block extra_head %}{# chèn thêm vào phần <head> #}
+<link rel="stylesheet" href="{% static 'bookings/css/chi_tiet_booking.css' %}">{# nạp CSS riêng của trang chi tiết #}
+{% endblock %}
+
+{% block extra_js %}<script src="{% static 'bookings/js/han_dat_coc.js' %}" defer></script>{% endblock %}{# C2: JS thanh đếm ngược hạn đặt cọc (không có khối #han-coc thì tự bỏ qua) #}
+
+{% block content %}{# nội dung chính của trang #}
+<div class="container ct">{# khung giữa trang; các khối con tự cách đều nhau nhờ CSS #}
+
+  <a class="ct__quay-lai" href="{{ url_danh_sach }}"><span aria-hidden="true">←</span> Quay lại danh sách Booking</a>{# link quay lại danh sách (địa chỉ tùy vai trò, do view cấp) #}
+
+  {# ===== ĐẦU TRANG: bên trái là tiêu đề, bên phải là các nút thao tác ===== #}
+  <header class="ct__dau">{# hàng đầu trang #}
+    <div>{# phần tiêu đề #}
+      <p class="ct__nhan-nho">Chi tiết Booking</p>{# dòng nhỏ viết hoa phía trên tiêu đề #}
+      {# Nhãn trạng thái đặt NGOÀI <h1>: chữ <h1> của cả web là gradient trong suốt, nhãn nằm trong sẽ mất chữ. #}
+      <div class="ct__tieu-de">{# "Booking #1" và nhãn trạng thái cùng một hàng #}
+        <h1>Booking #{{ booking.pk }}</h1>{# tiêu đề: mã Booking #}
+        {% status_badge booking.TrangThai %}{# nhãn trạng thái hiện tại, màu thống nhất toàn hệ thống #}
+      </div>
+      <p class="ct__gui-luc">Gửi lúc {{ booking.NgayTao|date:"H:i d/m/Y" }}</p>{# thời điểm Khách gửi Booking #}
+    </div>
+
+    {% include "bookings/includes/the_thoi_tiet.html" with gon=True %}{# E8: thẻ dự báo thời tiết dạng gọn, cùng hàng với tiêu đề #}
+    <div class="ct__hanh-dong">{# các nút thao tác: chỉ hiện nút nào người xem được phép dùng #}
+      {% if url_xu_ly %}{# chỉ có giá trị khi người xem là Nhiếp ảnh gia và Booking còn việc cần xử lý #}
+        <a class="btn btn--primary" href="{{ url_xu_ly }}">Xử lý Booking này</a>{# nút dẫn tới màn xử lý của Nhiếp ảnh gia (T5/T8) #}
+      {% endif %}
+      {% if url_chon_anh %}{# Khách hàng + Booking "Chờ Khách hàng lựa chọn ảnh" #}
+        <a class="btn btn--primary" href="{{ url_chon_anh }}">Chọn ảnh cần hậu kỳ</a>{# nút dẫn tới trang chọn ảnh (chon_anh_hau_ky) của module Bàn giao ảnh #}
+      {% endif %}
+      {% if url_xem_anh_hau_ky %}
+        <a class="btn btn--primary" href="{{ url_xem_anh_hau_ky }}">Xem ảnh sau hậu kỳ</a>
+      {% endif %}
+      {# 2 nút "Xác nhận hoàn tất bàn giao" và "Yêu cầu chỉnh sửa ảnh" đã chuyển sang trang "Xem ảnh sau hậu kỳ" (delivery/xem_anh_hau_ky.html) #}
+      {% if url_tai_anh_hoan_chinh %}{# Khách hàng + Booking "Hoàn thành" #}
+        <a class="btn btn--primary" href="{{ url_tai_anh_hoan_chinh }}">Tải ảnh hoàn chỉnh</a>{# nút dẫn tới trang tải ảnh hoàn chỉnh không watermark (tai_anh_hoan_chinh, UC5.8) #}
+      {% endif %}
+      {% if url_danh_gia %}{# Khách hàng + Booking "Hoàn thành" #}
+        <a class="btn btn--secondary" href="{{ url_danh_gia }}">{% if da_danh_gia %}Xem đánh giá của bạn{% else %}Đánh giá Nhiếp ảnh gia{% endif %}</a>{# nút dẫn tới trang đánh giá (danh_gia_booking, UC6.1); đã đánh giá thì chữ đổi thành "Xem đánh giá của bạn" #}
+      {% endif %}
+      {% if url_xac_nhan_thanh_toan %}{# Nhiếp ảnh gia + Khách đã gửi minh chứng đang chờ xác nhận #}
+        <a class="btn btn--primary" href="{{ url_xac_nhan_thanh_toan }}">{{ nhan_xac_nhan_thanh_toan }}</a>{# nút dẫn tới trang xem minh chứng và xác nhận / yêu cầu bổ sung (payments) #}
+      {% endif %}
+      {% if url_tai_minh_chung %}{# Khách hàng + Booking "Chờ đặt cọc" / "Chờ xác nhận thanh toán" #}
+        <a class="btn btn--primary" href="{{ url_tai_minh_chung }}">{{ nhan_tai_minh_chung }}</a>{# nút dẫn tới trang tải minh chứng thanh toán (tai_len_minh_chung) của module Thanh toán #}
+      {% endif %}
+      {% if url_bat_dau_hau_ky %}
+        <form method="post" action="{{ url_bat_dau_hau_ky }}">
+          {% csrf_token %}
+          <button class="btn btn--primary" type="submit">Bắt đầu hậu kỳ</button>
+        </form>
+      {% elif url_tai_anh %}
+        <a class="btn btn--primary" href="{{ url_tai_anh }}">Tải ảnh lên hệ thống</a>
+      {% endif %}
+      {% if co_the_huy %}{# chỉ hiện khi được phép hủy (T9 / UC4.6) #}
+        <a class="btn btn--danger" href="{% url 'huy_booking' ma_booking=booking.pk %}">Hủy Booking</a>{# nút đỏ dẫn tới trang nhập lý do + xác nhận hủy #}
+      {% endif %}
+    </div>
+  </header>
+
+  {% include "bookings/includes/the_thoi_tiet_nhac.html" %}{# E8: dải nhắc đổi lịch (chỉ hiện khi khả năng mưa cao) #}
+
+  {% if khach_cho_phan_hoi %}{# C1: Khách vừa gửi yêu cầu, Nhiếp ảnh gia chưa phản hồi: cho biết đang chờ và Khách vẫn có thể hủy #}
+    {% include "includes/alert.html" with level="info" title="Đang chờ Nhiếp ảnh gia phản hồi" text="Bạn có thể bấm Hủy Booking nếu không muốn tiếp tục. Khung giờ sẽ được trả về lịch trống, không phát sinh tiền cọc." %}
+  {% endif %}
+
+  {% include "bookings/includes/dem_nguoc_han_coc.html" with cho_khach=la_khach %}{# C2: thanh đếm ngược hạn đặt cọc (chỉ hiện khi Booking đang "Chờ đặt cọc") #}
+
+  {# Chỉ Quản trị viên thấy: trạng thái Booking lệch dữ liệu thanh toán (BR4.7-2). #}
+  {% for cau in canh_bao %}{# mỗi chỗ lệch là một cảnh báo (Khách / Nhiếp ảnh gia nhận danh sách rỗng nên không thấy) #}
+    {% include "includes/alert.html" with level="warning" title="Trạng thái không khớp dữ liệu thanh toán" text=cau %}{# khung cảnh báo vàng #}
+  {% endfor %}
+
+  {% if dong_tien_do_anh %}{# Khách đang kiểm tra ảnh: cho biết Nhiếp ảnh gia đã tải ảnh lần đầu hay lần chỉnh sửa thứ mấy #}
+    {% include "includes/alert.html" with level="info" text=dong_tien_do_anh %}
+  {% endif %}
+  {% if thong_bao_thanh_toan_khach %}{# Khách: Booking được chấp nhận (cần tải minh chứng cọc) hoặc Nhiếp ảnh gia yêu cầu bổ sung minh chứng kèm lý do #}
+    {% include "includes/alert.html" with level=thong_bao_thanh_toan_khach.level title=thong_bao_thanh_toan_khach.title text=thong_bao_thanh_toan_khach.text %}
+  {% endif %}
+  {% if dong_thanh_toan_nag %}{# Nhiếp ảnh gia: Khách đã gửi minh chứng cọc / phần còn lại đang chờ xác nhận #}
+    {% include "includes/alert.html" with level="info" text=dong_thanh_toan_nag %}
+  {% endif %}
+
+  {# ===== DẢI THÔNG TIN CHÍNH: một thẻ lớn chia 3 ô, nhìn là biết "chụp khi nào, ở đâu, mấy người" ===== #}
+  <section class="ct__dai" aria-label="Thông tin buổi chụp">{# thẻ lớn, CSS chia 3 cột #}
+    <div class="ct__o ct__o--ngay">{# ô 1: ngày giờ chụp (tông xanh dương) #}
+      <p class="ct__o-nhan">Ngày giờ chụp</p>{# nhãn ô #}
+      <div class="ct__ngay">{# số ngày to + tháng/năm #}
+        <span class="ct__ngay-so">{{ booking.NgayGioChup|date:"d" }}</span>{# số ngày, ví dụ 04 #}
+        <span class="ct__ngay-thang">Tháng {{ booking.NgayGioChup|date:"n" }} · {{ booking.NgayGioChup|date:"Y" }}</span>{# ví dụ "Tháng 11 · 2026" #}
+      </div>
+      <p class="ct__o-phu">{{ booking.NgayGioChup|date:"l" }} · {{ booking.NgayGioChup|date:"H:i" }}</p>{# thứ trong tuần + giờ, ví dụ "Thứ 4 · 09:00" #}
+    </div>
+    <div class="ct__o ct__o--dia-diem">{# ô 2: địa điểm (tông tím) #}
+      <p class="ct__o-nhan">Địa điểm</p>{# nhãn ô #}
+      <p class="ct__o-chinh">{{ booking.DiaDiem }}</p>{# địa điểm chụp #}
+    </div>
+    <div class="ct__o ct__o--so-nguoi">{# ô 3: số người (tông xanh ngọc) #}
+      <p class="ct__o-nhan">Số người</p>{# nhãn ô #}
+      <p class="ct__so-nguoi">{{ booking.SoNguoi }}</p>{# số người tham gia chụp #}
+    </div>
+  </section>
+
+  <div class="ct__than">{# thân trang chia 2 cột: chính (trái) và phụ (phải) #}
+
+    {# ===== CỘT CHÍNH ===== #}
+    <div class="ct__cot">{# các thẻ trong cột chính xếp dọc cách đều #}
+
+      <section class="ct__the ct__the--mau ct__the--xanh-duong">{# thẻ: gói dịch vụ + hai người tham gia (tông xanh dương) #}
+        <h2 class="ct__the-tieu-de">Dịch vụ</h2>{# tiêu đề thẻ #}
+        <p class="ct__goi">{{ booking.MaGoi.TenGoi }}</p>{# tên gói đã đặt, in to #}
+        <p class="ct__loai">{{ booking.MaGoi.MaLoaiHinh.TenLoaiHinh }}</p>{# loại hình chụp: chân dung, cưới... #}
+        <div class="ct__nguoi-ds">{# hai người: Khách hàng và Nhiếp ảnh gia #}
+          {% if not la_khach %}{# Khách không cần xem thẻ của chính mình #}
+          <div class="ct__nguoi">
+            <span class="ct__avatar" aria-hidden="true">{{ ten_khach|slice:":1"|upper }}</span>{# chữ cái đầu của tên Khách #}
+            <div><p class="ct__nguoi-vai">Khách hàng</p><p class="ct__nguoi-ten">{{ ten_khach }}</p></div>{# vai trò + tên #}
+          </div>
+          {% endif %}
+          {% if not la_nag %}{# Nhiếp ảnh gia không cần xem thẻ của chính mình #}
+          <div class="ct__nguoi">
+            <span class="ct__avatar" aria-hidden="true">{% if booking.MaNhiepAnhGia.AnhDaiDien %}<img src="{{ booking.MaNhiepAnhGia.AnhDaiDien.url }}" alt="">{% else %}{{ ten_nag|slice:":1"|upper }}{% endif %}</span>{# có ảnh đại diện thì hiện ảnh, không thì chữ cái đầu #}
+            <div><p class="ct__nguoi-vai">Nhiếp ảnh gia</p><p class="ct__nguoi-ten">{{ ten_nag }}</p></div>{# vai trò + tên #}
+          </div>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="ct__the ct__the--mau ct__the--tim">{# thẻ: mong muốn của Khách (tông tím) #}
+        <h2 class="ct__the-tieu-de">Yêu cầu của Khách hàng</h2>{# tiêu đề thẻ #}
+        <dl class="ct__ds">{# danh sách "nhãn – giá trị" #}
+          <div class="ct__dong"><dt>Concept</dt><dd>{{ booking.Concept|linebreaksbr }}</dd></div>{# linebreaksbr giữ các lần xuống dòng Khách đã gõ #}
+          <div class="ct__dong"><dt>Yêu cầu riêng</dt><dd>{% if booking.YeuCauRieng %}{{ booking.YeuCauRieng|linebreaksbr }}{% else %}<span class="muted">Không có</span>{% endif %}</dd></div>{# trống thì ghi "Không có" #}
+          {% if booking.LyDoTuChoi %}<div class="ct__dong"><dt>Lý do từ chối</dt><dd>{{ booking.LyDoTuChoi }}</dd></div>{% endif %}{# lý do Nhiếp ảnh gia từ chối (nếu có) #}
+        </dl>
+      </section>
+
+      {# Dòng thời gian lịch sử đổi trạng thái (UC4.7 bước 4). Dữ liệu từ bảng LichSuTrangThaiBooking, cũ -> mới. #}
+      <section class="ct__the ct__the--mau ct__the--ngoc">{# thẻ lịch sử (tông xanh ngọc) #}
+        <h2 class="ct__the-tieu-de">Lịch sử trạng thái</h2>{# tiêu đề thẻ #}
+        {% if lich_su %}{# có ít nhất 1 dòng lịch sử #}
+        <ol class="ct-timeline">{# danh sách có thứ tự = dòng thời gian #}
+          {% for muc in lich_su %}{# lặp qua từng lần đổi trạng thái, cũ -> mới #}
+          <li class="ct-timeline__muc">{# một mốc trên dòng thời gian #}
+            <div class="ct-timeline__dong">{# dòng chính của mốc: trạng thái cũ → mới #}
+              {% if muc.TrangThaiCu %}{% status_badge muc.TrangThaiCu %} <span aria-hidden="true">→</span> <span class="sr-only">chuyển sang</span>{% else %}<span class="muted">Tạo Booking:</span>{% endif %}{# có trạng thái cũ: hiện "cũ → "; mốc đầu tiên: hiện "Tạo Booking:" #}
+              {% status_badge muc.TrangThaiMoi %}{# nhãn trạng thái mới #}
+            </div>
+            <div class="ct-timeline__meta">{{ muc.ThoiDiemThayDoi|date:"H:i d/m/Y" }} · {{ muc.BenThucHien }}</div>{# thời điểm đổi + ai đổi (Khách hàng / Nhiếp ảnh gia / Hệ thống) #}
+            {% if muc.LyDo %}<div class="ct-timeline__ly-do">Lý do: {{ muc.LyDo }}</div>{% endif %}{# lý do đổi, nếu có #}
+          </li>
+          {% endfor %}
+        </ol>
+        {% else %}{# chưa có dòng lịch sử nào #}
+          <p class="muted">Chưa có lịch sử thay đổi trạng thái.</p>
+        {% endif %}
+      </section>
+    </div>
+
+    {# ===== CỘT PHỤ ===== #}
+    <aside class="ct__cot">{# các thẻ trong cột phụ xếp dọc cách đều #}
+
+      {# E8: dự báo thời tiết buổi chụp (chỉ Khách / Nhiếp ảnh gia, Booking còn hiệu lực, buổi chụp chưa diễn ra). Dữ liệu: bookings/the_thoi_tiet.py #}
+      {# Thanh toán: hiện cạnh trạng thái để người xem thấy hai thứ đi cùng nhau (BR4.7-2). #}
+      <section class="ct__the ct__the--mau ct__the--xanh-la">{# thẻ thanh toán (tông xanh lá = tiền) #}
+        <h2 class="ct__the-tieu-de">Thanh toán</h2>{# tiêu đề thẻ #}
+        <p class="ct__tong">{{ tong_gia }}<small>VNĐ</small></p>{# tổng giá trị, số lớn #}
+        <p class="ct__ghi-chu">Tổng giá trị Booking</p>{# chú thích cho số lớn phía trên #}
+        {% if thanh_toan %}{# đã có khoản thanh toán nào #}
+          <ul class="ct__khoan-ds">{# danh sách khoản thanh toán #}
+            {% for khoan in thanh_toan %}{# lặp qua từng khoản: cọc rồi tới phần còn lại #}
+            <li class="ct__khoan">
+              <div><span class="ct__khoan-ten">{{ khoan.LoaiThanhToan }}</span><span class="ct__khoan-tien">{{ khoan.SoTien|floatformat:"0g" }} VNĐ</span></div>{# loại khoản + số tiền (bỏ số lẻ, có dấu ngăn nghìn) #}
+              {% status_badge khoan.TrangThai %}{# nhãn trạng thái của khoản thanh toán #}
+            </li>
+            {% endfor %}
+          </ul>
+        {% else %}{# chưa có khoản nào: báo trước số tiền sẽ phải trả #}
+          <ul class="ct__khoan-ds">
+            <li class="ct__khoan"><div><span class="ct__khoan-ten">Cọc 40%</span><span class="ct__khoan-tien">{{ tien_coc }} VNĐ</span></div></li>{# tiền cọc #}
+            <li class="ct__khoan"><div><span class="ct__khoan-ten">Còn lại 60%</span><span class="ct__khoan-tien">{{ tien_con_lai }} VNĐ</span></div></li>{# phần thanh toán còn lại #}
+          </ul>
+          <p class="ct__ghi-chu">Chưa có khoản thanh toán nào.</p>{# nhắc chưa phát sinh khoản nào #}
+        {% endif %}
+      </section>
+
+      {# Hạn chót: chỉ hiện khi Booking đã có ít nhất một hạn (hệ thống gán khi vào trạng thái tương ứng). #}
+      {% if booking.HanDatCoc or booking.HanHauKy or booking.HanThanhToanConLai %}
+      <section class="ct__the ct__the--mau ct__the--vang">{# thẻ hạn chót (tông vàng = đang chờ) #}
+        <h2 class="ct__the-tieu-de">Hạn chót</h2>{# tiêu đề thẻ #}
+        <dl class="ct__ds">
+          {% if booking.HanDatCoc %}<div class="ct__dong"><dt>Đặt cọc</dt><dd>{{ booking.HanDatCoc|date:"H:i d/m/Y" }}</dd></div>{% endif %}{# hạn đặt cọc #}
+          {% if booking.HanHauKy %}<div class="ct__dong"><dt>Hậu kỳ</dt><dd>{{ booking.HanHauKy|date:"H:i d/m/Y" }}</dd></div>{% endif %}{# hạn hoàn tất hậu kỳ #}
+          {% if booking.HanThanhToanConLai %}<div class="ct__dong"><dt>Thanh toán còn lại</dt><dd>{{ booking.HanThanhToanConLai|date:"H:i d/m/Y" }}</dd></div>{% endif %}{# hạn trả 60% còn lại #}
+        </dl>
+      </section>
+      {% endif %}
+
+      {# T9: thông tin hủy (chỉ có khi Booking đã bị hủy) + theo dõi hoàn cọc. #}
+      {% if yeu_cau_huy %}{# chỉ có giá trị khi Booking đã bị hủy (có bản ghi YeuCauHuy) #}
+      <section class="ct__the ct__the--mau ct__the--do">{# thẻ "Thông tin hủy" (tông đỏ) #}
+        <h2 class="ct__the-tieu-de">Thông tin hủy</h2>{# tiêu đề thẻ #}
+        <dl class="ct__ds">
+          <div class="ct__dong"><dt>Bên hủy</dt><dd>{{ yeu_cau_huy.BenYeuCau }}</dd></div>{# ai hủy: Khách hàng hay Nhiếp ảnh gia #}
+          <div class="ct__dong"><dt>Lý do</dt><dd>{{ yeu_cau_huy.LyDo }}</dd></div>{# lý do người hủy đã nhập #}
+          <div class="ct__dong"><dt>Hủy lúc</dt><dd>{{ yeu_cau_huy.ThoiDiemYeuCau|date:"H:i d/m/Y" }} (lúc đó Booking ở "{{ yeu_cau_huy.TrangThaiBookingLucHuy }}")</dd></div>{# thời điểm hủy + trạng thái Booking ngay trước khi hủy #}
+          <div class="ct__dong"><dt>Tiền cọc</dt><dd>{% status_badge yeu_cau_huy.XuLyTienCoc %}</dd></div>{# hệ quả tiền cọc (Không phát sinh / Mất cọc / Hoàn cọc) dạng nhãn màu #}
+          {% if yeu_cau_huy.TrangThaiHoanTien %}{# chỉ có khi thuộc diện "Hoàn cọc" #}
+          <div class="ct__dong"><dt>Hoàn cọc ({{ tien_coc }} VNĐ)</dt><dd>{% status_badge yeu_cau_huy.TrangThaiHoanTien %}</dd></div>{# số tiền cọc + trạng thái hoàn (Chờ hoàn tiền / Đã hoàn tiền) #}
+          {% endif %}
+          {% if yeu_cau_huy.ThoiDiemXacNhanHoanTien %}<div class="ct__dong"><dt>Khách xác nhận đã nhận lại</dt><dd>{{ yeu_cau_huy.ThoiDiemXacNhanHoanTien|date:"H:i d/m/Y" }}</dd></div>{% endif %}{# thời điểm Khách xác nhận đã nhận lại tiền (nếu có) #}
+        </dl>
+        <p class="ct__ghi-chu">FRAMIE không trực tiếp giữ, thu hoặc hoàn tiền; hệ thống chỉ ghi nhận và theo dõi trạng thái hoàn cọc.</p>{# lời nhắc FRAMIE không giữ/thu/hoàn tiền (BR4.6-5) #}
+        {% if co_the_xac_nhan_hoan_tien %}{# chỉ Khách hàng và chỉ khi đang "Chờ hoàn tiền"; gửi bằng POST #}
+        <form method="post" action="{% url 'xac_nhan_hoan_tien' ma_booking=booking.pk %}" class="ct__ghi-chu">{# form POST gửi tới view xac_nhan_hoan_tien #}
+          {% csrf_token %}{# mã chống giả mạo yêu cầu #}
+          <button class="btn btn--primary" type="submit">Tôi đã nhận lại tiền cọc</button>{# nút Khách bấm khi đã nhận lại tiền cọc #}
+        </form>
+        {% endif %}
+      </section>
+      {% endif %}
+
+    </aside>
+  </div>
+
+</div>
+{% endblock %}

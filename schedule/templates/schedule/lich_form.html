@@ -1,0 +1,31 @@
+{% extends "base.html" %}{# K10 - UC3.1: thêm / sửa khung giờ (wireframe Module 3, màn SC3.2) #}
+{% load static %}
+{% block title %}{{ tieu_de }}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'schedule/css/lich.css' %}">{% endblock %}
+{% block content %}
+<div class="container lich lich--hep">
+  <p><a href="{{ url_quay_lai }}">◂ Quay lại Quản lý lịch</a></p>
+  <h1>{{ tieu_de }}</h1>
+  <p class="lich__mo-ta">Chọn ngày và khoảng giờ bạn nhận chụp.</p>
+  <form class="panel" method="post" novalidate>
+    {% csrf_token %}
+    {% if form.errors %}{# UC3.1 ngoại lệ 4a: MỘT hộp báo lỗi duy nhất; lý do chung (vd. chồng giờ) nằm trong cùng hộp, lỗi từng ô hiện ngay dưới ô #}
+    <div class="alert alert--danger lich-form__bao" role="alert">
+      <div class="alert__body">
+        <strong class="alert__title">Thông tin lịch không hợp lệ. Vui lòng kiểm tra và chỉnh sửa.</strong>
+        {% for loi in form.non_field_errors %}<span class="alert__text">{{ loi }}</span>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% include "includes/form_field.html" with field=form.Ngay %}
+    <div class="lich-form__gio">
+      {% include "includes/form_field.html" with field=form.GioBatDau %}
+      {% include "includes/form_field.html" with field=form.GioKetThuc %}
+    </div>
+    <div class="lich-form__nut">
+      <a class="btn btn--secondary" href="{{ url_quay_lai }}">Hủy</a>
+      <button class="btn btn--primary" type="submit">Lưu</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

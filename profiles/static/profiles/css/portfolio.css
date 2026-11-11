@@ -1,0 +1,51 @@
+/* profiles/static/profiles/css/portfolio.css - K5: Quản lý Portfolio. Chỉ dùng token trong tokens.css. */
+.pf { padding-block: var(--space-6); }
+.pf--hep { max-width: 48rem; }
+.pf__dau { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-6); }
+.pf__dau h1 { margin: 0 0 var(--space-1); font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.pf__dau p { margin: 0; color: var(--color-text-muted); }
+
+/* ---- danh sách project ---- */
+.pf__luoi { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: var(--space-5); list-style: none; margin: 0; padding: 0; }
+.pf__the { height: 100%; }
+.pf__the .card__title { font-size: var(--text-base); }
+.pf__nut { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+.pf__trong { display: grid; justify-items: center; gap: var(--space-4); padding: var(--space-8) var(--space-4); text-align: center; background: var(--color-surface-alt); border-radius: var(--radius-lg); color: var(--color-text-muted); }
+.pf__trong p { margin: 0; }
+.pf__xac-nhan { gap: var(--space-4); }
+.pf__xac-nhan p { margin: 0; }
+
+/* ---- ô tải nhiều hình ---- */
+.pf__tai-nhieu { position: relative; display: grid; justify-items: center; gap: var(--space-1); padding: var(--space-6) var(--space-4); text-align: center; background: var(--color-surface-alt); border: 1.5px dashed var(--color-border); border-radius: var(--radius-md); cursor: pointer; transition: border-color .15s, background .15s; }
+.pf__tai-nhieu:hover { border-color: var(--color-black); background: var(--color-white); }
+.pf__tai-nhieu:focus-within { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.field.has-error .pf__tai-nhieu { border-color: var(--danger-fg); }
+.pf__tai-nhieu small { color: var(--color-text-muted); font-size: var(--text-xs); }
+.pf__so-tep { font-style: normal; font-size: var(--text-sm); }
+.pf__tep { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.pf__xem-truoc { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
+.pf__xem-truoc:empty { display: none; }
+.pf__xem-truoc img { width: 4.5rem; height: 4.5rem; object-fit: cover; border-radius: var(--radius-md); border: 1px solid var(--color-border); }
+
+/* ---- thứ tự và danh sách hình: lưới 4 cột, kéo thả hoặc gõ số ---- */
+.pf__tieu-de-nho { margin: var(--space-5) 0 var(--space-1); font-size: var(--text-base); }
+.pf__huong-dan { margin: 0 0 var(--space-3); font-size: var(--text-sm); color: var(--color-text-muted); }
+.pf__an { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.pf__luoi-hinh { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); list-style: none; margin: 0; padding: 0; }
+.pf__o { display: grid; gap: var(--space-2); padding: var(--space-2); background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-md); cursor: grab; transition: opacity .15s, border-color .15s, box-shadow .15s; }
+.pf__o:hover { border-color: var(--color-black); }
+.pf__o-anh { position: relative; }
+.pf__o-anh img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: var(--radius-sm); pointer-events: none; }
+.pf__o-so .input { min-height: 2.25rem; padding: var(--space-1) var(--space-2); text-align: center; font-weight: 600; }
+/* Dấu × ở góc trên bên phải ảnh. Bấm vào là hình biến mất khỏi lưới (chỉ thật sự xóa khi bấm Lưu). */
+.pf__o-xoa { position: absolute; top: var(--space-2); right: var(--space-2); display: grid; place-items: center; width: 1.75rem; height: 1.75rem; background: var(--color-white); color: var(--color-text); border: 1px solid var(--color-border); border-radius: 50%; box-shadow: var(--shadow-sm); font-size: var(--text-lg); line-height: 1; cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
+.pf__o-xoa:hover { background: var(--danger-fg); border-color: var(--danger-fg); color: var(--color-white); }
+.pf__o-xoa input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.pf__o-xoa:has(input:focus-visible) { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.pf__o:has(.pf__o-xoa input:checked) { display: none; }       /* đã gỡ: biến mất ngay, kể cả khi không có JavaScript */
+.pf__da-go { margin: var(--space-3) 0 0; display: flex; align-items: center; gap: var(--space-3); font-size: var(--text-sm); color: var(--color-text-muted); }
+.pf__da-go[hidden] { display: none; }
+.pf__o.dang-keo { opacity: .4; border-style: dashed; }
+.pf__o.dang-keo { cursor: grabbing; }
+@media (max-width: 640px) { .pf__luoi-hinh { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 420px) { .pf__luoi-hinh { grid-template-columns: repeat(2, 1fr); } }

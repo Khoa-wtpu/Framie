@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+{% load static %}
+{% comment %}
+  Trang Giới thiệu FRAMIE. Gồm 4 phần có địa chỉ riêng (dùng cho thanh mục lục và link ở footer):
+    #gioi-thieu            Giới thiệu (FRAMIE giúp được gì, hành trình một buổi chụp, cam kết không giữ tiền)
+    #dieu-khoan            Điều khoản sử dụng
+    #chinh-sach-bao-mat    Chính sách bảo mật
+    #cau-hoi-thuong-gap    Câu hỏi thường gặp
+  CSS: core/css/gioi_thieu.css (tiền tố gt-). JS: core/js/gioi_thieu.js (tô sáng mục đang đọc, mở câu hỏi theo #).
+  Không dùng style inline, không viết JS trong HTML (quy ước nhóm).
+{% endcomment %}
+{% block title %}Giới thiệu{% endblock %}
+{% block body_class %}trang-gioi-thieu{% endblock %}
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@200;300&display=swap" rel="stylesheet">{# thêm hai nét mảnh cho chữ lớn của trang này; base.html đã nạp nét 400 và 600 #}
+<link rel="stylesheet" href="{% static 'core/css/gioi_thieu.css' %}">
+{% endblock %}
+{% block content %}
+
+{# ================= HERO ================= #}
+<section class="gt-hero giu-mau-trang" aria-labelledby="gt-tieu-de">
+  <span class="gt-khung" aria-hidden="true"></span>
+  <div class="container gt-hero__luoi">
+    <div class="gt-hero__chu">
+      <h1 id="gt-tieu-de" class="gt-hero__tieu-de">Nối bạn với nhiếp ảnh gia, đi cùng đến bức ảnh cuối cùng.</h1>
+      <p class="gt-hero__mo-ta">FRAMIE là nền tảng đặt lịch chụp ảnh. Bạn tìm nhiếp ảnh gia phù hợp, giữ khung giờ, theo dõi từng bước và nhận ảnh ngay trong một nơi.</p>
+      {% if can_search %}{# nút "Tìm nhiếp ảnh gia" chỉ dành cho khách vãng lai và Khách hàng #}
+      <p class="gt-hero__nut">
+        <a class="btn btn--primary btn--lg" href="{% url 'search' %}">Tìm nhiếp ảnh gia</a>
+        {% if not is_logged_in %}<a class="btn btn--ghost btn--lg" href="{{ urls.register }}">Tạo tài khoản</a>{% endif %}
+      </p>
+      {% endif %}
+    </div>
+    <div class="gt-hero__hinh">
+      <svg class="gt-ong-kinh" viewBox="0 0 400 400" aria-hidden="true" focusable="false">
+            <defs>
+              <radialGradient id="gt-kinh" cx="38%" cy="32%" r="75%">
+                <stop class="gt-ok__kinh gt-ok__kinh--1" offset="0"/>
+                <stop class="gt-ok__kinh gt-ok__kinh--2" offset=".5"/>
+                <stop class="gt-ok__kinh gt-ok__kinh--3" offset="1"/>
+              </radialGradient>
+            </defs>
+            <circle class="gt-ok__vanh gt-ok__vanh--ngoai" cx="200" cy="200" r="194"/>
+            <circle class="gt-ok__vanh gt-ok__vanh--trong" cx="200" cy="200" r="170"/>
+            <path class="gt-ok__vach" d="M200.0 24.0L200.0 15.0 M215.6 21.7L215.9 17.7 M231.1 23.7L231.8 19.8 M246.3 27.1L247.4 23.2 M261.2 31.8L262.6 28.0 M275.6 37.8L277.3 34.1 M288.0 47.6L292.5 39.8 M302.7 53.4L305.0 50.1 M315.1 62.9L317.6 59.8 M326.6 73.4L329.4 70.6 M337.1 84.9L340.2 82.4 M346.6 97.3L349.9 95.0 M352.4 112.0L360.2 107.5 M362.2 124.4L365.9 122.7 M368.2 138.8L372.0 137.4 M372.9 153.7L376.8 152.6 M376.3 168.9L380.2 168.2 M378.3 184.4L382.3 184.1 M376.0 200.0L385.0 200.0 M378.3 215.6L382.3 215.9 M376.3 231.1L380.2 231.8 M372.9 246.3L376.8 247.4 M368.2 261.2L372.0 262.6 M362.2 275.6L365.9 277.3 M352.4 288.0L360.2 292.5 M346.6 302.7L349.9 305.0 M337.1 315.1L340.2 317.6 M326.6 326.6L329.4 329.4 M315.1 337.1L317.6 340.2 M302.7 346.6L305.0 349.9 M288.0 352.4L292.5 360.2 M275.6 362.2L277.3 365.9 M261.2 368.2L262.6 372.0 M246.3 372.9L247.4 376.8 M231.1 376.3L231.8 380.2 M215.6 378.3L215.9 382.3 M200.0 376.0L200.0 385.0 M184.4 378.3L184.1 382.3 M168.9 376.3L168.2 380.2 M153.7 372.9L152.6 376.8 M138.8 368.2L137.4 372.0 M124.4 362.2L122.7 365.9 M112.0 352.4L107.5 360.2 M97.3 346.6L95.0 349.9 M84.9 337.1L82.4 340.2 M73.4 326.6L70.6 329.4 M62.9 315.1L59.8 317.6 M53.4 302.7L50.1 305.0 M47.6 288.0L39.8 292.5 M37.8 275.6L34.1 277.3 M31.8 261.2L28.0 262.6 M27.1 246.3L23.2 247.4 M23.7 231.1L19.8 231.8 M21.7 215.6L17.7 215.9 M24.0 200.0L15.0 200.0 M21.7 184.4L17.7 184.1 M23.7 168.9L19.8 168.2 M27.1 153.7L23.2 152.6 M31.8 138.8L28.0 137.4 M37.8 124.4L34.1 122.7 M47.6 112.0L39.8 107.5 M53.4 97.3L50.1 95.0 M62.9 84.9L59.8 82.4 M73.4 73.4L70.6 70.6 M84.9 62.9L82.4 59.8 M97.3 53.4L95.0 50.1 M112.0 47.6L107.5 39.8 M124.4 37.8L122.7 34.1 M138.8 31.8L137.4 28.0 M153.7 27.1L152.6 23.2 M168.9 23.7L168.2 19.8 M184.4 21.7L184.1 17.7"/>
+            <g class="gt-ok__nhom">
+              <path class="gt-ok__canh gt-ok__canh--0" d="M229.0 149.8L258.0 200.0L314.2 297.3A150 150 0 0 0 341.3 149.8Z"/>
+              <path class="gt-ok__canh gt-ok__canh--1" d="M258.0 200.0L229.0 250.2L172.8 347.5A150 150 0 0 0 314.2 297.3Z"/>
+              <path class="gt-ok__canh gt-ok__canh--0" d="M229.0 250.2L171.0 250.2L58.7 250.2A150 150 0 0 0 172.8 347.5Z"/>
+              <path class="gt-ok__canh gt-ok__canh--1" d="M171.0 250.2L142.0 200.0L85.8 102.7A150 150 0 0 0 58.7 250.2Z"/>
+              <path class="gt-ok__canh gt-ok__canh--0" d="M142.0 200.0L171.0 149.8L227.2 52.5A150 150 0 0 0 85.8 102.7Z"/>
+              <path class="gt-ok__canh gt-ok__canh--1" d="M171.0 149.8L229.0 149.8L341.3 149.8A150 150 0 0 0 227.2 52.5Z"/>
+            </g>
+            <circle class="gt-ok__vanh gt-ok__vanh--khau" cx="200" cy="200" r="150"/>
+            <polygon class="gt-ok__lo" points="229.0,149.8 258.0,200.0 229.0,250.2 171.0,250.2 142.0,200.0 171.0,149.8"/>
+          </svg>
+    </div>
+  </div>
+  <div class="gt-vien" aria-hidden="true"><span class="gt-vien__chu">FRAMIE 400 &nbsp; 12 &nbsp; 12A &nbsp; 13</span></div>
+</section>
+
+{# ================= THANH MỤC LỤC + NỘI DUNG ================= #}
+<div class="container gt-bo-cuc">
+
+  <nav class="gt-muc-luc" aria-label="Mục lục trang Giới thiệu" data-gt-muc-luc>
+    <ul>
+      <li><a href="#gioi-thieu">Giới thiệu</a></li>
+      <li><a href="#dieu-khoan">Điều khoản sử dụng</a></li>
+      <li><a href="#chinh-sach-bao-mat">Chính sách bảo mật</a></li>
+      <li><a href="#cau-hoi-thuong-gap">Câu hỏi thường gặp</a></li>
+    </ul>
+  </nav>
+
+  <div class="gt-noi-dung">
+
+    {# ---------- 1. Giới thiệu ---------- #}
+    <section class="gt-muc" id="gioi-thieu" aria-labelledby="gt-gioi-thieu-td">
+      <h2 class="gt-muc__tieu-de" id="gt-gioi-thieu-td">FRAMIE giúp được gì?</h2>
+      <p class="gt-dan">Một bên cần tìm đúng người cầm máy, một bên cần khách hàng và lịch làm việc rõ ràng. FRAMIE đặt hai bên vào cùng một quy trình.</p>
+
+      <div class="gt-doi">
+        <div class="gt-doi__khung">
+          <h3>Dành cho Khách hàng</h3>
+          <ul class="gt-ds">
+            <li>Tìm nhiếp ảnh gia theo loại hình, phong cách, khu vực và mức giá.</li>
+            <li>Xem hồ sơ, Portfolio và các gói dịch vụ trước khi quyết định.</li>
+            <li>Chọn khung giờ còn trống, FRAMIE giữ chỗ cho bạn 5 phút.</li>
+            <li>Theo dõi trạng thái Booking, nhắn tin với nhiếp ảnh gia và nhận ảnh trên hệ thống.</li>
+          </ul>
+        </div>
+        <div class="gt-doi__khung gt-doi__khung--phu">
+          <h3>Dành cho Nhiếp ảnh gia</h3>
+          <ul class="gt-ds">
+            <li>Xây dựng hồ sơ và Portfolio; hồ sơ được Quản trị viên duyệt trước khi hiện công khai.</li>
+            <li>Quản lý gói dịch vụ và lịch trống của riêng mình.</li>
+            <li>Nhận Booking, xác nhận đặt cọc và thanh toán từ khách.</li>
+            <li>Giao ảnh qua hệ thống: khách chọn ảnh, kiểm tra ảnh hậu kỳ và yêu cầu chỉnh sửa.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="gt-phu">
+        <h3 class="gt-phu__tieu-de">Một buổi chụp đi qua những bước nào?</h3>
+        <ol class="gt-hanh-trinh">
+          <li class="gt-buoc">
+            <span class="gt-buoc__so" aria-hidden="true">1</span>
+            <div><h4>Tìm nhiếp ảnh gia</h4><p>Tìm theo từ khóa, loại hình, khu vực hoặc mức giá, rồi xem hồ sơ và Portfolio.</p></div>
+          </li>
+          <li class="gt-buoc">
+            <span class="gt-buoc__so" aria-hidden="true">2</span>
+            <div><h4>Chọn lịch và giữ chỗ</h4><p>Chọn khung giờ còn trống. FRAMIE giữ chỗ cho bạn trong 5 phút để không ai đặt trùng.</p></div>
+          </li>
+          <li class="gt-buoc">
+            <span class="gt-buoc__so" aria-hidden="true">3</span>
+            <div><h4>Gửi yêu cầu Booking</h4><p>Chọn gói dịch vụ, điền địa điểm, số người, concept và yêu cầu riêng.</p></div>
+          </li>
+          <li class="gt-buoc">
+            <span class="gt-buoc__so" aria-hidden="true">4</span>
+            <div><h4>Xác nhận và đặt cọc</h4><p>Nhiếp ảnh gia chấp nhận yêu cầu, bạn đặt cọc 40% để chốt lịch.</p></div>
+          </li>
+          <li class="gt-buoc">
+            <span class="gt-buoc__so" aria-hidden="true">5</span>
+            <div><h4>Chụp và nhận ảnh</h4><p>Sau buổi chụp, bạn chọn ảnh, kiểm tra ảnh hậu kỳ, thanh toán phần còn lại và tải ảnh về. Mỗi bước có thời hạn riêng, xem ở <a href="#hoi-thoi-han">Câu hỏi thường gặp</a>.</p></div>
+          </li>
+        </ol>
+      </div>
+
+      <aside class="gt-cam-ket giu-mau-trang" aria-labelledby="gt-cam-ket-td">
+        <span class="gt-khung" aria-hidden="true"></span>
+        <h3 class="gt-cam-ket__tieu-de" id="gt-cam-ket-td">FRAMIE không giữ tiền của bạn.</h3>
+        <p>FRAMIE chỉ là nền tảng kết nối và quản lý lịch hẹn. <strong>FRAMIE không giữ, không trung gian và không xử lý tiền.</strong> Bạn chuyển khoản trực tiếp cho nhiếp ảnh gia theo thông tin ngân hàng và mã QR trên hồ sơ của họ, sau đó tải minh chứng lên hệ thống để hai bên đối chiếu.</p>
+        <p class="gt-cam-ket__nut"><a class="btn btn--ghost" href="#dieu-khoan">Đọc điều khoản sử dụng</a></p>
+      </aside>
+    </section>
+
+    {# ---------- 2. Điều khoản sử dụng ---------- #}
+    <section class="gt-muc" id="dieu-khoan" aria-labelledby="gt-dieu-khoan-td">
+      <h2 class="gt-muc__tieu-de" id="gt-dieu-khoan-td">Điều khoản sử dụng</h2>
+      <p class="gt-dan">Khi đăng ký và sử dụng FRAMIE, bạn đồng ý với các điều khoản dưới đây.</p>
+      <div class="gt-hang-ds">
+        <div class="gt-hang">
+          <h3>1. FRAMIE không giữ và không xử lý tiền</h3>
+          <div class="gt-hang__noi-dung">
+            <p>FRAMIE chỉ cung cấp công cụ để Khách hàng và Nhiếp ảnh gia tìm nhau, đặt lịch và theo dõi tiến độ. <strong>FRAMIE không giữ, không nhận hộ, không chuyển hộ và không xử lý bất kỳ khoản tiền nào.</strong> Tiền đặt cọc và phần thanh toán còn lại được Khách hàng chuyển khoản trực tiếp cho Nhiếp ảnh gia. Việc hoàn lại tiền cọc (nếu có) do hai bên tự thực hiện; hệ thống chỉ ghi nhận xác nhận của các bên.</p>
+          </div>
+        </div>
+        <div class="gt-hang">
+          <h3>2. Mục đích thu thập thông tin khi đăng ký</h3>
+          <div class="gt-hang__noi-dung">
+            <p>FRAMIE chỉ thu thập thông tin cần thiết cho hoạt động của nền tảng:</p>
+            <ul class="gt-ds">
+              <li><strong>Họ tên, email, số điện thoại:</strong> tạo và xác định tài khoản, đăng nhập, gửi mã xác thực khi quên mật khẩu, gửi thông báo về Booking, và để hai bên liên hệ khi thực hiện buổi chụp.</li>
+              <li><strong>Mật khẩu:</strong> chỉ lưu dưới dạng mã hóa một chiều, dùng để đăng nhập.</li>
+              <li><strong>Với Nhiếp ảnh gia</strong> (thêm ảnh đại diện, giới thiệu, loại hình chụp, khu vực, thông tin ngân hàng và mã QR): hiển thị hồ sơ cho Khách hàng, quản trị viên xét duyệt hồ sơ, và để Khách hàng biết nơi chuyển khoản.</li>
+            </ul>
+            <p>FRAMIE không bán thông tin của bạn và không dùng cho mục đích nào khác ngoài các mục trên.</p>
+          </div>
+        </div>
+        <div class="gt-hang">
+          <h3>3. Trách nhiệm của người dùng</h3>
+          <div class="gt-hang__noi-dung">
+            <p>Bạn cung cấp thông tin chính xác, giữ bí mật mật khẩu và chịu trách nhiệm về hoạt động trên tài khoản của mình. Nhiếp ảnh gia chịu trách nhiệm về thông tin hồ sơ, gói dịch vụ và chất lượng dịch vụ mình cung cấp.</p>
+          </div>
+        </div>
+        <div class="gt-hang">
+          <h3>4. Thời hạn trong quá trình đặt lịch</h3>
+          <div class="gt-hang__noi-dung">
+            <p>Để tránh giữ chỗ vô thời hạn, hệ thống tự xử lý các Booking quá hạn (giữ chỗ, đặt cọc, thanh toán, thời hạn tải ảnh). Chi tiết thời hạn được hiển thị ngay tại từng bước trong quá trình đặt lịch và tóm tắt ở <a href="#hoi-thoi-han">Câu hỏi thường gặp</a>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {# ---------- 3. Chính sách bảo mật ---------- #}
+    <section class="gt-muc" id="chinh-sach-bao-mat" aria-labelledby="gt-bao-mat-td">
+      <h2 class="gt-muc__tieu-de" id="gt-bao-mat-td">Chính sách bảo mật</h2>
+      <p class="gt-dan">FRAMIE lưu những thông tin nào của bạn, dùng vào việc gì, ai xem được và lưu trong bao lâu.</p>
+      <div class="gt-hang-ds">
+        <div class="gt-hang">
+          <h3>Thông tin chúng tôi lưu</h3>
+          <div class="gt-hang__noi-dung">
+            <ul class="gt-ds">
+              <li><strong>Mọi tài khoản:</strong> họ tên, email, số điện thoại và mật khẩu (chỉ lưu dạng mã hóa một chiều).</li>
+              <li><strong>Nhiếp ảnh gia:</strong> ảnh đại diện, giới thiệu, loại hình chụp, phong cách, khu vực, Portfolio, gói dịch vụ, lịch trống, thông tin ngân hàng và mã QR nhận tiền.</li>
+              <li><strong>Khi đặt lịch:</strong> nội dung Booking (gói, thời gian, địa điểm, số người, concept, yêu cầu riêng), lịch sử trạng thái, minh chứng thanh toán, ảnh bàn giao, đánh giá, tin nhắn và ảnh trong cuộc trò chuyện.</li>
+              <li><strong>Trên thiết bị của bạn:</strong> cookie cần thiết để giữ phiên đăng nhập và bảo vệ biểu mẫu, cùng lựa chọn nền Trắng hoặc Đen. FRAMIE không dùng cookie quảng cáo hay công cụ theo dõi hành vi. Trang tải phông chữ từ Google Fonts nên Google có thể ghi nhận địa chỉ IP của bạn khi tải phông.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="gt-hang">
+          <h3>Chúng tôi dùng thông tin để làm gì</h3>
+          <div class="gt-hang__noi-dung">
+            <ul class="gt-ds">
+              <li>Tạo tài khoản, đăng nhập và gửi mã xác thực khi bạn quên mật khẩu.</li>
+              <li>Gửi thông báo trên FRAMIE và email về Booking, thanh toán và ảnh.</li>
+              <li>Để hai bên liên hệ và thực hiện buổi chụp.</li>
+              <li>Xét duyệt hồ sơ nhiếp ảnh gia và xử lý tranh chấp khi có.</li>
+            </ul>
+            <p>FRAMIE không bán thông tin của bạn và không dùng cho mục đích nào khác.</p>
+          </div>
+        </div>
+        <div class="gt-hang">
+          <h3>Ai xem được thông tin của bạn</h3>
+          <div class="gt-hang__noi-dung">
+            <dl class="gt-cap">
+              <dt>Hồ sơ nhiếp ảnh gia đã duyệt (ảnh, giới thiệu, Portfolio, gói dịch vụ, lịch trống)</dt>
+              <dd>Mọi người, kể cả khi chưa đăng nhập.</dd>
+              <dt>Thông tin ngân hàng và mã QR</dt>
+              <dd>Quản trị viên khi duyệt hồ sơ, và Khách hàng ở bước thanh toán của Booking với nhiếp ảnh gia đó.</dd>
+              <dt>Ảnh bàn giao</dt>
+              <dd>Khách hàng và nhiếp ảnh gia của Booking. Quản trị viên chỉ xem bản có dấu mờ (watermark) khi cần xử lý tranh chấp.</dd>
+              <dt>Minh chứng thanh toán</dt>
+              <dd>Khách hàng và nhiếp ảnh gia của Booking, và Quản trị viên.</dd>
+              <dt>Tin nhắn</dt>
+              <dd>Hai người trong cuộc trò chuyện. Tin đã thu hồi không còn hiện với cả hai bên, nhưng nội dung vẫn được lưu để Quản trị viên xử lý tranh chấp.</dd>
+              <dt>Họ tên, email, số điện thoại</dt>
+              <dd>Quản trị viên, và bên còn lại trong Booking khi cần liên hệ để thực hiện buổi chụp.</dd>
+            </dl>
+          </div>
+        </div>
+        <div class="gt-hang">
+          <h3>Lưu trong bao lâu</h3>
+          <div class="gt-hang__noi-dung">
+            <dl class="gt-cap">
+              <dt>Phiên đăng nhập</dt>
+              <dd>Tự hết hạn sau 30 phút không thao tác.</dd>
+              <dt>Mã xác thực khi quên mật khẩu</dt>
+              <dd>Có hiệu lực 10 phút.</dd>
+              <dt>Ảnh trong tin nhắn</dt>
+              <dd>6 tháng kể từ lúc gửi. Sau đó ảnh không xem được nữa và được dọn khỏi hệ thống; tin nhắn chữ vẫn còn.</dd>
+              <dt>Ảnh bàn giao</dt>
+              <dd>Bị xóa khỏi hệ thống 3 ngày sau khi nhiếp ảnh gia xác nhận bạn đã thanh toán đủ. Hãy tải ảnh về trước thời điểm này.</dd>
+              <dt>Tài khoản, Booking và minh chứng thanh toán</dt>
+              <dd>Lưu cùng tài khoản để hai bên đối chiếu khi cần.</dd>
+            </dl>
+          </div>
+        </div>
+        <div class="gt-hang">
+          <h3>Quyền của bạn và cách chúng tôi bảo vệ dữ liệu</h3>
+          <div class="gt-hang__noi-dung">
+            <ul class="gt-ds">
+              <li>Bạn xem và cập nhật thông tin cá nhân ở mục Hồ sơ của tôi, và đổi mật khẩu bất cứ lúc nào ở mục Đổi mật khẩu.</li>
+              <li>Mật khẩu được mã hóa một chiều. Ảnh bàn giao nằm ở khu vực lưu trữ riêng, chỉ người có quyền mới mở được.</li>
+              <li>Phiên đăng nhập tự hết hạn khi bạn không thao tác, để hạn chế người khác dùng nhầm tài khoản.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {# ---------- 4. Câu hỏi thường gặp ---------- #}
+    <section class="gt-muc" id="cau-hoi-thuong-gap" aria-labelledby="gt-faq-td">
+      <h2 class="gt-muc__tieu-de" id="gt-faq-td">Câu hỏi thường gặp</h2>
+      <p class="gt-dan">Bấm vào câu hỏi để xem câu trả lời.</p>
+
+      <div class="gt-hoi-nhom">
+        <h3>Đặt lịch</h3>
+        <details class="gt-hoi" id="hoi-giu-tien" name="faq-dat-lich">
+          <summary>FRAMIE có giữ tiền cọc của tôi không?</summary>
+          <div class="gt-hoi__tra-loi"><p>Không. FRAMIE không giữ, không nhận hộ và không chuyển hộ tiền. Bạn chuyển khoản trực tiếp cho nhiếp ảnh gia theo thông tin ngân hàng và mã QR ở bước thanh toán, rồi tải minh chứng lên để hai bên đối chiếu.</p></div>
+        </details>
+        <details class="gt-hoi" id="hoi-giu-cho" name="faq-dat-lich">
+          <summary>Giữ chỗ 5 phút nghĩa là gì?</summary>
+          <div class="gt-hoi__tra-loi"><p>Khi bạn chọn một khung giờ, FRAMIE giữ riêng khung đó cho bạn trong 5 phút để bạn điền và gửi yêu cầu Booking. Hết 5 phút mà chưa gửi, khung giờ tự trở về lịch trống và người khác có thể chọn.</p></div>
+        </details>
+        <details class="gt-hoi" id="hoi-sau-khi-gui" name="faq-dat-lich">
+          <summary>Gửi Booking xong thì chuyện gì xảy ra?</summary>
+          <div class="gt-hoi__tra-loi"><p>Booking ở trạng thái “Chờ xác nhận” cho đến khi nhiếp ảnh gia chấp nhận hoặc từ chối. Nếu đã qua giờ chụp mà nhiếp ảnh gia chưa xác nhận, Booking tự hủy và khung giờ được trả về lịch trống.</p></div>
+        </details>
+        <details class="gt-hoi" id="hoi-huy" name="faq-dat-lich">
+          <summary>Tôi có thể hủy Booking không?</summary>
+          <div class="gt-hoi__tra-loi">
+            <p>Được, khi Booking đang ở “Chờ đặt cọc” hoặc “Chốt Booking”. Từ “Đã chụp” trở đi Booking không hủy được.</p>
+            <ul class="gt-ds">
+              <li>Hủy khi chưa đặt cọc: không phát sinh tiền.</li>
+              <li>Khách hàng hủy sau khi đã đặt cọc: mất 40% tiền cọc.</li>
+              <li>Nhiếp ảnh gia hủy sau khi đã đặt cọc: Khách hàng được hoàn lại tiền cọc. Hai bên tự chuyển lại tiền, và bạn xác nhận trên hệ thống khi đã nhận được.</li>
+            </ul>
+          </div>
+        </details>
+      </div>
+
+      <div class="gt-hoi-nhom">
+        <h3>Thanh toán và ảnh</h3>
+        <details class="gt-hoi" id="hoi-thoi-han" name="faq-thanh-toan">
+          <summary>Các bước đặt cọc, thanh toán và tải ảnh có thời hạn như thế nào?</summary>
+          <div class="gt-hoi__tra-loi">
+            <ul class="gt-ds">
+              <li>Đặt cọc 40%: trong 1 ngày kể từ khi nhiếp ảnh gia chấp nhận. Quá hạn, Booking tự hết thời hạn đặt cọc.</li>
+              <li>Chọn ảnh cần hậu kỳ: trong 2 ngày kể từ khi nhiếp ảnh gia tải ảnh lên.</li>
+              <li>Thanh toán 60% còn lại: trong 2 ngày kể từ khi bạn xác nhận hoàn tất bàn giao.</li>
+              <li>Tải ảnh hoàn chỉnh: trong 3 ngày kể từ khi nhiếp ảnh gia xác nhận bạn đã thanh toán đủ.</li>
+            </ul>
+          </div>
+        </details>
+        <details class="gt-hoi" id="hoi-nhan-anh" name="faq-thanh-toan">
+          <summary>Sau buổi chụp tôi nhận ảnh như thế nào?</summary>
+          <div class="gt-hoi__tra-loi"><p>Nhiếp ảnh gia tải ảnh lên hệ thống. Tùy gói dịch vụ, bạn chọn những ảnh cần hậu kỳ hoặc nhiếp ảnh gia hậu kỳ toàn bộ. Khi có ảnh hậu kỳ, bạn kiểm tra và có thể yêu cầu chỉnh sửa tối đa 3 lần cho mỗi Booking.</p></div>
+        </details>
+        <details class="gt-hoi" id="hoi-watermark" name="faq-thanh-toan">
+          <summary>Ảnh tôi xem trước có dấu mờ không?</summary>
+          <div class="gt-hoi__tra-loi"><p>Có. Ảnh bạn xem để chọn và kiểm tra có dấu mờ (watermark) của FRAMIE. Sau khi nhiếp ảnh gia xác nhận bạn đã thanh toán đủ, bạn tải được ảnh hoàn chỉnh không có dấu mờ.</p></div>
+        </details>
+        <details class="gt-hoi" id="hoi-het-han-tai" name="faq-thanh-toan">
+          <summary>Nếu tôi chưa kịp tải ảnh thì sao?</summary>
+          <div class="gt-hoi__tra-loi"><p>Hết thời hạn tải, ảnh bị xóa khỏi hệ thống và không khôi phục được. Hãy tải ảnh về máy trong thời hạn.</p></div>
+        </details>
+      </div>
+
+      <div class="gt-hoi-nhom">
+        <h3>Tài khoản và tin nhắn</h3>
+        <details class="gt-hoi" id="hoi-quen-mat-khau" name="faq-tai-khoan">
+          <summary>Tôi quên mật khẩu thì làm thế nào?</summary>
+          <div class="gt-hoi__tra-loi"><p>Chọn “Quên mật khẩu?” ở trang đăng nhập. FRAMIE gửi mã xác thực đến email của bạn, mã có hiệu lực 10 phút.</p></div>
+        </details>
+        <details class="gt-hoi" id="hoi-lam-nag" name="faq-tai-khoan">
+          <summary>Làm sao để trở thành nhiếp ảnh gia trên FRAMIE?</summary>
+          <div class="gt-hoi__tra-loi"><p>Đăng ký tài khoản Nhiếp ảnh gia, điền hồ sơ (ảnh đại diện, giới thiệu, loại hình, khu vực, thông tin ngân hàng và mã QR) rồi chờ Quản trị viên duyệt. Hồ sơ được duyệt mới hiện công khai và nhận được Booking.</p></div>
+        </details>
+        <details class="gt-hoi" id="hoi-dang-xuat" name="faq-tai-khoan">
+          <summary>Vì sao tôi bị đăng xuất khi không dùng một lúc?</summary>
+          <div class="gt-hoi__tra-loi"><p>Phiên đăng nhập tự hết hạn sau 30 phút không thao tác để bảo vệ tài khoản của bạn. Bạn chỉ cần đăng nhập lại.</p></div>
+        </details>
+        <details class="gt-hoi" id="hoi-gui-anh" name="faq-tai-khoan">
+          <summary>Tôi có thể gửi ảnh trong tin nhắn không?</summary>
+          <div class="gt-hoi__tra-loi"><p>Được. Mỗi tin nhắn gửi tối đa 5 ảnh định dạng JPG, PNG hoặc WEBP, mỗi ảnh tối đa 5 MB. Ảnh trong tin nhắn được lưu 6 tháng.</p></div>
+        </details>
+      </div>
+    </section>
+
+    {# ---------- Lời mời cuối trang ---------- #}
+    {% if can_search %}
+    <section class="gt-ket" aria-labelledby="gt-ket-td">
+      <h2 class="gt-ket__tieu-de" id="gt-ket-td">Sẵn sàng cho buổi chụp tiếp theo?</h2>
+      <p>Tìm nhiếp ảnh gia phù hợp, chọn khung giờ còn trống và gửi yêu cầu Booking chỉ trong vài phút.</p>
+      <p class="gt-ket__nut">
+        <a class="btn btn--primary" href="{% url 'search' %}">Tìm nhiếp ảnh gia</a>
+        {% if not is_logged_in %}<a class="btn btn--secondary" href="{{ urls.register }}">Tạo tài khoản</a>{% endif %}
+      </p>
+    </section>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'core/js/gioi_thieu.js' %}" defer></script>{% endblock %}

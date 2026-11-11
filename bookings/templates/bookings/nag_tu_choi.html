@@ -1,0 +1,43 @@
+{# UC4.5 bước 3-4: nhập lý do từ chối. Dùng bởi bookings/tiep_nhan.py (view tu_choi) #}
+{# GIAO DIỆN: trang dạng form hẹp, cùng phong cách trang chi tiết Booking (bookings/css/chi_tiet_booking.css). #}
+
+{% extends "base.html" %}{# kế thừa khung chung #}
+{% load static %}{# để gọi CSS #}
+
+{% block title %}Từ chối Booking #{{ booking.pk }}{% endblock %}{# chữ trên tab trình duyệt #}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'bookings/css/chi_tiet_booking.css' %}">{% endblock %}{# nạp CSS dùng chung #}
+
+{% block content %}
+<div class="container ct ct--hep">{# khung hẹp giữa trang #}
+
+  <a class="ct__quay-lai" href="{% url 'chi_tiet_yeu_cau_booking' ma_booking=booking.pk %}"><span aria-hidden="true">←</span> Quay lại chi tiết Booking</a>{# khi đổi ý, không từ chối nữa #}
+
+  <header>
+    <p class="ct__nhan-nho">Từ chối yêu cầu</p>{# dòng nhỏ viết hoa #}
+    <h1>Từ chối Booking #{{ booking.pk }}</h1>{# tiêu đề #}
+    <p class="ct__mo-ta">Khung giờ sẽ được trả về lịch trống ngay và Khách hàng nhận được lý do bạn nhập.</p>{# mô tả hậu quả ngắn gọn #}
+  </header>
+
+  <section class="ct__the">{# thẻ nhắc lại Booking đang từ chối để không từ chối nhầm #}
+    <h2 class="ct__the-tieu-de">Booking đang xử lý</h2>
+    <dl class="ct__ds">
+      <div class="ct__dong"><dt>Khách hàng</dt><dd>{{ ten_khach }}</dd></div>
+      <div class="ct__dong"><dt>Gói</dt><dd>{{ booking.MaGoi.TenGoi }}</dd></div>
+      <div class="ct__dong"><dt>Giờ chụp</dt><dd>{{ booking.NgayGioChup|date:"H:i d/m/Y" }}</dd></div>
+    </dl>
+  </section>
+
+  {# novalidate: để máy chủ hiện đúng câu "Vui lòng nhập lý do từ chối" (ngoại lệ 4a) thay vì cửa sổ của trình duyệt #}
+  <form class="ct__the" method="post" novalidate>{# form gửi bằng POST khi bấm "Xác nhận từ chối" #}
+    {% csrf_token %}{# mã chống giả mạo yêu cầu #}
+    {% for loi in form.non_field_errors %}{# lỗi chung (ví dụ Booking vừa bị xử lý ở nơi khác) #}
+      {% include "includes/alert.html" with level="danger" text=loi %}{# hộp cảnh báo đỏ #}
+    {% endfor %}
+    {% include "includes/form_field.html" with field=form.ly_do %}{# ô nhập "Lý do từ chối" + câu lỗi ngay dưới ô #}
+    <div class="ct__nut">
+      <button class="btn btn--danger" type="submit">Xác nhận từ chối</button>{# thực hiện từ chối (UC4.5 bước 4) #}
+      <a class="btn btn--ghost" href="{% url 'chi_tiet_yeu_cau_booking' ma_booking=booking.pk %}">Hủy</a>{# quay lại, không từ chối gì cả #}
+    </div>
+  </form>
+</div>
+{% endblock %}

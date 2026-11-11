@@ -1,0 +1,117 @@
+{# ===== admin_quan_ly_thanh_toan.html : trang "Quản lý thanh toán" của Quản trị viên ===== #}
+{# Bố cục SAO Y trang "Tất cả Booking" (bookings/admin_booking_list.html): tiêu đề → 4 tab → ô tìm kiếm viên thuốc + bảng bộ lọc → hàng kết quả/sắp xếp → bảng → phân trang #}
+{# View: payments/admin_views.py (quan_ly_thanh_toan). Biến: page_obj, tab, so_tat_ca, so_cho_xac_nhan, so_da_xac_nhan, so_qua_han, bo_loc, so_bo_loc, dang_loc, sap_xep_chon, so_ket_qua, co_thanh_toan #}
+{% extends "base.html" %}{# dùng khung trang chung (đầu trang, menu, chân trang) #}
+{% load static ui %}{# ui: status_badge, add_class #}
+{% block title %}{{ tieu_de }}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/admin_quan_ly_thanh_toan.css' %}">{% endblock %}
+{% block extra_js %}<script src="{% static 'js/admin_quan_ly_thanh_toan.js' %}" defer></script>{% endblock %}
+{% block content %}
+<div class="container abt">
+  <h1>{{ tieu_de }}</h1>
+
+  <nav class="abt__tabs" aria-label="Lọc theo nhóm trạng thái thanh toán">{# giữ ?tab=... khi tìm kiếm / lọc nhờ ô ẩn "tab" trong form bên dưới #}
+    <a href="?tab={{ TAB_TAT_CA }}"{% if tab == TAB_TAT_CA %} class="is-active" aria-current="page"{% endif %}>Tất cả ({{ so_tat_ca }})</a>
+    <a href="?tab={{ TAB_CHO_XAC_NHAN }}"{% if tab == TAB_CHO_XAC_NHAN %} class="is-active" aria-current="page"{% endif %}>Chờ xác nhận ({{ so_cho_xac_nhan }})</a>
+    <a href="?tab={{ TAB_DA_XAC_NHAN }}"{% if tab == TAB_DA_XAC_NHAN %} class="is-active" aria-current="page"{% endif %}>Đã xác nhận ({{ so_da_xac_nhan }})</a>
+    <a href="?tab={{ TAB_QUA_HAN }}"{% if tab == TAB_QUA_HAN %} class="is-active" aria-current="page"{% endif %}>Quá hạn ({{ so_qua_han }})</a>
+  </nav>
+
+  <form class="abt__form" id="form-abt" method="get" role="search" aria-label="Tìm kiếm và lọc khoản thanh toán" novalidate>
+    <input type="hidden" name="tab" value="{{ tab }}">
+    <div class="abt__tim-kiem">
+      {# Một ô duy nhất: [kính lúp | ô nhập | nút Bộ lọc | nút Tìm kiếm] #}
+      <div class="abt__pill">
+        <svg class="abt__bieu-tuong" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <label class="abt__o-tim">
+          <span class="sr-only">{{ bo_loc.q.label }}</span>
+          {{ bo_loc.q|add_class:"abt__input" }}
+        </label>
+        <button class="abt__nut-loc" id="nut-bo-loc-abt" type="button" aria-expanded="false" aria-controls="bang-bo-loc-abt">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+          <span class="abt__nhan">Bộ lọc</span>{% if so_bo_loc %}<span class="abt__so-loc">{{ so_bo_loc }}</span>{% endif %}
+        </button>
+        <button class="abt__gui" type="submit">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <span class="abt__nhan">Tìm kiếm</span>
+        </button>
+      </div>
+
+      <div class="abt__bang" id="bang-bo-loc-abt" role="group" aria-label="Bộ lọc thanh toán"{% if bo_loc.tu_ngay.errors or bo_loc.den_ngay.errors %} data-mo="1"{% endif %}>
+        <fieldset class="abt__nhom">
+          <legend>Thời điểm gửi</legend>
+          <div class="abt__ngay">
+            <label class="sr-only" for="{{ bo_loc.tu_ngay.id_for_label }}">{{ bo_loc.tu_ngay.label }}</label>{{ bo_loc.tu_ngay|add_class:"input" }}
+            <span aria-hidden="true">–</span>
+            <label class="sr-only" for="{{ bo_loc.den_ngay.id_for_label }}">{{ bo_loc.den_ngay.label }}</label>{{ bo_loc.den_ngay|add_class:"input" }}
+          </div>
+          {% for loi in bo_loc.tu_ngay.errors %}<p class="abt__loi" role="alert">{{ loi }}</p>{% endfor %}
+          {% for loi in bo_loc.den_ngay.errors %}<p class="abt__loi" role="alert">{{ loi }}</p>{% endfor %}
+        </fieldset>
+        <fieldset class="abt__nhom">
+          <legend>{{ bo_loc.trang_thai.label }}</legend>
+          <div class="abt__vien-ds">{% for c in bo_loc.trang_thai %}<label class="abt__vien">{{ c.tag }}<span>{{ c.choice_label }}</span></label>{% endfor %}</div>
+        </fieldset>
+        <div class="abt__nut">
+          <a class="btn btn--ghost" href="?tab={{ tab }}{% if bo_loc.q.value %}&amp;q={{ bo_loc.q.value|urlencode }}{% endif %}">Xóa bộ lọc</a>
+          <button class="btn btn--primary" type="submit">Áp dụng</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="abt__ket-qua-dau">
+      <p class="abt__dem" role="status">{% if dang_loc %}Tìm thấy {{ so_ket_qua }} khoản thanh toán.{% else %}{{ so_ket_qua }} khoản thanh toán{% endif %}</p>
+      <label class="abt__sap-xep">
+        <span>Sắp xếp</span>
+        <select name="sap_xep" class="input" data-tu-gui>{# đổi lựa chọn là tự tìm lại; không có JS thì dùng nút trong <noscript> #}
+          {% for gia_tri, nhan in bo_loc.sap_xep.field.choices %}<option value="{{ gia_tri }}"{% if gia_tri == sap_xep_chon %} selected{% endif %}>{{ nhan }}</option>{% endfor %}
+        </select>
+      </label>
+      <noscript><button class="btn btn--secondary btn--sm" type="submit">Sắp xếp</button></noscript>
+    </div>
+  </form>
+
+  {% if page_obj.object_list %}
+  <div class="abt__cuon abt__cuon--rong">
+    <table class="abt__bang-luot">
+      <thead>
+        <tr>
+          <th scope="col">Mã thanh toán</th>
+          <th scope="col">Mã Booking</th>
+          <th scope="col">Khách hàng</th>
+          <th scope="col">Nhiếp ảnh gia</th>
+          <th scope="col">Dịch vụ</th>
+          <th scope="col">Số tiền</th>
+          <th scope="col">Thời điểm gửi</th>
+          <th scope="col">Trạng thái</th>
+          <th scope="col" class="abt__thao-tac">Minh chứng</th>{# cột nút: dính mép phải bảng khi cửa sổ hẹp (CSS .abt__thao-tac) #}
+        </tr>
+      </thead>
+      <tbody>
+        {% for tt in page_obj %}
+        <tr>
+          <th scope="row" class="abt__ma">#{{ tt.pk }}</th>
+          <td class="abt__ma">#{{ tt.MaBooking_id }}</td>
+          <td>{{ tt.MaBooking.MaKhachHang.get_full_name|default:tt.MaBooking.MaKhachHang.username }}<span class="abt__phu">{{ tt.MaBooking.MaKhachHang.email }}</span></td>
+          <td>{{ tt.MaBooking.MaNhiepAnhGia.MaTaiKhoan.get_full_name|default:tt.MaBooking.MaNhiepAnhGia.MaTaiKhoan.username }}<span class="abt__phu">{{ tt.MaBooking.MaNhiepAnhGia.MaTaiKhoan.email }}</span></td>
+          <td>{{ tt.MaBooking.MaGoi.TenGoi }}</td>
+          <td class="abt__tien">{{ tt.so_tien_hien }} VNĐ</td>
+          <td class="abt__gio">{% if tt.NgayThanhToan %}{{ tt.NgayThanhToan|date:"d/m/Y H:i" }}{% else %}—{% endif %}</td>
+          <td>{% status_badge tt.TrangThai %}</td>{# nhãn trạng thái có màu thống nhất toàn hệ thống #}
+          <td class="abt__thao-tac">
+            {% with moi_nhat=tt.minh_chungs_moi_nhat_truoc.0 %}
+              {% if moi_nhat %}<a class="btn btn--soft btn--sm" href="{% url 'xem_minh_chung' moi_nhat.pk %}" target="_blank" rel="noopener">Xem</a>{% else %}<span class="abt__khong">—</span>{% endif %}
+            {% endwith %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "includes/pagination.html" with page_obj=page_obj %}
+  {% else %}
+  {# Có khoản thanh toán nhưng tìm / lọc ra rỗng -> báo theo bộ lọc; hệ thống chưa có khoản nào -> "Chưa có khoản thanh toán nào" #}
+  <p class="abt__trong">{% if co_thanh_toan %}{{ TB_KHONG_KHOP_BO_LOC }}{% if dang_loc %} <a href="?tab={{ tab }}">Xóa tìm kiếm và bộ lọc</a>{% endif %}{% else %}{{ TB_CHUA_CO_THANH_TOAN }}{% endif %}</p>
+  {% endif %}
+</div>
+{% endblock %}

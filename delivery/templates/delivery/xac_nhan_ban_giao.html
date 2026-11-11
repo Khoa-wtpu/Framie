@@ -1,0 +1,78 @@
+{% extends "base.html" %}{# N8 - UC5.6: Khách hàng xác nhận hoàn tất bàn giao #}
+{% load ui static %}{# nạp thẻ status_badge và static #}
+{% block title %}Xác nhận hoàn tất bàn giao{% endblock %}{# tiêu đề tab trình duyệt #}
+{% block content %}
+<div class="container stack xac-nhan-bg">{# khung chính của trang #}
+  <header>{# đầu trang #}
+    <h1>Xác nhận hoàn tất bàn giao</h1>{# tiêu đề trang #}
+    <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>{# thông tin Booking #}
+  </header>
+
+  {% if ly_do %}{# không xác nhận được lúc này (đã xác nhận, đang hậu kỳ, chưa đến lúc...) #}
+    {% include "includes/alert.html" with level="info" text=ly_do %}{# hiện lý do #}
+    {% if da_xac_nhan %}{# đã xác nhận, đang chờ thanh toán 60% #}
+      <section class="panel stack">{# khung thông tin thanh toán #}
+        <h2>Thanh toán phần còn lại</h2>{# tiêu đề #}
+        <p>Số tiền cần thanh toán: <strong>{{ so_tien_con_lai }}</strong></p>{# số tiền 60% #}
+        {% if booking.HanThanhToanConLai %}<p>Hạn thanh toán: <strong>{{ booking.HanThanhToanConLai|date:"d/m/Y H:i" }}</strong></p>{% endif %}{# hạn 2 ngày #}
+        {% url 'tai_len_minh_chung' booking.pk as url_minh_chung %}{# đường dẫn trang tải minh chứng của N2 (rỗng nếu chưa có) #}
+        {% if url_minh_chung %}<p><a class="btn btn--primary" href="{{ url_minh_chung }}">Tải minh chứng thanh toán</a></p>{% endif %}{# sang trang tải minh chứng của N2 #}
+      </section>
+    {% endif %}
+  {% else %}{# Khách được phép xác nhận #}
+    <section class="panel stack">{# khung hướng dẫn #}
+      <p>Hãy xem kỹ các ảnh đã hậu kỳ (có watermark) bên dưới. Nếu ảnh đã đáp ứng yêu cầu, bấm <strong>Xác nhận hoàn tất bàn giao</strong>.
+        Sau đó bạn cần thanh toán phần còn lại <strong>{{ so_tien_con_lai }}</strong> trong vòng 2 ngày.</p>{# hướng dẫn và số tiền sẽ phải thanh toán #}
+      <p>Nếu chưa hài lòng, hãy <a href="{% url 'yeu_cau_chinh_sua' booking.pk %}">yêu cầu chỉnh sửa</a>
+        {% if so_lan_chinh_sua_con_lai %}(còn {{ so_lan_chinh_sua_con_lai }} lần){% else %}(đã hết số lần cho phép){% endif %}.</p>{# nhánh 4a: chuyển sang chức năng Yêu cầu chỉnh sửa #}
+    </section>
+
+    {% if hoi_xac_nhan %}{# bước xác nhận: hỏi lại cho chắc trước khi ghi #}
+      <section class="panel stack">{# khung hỏi #}
+        {% include "includes/alert.html" with level="warning" text="Bạn có chắc chắn đã hài lòng và muốn hoàn tất bàn giao? Sau khi xác nhận, bạn không thể yêu cầu chỉnh sửa nữa." %}{# câu hỏi xác nhận #}
+        <div class="chon-anh__nut-hoi">{# hàng 2 nút #}
+          <form method="post">{# nút xác nhận #}
+            {% csrf_token %}{# mã chống giả mạo yêu cầu #}
+            <input type="hidden" name="hanh_dong" value="xac_nhan">{# báo cho view biết Khách đã xác nhận #}
+            <button class="btn btn--primary" type="submit">Có, xác nhận hoàn tất bàn giao</button>{# xác nhận thật #}
+          </form>
+          <a class="btn btn--secondary" href="{% url 'xac_nhan_ban_giao' booking.pk %}">Quay lại kiểm tra ảnh</a>{# không xác nhận nữa #}
+        </div>
+      </section>
+    {% else %}{# chưa hỏi: hiện nút bấm đầu tiên #}
+      <form method="post">{# nút "Xác nhận hoàn tất bàn giao" #}
+        {% csrf_token %}{# mã chống giả mạo yêu cầu #}
+        <input type="hidden" name="hanh_dong" value="hoi">{# báo cho view hiện hộp hỏi lại #}
+        <button class="btn btn--primary" type="submit">Xác nhận hoàn tất bàn giao</button>{# bước 4 #}
+      </form>
+    {% endif %}
+  {% endif %}
+
+  {% if anhs %}{# bước 2: các ảnh đã hậu kỳ có watermark #}
+    <section class="panel stack">{# khung danh sách ảnh #}
+      <h2>Ảnh đã hậu kỳ ({{ anhs|length }})</h2>{# số ảnh #}
+      <div class="chon-anh__luoi">{# lưới ảnh #}
+        {% for a in anhs %}{# duyệt từng ảnh #}
+          <figure class="chon-anh__the">{# một ô ảnh #}
+            <a href="{% url 'xem_anh' a.pk %}" data-xem-lon target="_blank" rel="noopener">{# bấm để phóng to ngay trong trang (vẫn có watermark) #}
+              <img src="{% url 'xem_anh' a.pk %}?nho=1" alt="{{ a.TenAnh }}" loading="lazy" draggable="false">{# ảnh thu nhỏ có watermark #}
+            </a>
+            <figcaption class="muted chon-anh__chu-thich">{{ a.TenAnh }}</figcaption>{# tên ảnh #}
+          </figure>
+        {% endfor %}
+      </div>
+    </section>
+  {% elif not ly_do %}{# được xác nhận nhưng chưa có ảnh nào (hoặc lỗi tải ảnh 2a) #}
+    {% include "includes/alert.html" with level="info" text="Chưa có ảnh hậu kỳ nào để hiển thị." %}{# báo trống #}
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'delivery/css/xem_anh_lightbox.css' %}">{# CSS cửa sổ phóng to ảnh dùng chung #}
+<link rel="stylesheet" href="{% static 'delivery/css/chon_anh.css' %}">{# dùng lại CSS lưới ảnh của trang chọn ảnh (N6) #}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'delivery/js/xem_anh_lightbox.js' %}" defer></script>{# JS cửa sổ phóng to ảnh dùng chung (bấm ảnh có data-xem-lon) #}
+{% endblock %}

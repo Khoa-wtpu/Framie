@@ -1,0 +1,12 @@
+/* accounts/static/accounts/css/quan_tri_tai_khoan.css - P7: giao diện bảng tài khoản và nút Tạo tài khoản quản trị viên. Chỉ dùng token trong tokens.css. */
+.tk-bang th:nth-child(3), .tk-bang td.tk-vai-tro { text-align: center; }  /* cột Vai trò căn giữa cả tiêu đề lẫn chữ (Khách hàng, Nhiếp ảnh gia, Quản trị viên) */
+
+/* Nút "Tạo tài khoản quản trị viên" cùng hàng với tiêu đề: chỉ đầu trang có nút này mới đổi sang lưới 2 cột, các trang Quản trị khác giữ nguyên */
+.admin-content__head:has(.tk-nut-moi) { display: grid; grid-template-columns: 1fr auto; column-gap: var(--space-4); align-items: end; }  /* cột trái: tiêu đề, cột phải: nút, canh đáy */
+.admin-content__head:has(.tk-nut-moi) > .admin-caption { grid-column: 1 / -1; }  /* dòng nhỏ phía trên chiếm cả hàng */
+.admin-content__head:has(.tk-nut-moi) > .admin-content__title { grid-column: 1; }  /* tiêu đề ở cột trái */
+.admin-content__head:has(.tk-nut-moi) > .tk-nut-moi { grid-column: 2; margin-bottom: var(--space-3); white-space: nowrap; }  /* nút ở cột phải, nâng lên chút cho thẳng chân chữ dòng dưới */
+@media (max-width: 640px) {  /* màn hình hẹp: nút xuống dưới tiêu đề */
+  .admin-content__head:has(.tk-nut-moi) { grid-template-columns: 1fr; }  /* một cột */
+  .admin-content__head:has(.tk-nut-moi) > .tk-nut-moi { grid-column: 1; justify-self: start; margin-top: var(--space-3); margin-bottom: 0; }  /* nút nằm dưới tiêu đề, canh trái */
+}

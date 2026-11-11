@@ -1,0 +1,169 @@
+{% extends "base.html" %}{# N2 - UC5.1: Khách hàng tải lên minh chứng thanh toán #}
+{% load ui %}
+{% block title %}Tải lên minh chứng thanh toán{% endblock %}
+
+{% block extra_head %}
+<style>
+  .mc-split { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,280px); gap:var(--space-6); align-items:start; }
+  .mc-split__info > * { margin:0; }
+  .mc-split__info > * + * { margin-top:var(--space-3); }
+  .mc-split__side { display:flex; flex-direction:column; align-items:center; gap:var(--space-2); text-align:center; }
+  .mc-qr { width:100%; max-width:240px; height:auto; background:#fff; border:1px solid var(--color-border); border-radius:var(--radius-md); }
+  .mc-section-title { margin:0 0 var(--space-4); font-size:var(--text-lg); }
+  .mc-amount { display:block; margin-top:var(--space-1); font-size:var(--text-3xl); font-weight:700; line-height:var(--leading-tight); letter-spacing:-.01em; } /* số tiền: không còn ô nền, chữ to hơn */
+  .mc-amount__text { background:linear-gradient(135deg, #FFFFFF 0%, #A8A8A8 100%); -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent; } /* nền đen: chữ gradient trắng-xám */
+  :root[data-theme="light"] .mc-amount__text { background-image:linear-gradient(135deg, #1A1A1A 0%, #8A8A8A 100%); } /* nền trắng: chữ gradient đen-xám */
+  .mc-amount-label { margin:0; color:var(--color-text-muted); font-size:var(--text-sm); }
+  .mc-preview { width:100%; min-height:220px; display:flex; align-items:center; justify-content:center; padding:var(--space-3); border:1px dashed var(--color-border); border-radius:var(--radius-md); background:var(--color-surface-alt); }
+  .mc-preview img { max-width:100%; max-height:320px; object-fit:contain; border-radius:var(--radius-sm); }
+  .mc-file-input { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .mc-upload-label { display:flex; align-items:center; gap:var(--space-4); width:100%; min-height:6rem; padding:var(--space-4); border:1px solid var(--color-border); border-radius:var(--radius-lg); background:var(--color-surface-alt); cursor:pointer; }
+  .mc-upload-label:hover { border-color:var(--color-border-hover); }
+  .mc-upload-plus { display:grid; place-items:center; flex:none; width:4.25rem; height:4.25rem; border-radius:50%; background:linear-gradient(145deg,#fff,#e5e5e5); color:#444; font-size:2rem; font-weight:300; }
+  .mc-upload-copy { display:grid; gap:2px; }
+  .mc-upload-copy strong { font-size:var(--text-base); }
+  .mc-upload-copy small { color:var(--color-text-muted); font-size:var(--text-xs); }
+  .mc-upload-name { margin:var(--space-2) 0 0; color:var(--color-text-muted); font-size:var(--text-xs); overflow-wrap:anywhere; }
+  .mc-item { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,200px); gap:var(--space-5); align-items:start; padding-top:var(--space-4); border-top:1px solid var(--color-border); }
+  .mc-item:first-of-type { border-top:0; padding-top:0; }
+  .mc-item__info > * { margin:0; }
+  .mc-item__info > * + * { margin-top:var(--space-2); }
+  .mc-item__thumb img { width:100%; height:auto; max-height:260px; object-fit:contain; border:1px solid var(--color-border); border-radius:var(--radius-md); background:var(--color-surface-alt); }
+  .mc-wait { display:flex; align-items:center; gap:var(--space-4); }
+  .mc-wait__icon { flex:none; display:grid; place-items:center; width:2.75rem; height:2.75rem; border-radius:50%; background:var(--tone-amber-bg); color:var(--tone-amber-fg); font-size:var(--text-lg); }
+  .mc-wait h2 { margin:0 0 var(--space-1); font-size:var(--text-lg); }
+  .mc-wait p { margin:0; color:var(--color-text-muted); font-size:var(--text-sm); }
+  @media (max-width:720px) { .mc-split,.mc-item { grid-template-columns:1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container stack">
+  {% include "includes/quay_lai_booking.html" with booking=booking %}{# nút quay lại Booking (Khách hàng) #}
+  <header>
+    <h1>Tải lên minh chứng thanh toán</h1>
+    <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>
+  </header>
+
+  {% if not khoan %}
+    {% include "includes/alert.html" with level="info" text="Booking này hiện chưa đến giai đoạn thanh toán." %}
+  {% else %}
+
+    {# ===== Ô thông tin chuyển khoản: trái = tài khoản NAG, phải = mã QR ===== #}
+    <section class="panel">
+      <h2 class="mc-section-title">{{ khoan.loai }}</h2>
+      <div class="mc-split">
+        <div class="mc-split__info">
+          <p class="mc-amount-label">SỐ TIỀN CẦN CHUYỂN</p><div class="mc-amount"><span class="mc-amount__text">{{ khoan.so_tien|vnd }} đ</span></div>
+          {% if khoan.han %}<p class="muted">Hạn thanh toán: {{ khoan.han|date:"d/m/Y H:i" }}</p>{% endif %}
+          <p>Ngân hàng: <strong>{{ nag.NganHang }}</strong></p>
+          <p>Số tài khoản: <strong>{{ nag.SoTaiKhoan }}</strong></p>
+          <p>Chủ tài khoản: <strong>{{ nag.ChuTaiKhoan }}</strong></p>
+        </div>
+        <div class="mc-split__side">
+          {% if nag.AnhMaQR %}
+            <img class="mc-qr" src="{{ nag.AnhMaQR.url }}" alt="Mã QR nhận tiền">
+            <span class="muted">Quét mã QR để chuyển khoản</span>
+          {% else %}
+            <span class="muted">Nhiếp ảnh gia chưa cung cấp mã QR.</span>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    {% if thanh_toan and thanh_toan.LyDoTuChoi %}
+      {% include "includes/alert.html" with level="warning" title="Nhiếp ảnh gia yêu cầu bổ sung minh chứng" text=thanh_toan.LyDoTuChoi %}
+    {% endif %}
+
+    {# ===== Ô tải minh chứng: chỉ hiện khi khách CHƯA gửi, hoặc NAG đã yêu cầu bổ sung ===== #}
+    {% if khong_gui_duoc %}
+      {% include "includes/alert.html" with level="warning" text=khong_gui_duoc %}
+    {% elif thanh_toan and minh_chungs and not thanh_toan.LyDoTuChoi %}
+      {# Đã gửi xong, đang chờ NAG: không hiện ô tải ảnh nữa #}
+      <section class="panel mc-wait">
+        <div class="mc-wait__icon">⏳</div>
+        <div>
+          <h2>Đã gửi minh chứng</h2>
+          <p>Đang chờ Nhiếp ảnh gia kiểm tra và xác nhận. Nếu minh chứng chưa hợp lệ, bạn sẽ nhận được yêu cầu bổ sung tại đây.</p>
+        </div>
+      </section>
+    {% else %}
+      <form method="post" enctype="multipart/form-data" class="panel" novalidate>
+        {% csrf_token %}
+        <div class="mc-split">
+          <div class="mc-split__info">
+            {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}
+            <div class="field{% if form.tep.errors %} has-error{% endif %}">
+              <label class="field__label" for="{{ form.tep.id_for_label }}">ẢNH MINH CHỨNG CHUYỂN KHOẢN</label>
+              <label class="mc-upload-label" for="{{ form.tep.id_for_label }}">
+                <span class="mc-upload-plus" aria-hidden="true">+</span>
+                <span class="mc-upload-copy">
+                  <strong>Tải ảnh lên</strong>
+                  <small>JPG, JPEG, PNG · tối đa 5 MB mỗi lần</small>
+                  <small class="mc-upload-name" id="mc-upload-name">Chưa có tệp nào được chọn</small>
+                </span>
+              </label>
+              {{ form.tep }}
+              {% for loi in form.tep.errors %}<p class="field__error">{{ loi }}</p>{% endfor %}
+              {% if form.tep.help_text %}<p class="field__hint">{{ form.tep.help_text }}</p>{% endif %}
+            </div>
+            <button class="btn btn--primary" type="submit">Gửi minh chứng</button>
+          </div>
+          <div class="mc-split__side">
+            <div class="mc-preview" id="mc-preview">
+              <span class="muted" id="mc-preview-empty">Ảnh bạn chọn sẽ hiển thị ở đây</span>
+            </div>
+          </div>
+        </div>
+      </form>
+    {% endif %}
+
+    {# ===== Minh chứng đã gửi: chữ bên trái, ảnh bên phải ===== #}
+    {% if minh_chungs %}
+      <section class="panel stack">
+        <h2>Minh chứng đã gửi</h2>
+        {% if thanh_toan %}<p>Trạng thái khoản thanh toán: {% status_badge thanh_toan.TrangThai %}</p>{% endif %}
+        {% for mc in minh_chungs %}
+          <div class="mc-item">
+            <div class="mc-item__info">
+              <p><strong>{{ mc.TenTep }}</strong> ({{ mc.DinhDangTep }})</p>
+              <p class="muted">Gửi lúc {{ mc.NgayTaiLen|date:"d/m/Y H:i" }}</p>
+              <p><a href="{% url 'xem_minh_chung' mc.pk %}" target="_blank" rel="noopener">Mở ảnh kích thước đầy đủ</a></p>
+            </div>
+            <a class="mc-item__thumb" href="{% url 'xem_minh_chung' mc.pk %}" target="_blank" rel="noopener">
+              <img src="{% url 'xem_minh_chung' mc.pk %}" alt="Minh chứng gửi lúc {{ mc.NgayTaiLen|date:'d/m/Y H:i' }}">
+            </a>
+          </div>
+        {% endfor %}
+      </section>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Hiện ảnh xem trước ngay khi khách chọn tệp (chưa cần gửi lên server)
+  (function () {
+    var input = document.getElementById('{{ form.tep.id_for_label }}');
+    var box = document.getElementById('mc-preview');
+    var nameBox = document.getElementById('mc-upload-name');
+    if (!input || !box) return;
+    var emptyHtml = box.innerHTML;
+    var url = null;
+
+    input.addEventListener('change', function () {
+      if (url) { URL.revokeObjectURL(url); url = null; }
+      var file = input.files && input.files[0];
+      if (nameBox) nameBox.textContent = file ? file.name : 'Chưa có tệp nào được chọn';
+      if (!file || !file.type.startsWith('image/')) { box.innerHTML = emptyHtml; return; }
+      url = URL.createObjectURL(file);
+      box.innerHTML = '';
+      var img = document.createElement('img');
+      img.src = url;
+      img.alt = 'Ảnh minh chứng đã chọn';
+      box.appendChild(img);
+    });
+  })();
+</script>
+{% endblock %}

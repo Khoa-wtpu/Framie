@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load ui static %}
+{% block title %}Xem ảnh sau hậu kỳ{% endblock %}
+{% block content %}
+<main class="container stack gallery-hau-ky">
+  <a class="muted" href="{% url 'chi_tiet_booking' ma_booking=booking.pk %}"><span aria-hidden="true">←</span> Quay lại Booking #{{ booking.pk }}</a>{# về trang chi tiết Booking (trang 1) #}
+  <header>
+    <h1>Xem ảnh sau hậu kỳ</h1>
+    <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>
+  </header>
+  {% if ly_do %}
+    {% include "includes/alert.html" with level="info" text=ly_do %}
+  {% else %}
+    <div class="gallery-hau-ky__grid" aria-label="Ảnh sau hậu kỳ">
+      {% for a in anhs %}
+        <figure class="gallery-hau-ky__the">{# E10: bọc ảnh + nút so sánh (hai nút không được lồng nhau) #}
+          <button class="gallery-hau-ky__item" type="button"
+                  data-xem-lon="{% url 'xem_anh' a.pk %}" data-ten="{{ a.TenAnh }}"
+                  aria-label="Xem ảnh {{ forloop.counter }}">
+            <img src="{% url 'xem_anh' a.pk %}?nho=1" alt="{{ a.TenAnh }}" loading="lazy">
+          </button>
+          {% if a.co_ban_truoc %}{# E10: chỉ ảnh có bản liền trước mới có nút; không có thì ẩn #}
+            <button class="btn btn--secondary btn--sm so-sanh-mo" type="button"
+                    data-so-sanh-truoc="{% url 'xem_anh_truoc' a.pk %}?vua=1"
+                    data-so-sanh-sau="{% url 'xem_anh' a.pk %}?vua=1"
+                    data-so-sanh-ten="{{ a.TenAnh }}">So sánh trước/sau</button>
+          {% endif %}
+        </figure>
+      {% empty %}
+        <p class="muted">Chưa có ảnh sau hậu kỳ để hiển thị.</p>
+      {% endfor %}
+    </div>
+    <section class="panel stack gallery-hau-ky__hanh-dong">{# 2 nút quyết định sau khi xem ảnh #}
+      <p>Xem kỹ ảnh rồi chọn: hài lòng thì xác nhận bàn giao, chưa hài lòng thì gửi yêu cầu chỉnh sửa{% if co_the_yeu_cau %} (còn {{ so_lan_con_lai }} lần){% endif %}.</p>
+      <div class="gallery-hau-ky__nut">
+        <a class="btn btn--primary" href="{% url 'xac_nhan_ban_giao' booking.pk %}">Xác nhận hoàn tất bàn giao</a>{# sang trang xác nhận bàn giao #}
+        {% if co_the_yeu_cau %}
+          <a class="btn btn--secondary" href="{% url 'yeu_cau_chinh_sua' booking.pk %}">Yêu cầu chỉnh sửa ảnh</a>{# sang trang gửi chi tiết yêu cầu chỉnh sửa #}
+        {% endif %}
+      </div>
+      {% if not co_the_yeu_cau %}<p class="muted">Bạn đã dùng hết số lần yêu cầu chỉnh sửa cho Booking này.</p>{% endif %}
+    </section>
+    {% if co_so_sanh %}{# E10: hộp so sánh trước/sau (dùng chung cho mọi ảnh, JS nạp ảnh khi bấm nút) #}
+    <dialog class="so-sanh" id="so-sanh-hop" aria-labelledby="so-sanh-tieu-de">
+      <button class="so-sanh__dong" type="button" aria-label="Đóng">×</button>
+      <h2 class="so-sanh__tieu-de" id="so-sanh-tieu-de">So sánh trước/sau</h2>
+      <p class="muted so-sanh__ten" id="so-sanh-ten"></p>
+      <div class="so-sanh__khung" id="so-sanh-khung">
+        <img class="so-sanh__anh so-sanh__anh--sau" alt="Ảnh sau (bản mới nhất)" draggable="false">
+        <img class="so-sanh__anh so-sanh__anh--truoc" alt="Ảnh trước (bản liền trước)" draggable="false">
+        <span class="so-sanh__nhan so-sanh__nhan--truoc" aria-hidden="true">Trước</span>
+        <span class="so-sanh__nhan so-sanh__nhan--sau" aria-hidden="true">Sau</span>
+        <span class="so-sanh__vach" aria-hidden="true"></span>
+        <span class="so-sanh__nut" aria-hidden="true"></span>
+        <input class="so-sanh__thanh" id="so-sanh-thanh" type="range" min="0" max="100" step="1" value="50"
+               aria-label="Kéo ngang để so sánh ảnh trước và ảnh sau">
+      </div>
+      <p class="so-sanh__loi" id="so-sanh-loi" role="alert" hidden>Không tải được ảnh để so sánh, vui lòng thử lại.</p>
+      <p class="muted so-sanh__goi-y">Kéo thanh ngang (hoặc bấm phím ← →) để so sánh. Bên trái là ảnh Trước, bên phải là ảnh Sau.</p>
+    </dialog>
+    {% endif %}
+  {% endif %}
+</main>
+{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'delivery/css/so_sanh_truoc_sau.css' %}">{# E10: CSS riêng của thanh kéo so sánh #}
+<link rel="stylesheet" href="{% static 'delivery/css/xem_anh_lightbox.css' %}">{# CSS cửa sổ phóng to ảnh dùng chung #}
+<link rel="stylesheet" href="{% static 'delivery/css/xem_anh_hau_ky.css' %}">{# CSS của trang xem ảnh sau hậu kỳ (trước đây viết trong thẻ style) #}
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'delivery/js/xem_anh_lightbox.js' %}" defer></script>{# JS cửa sổ phóng to ảnh dùng chung (bấm ảnh có data-xem-lon) #}
+<script src="{% static 'delivery/js/so_sanh_truoc_sau.js' %}" defer></script>{# E10: JS riêng của thanh kéo so sánh #}
+{% endblock %}

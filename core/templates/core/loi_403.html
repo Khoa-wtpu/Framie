@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Không có quyền truy cập{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'core/css/trang_tinh.css' %}">{% endblock %}
+{% block content %}
+<div class="container tt-hop">
+  <p class="muted tt-ma-loi">403</p>
+  <h1>Bạn không có quyền truy cập</h1>
+  <p class="muted">Tài khoản của bạn không được phép xem trang này. Nếu nghĩ đây là nhầm lẫn, hãy đăng nhập đúng tài khoản hoặc quay về trang chủ.</p>
+  <p class="tt-nut"><a class="btn btn--primary" href="{% url 'home' %}">Về trang chủ</a></p>
+</div>
+{% endblock %}

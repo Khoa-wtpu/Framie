@@ -1,0 +1,16 @@
+{% extends "base.html" %}{# trường hợp 16, 17: cuộc không tồn tại hoặc không phải của mình; cùng một trang để không lộ cuộc có tồn tại hay không #}
+{% load static %}
+{% block title %}Không tìm thấy cuộc trò chuyện{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'chat/css/chat.css' %}">{% endblock %}
+{% block content %}
+<div class="container chat-trang">
+  <section class="chat-cot chat-cot--giua chat-cot--don" aria-labelledby="chat-khong-thay">
+    <div class="chat__trong-lon chat__trong-lon--loi">
+      <span class="chat__icon-tron" aria-hidden="true"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.55L3.5 20.5l1.45-4.9A8.5 8.5 0 1 1 21 11.5z"/><path d="M9.8 9.2a2.2 2.2 0 1 1 3.6 1.7c-.9.6-1.4 1-1.4 2.1M12 16.2h.01"/></svg></span>
+      <h1 id="chat-khong-thay" class="chat__trong-lon-tieu-de">Không tìm thấy cuộc trò chuyện</h1>
+      <p class="chat__trong-lon-mo-ta">Cuộc trò chuyện này không tồn tại hoặc bạn không phải người tham gia.</p>
+      <div class="chat__trong-lon-nut"><a class="btn btn--primary" href="{% url 'inbox' %}">Quay lại danh sách</a></div>
+    </div>
+  </section>
+</div>
+{% endblock %}

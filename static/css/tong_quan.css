@@ -1,0 +1,35 @@
+/* static/css/tong_quan.css - B9: Trang tổng quan sau đăng nhập. Chỉ dùng token trong tokens.css. */
+.tq { padding-block: var(--space-6); } /* khung trang: chừa khoảng trống phía trên và dưới */
+.tq-dau { margin-bottom: var(--space-5); } /* phần lời chào: cách khối bên dưới một đoạn */
+.tq-dau h1 { margin-bottom: var(--space-1); } /* tiêu đề "Xin chào": sát câu mô tả bên dưới */
+.tq-dau p { margin: 0; } /* câu mô tả: bỏ khoảng cách mặc định */
+
+/* Hàng ô số liệu */
+.tq-so { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-4); margin-bottom: var(--space-5); } /* lưới tự chia cột, mỗi ô rộng tối thiểu 12rem; hẹp màn hình thì tự xuống dòng */
+.tq-so__o { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-5); background: var(--color-black); color: var(--color-white); border-radius: var(--radius-lg); } /* một ô: nền đen chữ trắng, xếp con số trên nhãn, bo góc lớn */
+.tq-so__gia-tri { font-size: var(--text-xl); font-weight: var(--fw-heading); line-height: 1.1; } /* con số: chữ to, đậm */
+.tq-so__nhan { font-size: var(--text-sm); opacity: .8; } /* nhãn dưới con số: chữ nhỏ, hơi mờ */
+.tq-so { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: var(--space-4); margin-bottom: var(--space-5); }
+.tq-so__o { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-5); background: var(--btn-primary-bg); color: var(--color-white); border-radius: var(--radius-lg); }
+.tq-so__gia-tri { font-size: var(--text-xl); font-weight: var(--fw-heading); line-height: 1.1; }
+.tq-so__nhan { font-size: var(--text-sm); opacity: .8; }
+
+/* Lưới các khối nội dung */
+.tq-luoi { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); align-items: start; } /* điện thoại: 1 cột; minmax(0, 1fr) để nội dung dài không làm tràn ngang; align start để khối không bị kéo cao bằng nhau */
+.tq-khoi { display: flex; flex-direction: column; gap: var(--space-3); } /* một khối: các phần bên trong xếp dọc, cách đều */
+.tq-khoi__dau { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); } /* đầu khối: tiêu đề bên trái, link/nhãn bên phải, canh giữa theo chiều dọc */
+.tq-khoi__dau h2 { margin: 0; font-size: var(--text-lg); } /* tiêu đề khối: bỏ khoảng cách mặc định, cỡ chữ lớn vừa */
+.tq-khoi p { margin: 0; } /* đoạn chữ trong khối: bỏ khoảng cách mặc định (khoảng cách do gap của khối lo) */
+.tq-xem-tat-ca { font-size: var(--text-sm); } /* link "Xem tất cả": chữ nhỏ */
+.tq-rong { color: var(--color-text-muted); } /* câu báo trống: màu chữ mờ */
+
+/* Danh sách dòng */
+.tq-ds { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; } /* danh sách: xếp dọc, bỏ chấm đầu dòng và lề mặc định */
+.tq-dong { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding-block: var(--space-3); border-top: 1px solid var(--color-border); } /* một dòng: chữ bên trái, nhãn/giờ bên phải, có đường kẻ phía trên */
+.tq-dong:first-child { border-top: 0; } /* dòng đầu tiên: không cần đường kẻ phía trên */
+.tq-dong__chinh { min-width: 0; } /* phần chữ bên trái: cho phép co lại để chữ dài không đẩy nhãn ra ngoài */
+.tq-dong__tieu-de { font-weight: var(--fw-heading); } /* dòng tiêu đề (tên gói / tiêu đề thông báo): chữ đậm */
+.tq-dong__phu { font-size: var(--text-sm); color: var(--color-text-muted); } /* dòng phụ (tên người, giờ chụp, nội dung): chữ nhỏ, mờ */
+.tq-dong__gio { flex: none; font-size: var(--text-xs); } /* giờ của thông báo: không bị co lại, chữ rất nhỏ */
+
+@media (min-width: 960px) { .tq-luoi { grid-template-columns: repeat(2, minmax(0, 1fr)); } } /* màn hình rộng từ 960px: chia lưới thành 2 cột bằng nhau */

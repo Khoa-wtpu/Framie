@@ -1,0 +1,75 @@
+{# UC4.7: danh sách Booking của Khách hàng / Nhiếp ảnh gia ("Booking của tôi"). Dùng bởi bookings/theo_doi.py (view _trang_danh_sach). #}
+{# GIAO DIỆN: cùng phong cách trang Duyệt hồ sơ và trang Tất cả Booking của Quản trị viên (tab → hàng kết quả → bảng bo góc → phân trang). #}
+{# CSS dùng chung: bookings/css/admin_booking_list.css (class bắt đầu bằng "abk"). Dữ liệu và tên biến KHÔNG đổi so với bản cũ. #}
+
+{% extends "base.html" %}{# dùng khung trang chung (đầu trang, menu, chân trang) #}
+{% load ui static %}{# ui: thẻ status_badge (nhãn trạng thái có màu thống nhất); static: gọi CSS/JS #}
+
+{% block title %}{{ tieu_de }}{% endblock %}{# chữ hiện trên tab trình duyệt #}
+
+{% block extra_head %}<link rel="stylesheet" href="{% static 'bookings/css/admin_booking_list.css' %}">{% endblock %}{# nạp CSS dùng chung cho các trang danh sách #}
+{% block extra_js %}<script src="{% static 'bookings/js/admin_booking_list.js' %}" defer></script>{% endblock %}{# JS: đổi ô chọn là tự tìm lại (select có thuộc tính data-tu-gui) #}
+
+{% block content %}{# nội dung chính #}
+<div class="container abk">{# khung giữa trang #}
+  <h1>{{ tieu_de }}</h1>{# tiêu đề: "Booking của tôi" #}
+
+  <nav class="abk__tabs" aria-label="Lọc theo nhóm trạng thái">{# hàng tab: Tất cả / Đang xử lý / Đã kết thúc, kèm số lượng #}
+    <a href="?tab={{ TAB_TAT_CA }}{% if trang_thai != 'tat_ca' %}&amp;trang_thai={{ trang_thai|urlencode }}{% endif %}"{% if tab == TAB_TAT_CA %} class="is-active" aria-current="page"{% endif %}>Tất cả ({{ so_tat_ca }})</a>{# link giữ nguyên ô lọc trạng thái đang chọn #}
+    <a href="?tab={{ TAB_DANG_XU_LY }}{% if trang_thai != 'tat_ca' %}&amp;trang_thai={{ trang_thai|urlencode }}{% endif %}"{% if tab == TAB_DANG_XU_LY %} class="is-active" aria-current="page"{% endif %}>Đang xử lý ({{ so_dang_xu_ly }})</a>
+    <a href="?tab={{ TAB_KET_THUC }}{% if trang_thai != 'tat_ca' %}&amp;trang_thai={{ trang_thai|urlencode }}{% endif %}"{% if tab == TAB_KET_THUC %} class="is-active" aria-current="page"{% endif %}>Đã kết thúc ({{ so_ket_thuc }})</a>
+  </nav>
+
+  <form class="abk__form" method="get">{# form lọc; method=get => điều kiện lọc hiện trên thanh địa chỉ, chuyển trang vẫn giữ #}
+    <input type="hidden" name="tab" value="{{ tab }}">{# giữ tab đang chọn khi đổi ô lọc #}
+    <div class="abk__ket-qua-dau">{# hàng kết quả: số lượng bên trái, ô lọc bên phải #}
+      <p class="abk__dem" role="status">{{ page_obj.paginator.count }} Booking</p>{# tổng số Booking khớp bộ lọc (tất cả các trang) #}
+      <label class="abk__sap-xep">{# nhãn + ô chọn trạng thái #}
+        <span>Trạng thái</span>{# chữ nhãn #}
+        <select name="trang_thai" class="input" data-tu-gui>{# chọn xong tự gửi form nhờ admin_booking_list.js #}
+          {% for gia_tri, nhan in lua_chon_trang_thai %}{# lặp qua "Tất cả" + 13 trạng thái #}
+            <option value="{{ gia_tri }}"{% if gia_tri == trang_thai %} selected{% endif %}>{{ nhan }}</option>{# đang lọc cái nào thì đánh dấu selected #}
+          {% endfor %}
+        </select>
+      </label>
+      <noscript><button class="btn btn--secondary btn--sm" type="submit">Áp dụng</button></noscript>{# trình duyệt tắt JavaScript thì có nút bấm thay thế #}
+    </div>
+  </form>
+
+  {% if page_obj.object_list %}{# trang hiện tại có ít nhất 1 Booking #}
+  <div class="abk__cuon">{# khung bảng: viền bo góc, cuộn ngang được khi màn hình hẹp #}
+    <table class="abk__bang-luot">{# bảng danh sách #}
+      <thead>
+        <tr>
+          <th scope="col">Mã</th>{# mã Booking #}
+          {% if not la_khach %}<th scope="col">Khách hàng</th>{% endif %}{# Khách không cần cột này (chính là mình) #}
+          {% if not la_nag %}<th scope="col">Nhiếp ảnh gia</th>{% endif %}{# Nhiếp ảnh gia không cần cột này #}
+          <th scope="col">Dịch vụ</th>{# gói (dòng chính) + loại hình (dòng phụ) #}
+          <th scope="col">Lịch chụp</th>{# ngày giờ (dòng chính) + địa điểm (dòng phụ) #}
+          <th scope="col">Trạng thái</th>{# nhãn trạng thái #}
+          <th scope="col"><span class="sr-only">Thao tác</span></th>{# cột nút; chữ chỉ dành cho trình đọc màn hình #}
+        </tr>
+      </thead>
+      <tbody>
+        {% for bk in page_obj %}{# mỗi vòng lặp = một Booking #}
+        <tr>
+          <th scope="row" class="abk__ma">#{{ bk.pk }}</th>{# mã Booking #}
+          {% if not la_khach %}<td>{{ bk.MaKhachHang.get_full_name|default:bk.MaKhachHang.username }}</td>{% endif %}{# tên Khách; thiếu họ tên thì lấy tên đăng nhập #}
+          {% if not la_nag %}<td>{{ bk.MaNhiepAnhGia.MaTaiKhoan.get_full_name|default:bk.MaNhiepAnhGia.MaTaiKhoan.username }}</td>{% endif %}{# tên Nhiếp ảnh gia #}
+          <td>{{ bk.MaGoi.TenGoi }}<span class="abk__phu">{{ bk.MaGoi.MaLoaiHinh.TenLoaiHinh }}</span></td>{# tên gói + loại hình (chữ nhỏ, mờ) #}
+          <td><span class="abk__gio">{{ bk.NgayGioChup|date:"d/m/Y H:i" }}</span><span class="abk__phu abk__cat" title="{{ bk.DiaDiem }}">{{ bk.DiaDiem }}</span></td>{# ngày giờ chụp + địa điểm (dài thì cắt "...") #}
+          <td>{% status_badge bk.TrangThai %}</td>{# nhãn trạng thái có màu thống nhất toàn hệ thống #}
+          <td><a class="btn btn--soft btn--sm" href="{% if la_quan_tri %}{% url 'admin_booking_detail' ma_booking=bk.pk %}{% else %}{% url 'chi_tiet_booking' ma_booking=bk.pk %}{% endif %}">Xem chi tiết</a></td>{# nút dẫn tới trang chi tiết #}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "includes/pagination.html" with page_obj=page_obj %}{# thanh chuyển trang (trước / sau / số trang) #}
+
+  {% else %}{# trang không có Booking nào #}
+  {# Ngoại lệ 1a: chưa có Booking nào -> "Chưa có Booking nào". Có Booking nhưng lọc ra rỗng -> báo theo bộ lọc. #}
+  <p class="abk__trong">{% if co_booking %}{{ TB_KHONG_KHOP_BO_LOC }}{% else %}{{ TB_CHUA_CO_BOOKING }}{% endif %}</p>{# khung nét đứt báo trống #}
+  {% endif %}
+</div>
+{% endblock %}

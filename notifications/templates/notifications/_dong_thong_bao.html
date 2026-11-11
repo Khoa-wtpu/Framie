@@ -1,0 +1,47 @@
+{# Một dòng thông báo trong danh sách SC9.1. Gọi: {% include "notifications/_dong_thong_bao.html" with tb=tb quay_lai=quay_lai %} #}
+{% load thong_bao_tags %}
+<li class="tb-dong{% if tb|chua_doc %} is-unread{% endif %}">
+ {# Chấm tròn: chỉ hiện khi Chưa đọc (đúng wireframe). aria-hidden vì trạng thái đã có trong sr-only bên dưới #}
+ <span class="tb-dong__cham" aria-hidden="true"></span>
+ <div class="tb-dong__noi-dung">
+   {# Liên kết kéo giãn phủ cả dòng (::after trong CSS): bấm vào đâu trên dòng cũng sang trang chi tiết #}
+   <a class="tb-dong__tieu-de" href="{% url 'chi_tiet_thong_bao' tb.MaThongBao %}">{{ tb.TieuDe }}{% if tb|chua_doc %}<span class="sr-only"> (chưa đọc)</span>{% endif %}</a>
+   <p class="tb-dong__tom-tat">{{ tb.NoiDung|truncatechars:120 }}</p>
+ </div>
+ <span class="tb-dong__gio">{{ tb.NgayTao|thoi_gian_ngan }}</span>
+
+ {# Nút ★: gửi POST đặt sao đối nghịch với trạng thái hiện tại. data-tb-form: thong_bao.js gửi ngầm, không tải lại trang #}
+ <form class="tb-dong__form" method="post" action="{% url 'doi_dau_sao' tb.MaThongBao %}" data-tb-form>
+   {% csrf_token %}
+   <input type="hidden" name="next" value="{{ quay_lai }}">
+   <input type="hidden" name="gia_tri" value="{% if tb|co_sao %}khong{% else %}co{% endif %}">
+   <button class="tb-sao{% if tb|co_sao %} is-on{% endif %}" type="submit" aria-label="{% if tb|co_sao %}Bỏ đánh dấu sao{% else %}Đánh dấu sao{% endif %}">{% if tb|co_sao %}★{% else %}☆{% endif %}</button>
+ </form>
+
+ {# Menu "…": data-dropdown (thong_bao.js tự lo mở/đóng menu trong vùng thông báo) #}
+ <div class="dropdown tb-dong__menu" data-dropdown>
+   <button class="icon-btn" type="button" data-dropdown-toggle aria-haspopup="true" aria-expanded="false" aria-label="Tùy chọn cho thông báo này"><svg class="tb-dots" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+   <div class="dropdown__menu" data-dropdown-menu hidden>
+     {# Mục 1: đổi đọc/chưa đọc theo trạng thái dòng (đúng wireframe: Đã đọc có "Đánh dấu chưa đọc", Chưa đọc có "Đánh dấu đã đọc") #}
+     <form method="post" action="{% url 'doi_trang_thai_doc' tb.MaThongBao %}" data-tb-form>
+       {% csrf_token %}
+       <input type="hidden" name="next" value="{{ quay_lai }}">
+       <input type="hidden" name="gia_tri" value="{% if tb|chua_doc %}da_doc{% else %}chua_doc{% endif %}">
+       <button class="dropdown__item tb-menu-btn" type="submit">{% if tb|chua_doc %}Đánh dấu đã đọc{% else %}Đánh dấu chưa đọc{% endif %}</button>
+     </form>
+     {# Mục 2: gắn hoặc bỏ sao #}
+     <form method="post" action="{% url 'doi_dau_sao' tb.MaThongBao %}" data-tb-form>
+       {% csrf_token %}
+       <input type="hidden" name="next" value="{{ quay_lai }}">
+       <input type="hidden" name="gia_tri" value="{% if tb|co_sao %}khong{% else %}co{% endif %}">
+       <button class="dropdown__item tb-menu-btn" type="submit">{% if tb|co_sao %}Bỏ đánh dấu sao{% else %}Đánh dấu sao{% endif %}</button>
+     </form>
+    {# Mục 3: xóa thông báo. data-tb-xoa: thong_bao.js hiện hộp xác nhận trước khi gửi #}
+    <form method="post" action="{% url 'xoa_thong_bao' tb.MaThongBao %}" data-tb-form data-tb-xoa>
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ quay_lai }}">
+      <button class="dropdown__item dropdown__item--danger tb-menu-btn" type="submit">Xóa thông báo</button>
+    </form>
+  </div>{# đóng .dropdown__menu #}
+</div>{# đóng .dropdown tb-dong__menu #}
+</li>

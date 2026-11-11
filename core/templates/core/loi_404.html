@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Không tìm thấy trang{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'core/css/trang_tinh.css' %}">{% endblock %}
+{% block content %}
+<div class="container tt-hop">
+  <p class="muted tt-ma-loi">404</p>
+  <h1>Không tìm thấy trang bạn cần</h1>
+  <p class="muted">Địa chỉ này không tồn tại, đã bị xóa hoặc bạn không được phép xem. Hãy kiểm tra lại đường dẫn hoặc quay về trang chủ.</p>
+  <p class="tt-nut"><a class="btn btn--primary" href="{% url 'home' %}">Về trang chủ</a></p>
+</div>
+{% endblock %}

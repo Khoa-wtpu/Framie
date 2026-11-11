@@ -1,0 +1,116 @@
+{% extends "base.html" %}{# K8 - UC2.1 + UC2.2: Tìm kiếm & lọc nhiếp ảnh gia (wireframe Module 2, SC2.1 và SC2.2). Không cần đăng nhập. #}
+{% load static ui tro_ly_tags %}
+{% block title %}Tìm kiếm Nhiếp ảnh gia{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'search/css/tim_kiem.css' %}">{% if user|hien_tro_ly %}<link rel="stylesheet" href="{% static 'search/css/tro_ly.css' %}">{% endif %}{% endblock %}
+{% block extra_js %}<script src="{% static 'search/js/tim_kiem.js' %}" defer></script>{% endblock %}
+{% block content %}
+<div class="container tim">
+  <header class="tim__dau">
+    <h1>Tìm kiếm Nhiếp ảnh gia</h1>
+    <p>Tìm theo từ khóa hoặc ID Nhiếp ảnh gia, sau đó dùng bộ lọc để thu hẹp kết quả.</p>
+  </header>
+
+  {% if user|hien_tro_ly %}{# E5: khối gợi ý Trợ lý, Khách chưa đăng nhập và Khách hàng thấy; Nhiếp ảnh gia, Quản trị viên không thấy (CSS ở search/css/tro_ly.css) #}
+  <section class="panel tro-ly__goc tro-ly-moi" aria-labelledby="tro-ly-moi-tieu-de">
+    <div>
+      <h2 id="tro-ly-moi-tieu-de" class="tro-ly-moi__tieu-de">Chưa biết chọn ai?</h2>
+      <p class="tro-ly-moi__mo-ta">Trả lời 5 câu hỏi ngắn, Trợ lý gợi ý nhiếp ảnh gia phù hợp kèm khung giờ trống.{% if not user.is_authenticated %} Bạn cần đăng nhập để dùng.{% endif %}</p>
+    </div>
+    <a class="btn btn--secondary" href="{% if user.is_authenticated %}{% url 'assistant' %}{% else %}{% url 'login' %}?next={% url 'assistant' %}{% endif %}">Trợ lý chọn Nhiếp ảnh gia</a>
+  </section>
+  {% endif %}
+
+  <form class="tim__form" id="form-tim-kiem" method="get" action="{% url 'search' %}" novalidate>
+    <div class="tim__tim-kiem">
+      {# Một ô duy nhất: [kính lúp | ô nhập | nút Bộ lọc | nút Tìm kiếm]. Nút Bộ lọc nằm BÊN TRONG ô, phía bên phải. #}
+      <div class="tim__pill">
+        <svg class="tim__bieu-tuong" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <label class="tim__o-tim">
+          <span class="tim__an">Từ khóa hoặc ID Nhiếp ảnh gia</span>
+          {{ form.q|add_class:"tim__input" }}
+        </label>
+        <button class="btn btn--secondary tim__nut-loc" id="nut-bo-loc" type="button" aria-expanded="false" aria-controls="bang-bo-loc">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+          <span class="tim__nhan">Bộ lọc</span>{% if so_bo_loc %}<span class="tim__so-loc">{{ so_bo_loc }}</span>{% endif %}
+        </button>
+        <button class="btn btn--primary tim__gui" type="submit">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <span class="tim__nhan">Tìm kiếm</span>
+        </button>
+      </div>
+
+      {# Bảng bộ lọc: JS thu gọn lại và mở bằng nút Bộ lọc; không có JS thì luôn hiện sẵn để vẫn dùng được. #}
+      <div class="tim__bang" id="bang-bo-loc" role="group" aria-label="Bộ lọc nhiếp ảnh gia"{% if loi %} data-mo="1"{% endif %}>
+        <fieldset class="tim__nhom">
+          <legend>Loại hình chụp</legend>
+          <div class="tim__chon">{% for c in form.loai_hinh %}<label class="tim__muc">{{ c.tag }}<span>{{ c.choice_label }}</span></label>{% endfor %}</div>
+        </fieldset>
+        <fieldset class="tim__nhom">
+          <legend>Phong cách</legend>
+          <div class="tim__chon">{% for c in form.phong_cach %}<label class="tim__muc">{{ c.tag }}<span>{{ c.choice_label }}</span></label>{% endfor %}</div>
+        </fieldset>
+        <fieldset class="tim__nhom">
+          <legend>Khu vực</legend>
+          <div class="tim__chon">{% for c in form.khu_vuc %}<label class="tim__muc">{{ c.tag }}<span>{{ c.choice_label }}</span></label>{% endfor %}</div>
+        </fieldset>
+        <fieldset class="tim__nhom">
+          <legend>Mức giá</legend>
+          <div class="tim__gia-khoang">
+            <label class="tim__an" for="{{ form.gia_tu.id_for_label }}">{{ form.gia_tu.label }}</label>{{ form.gia_tu|add_class:"input" }}
+            <span aria-hidden="true">–</span>
+            <label class="tim__an" for="{{ form.gia_den.id_for_label }}">{{ form.gia_den.label }}</label>{{ form.gia_den|add_class:"input" }}
+          </div>
+        </fieldset>
+        <div class="tim__nut">
+          <a class="btn btn--ghost" href="{% url 'search' %}{% if form.q.value %}?q={{ form.q.value|urlencode }}{% endif %}">Xóa bộ lọc</a>
+          <button class="btn btn--primary" type="submit">Áp dụng</button>
+        </div>
+      </div>
+    </div>
+
+    {% for e in loi %}{% include "includes/alert.html" with level="danger" text=e %}{% endfor %}
+
+    {% if not loi %}
+    <div class="tim__ket-qua-dau">
+      <p class="tim__dem" role="status">{% if tong %}{{ tong }} nhiếp ảnh gia{% endif %}</p>
+      <label class="tim__sap-xep">
+        <span>Sắp xếp</span>
+        <select name="sap_xep" class="input" data-tu-gui>
+          {% for khoa, nhan in cach_sap_xep %}<option value="{{ khoa }}"{% if khoa == sap_xep_chon %} selected{% endif %}>{{ nhan }}</option>{% endfor %}
+        </select>
+      </label>
+      <noscript><button class="btn btn--secondary btn--sm" type="submit">Sắp xếp</button></noscript>
+    </div>
+    {% endif %}
+  </form>
+
+  {% if not loi %}
+    {% if cac_the %}
+      <ul class="tim__luoi">
+        {% for the in cac_the %}
+        <li>
+          <article class="card tim__the{% if the.href %} card--link{% endif %}">
+            <div class="card__media">{% if the.anh %}<img src="{{ the.anh }}" alt="Ảnh đại diện của {{ the.ten }}" loading="lazy">{% endif %}{% if the.href %}<span class="tim__xem" aria-hidden="true">Xem hồ sơ →</span>{% endif %}</div>
+            <div class="card__body">
+              <h2 class="card__title">{% if the.href %}<a class="card__link" href="{{ the.href }}">{{ the.ten }}</a>{% else %}{{ the.ten }}{% endif %}</h2>
+              <p class="card__meta">ID: {{ the.ma }}</p>
+              {% if the.mo_ta %}<p class="card__text">{{ the.mo_ta }}</p>{% endif %}
+              <p class="tim__gia">{% if the.gia_tu %}Từ {{ the.gia_tu }}{% else %}Chưa có gói dịch vụ{% endif %}</p>
+              <p class="card__meta">{% if the.diem %}★ {{ the.diem }} ({{ the.so_danh_gia }} đánh giá){% else %}Chưa có đánh giá{% endif %}</p>
+            </div>
+          </article>
+        </li>
+        {% endfor %}
+      </ul>
+      {% include "includes/pagination.html" with page_obj=trang %}
+    {% else %}
+      <div class="tim__trong" role="status">
+        {% if so_bo_loc %}<p>Không có Nhiếp ảnh gia phù hợp với các tiêu chí đã chọn.</p>
+        {% elif co_tu_khoa %}<p>Không tìm thấy Nhiếp ảnh gia phù hợp với thông tin tìm kiếm.</p>
+        {% else %}<p>Hiện chưa có Nhiếp ảnh gia nào.</p>{% endif %}
+        {% if so_bo_loc or co_tu_khoa %}<a class="btn btn--secondary" href="{% url 'search' %}">Xóa tìm kiếm và bộ lọc</a>{% endif %}
+      </div>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

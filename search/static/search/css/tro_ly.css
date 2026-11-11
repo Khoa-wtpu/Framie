@@ -1,0 +1,167 @@
+/* search/static/search/css/tro_ly.css - E4/E5: giao diện Trợ lý chọn Nhiếp ảnh gia (v2) + khối "Chưa biết chọn ai?" ở trang Tìm kiếm.
+   Quy ước nhóm: KHÔNG gõ mã màu, chỉ dùng biến trong static/css/tokens.css. Nút, ô nhập, panel, alert dùng class có sẵn trong components.css.
+   Hai chế độ Đen/Trắng tự đổi vì --color-white là màu NỀN và --color-black là màu CHỮ (xem tokens.css). */
+
+/* ---------- khung 4 góc ngắm (dùng chung: khung form, ảnh thẻ, khối ở trang Tìm kiếm) ---------- */
+.tro-ly__goc { position: relative; --goc-mau: var(--color-text-muted); --goc-dai: 1.1rem; --goc-day: 1.5px; }   /* biến màu/độ dài/độ dày của góc */
+.tro-ly__goc::before { content: ""; position: absolute; inset: .875rem; z-index: 1; pointer-events: none;   /* lớp phủ lùi vào 14px, không chặn bấm chuột */
+  background:
+    linear-gradient(var(--goc-mau), var(--goc-mau)) top left / var(--goc-dai) var(--goc-day) no-repeat,   /* góc trên trái: nét ngang */
+    linear-gradient(var(--goc-mau), var(--goc-mau)) top left / var(--goc-day) var(--goc-dai) no-repeat,   /* góc trên trái: nét dọc */
+    linear-gradient(var(--goc-mau), var(--goc-mau)) top right / var(--goc-dai) var(--goc-day) no-repeat,   /* góc trên phải: nét ngang */
+    linear-gradient(var(--goc-mau), var(--goc-mau)) top right / var(--goc-day) var(--goc-dai) no-repeat,   /* góc trên phải: nét dọc */
+    linear-gradient(var(--goc-mau), var(--goc-mau)) bottom left / var(--goc-dai) var(--goc-day) no-repeat,   /* góc dưới trái: nét ngang */
+    linear-gradient(var(--goc-mau), var(--goc-mau)) bottom left / var(--goc-day) var(--goc-dai) no-repeat,   /* góc dưới trái: nét dọc */
+    linear-gradient(var(--goc-mau), var(--goc-mau)) bottom right / var(--goc-dai) var(--goc-day) no-repeat,   /* góc dưới phải: nét ngang */
+    linear-gradient(var(--goc-mau), var(--goc-mau)) bottom right / var(--goc-day) var(--goc-dai) no-repeat;   /* góc dưới phải: nét dọc */
+}
+
+/* ---------- bố cục chung ---------- */
+.tro-ly { padding-block: var(--space-5); }   /* khoảng cách trên/dưới của trang */
+.tro-ly__hep { max-width: 52rem; margin-inline: auto; }   /* form 5 bước: cột giữa hẹp */
+.tro-ly__nhan { margin: 0; font-size: var(--text-sm); font-weight: var(--fw-heading); text-transform: uppercase; letter-spacing: .12em; color: var(--color-text-muted); }   /* nhãn nhỏ in hoa (Câu x/5, Gợi ý, Bạn có thể thử...) */
+.tro-ly__phu { margin: 0; color: var(--color-text-muted); }   /* dòng phụ dưới tiêu đề */
+.tro-ly__vien { border-color: var(--color-border-hover); }   /* nút ghost có viền (nút phụ như Chưa rõ, bỏ qua / Sửa câu trả lời / chọn giờ) */
+.tro-ly__nut-phai { display: flex; flex-wrap: wrap; gap: var(--space-3); justify-content: flex-end; align-items: center; }   /* cụm nút bên phải */
+.tro-ly__so { font-size: var(--text-sm); letter-spacing: .08em; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }   /* số thứ tự 01, 02... */
+
+/* ---------- phần đầu: nhãn bước, thanh tiến độ, câu hỏi ---------- */
+.tro-ly__dau { margin-bottom: var(--space-5); }   /* khoảng cách dưới phần đầu */
+.tro-ly__hang { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-4); margin-bottom: var(--space-2); }   /* nhãn bước trái, nút thoát phải */
+.tro-ly__bo-qua { font-size: var(--text-sm); color: var(--color-text-muted); text-decoration: underline; white-space: nowrap; }   /* link "Bỏ qua Trợ lý" */
+.tro-ly__bo-qua:hover { color: var(--color-text); }   /* rê chuột: chữ rõ hơn */
+.tro-ly__tien-do { display: flex; gap: var(--space-2); margin-bottom: var(--space-6); }   /* thanh tiến độ: các đoạn xếp ngang */
+.tro-ly__doan { flex: 1; height: .25rem; border-radius: var(--radius-pill); background: var(--color-border-hover); transition: background .2s; }   /* đoạn chưa tới */
+.tro-ly__doan.is-xong { background: var(--color-black); }   /* đoạn đã tới: màu chữ (sáng ở chế độ Đen) */
+.tro-ly__hoi { margin-bottom: var(--space-2); font-size: clamp(var(--text-2xl), 5vw, var(--text-3xl)); text-wrap: balance; }   /* câu hỏi cỡ lớn (chữ gradient từ h1 chung) */
+
+/* ---------- khung câu trả lời ---------- */
+.tro-ly__khung { padding: var(--space-5) var(--space-5); margin-bottom: var(--space-5); border-radius: var(--radius-lg); }   /* khung chứa đáp án */
+.tro-ly__cau { border: 0; margin: 0; padding: 0; min-width: 0; }   /* bỏ viền mặc định của fieldset */
+.tro-ly__chon { display: grid; gap: var(--space-3); }   /* nhóm đáp án */
+.tro-ly__chon--luoi { grid-template-columns: repeat(3, 1fr); }   /* câu 1, 2: lưới 3 cột */
+.tro-ly__chon--danh_sach { grid-template-columns: 1fr; }   /* câu 3: danh sách dọc (template sinh class có gạch dưới: bo_cuc = danh_sach) */
+.tro-ly__chon--chip { display: flex; flex-wrap: wrap; }   /* câu 5: chip tự xuống dòng */
+
+/* ô đáp án: input ẩn, vẫn bấm và dùng bàn phím được */
+.tro-ly__muc { position: relative; display: grid; align-items: center; padding: var(--space-4); background: var(--surface-solid); border: 1px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer; transition: background .15s, border-color .15s, color .15s, transform .15s; }   /* ô đáp án mặc định */
+.tro-ly__muc input { position: absolute; opacity: 0; pointer-events: none; }   /* ẩn ô radio/checkbox gốc */
+.tro-ly__muc:hover { border-color: var(--color-border-hover); transform: translateY(-1px); }   /* rê chuột: nhích lên */
+.tro-ly__muc:has(input:checked) { background: var(--color-black); border-color: var(--color-black); color: var(--color-white); }   /* đã chọn: đảo màu (nền sáng, chữ tối ở chế độ Đen) */
+.tro-ly__muc:has(input:checked) .tro-ly__so { color: var(--color-white); }   /* số trong ô đã chọn cho rõ trên nền sáng */
+.tro-ly__muc:has(input:focus-visible) { outline: 2px solid var(--color-focus); outline-offset: 2px; }   /* thấy rõ khi dùng bàn phím */
+.tro-ly__muc:has(input:disabled) { opacity: .45; cursor: not-allowed; transform: none; }   /* chip bị khóa khi đã đủ số phong cách */
+.tro-ly__ten { font-weight: var(--fw-heading); }   /* tên đáp án */
+
+.tro-ly__chon--luoi .tro-ly__muc { grid-template-columns: 1fr auto; grid-template-areas: "so vong" "ten ten"; row-gap: var(--space-3); min-height: 6.5rem; }   /* ô lưới: số trên trái, vòng tròn trên phải, tên dưới */
+.tro-ly__chon--luoi .tro-ly__so { grid-area: so; }   /* đặt số vào vùng "so" */
+.tro-ly__chon--luoi .tro-ly__vong { grid-area: vong; }   /* đặt vòng vào vùng "vong" */
+.tro-ly__chon--luoi .tro-ly__ten { grid-area: ten; align-self: end; font-size: var(--text-lg); }   /* tên to hơn, nằm dưới */
+.tro-ly__chon--danh_sach .tro-ly__muc { grid-template-columns: 1fr auto; min-height: 4.25rem; }   /* ô danh sách: tên trái, vòng phải */
+.tro-ly__chon--danh_sach .tro-ly__ten { font-size: var(--text-lg); }   /* tên to hơn */
+.tro-ly__chon--chip .tro-ly__muc { display: inline-flex; gap: var(--space-2); padding: var(--space-3) var(--space-5); border-radius: var(--radius-pill); }   /* chip phong cách dạng viên thuốc */
+.tro-ly__chon--chip .tro-ly__muc:has(input:checked)::before { content: "\2713"; font-size: var(--text-sm); }   /* dấu ✓ khi chip được chọn */
+
+.tro-ly__vong { width: 1.25rem; height: 1.25rem; border: 2px solid var(--color-text-muted); border-radius: 50%; }   /* vòng tròn radio chưa chọn */
+.tro-ly__muc:has(input:checked) .tro-ly__vong { border-color: var(--color-white); background: radial-gradient(circle, var(--color-white) 0 40%, transparent 45%); }   /* đã chọn: vòng có chấm giữa */
+.tro-ly__dem { margin: var(--space-4) 0 0; font-size: var(--text-sm); color: var(--color-text-muted); }   /* dòng "Đã chọn 2/3 phong cách" */
+
+/* ---------- câu 4: ô ngày + 7 ngày chọn nhanh ---------- */
+.tro-ly__o-ngay { border-radius: var(--radius-pill); min-height: 3.5rem; font-size: var(--text-lg); font-weight: var(--fw-heading); padding-inline: var(--space-5); }   /* ô ngày dạng viên thuốc, chữ lớn */
+.tro-ly__ngay-nhanh { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--space-2); }   /* 7 nút ngày đều nhau */
+.tro-ly__ngay { display: grid; justify-items: center; gap: var(--space-1); padding: var(--space-3) 0; background: var(--surface-solid); color: var(--color-text); border: 1px solid var(--color-border); border-radius: var(--radius-md); font: inherit; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }   /* nút ngày: thứ ở trên, số ở dưới */
+.tro-ly__ngay span { font-size: var(--text-xs); letter-spacing: .08em; color: var(--color-text-muted); }   /* thứ T2, T3... */
+.tro-ly__ngay strong { font-size: var(--text-xl); line-height: 1.1; }   /* số ngày to */
+.tro-ly__ngay:hover { border-color: var(--color-border-hover); }   /* rê chuột */
+.tro-ly__ngay.is-chon { background: var(--color-black); border-color: var(--color-black); color: var(--color-white); }   /* ngày đang chọn: đảo màu */
+.tro-ly__ngay.is-chon span { color: var(--color-white); }   /* thứ trong ô đã chọn */
+
+/* ---------- lịch tự vẽ (thay lịch gốc của trình duyệt vì lịch gốc quá nhỏ và không chỉnh cỡ được) ---------- */
+.tro-ly__o-ngay { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); text-align: left; cursor: pointer; }   /* nút hiện ngày đã chọn, bấm để mở lịch (dùng chung kiểu .input) */
+.tro-ly__o-ngay--an { position: absolute; width: 1px; height: 1px; min-height: 0; padding: 0; border: 0; opacity: 0; pointer-events: none; }   /* ô ngày gốc: ẩn nhưng vẫn nằm trong form và vẫn gửi giá trị */
+.tro-ly__lich { margin-bottom: var(--space-4); padding: var(--space-4); background: var(--surface-solid); border: 1px solid var(--color-border); border-radius: var(--radius-md); }   /* bảng lịch mở ngay dưới ô ngày, đẩy hàng ngày nhanh xuống (không che nút) */
+.tro-ly__lich-dau { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }   /* hàng tên tháng + 2 nút chuyển tháng */
+.tro-ly__lich-thang { margin: 0; font-size: var(--text-lg); font-weight: var(--fw-heading); }   /* "Tháng 11 năm 2026" */
+.tro-ly__lich-chuyen { width: 2.5rem; height: 2.5rem; display: grid; place-items: center; background: transparent; color: var(--color-text); border: 1px solid var(--color-border); border-radius: 50%; font: inherit; font-size: var(--text-xl); line-height: 1; cursor: pointer; }   /* nút chuyển tháng tròn */
+.tro-ly__lich-chuyen:hover:not(:disabled) { border-color: var(--color-border-hover); background: var(--color-surface-alt); }   /* rê chuột */
+.tro-ly__lich-chuyen:disabled { opacity: .35; cursor: not-allowed; }   /* hết tháng được chọn thì khóa */
+.tro-ly__lich-luoi { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--space-1); }   /* 7 cột T2 đến CN */
+.tro-ly__lich-thu { padding-block: var(--space-1); text-align: center; font-size: var(--text-xs); letter-spacing: .08em; color: var(--color-text-muted); }   /* chữ T2, T3... */
+.tro-ly__lich-ngay { min-height: 2.75rem; background: transparent; color: inherit; border: 1px solid transparent; border-radius: var(--radius-sm); font: inherit; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }   /* một ô ngày (đủ to để bấm bằng ngón tay) */
+.tro-ly__lich-ngay:hover:not(:disabled) { background: var(--color-surface-alt); border-color: var(--color-border-hover); }   /* rê chuột */
+.tro-ly__lich-ngay.is-hom-nay { border-color: var(--color-text-muted); }   /* hôm nay có viền */
+.tro-ly__lich-ngay.is-chon { background: var(--color-black); border-color: var(--color-black); color: var(--color-white); font-weight: var(--fw-heading); }   /* ngày đang chọn: đảo màu như các ô khác */
+.tro-ly__lich-ngay:disabled { opacity: .3; cursor: not-allowed; }   /* ngày ngoài khoảng cho phép */
+
+/* ---------- hàng nút dưới khung ---------- */
+.tro-ly__hanh-dong { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); flex-wrap: wrap; }   /* Quay lại bên trái, nút chính bên phải */
+
+/* ---------- trang kết quả: phần đầu ---------- */
+.tro-ly__tieu-de { margin: var(--space-2) 0 var(--space-4); font-size: clamp(var(--text-2xl), 5vw, 3.25rem); line-height: 1.2; text-wrap: balance; max-width: 16ch; }   /* tiêu đề cỡ vừa, hai dòng sát nhau như mẫu (padding chống cắt dấu lấy từ h1 chung) */
+.tro-ly__thanh-tt { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: var(--space-4) var(--space-6); }   /* hàng chip tóm tắt (trái) + 2 nút (phải), cùng căn lên đầu để thẳng hàng với dòng chip đầu tiên */
+.tro-ly__tom-tat { display: flex; flex-wrap: wrap; gap: var(--space-2); }   /* các chip tóm tắt 5 đáp án */
+.tro-ly__tom-tat--giua { justify-content: center; margin-block: var(--space-4) var(--space-6); }   /* bản căn giữa cho màn hình rỗng */
+.tro-ly__tt { display: inline-flex; gap: var(--space-2); align-items: center; min-height: 2.5rem; padding: 0 var(--space-4); background: var(--color-gray-soft); border: 1px solid var(--color-border); border-radius: var(--radius-pill); font-size: var(--text-sm); white-space: nowrap; }   /* một chip tóm tắt: cao 2.5rem, bằng chiều cao nút bên phải */
+.tro-ly__thanh-tt .tro-ly__tom-tat { min-width: 0; }   /* chip tự xuống dòng bên trong cột trái */
+.tro-ly__thanh-tt .tro-ly__nut-phai { flex-wrap: nowrap; }   /* 2 nút luôn nằm cùng một hàng */
+.tro-ly__thanh-tt .btn { min-height: 2.5rem; white-space: nowrap; }   /* 2 nút cùng cao với chip, không bị rớt chữ */
+.tro-ly__tt span { color: var(--color-text-muted); }   /* nhãn (Loại hình, Khu vực...) nhạt */
+
+/* ---------- trang kết quả: thẻ Nhiếp ảnh gia ---------- */
+.tro-ly__ds { display: grid; gap: var(--space-5); margin-top: var(--space-5); }   /* danh sách thẻ xếp dọc */
+.tro-ly__the { display: grid; grid-template-columns: 21rem 1fr; padding: 0; overflow: hidden; }   /* thẻ ngang: ảnh trái, nội dung phải */
+.tro-ly__anh { min-height: 15rem; background: var(--gradient-white-gray); display: grid; place-items: center; overflow: hidden; }   /* khung ảnh; chưa có ảnh thì hiện nền xám */
+.tro-ly__anh img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }   /* ảnh phủ kín khung */
+.tro-ly__chu-cai { font-size: var(--text-display); font-weight: var(--fw-light); color: var(--color-text-muted); }   /* chữ cái đầu thay cho ảnh */
+.tro-ly__noi-dung { display: grid; gap: var(--space-3); padding: var(--space-5); align-content: start; }   /* nội dung thẻ */
+.tro-ly__ten-hang { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); }   /* tên trái, "Phù hợp x%" phải */
+.tro-ly__ten-nag { margin: 0; font-size: var(--text-xl); }   /* tên Nhiếp ảnh gia */
+.tro-ly__ten-nag a { text-decoration: none; }   /* bỏ gạch chân của link */
+.tro-ly__ten-nag a:hover { text-decoration: underline; }   /* rê chuột: gạch chân */
+.tro-ly__diem { margin: 0; padding: var(--space-1) var(--space-4); background: var(--color-black); color: var(--color-white); border-radius: var(--radius-pill); font-size: var(--text-xs); font-weight: var(--fw-heading); white-space: nowrap; }   /* nhãn "Phù hợp x%" */
+.tro-ly__thanh { appearance: none; -webkit-appearance: none; width: 100%; height: .25rem; border: 0; border-radius: var(--radius-pill); background: var(--color-border-hover); overflow: hidden; }   /* thanh phần trăm (progress) */
+.tro-ly__thanh::-webkit-progress-bar { background: var(--color-border-hover); }   /* nền thanh (Chrome, Safari) */
+.tro-ly__thanh::-webkit-progress-value { background: var(--color-black); border-radius: var(--radius-pill); }   /* phần đã đạt (Chrome, Safari) */
+.tro-ly__thanh::-moz-progress-bar { background: var(--color-black); border-radius: var(--radius-pill); }   /* phần đã đạt (Firefox) */
+.tro-ly__noi-dung .tro-ly__nhan { font-size: var(--text-xs); letter-spacing: .1em; }   /* nhãn "Bấm để chọn khung giờ" nhỏ như mẫu */
+.tro-ly__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: 0; color: var(--color-text-muted); }   /* dòng giá + đánh giá */
+.tro-ly__cham { width: .25rem; height: .25rem; border-radius: 50%; background: var(--color-text-muted); }   /* chấm ngăn cách giữa giá và đánh giá */
+.tro-ly__sao { color: var(--tone-amber-dot); }   /* ngôi sao vàng */
+.tro-ly__chip-ds, .tro-ly__gio-ds { display: flex; flex-wrap: wrap; gap: var(--space-2); }   /* danh sách chip lý do và khung giờ */
+.tro-ly__chip { padding: var(--space-1) var(--space-3); background: var(--color-gray-soft); border: 1px solid var(--color-border); border-radius: var(--radius-pill); font-size: var(--text-sm); }   /* chip lý do */
+.tro-ly__gio-ds form { margin: 0; }   /* form chọn giờ không thêm khoảng cách */
+.tro-ly__the-nut { margin-top: var(--space-1); }   /* nút Xem hồ sơ */
+
+/* ---------- màn hình rỗng ---------- */
+.tro-ly__trong { display: grid; justify-items: center; text-align: center; gap: var(--space-2); }   /* cả khối căn giữa */
+.tro-ly__bieu-tuong { color: var(--color-text-muted); margin-bottom: var(--space-4); }   /* hình ống ngắm */
+.tro-ly__trong .tro-ly__tieu-de { max-width: none; margin-block: var(--space-2); }   /* tiêu đề rỗng không bị giới hạn 16 ký tự */
+.tro-ly__thu { width: 100%; max-width: 52rem; padding: var(--space-5); text-align: left; }   /* khung "Bạn có thể thử" */
+.tro-ly__goi-y-ds { display: grid; gap: var(--space-3); margin-top: var(--space-4); }   /* các dòng gợi ý */
+.tro-ly__goi-y { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3) var(--space-4); background: var(--surface-solid); border: 1px solid var(--color-border); border-radius: var(--radius-md); }   /* một dòng gợi ý */
+.tro-ly__goi-y .tro-ly__so { min-width: 1.75rem; }   /* số 01, 02 cùng bề rộng nên chữ câu gợi ý luôn thẳng hàng */
+.tro-ly__goi-y .btn { min-width: 8.5rem; }   /* các nút Đổi... cùng bề rộng */
+.tro-ly__cau-goi-y { flex: 1; font-weight: var(--fw-heading); }   /* câu gợi ý chiếm phần giữa, nút nằm phải */
+.tro-ly__nut-giua { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-3); margin-top: var(--space-5); }   /* hai nút cuối trang */
+
+/* ---------- khối "Chưa biết chọn ai?" ở trang Tìm kiếm (chỉ thêm khối này, không đụng HTML còn lại) ---------- */
+.tro-ly-moi { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-5) var(--space-6); margin-bottom: var(--space-5); border-radius: var(--radius-lg); }   /* khối ngang: chữ trái, nút phải */
+.tro-ly-moi__tieu-de { margin: 0 0 var(--space-1); font-size: var(--text-xl); }   /* "Chưa biết chọn ai?" */
+.tro-ly-moi__mo-ta { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }   /* dòng mô tả */
+
+/* ---------- điện thoại ---------- */
+@media (max-width: 720px) {   /* màn hình hẹp */
+  .tro-ly__chon--luoi { grid-template-columns: repeat(2, 1fr); }   /* lưới còn 2 cột */
+  .tro-ly__the { grid-template-columns: 1fr; }   /* thẻ xếp dọc: ảnh trên, nội dung dưới */
+  .tro-ly__anh { min-height: 12rem; }   /* ảnh thấp hơn */
+  .tro-ly__ngay-nhanh { grid-template-columns: repeat(4, 1fr); }   /* 7 ngày xuống 2 hàng */
+  .tro-ly__khung { padding: var(--space-4); }   /* khung bớt đệm */
+  .tro-ly__thanh-tt { grid-template-columns: 1fr; }   /* điện thoại: chip một hàng, nút xuống dưới */
+  .tro-ly__thanh-tt .tro-ly__nut-phai { justify-content: flex-start; flex-wrap: wrap; }   /* nút căn trái, cho phép xuống dòng */
+  .tro-ly__tt { white-space: normal; }   /* chip dài được phép xuống dòng */
+  .tro-ly__goi-y { flex-wrap: wrap; }   /* nút gợi ý xuống dòng khi hẹp */
+}
+@media (prefers-reduced-motion: reduce) {   /* khách tắt hiệu ứng chuyển động */
+  .tro-ly__muc, .tro-ly__ngay, .tro-ly__doan { transition: none; }   /* tắt chuyển màu */
+  .tro-ly__muc:hover { transform: none; }   /* tắt nhích lên */
+}

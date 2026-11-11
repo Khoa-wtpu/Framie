@@ -36,7 +36,7 @@ class TrangThaiBooking:
     CHO_DAT_COC = 'Chờ đặt cọc'                   # đã chấp nhận, Khách có 1 ngày để đặt cọc 40%
     CHOT_BOOKING = 'Chốt Booking'                 # Nhiếp ảnh gia xác nhận đủ cọc, chờ buổi chụp
     DA_CHUP = 'Đã chụp'                           # buổi chụp xong (từ đây không hủy được nữa)
-    CHO_KH_CHON_ANH = 'Chờ Khách hàng lựa chọn ảnh'   # chỉ gói giới hạn số ảnh, hạn 2 ngày
+    CHO_KH_CHON_ANH = 'Chờ Khách hàng lựa chọn ảnh'   # chỉ gói giới hạn số ảnh, không giới hạn thời gian chọn
     CHO_HAU_KY = 'Chờ hậu kỳ'                     # chờ Nhiếp ảnh gia bắt đầu hậu kỳ
     DANG_HAU_KY = 'Đang hậu kỳ'                   # đang hậu kỳ, hạn 3 ngày
     CHO_KH_KIEM_TRA = 'Chờ Khách hàng kiểm tra'   # Khách xem ảnh đã hậu kỳ
@@ -70,9 +70,9 @@ class TrangThaiGiuCho:
 
 class TrangThaiThanhToan:
     # Trạng thái của MỘT khoản thanh toán (cọc 40% hoặc phần còn lại 60%).
-    CHO_XAC_NHAN_COC = 'Chờ xác nhận thanh toán cọc (40%)'  # Khách đã tải minh chứng cọc
+    CHO_XAC_NHAN_COC = 'Chờ xác nhận thanh toán cọc'  # Khách đã tải minh chứng cọc
     DA_DAT_COC = 'Đã đặt cọc'                               # Nhiếp ảnh gia xác nhận cọc
-    CHO_XAC_NHAN_60 = 'Chờ xác nhận thanh toán (60%)'        # khoản còn lại, chờ xác nhận
+    CHO_XAC_NHAN_60 = 'Chờ xác nhận thanh toán'        # khoản còn lại, chờ xác nhận
     QUA_HAN = 'Quá hạn thanh toán'                          # quá 2 ngày chưa trả 60%
     DA_THANH_TOAN = 'Đã thanh toán'                         # đã nhận đủ 60%
     CHOICES = _choices([CHO_XAC_NHAN_COC, DA_DAT_COC, CHO_XAC_NHAN_60,
@@ -176,3 +176,16 @@ class BenThucHien:
 
 # Bàn giao chỉ có một trạng thái nên không cần lớp.
 HOAN_TAT_BAN_GIAO = 'Hoàn tất bàn giao'
+
+class KetQuaDuyetHoSo:
+    DA_DUYET = TrangThaiHoSo.DA_DUYET            # 'Đã duyệt'
+    YEU_CAU_CHINH_SUA = 'Yêu cầu chỉnh sửa'
+    DA_TU_CHOI = TrangThaiHoSo.DA_TU_CHOI        # 'Đã từ chối'
+    CHOICES = _choices([DA_DUYET, YEU_CAU_CHINH_SUA, DA_TU_CHOI])
+
+class DinhDangTep:
+    # Định dạng tệp ảnh được phép (minh chứng thanh toán, ảnh bàn giao).
+    JPG = 'JPG'
+    PNG = 'PNG'
+    JPEG = 'JPEG'
+    CHOICES = _choices([JPG, PNG, JPEG])

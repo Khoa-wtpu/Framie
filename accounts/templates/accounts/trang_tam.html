@@ -1,0 +1,8 @@
+{% extends "base.html" %}{# dùng khung chung #}
+{% block title %}Trang tạm{% endblock %}{# chữ trên tab #}
+{% block content %}{# nội dung riêng #}
+<div class="container">{# khung nội dung #}
+  <h1>Đăng nhập thành công</h1>{# tiêu đề #}
+  <p>Vai trò hiện tại: <strong>{{ vai_tro|default:"Chưa được gán vai trò" }}</strong></p>{# hiện vai trò để test #}
+</div>
+{% endblock %}

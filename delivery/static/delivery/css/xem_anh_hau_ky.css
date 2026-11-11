@@ -1,0 +1,13 @@
+/* ===== Trang Khách hàng xem ảnh sau hậu kỳ (chuyển từ thẻ style trong xem_anh_hau_ky.html sang tệp riêng) ===== */
+/* Quy tắc giao diện cho: .gallery-hau-ky (khung trang: chừa khoảng trống phía trên và dưới) */
+.gallery-hau-ky { padding-block: var(--space-6); }
+/* Quy tắc giao diện cho: .gallery-hau-ky__grid (lưới ảnh: tự chia cột, mỗi ô rộng tối thiểu 220px) */
+.gallery-hau-ky__grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:var(--space-4); }
+/* Quy tắc giao diện cho: .gallery-hau-ky__item (nút bọc ảnh: viền bo tròn, con trỏ phóng to khi rê chuột) */
+.gallery-hau-ky__item { display:block; padding:0; overflow:hidden; border:1px solid var(--color-border); border-radius:var(--radius-lg); background:var(--surface-gradient); cursor:zoom-in; }
+/* Quy tắc giao diện cho: .gallery-hau-ky__item img (ảnh trong ô: khung 4/3, cắt vừa khung) */
+.gallery-hau-ky__item img { display:block; width:100%; aspect-ratio:4/3; object-fit:cover; transition:transform .2s; }
+/* Quy tắc giao diện cho: .gallery-hau-ky__item:hover img (rê chuột vào ảnh thì phóng nhẹ) */
+.gallery-hau-ky__item:hover img { transform:scale(1.035); }
+/* Quy tắc giao diện cho: .gallery-hau-ky__nut (hàng 2 nút hành động: xếp ngang, tự xuống dòng khi hẹp) */
+.gallery-hau-ky__nut { display:flex; flex-wrap:wrap; gap:var(--space-3); }

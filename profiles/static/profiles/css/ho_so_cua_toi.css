@@ -1,0 +1,37 @@
+/* profiles/static/profiles/css/ho_so_cua_toi.css - K3b: Hồ sơ của tôi (SC1.2), bố cục theo trang Portfolio công khai. Chỉ dùng token trong tokens.css. Tiền tố hsct__. */
+.hsct { padding-block: var(--space-6) var(--space-8); }
+.hsct__dau { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-2); }
+.hsct__tieu-de { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.hsct__tieu-de h1, .hsct__dau h1 { margin: 0; }
+.hsct__dau .btn--block { display: inline-flex; width: auto; }   /* nút nằm trên hàng tiêu đề, không kéo dài hết chiều ngang */
+.hsct__mo-ta { margin: 0 0 var(--space-2); color: var(--color-text-muted); }
+.hsct__ghi-chu { margin-bottom: var(--space-4); font-size: var(--text-sm); }
+.hsct__noi-dung { display: block; white-space: pre-line; }
+.hsct__gui-luc { display: block; margin-top: var(--space-1); color: var(--color-text-muted); }
+.hsct .alert { margin-bottom: var(--space-4); }
+
+/* ---- nhân vật ---- */
+.hsct__nhan-vat { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); padding: var(--space-6) 0; text-align: center; }
+.hsct__anh { display: grid; place-items: center; width: 9rem; height: 9rem; overflow: hidden; background: var(--gradient-white-gray); border: 1px solid var(--color-border); border-radius: var(--radius-pill); font-size: var(--text-3xl); font-weight: var(--fw-heading); }
+.hsct__anh img { width: 100%; height: 100%; object-fit: cover; }
+.hsct__ten { margin: 0 0 var(--space-1); font-size: clamp(var(--text-xl), 4vw, var(--text-3xl)); font-weight: var(--fw-heading); line-height: var(--leading-tight); }
+.hsct__ma { margin: 0 0 var(--space-2); font-size: var(--text-sm); letter-spacing: .04em; }
+.hsct__lien-he { margin: 0; color: var(--color-text-muted); overflow-wrap: anywhere; }
+
+/* ---- mỗi mục: tiêu đề viết hoa, căn giữa, gạch gradient dưới ---- */
+.hsct__muc { margin-top: var(--space-6); padding: var(--space-6) var(--space-5); background: var(--surface-gradient); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+.hsct__muc h2 { margin: 0 0 var(--space-6); text-align: center; text-transform: uppercase; letter-spacing: .18em; font-size: var(--text-xl); }
+.hsct__muc h2::after { content: ""; display: block; width: 3.5rem; height: 3px; margin: var(--space-3) auto 0; border-radius: var(--radius-pill); background: linear-gradient(90deg, var(--color-black), var(--color-text-muted)); }
+.hsct__gioi-thieu-muc, .hsct__thanh-toan { display: grid; gap: var(--space-7); align-items: start; }
+@media (min-width: 56rem) { .hsct__gioi-thieu-muc { grid-template-columns: minmax(0, 3fr) minmax(16rem, 2fr); } .hsct__thanh-toan { grid-template-columns: minmax(0, 3fr) minmax(12rem, 2fr); } }
+.hsct__van-ban { line-height: 1.8; overflow-wrap: anywhere; }
+.hsct__van-ban p:first-child { margin-top: 0; }
+.hsct__thong-so { display: grid; margin: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
+.hsct__dong { display: grid; gap: var(--space-1); padding: var(--space-4) var(--space-5); }
+.hsct__dong + .hsct__dong { border-top: 1px solid var(--color-border); }
+.hsct__dong dt { font-size: var(--text-xs); font-weight: var(--fw-heading); text-transform: uppercase; letter-spacing: .08em; color: var(--color-text-muted); }
+.hsct__dong dd { margin: 0; overflow-wrap: anywhere; }
+.hsct__qr { display: block; width: 100%; max-width: 12rem; justify-self: center; border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.hsct .is-disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
+.hsct__trong { padding: var(--space-7) var(--space-4); text-align: center; border: 1px dashed var(--color-border); border-radius: var(--radius-lg); background: var(--surface-gradient); }
+.hsct__trong p { margin: 0 0 var(--space-2); }

@@ -1,0 +1,377 @@
+/* static/css/admin.css - CSS riêng của khu Quản trị (B7). Chỉ dùng biến màu trong tokens.css, KHÔNG gõ mã màu. */
+.admin-content { /* vùng nội dung, rộng hết khung */
+  min-width: 0; /* tránh bảng/ nội dung rộng làm tràn trang */
+}
+.admin-content__head { /* đầu trang */
+  margin-bottom: var(--space-5); /* cách nội dung bên dưới */
+}
+.admin-content__title { /* tiêu đề trang */
+  margin: 0; /* bỏ khoảng mặc định */
+  font-size: var(--text-2xl); /* cỡ chữ tiêu đề */
+}
+.admin-stats { /* lưới thẻ số liệu */
+  display: grid; /* dùng lưới */
+  gap: var(--space-4); /* khoảng cách giữa các thẻ */
+  grid-template-columns: repeat(4, 1fr); /* 4 thẻ chia đều hết bề ngang, không còn dồn trái */
+  margin-bottom: var(--space-5); /* cách khối bên dưới */
+}
+@media (max-width: 900px) { /* màn hình vừa, 2 thẻ một hàng */
+  .admin-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 480px) { /* điện thoại, 1 thẻ một hàng */
+  .admin-stats {
+    grid-template-columns: 1fr;
+  }
+}
+.admin-stat { /* một thẻ số liệu (đã có class panel) */
+  display: flex; /* xếp dọc */
+  flex-direction: column; /* theo chiều dọc */
+  gap: var(--space-2); /* khoảng cách giữa các dòng */
+  align-items: flex-start; /* canh trái */
+}
+.admin-stat__label { /* tên số liệu */
+  margin: 0; /* bỏ khoảng mặc định */
+  min-height: calc(2 * var(--text-sm) * var(--leading)); /* chừa sẵn chỗ 2 dòng để nhãn dài không làm lệch số */
+  text-wrap: balance; /* chia đều chữ giữa các dòng, không để lẻ một chữ ở dòng dưới */
+  font-size: var(--text-sm); /* chữ nhỏ */
+  color: var(--color-text-muted); /* chữ phụ */
+}
+.admin-stat__row { /* hàng đáy thẻ: số + (nếu có) nút */
+  display: flex; /* xếp ngang */
+  align-items: flex-end; /* số và nút cùng chạm đáy */
+  justify-content: space-between; /* số bên trái, nút bên phải */
+  gap: var(--space-3); /* khoảng cách số và nút */
+  width: 100%; /* chiếm hết bề ngang thẻ */
+  margin-top: auto; /* đẩy cả hàng xuống sát đáy thẻ: 4 số luôn thẳng hàng dù nhãn 1 hay 2 dòng */
+}
+.admin-stat__value { /* con số lớn */
+  margin: 0; /* bỏ khoảng mặc định */
+  font-size: var(--text-3xl); /* chữ rất lớn */
+  font-weight: var(--fw-light); /* số nét nhẹ, cùng giọng với số lớn trong thẻ nhóm */
+  line-height: var(--leading-tight); /* dòng sát nhau */
+}
+.admin-section__title { /* tiêu đề khối */
+  font-size: var(--text-lg); /* cỡ chữ vừa */
+}
+.admin-section__head { /* hàng đầu khối: tiêu đề bên trái, tóm tắt bên phải */
+  display: flex; /* xếp ngang */
+  justify-content: space-between; /* đẩy hai đầu ra xa nhau */
+  align-items: baseline; /* hai chữ thẳng hàng chân chữ */
+  flex-wrap: wrap; /* màn hình hẹp thì tóm tắt xuống dòng */
+  gap: var(--space-2); /* khoảng cách khi xuống dòng */
+  margin-bottom: var(--space-4); /* cách thanh tỷ lệ bên dưới */
+}
+.admin-section__head .admin-section__title { /* tiêu đề trong hàng đầu */
+  margin: 0; /* bỏ khoảng dưới mặc định của h2 để hai chữ thẳng hàng */
+}
+.admin-caption { /* nhãn nhỏ viết hoa giãn chữ kiểu biên tập */
+  margin: 0; /* bỏ khoảng mặc định */
+  font-size: var(--text-xs); /* chữ nhỏ */
+  letter-spacing: .14em; /* giãn chữ */
+  text-transform: uppercase; /* viết hoa */
+  color: var(--color-text-muted); /* chữ phụ, độ tương phản đạt 4.5:1 trên nền trắng */
+}
+.tone-amber  { --nhom-mau: var(--tone-amber-dot); }  /* nhóm Chờ Nhiếp ảnh gia: màu vàng */
+.tone-violet { --nhom-mau: var(--tone-violet-dot); } /* nhóm Chờ Khách hàng: màu tím */
+.tone-blue   { --nhom-mau: var(--tone-blue-dot); }   /* nhóm Đang diễn ra: màu xanh dương */
+.tone-green  { --nhom-mau: var(--tone-green-dot); }  /* nhóm Hoàn tất: màu xanh lá */
+.tone-red    { --nhom-mau: var(--tone-red-dot); }    /* nhóm Không thành công: màu đỏ */
+.admin-ty-le { /* thanh tỷ lệ mỏng chạy ngang phía trên 5 thẻ */
+  display: flex; /* các đoạn nằm ngang */
+  gap: 3px; /* khe hở giữa các đoạn */
+  height: 4px; /* thanh mảnh */
+  margin-bottom: var(--space-5); /* cách 5 thẻ bên dưới */
+}
+.admin-ty-le__doan { /* một đoạn của thanh, ứng với một nhóm */
+  flex: 0 1 var(--ty-le); /* chiều dài theo phần trăm của nhóm (biến --ty-le đặt trong template) */
+  background: var(--nhom-mau, var(--tone-gray-dot)); /* màu theo nhóm */
+  border-radius: var(--radius-pill); /* hai đầu bo tròn */
+}
+.admin-nhom-luoi { /* lưới 5 thẻ nhóm */
+  display: grid; /* dùng lưới */
+  gap: var(--space-4); /* khoảng cách giữa các thẻ */
+  grid-template-columns: repeat(5, 1fr); /* 5 thẻ chia đều */
+}
+@media (max-width: 1000px) { /* màn hình vừa: 2 thẻ một hàng */
+  .admin-nhom-luoi {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 480px) { /* điện thoại: 1 thẻ một hàng */
+  .admin-nhom-luoi {
+    grid-template-columns: 1fr;
+  }
+}
+.admin-nhom { /* một thẻ nhóm (đã có class panel: nền trắng, viền xám, bo góc) */
+  display: flex; /* xếp dọc */
+  flex-direction: column; /* theo chiều dọc */
+  gap: var(--space-3); /* khoảng cách giữa các phần trong thẻ */
+  padding: var(--space-5) var(--space-4) var(--space-4); /* đệm trong, hơi hẹp hơn panel thường để đủ chỗ cho nhãn */
+  box-shadow: var(--shadow-card); /* bóng mảnh, lấy từ tokens.css */
+}
+.admin-nhom__ten { /* tên nhóm: chấm màu + chữ */
+  display: flex; /* chấm và chữ nằm ngang */
+  align-items: center; /* canh giữa theo chiều dọc */
+  gap: var(--space-2); /* khoảng cách chấm và chữ */
+  min-height: calc(2 * var(--text-xs) * var(--leading)); /* chừa sẵn 2 dòng để tên dài không làm lệch số lớn */
+  margin: 0; /* bỏ khoảng mặc định của h3 */
+  font-size: var(--text-xs); /* chữ nhỏ */
+  letter-spacing: .14em; /* giãn chữ */
+  text-transform: uppercase; /* viết hoa */
+}
+.admin-nhom__ten::before { /* chấm màu đầu tên nhóm (chỉ trang trí, tên nhóm đã có chữ) */
+  content: ""; /* phần tử rỗng */
+  flex: none; /* chấm không bị bóp méo */
+  width: .5625rem; /* rộng 9px */
+  height: .5625rem; /* cao 9px */
+  border-radius: 50%; /* hình tròn */
+  background: var(--nhom-mau, var(--tone-gray-dot)); /* màu theo nhóm */
+}
+.admin-nhom__so { /* số tổng của nhóm, rất lớn và mảnh */
+  margin: 0; /* bỏ khoảng mặc định */
+  font-size: var(--text-display); /* cỡ 64px */
+  font-weight: var(--fw-thin); /* nét rất mảnh */
+  line-height: 1; /* dòng sát để số gọn */
+  letter-spacing: -.04em; /* chữ số sát nhau hơn cho đẹp ở cỡ lớn */
+}
+.admin-nhom__ds { /* danh sách trạng thái trong nhóm */
+  margin: 0; /* bỏ khoảng mặc định của ul */
+  padding: 0; /* bỏ thụt lề mặc định */
+  list-style: none; /* bỏ chấm đầu dòng */
+}
+.admin-nhom__dong { /* một dòng trạng thái: tên .... số */
+  display: flex; /* xếp ngang */
+  align-items: baseline; /* tên, đường chấm, số thẳng hàng chân chữ */
+  gap: var(--space-2); /* khoảng cách giữa 3 phần */
+  padding: var(--space-1) 0; /* đệm trên dưới */
+  font-size: var(--text-sm); /* chữ nhỏ vừa */
+  color: var(--color-text-muted); /* tên trạng thái màu xám vừa */
+}
+.admin-nhom__dong.is-zero { /* trạng thái chưa có Booking nào */
+  opacity: .6; /* làm mờ vừa phải, vẫn đọc được */
+}
+.admin-nhom__cham { /* đường chấm nối tên với số */
+  flex: 1; /* chiếm hết chỗ trống giữa tên và số */
+  min-width: .625rem; /* tối thiểu 10px để tên dài vẫn còn đường chấm */
+  border-bottom: 1px dotted var(--color-border); /* đường chấm màu xám */
+  transform: translateY(-.1875rem); /* nâng lên ngang giữa chữ */
+}
+.admin-nhom__dong b { /* con số của trạng thái */
+  flex: none; /* số không bị ép nhỏ */
+  color: var(--color-text); /* số màu đen cho nổi hơn tên */
+  font-weight: var(--fw-heading); /* chữ đậm */
+}
+.admin-nhom__chan { /* chân thẻ: luôn dính đáy để 5 thẻ thẳng hàng */
+  display: flex; /* xếp dọc */
+  flex-direction: column; /* chữ phần trăm ở trên, thanh ở dưới */
+  gap: var(--space-2); /* khoảng cách chữ và thanh */
+  margin-top: auto; /* đẩy chân thẻ xuống sát đáy thẻ */
+  padding-top: var(--space-3); /* cách đường kẻ phía trên */
+  border-top: 1px solid var(--color-border); /* đường kẻ ngăn thân và chân thẻ */
+  font-size: var(--text-xs); /* chữ nhỏ */
+  color: var(--color-text-muted); /* chữ phụ */
+}
+.admin-nhom__chan b { /* con số phần trăm */
+  color: var(--color-text); /* màu đen */
+  font-size: var(--text-base); /* to hơn chữ "tổng Booking" */
+  font-weight: var(--fw-heading); /* chữ đậm */
+}
+.admin-nhom__nen { /* nền xám của thanh phần trăm */
+  height: 5px; /* thanh mảnh */
+  border-radius: var(--radius-pill); /* bo tròn */
+  background: var(--color-surface-alt); /* xám nhạt */
+}
+.admin-nhom__nen > i { /* phần đã đầy của thanh */
+  display: block; /* để có chiều cao và chiều rộng */
+  width: var(--ty-le); /* chiều dài theo phần trăm (biến --ty-le đặt trong template) */
+  height: 100%; /* cao đủ khung nền */
+  border-radius: var(--radius-pill); /* bo tròn */
+  background: var(--nhom-mau, var(--tone-gray-dot)); /* màu theo nhóm */
+}
+.admin-section__link { /* nút Xem tất cả Booking dưới lưới thẻ */
+  margin-top: var(--space-5); /* cách lưới thẻ bên trên */
+}
+/* ---- P7: trang Tài khoản và vai trò (chỉ dùng biến trong tokens.css) ---- */
+.admin-page:has(.tk-cuon) { /* chỉ khung của trang Tài khoản: chừa khoảng trống trên và dưới giống trang Duyệt hồ sơ (.duyet) */
+  padding-block: var(--space-6); /* 2rem trên và dưới */
+}
+.admin-content__head:has(.tk-tieu-de) { /* đầu trang Tài khoản: chừa khoảng thoáng giữa tiêu đề và hàng lọc như mockup */
+  margin-bottom: var(--space-6); /* 2rem */
+}
+.tk-tieu-de { /* tiêu đề hai dòng cỡ lớn; chữ gradient lấy từ h1 nên dòng dưới tự nhạt dần */
+  display: block; /* thành khối riêng để dòng chữ không chịu line-height 1.35 của h1 */
+  font-size: clamp(var(--text-3xl), 7vw, 4.5rem); /* to nhất 72px như mockup, màn hình nhỏ thì thu lại nhưng không dưới 44px */
+  line-height: 1.15; /* hai dòng sát nhau như mockup */
+  padding-block: .06em; /* chừa chỗ cho dấu tiếng Việt, không bị cắt (chữ gradient cắt theo khung) */
+  letter-spacing: -.04em; /* chữ sát nhau cho gọn ở cỡ lớn */
+}
+.tk-thanh { /* hàng lọc: ô tìm kiếm + hai nhóm nút lọc */
+  display: flex; /* xếp ngang */
+  flex-wrap: wrap; /* màn hình hẹp thì xuống hàng */
+  align-items: center; /* canh giữa theo chiều dọc */
+  gap: var(--space-3); /* khoảng cách giữa các khối */
+  margin-bottom: var(--space-5); /* cách bảng bên dưới */
+}
+.tk-tim { /* form chứa ô tìm kiếm */
+  flex: 1 1 20rem; /* chiếm hết chỗ trống; không đủ 20rem thì các nút lọc xuống hàng, không làm chữ gợi ý bị cắt */
+  margin: 0; /* bỏ khoảng mặc định của form */
+}
+.tk-tim .input { /* ô tìm kiếm */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu như các nút */
+  padding-inline: var(--space-5); /* chữ cách mép trái cho thoáng */
+}
+.tk-chips { /* một nhóm nút lọc */
+  display: flex; /* xếp ngang */
+  flex-wrap: wrap; /* hẹp thì xuống hàng */
+  gap: var(--space-2); /* khoảng cách giữa các nút */
+}
+.tk-chips--tt { /* nhóm trạng thái: có đường kẻ đứng ngăn với nhóm vai trò */
+  padding-left: var(--space-3); /* cách đường kẻ */
+  border-left: 1px solid var(--color-border); /* đường kẻ đứng */
+}
+.tk-chip { /* một nút lọc (là link GET, không phải nút gửi form) */
+  display: inline-flex; /* chữ canh giữa */
+  align-items: center; /* canh giữa theo chiều dọc */
+  min-height: 2.75rem; /* cao bằng ô tìm kiếm */
+  padding: var(--space-2) var(--space-4); /* đệm trong, gọn để 6 nút vẫn nằm cùng hàng với ô tìm kiếm */
+  border: 1px solid var(--color-border-hover); /* viền mảnh */
+  border-radius: var(--radius-pill); /* bo tròn hai đầu */
+  color: var(--color-text); /* chữ theo chế độ sáng/tối */
+  font-size: var(--text-sm); /* chữ nhỏ vừa */
+  font-weight: var(--fw-heading); /* chữ đậm */
+  text-decoration: none; /* bỏ gạch chân của link */
+  white-space: nowrap; /* chữ luôn một dòng */
+  transition: background .15s, color .15s, border-color .15s; /* đổi màu mượt khi rê chuột */
+}
+.tk-chip:hover { /* rê chuột vào */
+  background: var(--color-surface-alt); /* nền nhạt */
+}
+.tk-chip.is-active { /* nút lọc đang chọn: cùng kiểu với mục đang chọn ở menu trên cùng */
+  background: var(--btn-primary-bg); /* nền gradient đậm */
+  color: var(--color-white); /* chữ ngược màu nền */
+  border-color: transparent; /* bỏ viền */
+}
+.tk-cuon { /* khung bọc bảng: viền và bo góc giống .duyet__cuon của trang Duyệt hồ sơ */
+  overflow-x: auto; /* bảng rộng hơn khung thì cuộn ngang, không làm tràn trang */
+  border: 1px solid var(--color-border); /* viền mảnh */
+  border-radius: var(--radius-lg); /* bo góc lớn */
+}
+.admin-table { /* bảng dùng chung trong khu Quản trị */
+  width: 100%; /* rộng hết khung */
+  border-collapse: collapse; /* viền các ô liền nhau */
+  font-size: var(--text-sm); /* chữ nhỏ vừa cho bảng */
+}
+.admin-table th, .admin-table td { /* mọi ô */
+  padding: var(--space-3); /* đệm trong ô */
+  text-align: left; /* canh trái */
+  border-bottom: 1px solid var(--color-border); /* đường kẻ ngang giữa các dòng */
+  vertical-align: middle; /* canh giữa theo chiều dọc */
+}
+.admin-table th { /* ô tiêu đề */
+  color: var(--color-text-muted); /* chữ phụ */
+  font-weight: var(--fw-heading); /* chữ đậm */
+  background: var(--color-surface-alt); /* nền nhạt */
+}
+.admin-table__actions { /* ô chứa các nút thao tác */
+  white-space: nowrap; /* giữ các form trên một hàng */
+}
+.admin-inline-form { /* form nhỏ nằm trong ô thao tác */
+  display: inline-flex; /* ô chọn và nút nằm cạnh nhau */
+  gap: var(--space-2); /* khoảng cách ô chọn và nút */
+  margin-right: var(--space-3); /* cách form kế bên */
+  align-items: center; /* canh giữa theo chiều dọc */
+}
+.tk-bang { /* bảng riêng của trang Tài khoản */
+  min-width: 52rem; /* hẹp hơn thì khung bọc cuộn ngang, không bóp méo cột */
+}
+.tk-bang th, .tk-bang td { /* mọi ô: canh trái như mockup */
+  padding: var(--space-4) var(--space-5); /* đệm rộng cho thoáng */
+  text-align: left; /* canh trái */
+}
+.tk-bang th { /* ô tiêu đề: chữ nhỏ viết hoa như mockup, mỗi cột một nền gradient như trang Duyệt hồ sơ */
+  background: var(--gradient-white-gray); /* gradient trắng-xám (chế độ Đen: xám đậm dần) */
+  color: var(--color-text-muted); /* chữ phụ */
+  font-size: var(--text-xs); /* chữ nhỏ */
+  letter-spacing: .1em; /* giãn chữ */
+  text-transform: uppercase; /* viết hoa */
+  white-space: nowrap; /* tên cột luôn một dòng */
+}
+.tk-bang tbody tr:hover { /* rê chuột vào dòng */
+  background: var(--color-surface-alt); /* nền nhạt */
+}
+.tk-bang tbody tr:last-child td { /* dòng cuối */
+  border-bottom: 0; /* bỏ đường kẻ vì khung đã có viền */
+}
+.tk-nguoi { /* ô họ tên: ảnh tròn + chữ */
+  display: flex; /* xếp ngang */
+  align-items: center; /* canh giữa theo chiều dọc */
+  gap: var(--space-3); /* khoảng cách ảnh và chữ */
+  min-width: 0; /* cho phép chữ dài bị cắt thay vì làm tràn ô */
+}
+.tk-nguoi__av { /* ảnh đại diện tròn chứa chữ cái */
+  flex: none; /* không bị bóp méo */
+  display: grid; /* canh giữa chữ */
+  place-items: center; /* canh giữa hai chiều */
+  width: 2.75rem; /* rộng 44px */
+  height: 2.75rem; /* cao 44px */
+  border-radius: 50%; /* hình tròn */
+  background: var(--btn-primary-bg); /* gradient đậm, cùng kiểu nút chính */
+  color: var(--color-white); /* chữ ngược màu nền */
+  font-size: var(--text-xs); /* chữ nhỏ */
+  font-weight: var(--fw-heading); /* chữ đậm */
+}
+.tk-nguoi__chu { /* khối tên + email */
+  min-width: 0; /* cho phép email dài bị cắt */
+}
+.tk-nguoi__ten { /* họ tên */
+  display: block; /* chiếm một dòng */
+  font-weight: var(--fw-heading); /* chữ đậm */
+  line-height: var(--leading-tight); /* dòng sát để tên và email gần nhau */
+}
+.tk-nguoi__email { /* email dưới tên */
+  display: block; /* chiếm một dòng */
+  max-width: 18rem; /* email dài hơn thì cắt */
+  overflow: hidden; /* ẩn phần thừa */
+  text-overflow: ellipsis; /* hiện dấu ba chấm */
+  white-space: nowrap; /* không xuống dòng */
+  color: var(--color-text-muted); /* chữ phụ */
+  font-size: var(--text-xs); /* chữ nhỏ */
+}
+.tk-vai-tro { /* ô vai trò */
+  font-weight: var(--fw-heading); /* chữ đậm */
+  white-space: nowrap; /* luôn một dòng, không còn bị xuống dòng như "Nhiếp ảnh / gia" */
+}
+.tk-trang-thai { /* trạng thái dạng chấm màu + chữ (theo mockup) */
+  display: inline-flex; /* chấm và chữ nằm ngang */
+  align-items: center; /* canh giữa theo chiều dọc */
+  gap: var(--space-2); /* khoảng cách chấm và chữ */
+  font-weight: var(--fw-heading); /* chữ đậm */
+  white-space: nowrap; /* luôn một dòng */
+}
+.tk-trang-thai::before { /* chấm màu */
+  content: ""; /* phần tử rỗng */
+  width: .5rem; /* rộng 8px */
+  height: .5rem; /* cao 8px */
+  border-radius: 50%; /* hình tròn */
+  background: var(--tone-gray-dot); /* màu mặc định */
+}
+.tk-trang-thai--hoat-dong::before { /* đang hoạt động: chấm xanh lá, cùng màu tông với nhãn xanh lá của nhóm */
+  background: var(--tone-green-dot); /* xanh lá */
+}
+.tk-trang-thai--khoa::before { /* đã khóa: chấm đỏ */
+  background: var(--tone-red-dot); /* đỏ */
+}
+.tk-bang th:last-child, .tk-bang .admin-table__actions { /* cột nút */
+  text-align: center; /* canh giữa cột */
+}
+.tk-bang .admin-inline-form { /* form khóa/mở trong dòng */
+  margin-right: 0; /* sát mép phải ô */
+}
+.tk-nut { /* nút Khóa / Mở khóa */
+  min-width: 7.5rem; /* hai nút rộng bằng nhau để cột nút thẳng hàng (chỉ đặt độ rộng, kiểu nút vẫn lấy từ btn--*) */
+}
+.tk-trong { /* dòng báo không có tài khoản nào khớp bộ lọc */
+  color: var(--color-text-muted); /* chữ phụ */
+}

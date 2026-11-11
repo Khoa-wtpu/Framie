@@ -1,0 +1,102 @@
+/* profiles/static/profiles/css/duyet_ho_so.css - K7: Duyệt hồ sơ Nhiếp ảnh gia. Chỉ dùng token trong tokens.css. */
+.duyet { padding-block: var(--space-6); }
+.duyet__tabs { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-block: var(--space-4); border-bottom: 1px solid var(--color-border); }
+.duyet__tabs a { padding: var(--space-2) var(--space-4); text-decoration: none; color: var(--color-text-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.duyet__tabs a:hover { color: var(--color-black); }
+.duyet__tabs a.is-active { color: var(--color-black); border-bottom-color: var(--color-black); font-weight: var(--fw-heading); }
+
+/* ---- ô tìm kiếm dạng viên thuốc: [kính lúp | ô nhập | nút Bộ lọc | nút Tìm kiếm] ---- */
+.duyet__form { display: grid; gap: var(--space-4); margin-bottom: var(--space-6); }
+.duyet__tim-kiem { position: relative; }
+.duyet__pill { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4); background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-pill); box-shadow: var(--shadow-md); transition: border-color .2s, box-shadow .2s; }
+.duyet__pill:hover { border-color: var(--color-text-muted); }
+.duyet__pill:focus-within { border-color: var(--color-black); box-shadow: var(--shadow-md), 0 0 0 3px color-mix(in srgb, var(--color-black) 12%, transparent); }
+.duyet__bieu-tuong { flex: none; color: var(--color-text-muted); }
+.duyet__o-tim { flex: 1; min-width: 0; }
+.duyet__input { width: 100%; min-height: 2.75rem; padding: 0 var(--space-2); border: 0; background: transparent; color: var(--color-text); font: inherit; font-size: var(--text-base); outline: none; }
+.duyet__input::placeholder { color: var(--color-text-muted); }
+.duyet__nut-loc, .duyet__gui { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: 2.75rem; padding: 0 var(--space-4); border-radius: var(--radius-pill); font: inherit; font-weight: var(--fw-heading); cursor: pointer; transition: background .2s, color .2s, border-color .2s, transform .2s, box-shadow .2s; }
+.duyet__nut-loc { display: none; }   /* chỉ hiện khi có JS (xem .duyet--js); màu, viên thuốc, lóe sáng lấy từ .btn--secondary */
+.duyet--js .duyet__nut-loc { display: inline-flex; }
+.duyet__nut-loc[aria-expanded="true"] { background: var(--btn-primary-bg-hover); box-shadow: var(--shadow-md); }
+.duyet__so-loc { min-width: 1.4rem; height: 1.4rem; padding: 0 .35rem; display: inline-grid; place-items: center; border-radius: var(--radius-pill); background: var(--color-black); color: var(--color-white); font-size: var(--text-xs); }
+.duyet__nut-loc[aria-expanded="true"] .duyet__so-loc { background: var(--color-white); color: var(--color-black); }
+.duyet__nut-loc:focus-visible, .duyet__gui:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+
+/* ---- bảng bộ lọc: nổi bên dưới ô tìm kiếm ---- */
+.duyet__bang { display: grid; gap: var(--space-5); margin-top: var(--space-3); padding: var(--space-5); background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
+.duyet--js .duyet__bang { position: absolute; z-index: 20; top: 100%; left: 0; right: 0; box-shadow: 0 16px 40px color-mix(in srgb, var(--color-black) 16%, transparent); animation: duyet-mo .18s ease-out; }
+.duyet--js .duyet__bang[hidden] { display: none; }
+@keyframes duyet-mo { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+/* ---- nhóm lọc: bấm để chọn, chọn được nhiều ---- */
+.duyet__nhom { border: 0; padding: 0; margin: 0; min-width: 0; }
+.duyet__nhom legend { padding: 0; margin-bottom: var(--space-2); font-size: var(--text-sm); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--color-text-muted); }
+.duyet__vien-ds { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.duyet__vien { position: relative; display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-2) var(--space-4); background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-pill); font-size: var(--text-sm); cursor: pointer; transition: border-color .15s, background .15s, color .15s, transform .15s; }
+.duyet__vien input { position: absolute; opacity: 0; pointer-events: none; }
+.duyet__vien:hover { border-color: var(--color-black); transform: translateY(-1px); }
+.duyet__vien:has(input:checked) { background: linear-gradient(135deg, var(--color-black) 0%, var(--color-text-muted) 100%); border-color: var(--color-black); color: var(--color-white); }
+.duyet__vien:has(input:checked)::before { content: "\2713"; font-size: var(--text-xs); }
+.duyet__vien:has(input:focus-visible) { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.duyet__gia-khoang { display: flex; align-items: center; gap: var(--space-3); max-width: 28rem; }
+.duyet__ngay { display: flex; align-items: center; gap: var(--space-3); max-width: 28rem; }
+.duyet__nut { display: flex; justify-content: flex-end; gap: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
+
+/* ---- thanh kết quả ---- */
+.duyet__ket-qua-dau { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+.duyet__dem { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+.duyet__sap-xep { display: inline-flex; align-items: center; gap: var(--space-2); margin-left: auto; font-size: var(--text-sm); }
+.duyet__sap-xep .input { width: auto; min-height: 2.25rem; padding-block: var(--space-1); border-radius: var(--radius-pill); }
+
+
+@media (max-width: 40rem) {
+  .duyet__nhan { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }   /* màn nhỏ: chỉ còn biểu tượng để ô tìm kiếm vẫn nằm trên một hàng */
+  .duyet__nut-loc, .duyet__gui { padding: 0 var(--space-3); }
+  .duyet__bieu-tuong { display: none; }
+  .duyet__pill { padding-left: var(--space-3); }
+  .duyet__sap-xep { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .duyet--js .duyet__bang { animation: none; } }
+
+.duyet__cuon { overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+.duyet__bang-luot { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.duyet__bang-luot th, .duyet__bang-luot td { padding: var(--space-3) var(--space-4); text-align: center; vertical-align: middle; border-bottom: 1px solid var(--color-border); }
+.duyet__bang-luot thead th { background: var(--gradient-white-gray); font-weight: var(--fw-heading); white-space: nowrap; }
+.duyet__bang-luot tbody tr:last-child > * { border-bottom: 0; }
+.duyet__bang-luot tbody th { font-weight: var(--fw-heading); }
+.duyet__bang-luot tbody th.duyet__cot-nag { text-align: left; }   /* tên cột vẫn căn giữa, riêng nội dung cột Nhiếp ảnh gia căn lề trái */
+.duyet__trong { padding: var(--space-6); text-align: center; color: var(--color-text-muted); border: 1px dashed var(--color-border); border-radius: var(--radius-lg); }
+
+.duyet__dau { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-5); margin-block: var(--space-4) var(--space-5); }
+.duyet__dau h1 { margin: 0; }
+.duyet__dau p { margin: var(--space-1) 0 0; }
+.duyet__anh { width: 6rem; height: 6rem; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--gradient-white-gray); border: 1px solid var(--color-border); font-size: var(--text-xl); }
+.duyet__anh img { width: 100%; height: 100%; object-fit: cover; }
+
+.duyet__muc { margin-bottom: var(--space-5); }
+.duyet__muc h2 { margin-top: 0; font-size: var(--text-lg); }
+.duyet__muc h3 { font-size: var(--text-base); margin-bottom: var(--space-1); }
+.duyet__van-ban { white-space: pre-line; margin: 0 0 var(--space-3); }
+.duyet__ds { display: grid; grid-template-columns: max-content 1fr; gap: var(--space-2) var(--space-5); margin: 0; }
+.duyet__ds dt { color: var(--color-text-muted); }
+.duyet__ds dd { margin: 0; }
+.duyet__qr { display: block; margin-top: var(--space-4); max-width: 12rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.duyet__lich-su { list-style: none; margin: 0; padding: 0; }
+.duyet__lich-su li { padding-block: var(--space-3); border-bottom: 1px solid var(--color-border); }
+.duyet__lich-su li:last-child { border-bottom: 0; }
+.duyet__lich-su-dau { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); } /* Lần N | kết quả | thời điểm · người duyệt trên một hàng */
+.duyet__phan-hoi { margin: var(--space-2) 0 0; padding: var(--space-2) var(--space-3); border-left: 3px solid var(--color-border-hover); background: var(--color-surface-alt); border-radius: 0 var(--radius-md) var(--radius-md) 0; white-space: pre-line; } /* nội dung phản hồi: khối thụt vào, có vạch bên trái */
+
+.duyet__chon { border: 0; padding: 0; margin: 0; display: grid; gap: var(--space-2); }
+.duyet__chon legend { font-weight: var(--fw-heading); margin-bottom: var(--space-2); }
+.duyet__lua-chon { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; }
+.duyet__loi { margin: var(--space-2) 0 0; color: var(--danger-fg); font-size: var(--text-sm); }
+
+@media (max-width: 40rem) {
+  .duyet__ds { grid-template-columns: 1fr; gap: 0; }
+  .duyet__ds dd { margin-bottom: var(--space-3); }
+}
+
+.duyet__nhom:disabled { opacity: .55; } /* nhóm lọc không áp dụng ở tab hiện tại */
+.duyet__ghi-chu { margin: var(--space-2) 0 0; font-size: var(--text-xs); color: var(--color-text-muted); }

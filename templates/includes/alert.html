@@ -1,0 +1,9 @@
+{# {% include "includes/alert.html" with level="success" title="..." text="..." dismissible=True action_url="..." action_label="..." %}  level: success | danger | warning | info; action_url + action_label (tùy chọn): nút sang bước kế #}
+<div class="alert alert--{{ level|default:'info' }}" role="{% if level == 'danger' or level == 'warning' %}alert{% else %}status{% endif %}">
+  <div class="alert__body">
+    {% if title %}<strong class="alert__title">{{ title }}</strong>{% endif %}
+    <span class="alert__text">{{ text }}</span>
+  </div>
+  {% if action_url %}<a class="btn btn--secondary btn--sm" href="{{ action_url }}">{{ action_label }}</a>{% endif %}
+  {% if dismissible %}<button class="alert__close" type="button" data-dismiss aria-label="Đóng thông báo">×</button>{% endif %}
+</div>

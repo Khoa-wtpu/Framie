@@ -1,0 +1,73 @@
+{% load static thoi_tiet_tags %}{# E8: thẻ "Dự báo thời tiết buổi chụp", DÙNG CHUNG cho trang chi tiết của Khách hàng / Nhiếp ảnh gia. #}
+{# Dùng: {% include "bookings/includes/the_thoi_tiet.html" %}  (with gon=True: thẻ GỌN đặt cạnh tiêu đề trang, kèm {% include "bookings/includes/the_thoi_tiet_nhac.html" %} đặt dưới tiêu đề; with ngang=True: thẻ ngang)  - cần biến the_thoi_tiet (từ bookings/the_thoi_tiet.py: None thì không vẽ gì) và booking. #}
+{# CSS: bookings/css/the_thoi_tiet.css (class bắt đầu bằng "tt"). Biểu tượng: SVG nét mảnh, màu theo nhóm thời tiết (bộ lọc nhom_thoi_tiet). #}
+{% if the_thoi_tiet %}
+<link rel="stylesheet" href="{% static 'bookings/css/the_thoi_tiet.css' %}">{# nạp CSS riêng của thẻ; <link rel="stylesheet"> được phép nằm trong phần thân trang #}
+{% with du_bao=the_thoi_tiet.du_bao %}
+{% if du_bao %}{# E7 có dự báo #}
+{% with nhom=du_bao.mo_ta|nhom_thoi_tiet %}
+<section class="ct__the tt tt--{{ nhom }}{% if the_thoi_tiet.mua_cao %} tt--mua-cao{% endif %}{% if ngang %} tt--ngang{% endif %}{% if gon %} tt--gon{% endif %}" aria-label="Dự báo thời tiết buổi chụp">
+  <h2 class="ct__the-tieu-de">Dự báo thời tiết buổi chụp</h2>
+
+  <div class="tt__chinh">{# phần chính: biểu tượng + nhiệt độ lớn + mô tả #}
+    <svg class="tt__bieu-tuong" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      {% if nhom == 'nang' %}
+      <circle cx="12" cy="12" r="4.6"/><path d="M12 1.8v2.4M12 19.8v2.4M1.8 12h2.4M19.8 12h2.4M4.8 4.8l1.7 1.7M17.5 17.5l1.7 1.7M4.8 19.2l1.7-1.7M17.5 6.5l1.7-1.7"/>
+      {% elif nhom == 'it-may' %}
+      <defs><mask id="tt-che-nang" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24"><rect width="24" height="24" fill="white"/><path d="M19.4 20.6h-8.2a4.3 4.3 0 0 1-.8-8.5 6 6 0 0 1 11 1.4 3.6 3.6 0 0 1-2 7.1z" fill="black" stroke="black" stroke-width="2.6"/></mask></defs>{# mặt nạ chỉ để khoét phần mặt trời bị đám mây che (white/black ở đây là cú pháp mặt nạ SVG, không phải màu giao diện) #}
+      <g mask="url(#tt-che-nang)"><circle cx="8.2" cy="8.2" r="3.4"/><path d="M8.2 1.6v1.3M1.6 8.2h1.3M3.5 3.5l.9.9M12.9 3.5l-.9.9M3.5 12.9l.9-.9"/></g>
+      <path d="M19.4 20.6h-8.2a4.3 4.3 0 0 1-.8-8.5 6 6 0 0 1 11 1.4 3.6 3.6 0 0 1-2 7.1z"/>
+      {% elif nhom == 'mua' %}
+      <path d="M20 16.6A5 5 0 0 0 18 7h-1.3A8 8 0 1 0 4 15.3"/><path d="M8 13.5v6M12 15.5v6M16 13.5v6"/>
+      {% elif nhom == 'phun' %}
+      <path d="M20 16.6A5 5 0 0 0 18 7h-1.3A8 8 0 1 0 4 15.3"/><path d="M8 13.5v1.8M8 18v1.8M12 15.5v1.8M12 20v1.8M16 13.5v1.8M16 18v1.8"/>
+      {% elif nhom == 'dong' %}
+      <path d="M19 16.9A5 5 0 0 0 18 7h-1.3a8 8 0 1 0-11.6 9"/><path d="M13 11l-4 6h6l-4 6"/>
+      {% elif nhom == 'suong' %}
+      <path d="M18 12.2h-1.3a8 8 0 1 0-12.2 6.5"/><path d="M18 12.2a4 4 0 0 1 0 8h-1"/><path d="M3 20.4h6M3 23h12"/>
+      {% else %}{# 'may': nhiều mây và mọi mô tả lạ #}
+      <path d="M18 10h-1.3A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+      {% endif %}
+    </svg>
+    <div class="tt__so">
+      <p class="tt__nhiet">{{ du_bao.nhiet_do|floatformat:"-1" }}°C</p>
+      <p class="tt__mo-ta">{{ du_bao.mo_ta }}</p>
+    </div>
+  </div>
+
+  <div class="tt__mua">{# khả năng mưa: số + thanh tiến độ (dùng <progress> để không phải gõ style trong thẻ) #}
+    <div class="tt__mua-dong">
+      <span class="tt__mua-nhan">Khả năng mưa</span>
+      <span class="tt__muc">{% if the_thoi_tiet.mua_cao %}Cao{% elif du_bao.xac_suat_mua >= 30 %}Vừa{% else %}Thấp{% endif %}</span>
+      <strong class="tt__mua-so">{{ du_bao.xac_suat_mua }}%</strong>
+    </div>
+    <progress class="tt__thanh" max="100" value="{{ du_bao.xac_suat_mua }}" aria-label="Khả năng mưa">{{ du_bao.xac_suat_mua }}%</progress>
+    <p class="tt__ghi-chu">Mức cao nhất trong các giờ của buổi chụp.</p>
+  </div>
+
+  {% if the_thoi_tiet.mua_cao and not gon %}{# mưa cao: nhắc trao đổi đổi lịch + nút sang trò chuyện (dạng gọn thì phần này nằm ở the_thoi_tiet_nhac.html) #}
+  <div class="tt__nhac">
+    {% include "includes/alert.html" with level="warning" text=the_thoi_tiet.TB_NHAC_DOI_LICH %}
+    {% if the_thoi_tiet.url_chat %}
+    <form method="post" action="{{ the_thoi_tiet.url_chat }}">{% csrf_token %}<button class="btn btn--secondary" type="submit">Trao đổi qua trò chuyện</button></form>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <p class="tt__nguon">{% if booking.NgayGioChup %}Dự báo cho {{ booking.NgayGioChup|date:"H:i d/m" }}. {% endif %}Dữ liệu: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></p>{# Open-Meteo yêu cầu ghi nguồn khi dùng gói miễn phí #}
+</section>
+{% endwith %}
+{% else %}{# E7 trả rỗng: vẫn hiện thẻ để người dùng biết hệ thống có tính năng này #}
+<section class="ct__the tt tt--trong{% if ngang %} tt--ngang{% endif %}{% if gon %} tt--gon{% endif %}" aria-label="Dự báo thời tiết buổi chụp">
+  <h2 class="ct__the-tieu-de">Dự báo thời tiết buổi chụp</h2>
+  <div class="tt__chinh">
+    <svg class="tt__bieu-tuong" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 10h-1.3A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+    <div class="tt__so">
+      <p class="tt__mo-ta tt__mo-ta--lon">{{ the_thoi_tiet.TB_CHUA_CO_DU_BAO }}</p>
+      <p class="tt__ghi-chu">Chỉ có dự báo cho buổi chụp trong 16 ngày tới.</p>
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endwith %}
+{% endif %}

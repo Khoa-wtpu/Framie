@@ -1,0 +1,17 @@
+{% extends "base.html" %}{# K6 - UC1.4: trang xác nhận dự phòng (khi trình duyệt tắt JS); bình thường dùng popup ở danh sách #}
+{% load static %}
+{% block title %}{{ tieu_de }}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'profiles/css/goi_dich_vu.css' %}">{% endblock %}
+{% block content %}
+<div class="container gv gv--hep">
+  <div class="gv-popup__khung gv-popup__khung--trang">
+    <h1 class="gv-popup__tieu-de">{{ tieu_de }}</h1>
+    <p class="gv-popup__hoi">{{ cau_hoi }}</p>
+    <form method="post" class="gv-popup__nut">
+      {% csrf_token %}
+      <a class="btn btn--secondary" href="{% url 'service_packages' %}">Hủy</a>
+      <button class="btn btn--{{ kieu_nut }}" type="submit">{{ nut }}</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

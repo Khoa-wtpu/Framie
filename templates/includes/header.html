@@ -1,0 +1,84 @@
+{% load static %}<header class="site-header" data-role="{{ role|slugify }}">
+ <div class="container site-header__inner">
+   {% url 'admin_dashboard' as url_tong_quan %}{# trang Tổng quan của Quản trị viên #}
+   <a class="brand" href="{% if role|slugify == 'quan-tri-vien' and url_tong_quan %}{{ url_tong_quan }}{% else %}{{ urls.home }}{% endif %}" aria-label="{{ site_name }} – Trang chủ">
+     <img class="brand__logo brand__logo--nen-trang" src="{% static 'img/logo.png' %}" alt="{{ site_name }}">{# bản chữ đen: hiện ở chế độ Trắng #}
+     <img class="brand__logo brand__logo--nen-den" src="{% static 'img/logo-dark.png' %}" alt="" aria-hidden="true">{# bản chữ trắng: hiện ở chế độ Đen #}
+   </a>
+
+
+   <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" data-nav-toggle>
+     <span class="sr-only">Mở menu</span><span class="nav-toggle__bars" aria-hidden="true"></span>
+   </button>
+
+
+   <nav id="site-nav" class="site-nav" aria-label="Menu chính">
+     <ul class="site-nav__list">
+       {% for item in nav_items %}
+       <li><a class="site-nav__link{% if item.active %} is-active{% endif %}" href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>{{ item.label }}</a></li>
+       {% endfor %}
+     </ul>
+   </nav>
+
+
+   <div class="site-header__actions">
+     <button class="theme-toggle" type="button" role="switch" aria-checked="true" aria-label="Nền đen" title="Chuyển nền Trắng / Đen" data-theme-toggle>{# nút chuyển nền; theme.js cập nhật aria-checked và nhãn #}
+       <svg class="theme-toggle__icon theme-toggle__sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+       <svg class="theme-toggle__icon theme-toggle__moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+       <span class="theme-toggle__thumb" aria-hidden="true"></span>
+     </button>
+     {% if is_logged_in %}
+       {# P8: chuông + khung thả xuống. Không có JS hoặc chưa nối notifications.urls thì chuông vẫn là link tới trang danh sách. #}
+       {% url 'khung_thong_bao' as khung_thong_bao_url %}
+       <div class="dropdown tb-chuong" data-bell data-khung-url="{{ khung_thong_bao_url }}">
+         <a class="icon-btn" href="{{ urls.notifications }}" data-bell-toggle aria-haspopup="true" aria-expanded="false" aria-label="Thông báo{% if unread_count %} ({{ unread_count }} chưa đọc){% endif %}">
+           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+           {% if unread_count %}<span class="icon-btn__badge">{% if unread_count > 99 %}99+{% else %}{{ unread_count }}{% endif %}</span>{% endif %}
+         </a>
+         <div class="dropdown__menu tb-khung" data-bell-menu hidden></div>
+       </div>
+       <script src="{% static 'notifications/chuong.js' %}" defer></script>
+       <div class="dropdown" data-dropdown>
+         <button class="account-btn" type="button" aria-haspopup="true" aria-expanded="false" data-dropdown-toggle>
+           <span class="avatar" aria-hidden="true">{% if display_avatar_url %}<img src="{{ display_avatar_url }}" alt="">{% else %}{{ display_initial }}{% endif %}</span>{# NAG có AnhDaiDien thì hiện ảnh, không thì chữ cái đầu (display_avatar_url do core/context_processors.py cấp) #}
+           <span class="account-btn__text"><span class="account-btn__name">{{ display_name }}</span><span class="account-btn__role">{{ role }}</span></span>
+         </button>
+         <div class="dropdown__menu" data-dropdown-menu hidden>
+           {% for item in account_items %}<a class="dropdown__item" href="{{ item.url }}">{{ item.label }}</a>{% endfor %}
+           <a class="dropdown__item dropdown__item--danger" href="{{ urls.logout_confirm }}" data-logout-open>Đăng xuất</a>
+         </div>
+       </div>
+       {# Popup xác nhận đăng xuất: hiện ngay trên trang đang xem. Không có JS thì link "Đăng xuất" vẫn mở trang xác nhận cũ. #}
+       <dialog class="modal" data-logout-dialog aria-labelledby="logout-title">
+         <form class="modal__body" method="post" action="{{ urls.logout_confirm }}">
+           {% csrf_token %}
+           <h2 class="modal__title" id="logout-title">Đăng xuất</h2>
+           <p class="modal__text">Bạn có chắc muốn đăng xuất khỏi FRAMIE&nbsp;không?</p>
+           <div class="modal__actions">
+             <button class="btn btn--primary" type="button" data-logout-close>Hủy</button>
+             <button class="btn btn--ghost btn--logout" type="submit">Đăng xuất</button>
+           </div>
+         </form>
+       </dialog>
+       <script>
+       (function () {
+         var dlg = document.querySelector('[data-logout-dialog]');
+         if (!dlg || typeof dlg.showModal !== 'function') return;  // không hỗ trợ thì link vẫn sang trang xác nhận cũ
+         document.addEventListener('click', function (e) {
+           if (e.target.closest('[data-logout-open]')) {      // bấm "Đăng xuất" trong menu tài khoản
+             e.preventDefault();
+             document.querySelectorAll('[data-dropdown-menu]').forEach(function (m) { m.hidden = true; });
+             if (!dlg.open) dlg.showModal();
+           } else if (e.target.closest('[data-logout-close]') || e.target === dlg) {  // bấm Hủy hoặc bấm vùng mờ
+             dlg.close();
+           }
+         });
+       })();
+       </script>
+     {% else %}
+       <a class="btn btn--ghost btn--sm" href="{{ urls.login }}">Đăng nhập</a>
+       <a class="btn btn--primary btn--sm" href="{{ urls.register }}">Đăng ký</a>
+     {% endif %}
+   </div>
+ </div>
+</header>

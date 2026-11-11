@@ -1,0 +1,25 @@
+{% load static %}<footer class="site-footer">
+  <div class="container site-footer__grid">
+    <div>
+      <a class="brand" href="{{ urls.home }}"><img class="brand__logo brand__logo--nen-trang" src="{% static 'img/logo.png' %}" alt="{{ site_name }}"><img class="brand__logo brand__logo--nen-den" src="{% static 'img/logo-dark.png' %}" alt="" aria-hidden="true"></a>
+      <p class="site-footer__about">Từ tìm kiếm đến nhận ảnh, mọi trải nghiệm chụp ảnh trong một nền tảng.</p>
+    </div>
+    <div>
+      <h2 class="site-footer__title">Khám phá</h2>
+      <ul class="site-footer__list">
+        <li><a href="{{ urls.home }}">Trang chủ</a></li>
+        {% if can_search %}<li><a href="{{ urls.search }}">Tìm nhiếp ảnh gia</a></li>{% endif %}{# Nhiếp ảnh gia / Quản trị viên không tìm nhiếp ảnh gia để đặt lịch #}
+        <li><a href="{{ urls.about }}">Giới thiệu</a></li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="site-footer__title">Hỗ trợ</h2>
+      <ul class="site-footer__list">
+        <li><a href="{{ urls.about }}#cau-hoi-thuong-gap">Câu hỏi thường gặp</a></li>
+        <li><a href="{{ urls.about }}#dieu-khoan">Điều khoản sử dụng</a></li>
+        <li><a href="{{ urls.about }}#chinh-sach-bao-mat">Chính sách bảo mật</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container site-footer__bottom">© {% now "Y" %} {{ site_name }}. Bảo lưu mọi quyền.</div>
+</footer>

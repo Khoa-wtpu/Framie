@@ -1,0 +1,91 @@
+{% extends "base.html" %}{# kế thừa khung chung: header, menu, footer, hộp thông báo #}
+{% load static %}{# để dùng {% static %} #}
+{% block title %}Trao đổi với {{ doi_phuong.ten }}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'chat/css/chat.css' %}">{% endblock %}{# CSS riêng của chat, chỉ dùng biến trong tokens.css #}
+{% block content %}
+<div class="container chat-trang chat-trang--chi-tiet">{# dùng đúng .container chung nên thẳng hàng với các trang khác #}
+  <h1 class="sr-only">Trao đổi với {{ doi_phuong.ten }}</h1>{# tiêu đề trang cho trình đọc màn hình #}
+  <div class="chat-luoi chat-luoi--3-cot">{# 3 cột: danh sách, cuộc trò chuyện, thông tin đối phương #}
+
+    {% include "chat/_danh_sach_cuoc.html" with ma_dang_mo=cuoc.pk %}{# cột trái, đánh dấu cuộc đang mở #}
+
+    <section class="chat-cot chat-cot--giua chat" aria-label="Cuộc trò chuyện với {{ doi_phuong.ten }}"
+             data-chat data-url-moi="{% url 'tin_nhan_moi' cuoc.pk %}" data-url-tim="{% url 'tim_trong_cuoc' cuoc.pk %}" data-url-den="{% url 'tin_nhan_den_tin' cuoc.pk %}" data-url-dang-nhap="{{ url_dang_nhap }}" data-hom-nay="{% now 'Y-m-d' %}" data-doi-da-xem="{{ doi_da_xem }}" data-ten-doi="{{ doi_phuong.ten }}">{# cột giữa; chat.js đọc các địa chỉ từ data- #}
+      <header class="chat__dau">{# đầu cuộc trò chuyện: ảnh, tên, vai trò #}
+        <a class="btn btn--ghost btn--sm chat__quay-lai" href="{% url 'inbox' %}" aria-label="Quay lại danh sách tin nhắn">‹ Tin nhắn</a>{# chỉ hiện trên điện thoại, nơi cột danh sách bị ẩn #}
+        <span class="avatar chat__avatar" aria-hidden="true">{% if doi_phuong.anh %}<img src="{{ doi_phuong.anh }}" alt="">{% else %}{{ doi_phuong.chu_cai }}{% endif %}</span>{# ảnh đối phương #}
+        <div class="chat__nguoi">{# tên và vai trò xếp dọc #}
+          <p class="chat__ten">{% if doi_phuong.ho_so %}<a href="{{ doi_phuong.ho_so }}">{{ doi_phuong.ten }}</a>{% else %}{{ doi_phuong.ten }}{% endif %}</p>{# Khách hàng bấm tên Nhiếp ảnh gia để xem hồ sơ #}
+          <p class="chat__vai-tro">{{ doi_phuong.vai_tro }}</p>{# nhãn theo vai trò đối phương, lấy từ services #}
+        </div>
+        <div class="chat__dau-nut">{# hai nút tròn ở mép phải đầu cuộc trò chuyện: tìm kiếm và thông tin #}
+          <button class="chat__nut-tron" type="button" data-chat-nut-tim aria-expanded="false" aria-controls="chat-tim-cuoc" aria-label="Tìm trong cuộc trò chuyện" title="Tìm trong cuộc trò chuyện"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>{# kính lúp: mở thanh tìm #}
+          <button class="chat__nut-tron chat__nut-thong-tin" type="button" data-chat-nut-thong-tin aria-pressed="true" aria-controls="chat-cot-phai" aria-label="Thông tin về cuộc trò chuyện" title="Thông tin về cuộc trò chuyện"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg></button>{# chữ i giống Messenger: mở / đóng cột thông tin bên phải #}
+        </div>
+      </header>
+
+      <div class="chat__tim" id="chat-tim-cuoc" data-chat-tim-cuoc hidden>{# thanh tìm trong cuộc trò chuyện (bước 7), ẩn cho tới khi bấm kính lúp #}
+        <div class="chat__tim-hang">
+          <label class="sr-only" for="chat-tim-trong">Tìm trong cuộc trò chuyện</label>
+          <input id="chat-tim-trong" class="input chat__tim-o" type="search" maxlength="100" placeholder="Tìm trong cuộc trò chuyện" autocomplete="off" data-chat-tim-o>{# gõ là tự tìm sau 0,3 giây; Enter: kết quả cũ hơn, Shift+Enter: mới hơn, Esc: đóng #}
+          <span class="chat__tim-dem" role="status" aria-live="polite" data-chat-tim-dem></span>{# 1/12 hoặc "Không có kết quả" #}
+          <button class="chat__nut-tron chat__nut-tron--nho" type="button" data-chat-tim-cu aria-label="Kết quả cũ hơn" title="Cũ hơn (Enter)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button>
+          <button class="chat__nut-tron chat__nut-tron--nho" type="button" data-chat-tim-moi aria-label="Kết quả mới hơn" title="Mới hơn (Shift+Enter)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          <button class="chat__nut-tron chat__nut-tron--nho" type="button" data-chat-tim-dong aria-label="Đóng tìm kiếm" title="Đóng (Esc)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        </div>
+        <ul class="chat__tim-ds" data-chat-tim-ds hidden aria-label="Kết quả tìm kiếm"></ul>{# danh sách đoạn trích, chat.js vẽ #}
+      </div>
+
+      <div class="chat__trang-thai" role="status" data-chat-trang-thai hidden></div>{# "Mất kết nối...", "Đã tạm dừng..." do chat.js ghi vào #}
+      <div class="alert alert--danger chat__loi" role="alert" data-chat-loi hidden></div>{# lỗi gửi tin (luồng 5a) hoặc tải tin cũ (luồng 2a); chat.js ghi chữ vào #}
+
+      <div class="chat__khung">{# khung chứa danh sách cuộn và nút "Có tin mới" #}
+        <div class="chat__danh-sach" role="log" aria-live="polite" aria-label="Nội dung trao đổi" tabindex="0"
+             data-chat-list data-id-dau="{{ id_dau }}" data-id-cuoi="{{ id_cuoi }}" data-con-cu="{% if con_cu %}1{% else %}0{% endif %}">{# mốc id để tải tin cũ và polling tin mới #}
+          {% if con_cu %}<button class="btn btn--soft btn--sm chat__tai-cu" type="button" data-chat-tai-cu>Xem tin cũ hơn</button>{% endif %}{# dự phòng cho trường hợp không kéo lên được #}
+          <div class="chat__tin" data-chat-tin data-chat-nhom-anh>{# nơi chứa các bong bóng; data-chat-nhom-anh: các ảnh trong này tạo thành một bộ khi mở trang xem ảnh #}
+            {% for tin in tin_nhan %}{% include "chat/_tin_nhan.html" %}{% empty %}
+              {% if loi_tai %}
+              <div class="chat__trong-lon chat__trong-lon--loi" data-chat-trong>{# UC8.3 luồng 2a: không tải được lịch sử #}
+                <span class="chat__icon-tron" aria-hidden="true"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>{# biểu tượng cảnh báo #}
+                <h2 class="chat__trong-lon-tieu-de">Không thể tải lịch sử trao đổi</h2>
+                <p class="chat__trong-lon-mo-ta">Đã xảy ra lỗi khi truy xuất nội dung trao đổi với {{ doi_phuong.ten }}. Vui lòng thực hiện lại.</p>
+                <div class="chat__trong-lon-nut">{# hai nút theo wireframe #}
+                  <a class="btn btn--soft" href="{% url 'chi_tiet_cuoc_tro_chuyen' cuoc.pk %}">Thử lại</a>{# tải lại đúng trang này #}
+                  <a class="btn btn--secondary" href="{% url 'inbox' %}">Quay lại danh sách</a>
+                </div>
+              </div>
+              {% else %}
+              <div class="chat__trong-lon" data-chat-trong>{# cuộc trò chuyện mới khởi tạo, chưa có tin #}
+                <span class="chat__icon-tron" aria-hidden="true"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.7A8 8 0 1 1 21 12z"/></svg></span>{# biểu tượng khung chat #}
+                <h2 class="chat__trong-lon-tieu-de">Cuộc trò chuyện đã được khởi tạo</h2>
+                <p class="chat__trong-lon-mo-ta">{% if la_khach %}Hãy gửi lời chào đến nhiếp ảnh gia.{% else %}Hãy gửi lời chào đến khách hàng.{% endif %}</p>{# câu chữ theo vai trò #}
+              </div>
+              {% endif %}
+            {% endfor %}{# UC8.3: lịch sử, cũ trước mới sau #}
+          </div>
+        </div>
+        <button class="btn btn--soft btn--sm chat__tin-moi" type="button" data-chat-tin-moi hidden>Có tin mới ↓</button>{# hiện khi có tin mới mà người dùng đang đọc phía trên #}
+      </div>
+
+
+      <form class="chat__soan{% if loi_tai %} chat__soan--khoa{% endif %}" method="post" enctype="multipart/form-data" action="{% url 'gui_tin_nhan' cuoc.pk %}" data-chat-form data-toi-da-anh="{{ so_anh_toi_da }}">{# enctype multipart để gửi được ảnh; không có JavaScript thì form vẫn gửi được bằng POST thường #}
+        {% csrf_token %}
+        <div class="chat__tra-loi" data-chat-tra-loi-bar hidden>{# thanh "Đang trả lời ..." hiện khi bấm Trả lời ở một tin; chat.js ghi chữ vào #}
+          <span class="chat__tra-loi-chu"><strong>Đang trả lời <span data-chat-tl-ten></span></strong><span class="chat__tra-loi-nd" data-chat-tl-nd></span></span>
+          <button class="chat__tra-loi-huy" type="button" data-chat-huy-tra-loi aria-label="Hủy trả lời">×</button>
+        </div>
+        <div class="chat__xem-truoc" data-chat-xem-truoc hidden aria-label="Ảnh sắp gửi"></div>{# chat.js vẽ ảnh đã chọn ở đây, mỗi ảnh có nút bỏ #}
+        <button class="btn btn--ghost btn--sm chat__nut-anh" type="button" data-chat-nut-anh aria-label="Đính kèm ảnh" title="Đính kèm ảnh (JPG, PNG, WEBP, tối đa 5 ảnh, mỗi ảnh 5 MB)"{% if loi_tai %} disabled{% endif %}><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-8 9"/></svg></button>{# nút chọn ảnh #}
+        <input class="sr-only" id="chat-chon-anh" type="file" name="anh" accept="image/jpeg,image/png,image/webp" multiple data-chat-chon-anh tabindex="-1"{% if loi_tai %} disabled{% endif %}>{# chat.js bỏ thuộc tính name rồi tự thêm các ảnh đã chọn vào dữ liệu gửi đi #}
+        <label class="sr-only" for="chat-noi-dung">Nội dung tin nhắn</label>
+        <textarea id="chat-noi-dung" class="input chat__o-nhap" name="noi_dung" rows="1" maxlength="{{ gioi_han }}" placeholder="Nhập nội dung tin nhắn..."{% if loi_tai %} disabled{% endif %}></textarea>{# wireframe Lỗi tải lịch sử: ô nhập bị khóa #}
+        <button class="btn btn--primary" type="submit" data-chat-gui{% if loi_tai %} disabled{% endif %}>Gửi</button>{# nút chính duy nhất của màn hình #}
+      </form>
+    </section>
+
+    {% include "chat/_cot_phai.html" %}{# cột phải dùng chung với trang lỗi khởi tạo #}
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'chat/js/chat.js' %}" defer></script>{% endblock %}

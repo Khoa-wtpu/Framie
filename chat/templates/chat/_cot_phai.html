@@ -1,0 +1,33 @@
+{# Cột phải: thông tin đối phương. Cần biến: doi_phuong (ten, anh, chu_cai, ho_so, vai_tro); anh_theo_thang (ảnh chia theo tháng, có thể không truyền ở trang lỗi khởi tạo); thoi_han_anh_thang. Nhiếp ảnh gia xem Khách hàng thì ho_so rỗng nên KHÔNG có nút "Xem hồ sơ" (trường hợp 19). #}
+<aside class="chat-cot chat-cot--phai" id="chat-cot-phai" data-chat-cot-phai aria-label="Thông tin {{ doi_phuong.ten }}">
+  <div class="chat-ho-so">
+    <span class="avatar chat-ho-so__anh" aria-hidden="true">{% if doi_phuong.anh %}<img src="{{ doi_phuong.anh }}" alt="">{% else %}{{ doi_phuong.chu_cai }}{% endif %}</span>
+    <p class="chat-ho-so__ten">{{ doi_phuong.ten }}</p>
+    <p class="chat__vai-tro">{{ doi_phuong.vai_tro }}</p>{# nhãn lấy từ services, không gõ cứng #}
+    {% if doi_phuong.ho_so %}<a class="btn btn--secondary btn--sm" href="{{ doi_phuong.ho_so }}">Xem hồ sơ</a>{% endif %}
+  </div>
+  <div class="chat-muc">
+    <h2 class="chat-muc__tieu-de">File phương tiện</h2>{# đổi tên từ "Ảnh đã chia sẻ" #}
+    {% if thoi_han_anh_thang %}<p class="chat-muc__han">Ảnh được lưu trong {{ thoi_han_anh_thang }} tháng kể từ lúc gửi.</p>{% endif %}{# nhắc thời hạn lưu #}
+    <div class="chat-anh-cac-thang" data-chat-anh-cac-thang data-chat-nhom-anh{% if not anh_theo_thang %} hidden{% endif %}>{# nhóm ảnh theo tháng, mới nhất trên cùng; data-chat-nhom-anh: bấm ảnh nào cũng lướt được qua mọi ảnh #}
+      {% for thang in anh_theo_thang %}
+      <section class="chat-anh-thang" data-chat-anh-thang="{{ thang.khoa }}">{# một tháng #}
+        <h3 class="chat-anh-thang__ten">{{ thang.nhan }}</h3>{# Tháng 11 / Tháng 12/2025 #}
+        <div class="chat-anh-luoi" data-chat-anh-luoi>{# lưới 3 cột #}
+          {% for dk in thang.anh %}<button class="chat-anh-luoi__o" type="button" data-chat-anh data-ma="{{ dk.pk }}" data-url="{% url 'xem_anh_chat' dk.pk %}" aria-label="Xem ảnh"><img src="{% url 'xem_anh_chat' dk.pk %}?nho=1" alt="Ảnh trong cuộc trò chuyện" loading="lazy"></button>{% endfor %}
+        </div>
+      </section>
+      {% endfor %}
+    </div>
+    <div class="chat-muc__rong" data-chat-anh-rong{% if anh_theo_thang %} hidden{% endif %}><strong>Chưa có file phương tiện nào</strong><span>Ảnh gửi trong cuộc trò chuyện sẽ hiển thị tại đây.</span></div>
+  </div>
+  <div class="chat-muc">{# mục Liên kết (góp ý C2): link gửi trong cuộc trò chuyện, mới nhất trên cùng; chat.js thêm khi có tin mới và gỡ khi tin bị thu hồi #}
+    <h2 class="chat-muc__tieu-de">Liên kết</h2>
+    <ul class="chat-lien-ket" data-chat-lien-ket{% if not lien_ket %} hidden{% endif %}>{# danh sách link #}
+      {% for lk in lien_ket %}
+      <li class="chat-lien-ket__muc" data-chat-lk data-ma-tin="{{ lk.ma_tin }}" data-url="{{ lk.url }}"><a href="{{ lk.url }}" target="_blank" rel="noopener noreferrer nofollow" title="{{ lk.url }}">{{ lk.hien_thi }}</a></li>{# data-ma-tin: để gỡ khi tin bị thu hồi #}
+      {% endfor %}
+    </ul>
+    <div class="chat-muc__rong" data-chat-lk-rong{% if lien_ket %} hidden{% endif %}><strong>Chưa có liên kết nào</strong><span>Liên kết gửi trong cuộc trò chuyện sẽ hiển thị tại đây.</span></div>{# hiện khi chưa có link #}
+  </div>
+</aside>

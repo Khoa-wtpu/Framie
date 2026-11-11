@@ -1,0 +1,27 @@
+{# Phần ruột của một tin: tin đã thu hồi chỉ có câu thay thế; tin thường có khối trả lời, lưới ảnh, bong bóng chữ và nút Trả lời / Thu hồi. Cần biến: tin, nguoi_xem_id, doi_phuong, xoa_den. #}
+{% load chat_tags %}
+{% if tin.DaThuHoi %}
+<p class="tn__noi-dung tn__noi-dung--thu-hoi">{% if tin.MaNguoiGui_id == nguoi_xem_id %}Bạn đã thu hồi một tin nhắn{% else %}Tin nhắn đã bị thu hồi{% endif %}</p>{# TUYỆT ĐỐI không in NoiDung hay ảnh của tin đã thu hồi #}
+{% else %}
+{% with goc=tin.MaTinTraLoi ds_anh=tin.dinh_kem.all %}{# goc và ds_anh đã nạp sẵn bằng select_related/prefetch_related nên không tốn truy vấn #}
+{% if goc %}
+<button class="tn__tra-loi-goc" type="button" data-chat-di-den="{{ goc.pk }}" aria-label="Xem tin nhắn được trả lời">{# bấm để cuộn tới tin gốc #}
+  <span class="tn__tl-nhan">{% if tin.MaNguoiGui_id == nguoi_xem_id %}Bạn đã trả lời {% if goc.MaNguoiGui_id == nguoi_xem_id %}chính mình{% else %}{{ doi_phuong.ten }}{% endif %}{% else %}{{ doi_phuong.ten }} đã trả lời {% if goc.MaNguoiGui_id == nguoi_xem_id %}bạn{% else %}chính họ{% endif %}{% endif %}</span>
+  <span class="tn__tl-nd">{% if goc.pk <= xoa_den %}Tin nhắn gốc không còn hiển thị{% elif goc.DaThuHoi %}Tin nhắn đã bị thu hồi{% elif goc.NoiDung %}{{ goc.NoiDung|truncatechars:80 }}{% elif goc.dinh_kem.all %}[Ảnh]{% endif %}</span>{# tin gốc đã xóa phía mình hoặc đã thu hồi thì không lộ nội dung #}
+</button>
+{% endif %}
+{% if ds_anh %}
+{% if tin|anh_het_han %}<p class="tn__noi-dung tn__noi-dung--het-han">Ảnh đã hết hạn lưu trữ</p>{# quá 6 tháng: không in link ảnh, view xem ảnh cũng trả 404 #}
+{% else %}
+<div class="tn__anh-luoi tn__anh-luoi--{% if ds_anh|length > 2 %}nhieu{% else %}{{ ds_anh|length }}{% endif %}">{# 1 ảnh: to; 2 ảnh: 2 cột; từ 3 ảnh: lưới 3 cột #}
+  {% for dk in ds_anh %}<button class="tn__anh" type="button" data-chat-anh data-url="{% url 'xem_anh_chat' dk.pk %}" aria-label="Xem ảnh {{ forloop.counter }} trong {{ ds_anh|length }}"><img src="{% url 'xem_anh_chat' dk.pk %}?nho=1" alt="Ảnh trong cuộc trò chuyện" loading="lazy"></button>{% endfor %}{# bấm để mở trang xem ảnh; ảnh thu nhỏ do view tạo khi xem #}
+</div>
+{% endif %}
+{% endif %}
+{% if tin.NoiDung %}<p class="tn__noi-dung">{{ tin.NoiDung|lien_ket|linebreaksbr }}</p>{% endif %}{# lien_ket escape từng đoạn rồi mới gắn thẻ <a> cho link http, https, www (bấm mở tab mới); linebreaksbr tự escape HTML trước, chống XSS; tin chỉ có ảnh thì không có bong bóng chữ #}
+{% endwith %}
+<div class="tn__hanh-dong" role="group" aria-label="Tùy chọn tin nhắn">{# hiện khi rê chuột hoặc dùng phím Tab; chat.js xử lý bằng event delegation #}
+  <button class="tn__hd-nut" type="button" data-chat-tra-loi aria-label="Trả lời tin nhắn này" title="Trả lời"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v3"/></svg></button>
+  {% if tin.MaNguoiGui_id == nguoi_xem_id %}<button class="tn__hd-nut" type="button" data-chat-thu-hoi data-url="{% url 'thu_hoi_tin' tin.MaCuocTroChuyen_id tin.pk %}" aria-label="Thu hồi tin nhắn này" title="Thu hồi"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>{% endif %}{# chỉ người gửi mới thấy nút Thu hồi; server vẫn kiểm lại #}
+</div>
+{% endif %}

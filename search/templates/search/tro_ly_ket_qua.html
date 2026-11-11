@@ -1,0 +1,87 @@
+{% extends "base.html" %}{# E4 - UC2.3: trang kết quả của Trợ lý (giao diện v2). Dùng bởi search/tro_ly.py (view assistant_result). #}
+{% load static ui %}{# static: nạp CSS riêng #}
+{% block title %}Gợi ý Nhiếp ảnh gia{% endblock %}{# chữ trên tab trình duyệt #}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'search/css/tro_ly.css' %}">{% endblock %}{# CSS riêng của Trợ lý #}
+
+{% block content %}
+<div class="container tro-ly">
+  {% if cac_the %}{# ======== CÓ KẾT QUẢ: tối đa 5 thẻ ======== #}
+  <header class="tro-ly__dau tro-ly__dau--kq">
+    <p class="tro-ly__nhan">Gợi ý · {{ cac_the|length }} Nhiếp ảnh gia</p>{# số người được gợi ý #}
+    <h1 class="tro-ly__tieu-de">Nhiếp ảnh gia phù hợp với bạn</h1>{# tiêu đề chữ gradient #}
+    <div class="tro-ly__thanh-tt">
+      <ul class="tro-ly__tom-tat" aria-label="Câu trả lời của bạn">
+        {% for nhan, gia_tri in tom_tat %}<li class="tro-ly__tt"><span>{{ nhan }}</span><strong>{{ gia_tri }}</strong></li>{% endfor %}{# 5 đáp án khách đã chọn, mỗi đáp án một chip #}
+      </ul>
+      <div class="tro-ly__nut-phai">
+        <a class="btn btn--ghost tro-ly__vien" href="{{ url_sua }}">Sửa câu trả lời</a>{# các nút chọn giờ là hành động chính nên nút này chỉ là phụ #}
+        <a class="btn btn--ghost tro-ly__vien" href="{{ url_tim_kiem }}">Tự tìm kiếm</a>
+      </div>
+    </div>
+  </header>
+
+  <ul class="tro-ly__ds">
+    {% for the in cac_the %}
+    <li>
+      <article class="panel tro-ly__the" aria-labelledby="tro-ly-the-{{ the.ma }}">{# không dùng card--link để các nút chọn giờ bấm được #}
+        <div class="tro-ly__anh tro-ly__goc">{# ảnh đại diện có 4 góc ngắm #}
+          {% if the.anh %}<img src="{{ the.anh }}" alt="Ảnh đại diện của {{ the.ten }}" loading="lazy">{% else %}<span class="tro-ly__chu-cai" aria-hidden="true">{{ the.ten|slice:":1" }}</span>{% endif %}{# chưa có ảnh thì hiện chữ cái đầu trên nền xám #}
+        </div>
+        <div class="tro-ly__noi-dung">
+          <div class="tro-ly__ten-hang">
+            <h2 id="tro-ly-the-{{ the.ma }}" class="tro-ly__ten-nag"><a href="{{ the.url_ho_so }}">{{ the.ten }}</a></h2>{# tên dẫn tới photographer_detail #}
+            <p class="tro-ly__diem">Phù hợp {{ the.diem }}%</p>{# điểm đã chuẩn hóa, số nguyên; test cần chuỗi liền "Phù hợp 88%" #}
+          </div>
+          <progress class="tro-ly__thanh" max="100" value="{{ the.diem }}" aria-label="Mức phù hợp">{{ the.diem }}%</progress>{# thanh phần trăm, tô bằng CSS (không cần style trong HTML) #}
+          <p class="tro-ly__meta">Gói từ {{ the.gia_tu }}<span class="tro-ly__cham" aria-hidden="true"></span>{% if the.diem_tb is None %}Chưa có đánh giá{% else %}<span class="tro-ly__sao" aria-hidden="true">★</span> {{ the.diem_tb|floatformat:1 }}/5 ({{ the.so_danh_gia }} đánh giá){% endif %}</p>{# giá gói rẻ nhất + đánh giá; floatformat:1 vì diem_tb là float thô như 4.666666; chưa có đánh giá thì hiện dòng riêng đúng 1 lần #}
+          {% if the.ly_do %}
+          <ul class="tro-ly__chip-ds" aria-label="Lý do phù hợp">
+            {% for ly in the.ly_do %}<li class="tro-ly__chip">{{ ly }}</li>{% endfor %}{# tối đa 3 chip; có thể ít hơn (chọn Không giới hạn thì không có chip ngân sách) #}
+          </ul>
+          {% endif %}
+          <p class="tro-ly__nhan">Bấm để chọn khung giờ trống ngày {{ ngay_chup|date:"d/m/Y" }}</p>{# nhãn nhỏ trên hàng khung giờ #}
+          <ul class="tro-ly__gio-ds" aria-label="Khung giờ trống">
+            {% for lich in the.khung_gio %}
+            <li>
+              <form method="post" action="{% url 'chon_slot' lich.pk %}">{# giống hệt nút trong bookings/lich_chon_slot.html: POST tới chon_slot #}
+                {% csrf_token %}{# mã chống giả mạo form #}
+                <input type="hidden" name="ma_nhiep_anh_gia" value="{{ the.ma }}">{# để chon_slot biết trang lịch cần quay lại khi có lỗi #}
+                <button class="btn btn--ghost btn--sm tro-ly__vien" type="submit">{{ lich.GioBatDau|time:"H:i" }}–{{ lich.GioKetThuc|time:"H:i" }}</button>{# nút chọn giờ #}
+              </form>
+            </li>
+            {% endfor %}
+          </ul>
+          <div class="tro-ly__the-nut"><a class="btn btn--soft" href="{{ the.url_ho_so }}">Xem hồ sơ</a></div>{# sang trang hồ sơ công khai; btn--soft = nền trắng gradient, là nút phụ "nhấn vừa phải" theo README (không dùng btn--primary để mỗi màn hình chỉ có 1 nút chính) #}
+        </div>
+      </article>
+    </li>
+    {% endfor %}
+  </ul>
+
+  {% else %}{# ======== KHÔNG CÓ AI PHÙ HỢP ======== #}
+  <section class="tro-ly__trong" role="status">
+    <svg class="tro-ly__bieu-tuong" viewBox="0 0 120 120" width="120" height="120" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="60" cy="60" r="50"/><circle cx="60" cy="60" r="34"/><circle cx="60" cy="60" r="16"/><path d="M60 6v14M60 100v14M6 60h14M100 60h14"/></svg>{# hình ống ngắm #}
+    <p class="tro-ly__nhan">Gợi ý · 0 Nhiếp ảnh gia</p>
+    <h1 class="tro-ly__tieu-de">Chưa có ai phù hợp</h1>{# test cần chuỗi này #}
+    <p class="tro-ly__phu">Chưa có Nhiếp ảnh gia nào khớp đủ yêu cầu của bạn. Thử đổi ngày hoặc nới ngân sách để xem thêm.</p>
+    <ul class="tro-ly__tom-tat tro-ly__tom-tat--giua" aria-label="Câu trả lời của bạn">
+      {% for nhan, gia_tri in tom_tat %}<li class="tro-ly__tt"><strong>{{ gia_tri }}</strong></li>{% endfor %}{# chỉ hiện giá trị cho gọn #}
+    </ul>
+    {% if cau_noi_tieu_chi %}
+    <div class="panel tro-ly__goc tro-ly__thu">
+      <p class="tro-ly__nhan">Bạn có thể thử</p>
+      <ul class="tro-ly__goi-y-ds">
+        {% for g in cau_noi_tieu_chi %}
+        <li class="tro-ly__goi-y"><span class="tro-ly__so">{{ forloop.counter|stringformat:"02d" }}</span><span class="tro-ly__cau-goi-y">{{ g.cau }}</span>{% if g.url %}<a class="btn btn--ghost btn--sm tro-ly__vien" href="{{ g.url }}">{{ g.nhan }}</a>{% endif %}</li>{# câu từ goi_y_noi_tieu_chi + nút dẫn tới đúng bước cần sửa #}
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    <div class="tro-ly__nut-giua">
+      <a class="btn btn--primary" href="{{ url_sua }}">Sửa câu trả lời</a>{# màn hình rỗng: đây là hành động chính #}
+      <a class="btn btn--ghost tro-ly__vien" href="{{ url_tim_kiem }}">Tự tìm kiếm</a>
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

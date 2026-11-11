@@ -1,0 +1,84 @@
+{% extends "base.html" %}{# K7 - UC1.5 Duyệt hồ sơ Nhiếp ảnh gia: chi tiết một hồ sơ và ghi quyết định #}
+{% load static ui %}
+{% block title %}Hồ sơ của {{ ten }} - Duyệt hồ sơ{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'profiles/css/duyet_ho_so.css' %}">{% endblock %}
+{% block content %}
+<div class="container duyet">
+  <p><a href="{% url 'admin_profile_review' %}">◂ Quay lại danh sách</a></p>
+
+  <header class="duyet__dau">
+    <div class="duyet__anh">
+      {% if nag.AnhDaiDien %}<img src="{{ nag.AnhDaiDien.url }}" alt="Ảnh đại diện của {{ ten }}">{% else %}<span aria-hidden="true">{{ ten|slice:":1" }}</span>{% endif %}
+    </div>
+    <div>
+      <h1>{{ ten }}</h1>
+      <p class="muted">{{ nag.MaTaiKhoan.email }} · Lần nộp thứ {{ luot.LanNop }} · Nộp lúc {{ luot.ThoiDiemNop|date:"d/m/Y H:i" }}</p>
+      <p>{% if dang_cho %}{% status_badge trang_thai_cho %}{% else %}{% status_badge luot.KetQua %}{% endif %}</p>
+    </div>
+  </header>
+
+  <section class="panel duyet__muc" aria-labelledby="td-thong-tin">
+    <h2 id="td-thong-tin">Thông tin hồ sơ</h2>
+    <h3>Giới thiệu</h3>
+    <p class="duyet__van-ban">{{ nag.GioiThieu }}</p>
+    <dl class="duyet__ds">
+      <dt>Loại hình chụp</dt><dd>{% for x in loai_hinh %}{{ x.TenLoaiHinh }}{% if not forloop.last %}, {% endif %}{% empty %}<span class="muted">Chưa chọn</span>{% endfor %}</dd>
+      <dt>Phong cách</dt><dd>{% for x in phong_cach %}{{ x.TenPhongCach }}{% if not forloop.last %}, {% endif %}{% empty %}<span class="muted">Chưa chọn</span>{% endfor %}</dd>
+      <dt>Khu vực</dt><dd>{% for x in khu_vuc %}{{ x.TenKhuVuc }}{% if not forloop.last %}, {% endif %}{% empty %}<span class="muted">Chưa chọn</span>{% endfor %}</dd>
+    </dl>
+  </section>
+
+  <section class="panel duyet__muc" aria-labelledby="td-thanh-toan">
+    <h2 id="td-thanh-toan">Tài khoản nhận tiền</h2>
+    <dl class="duyet__ds">
+      <dt>Ngân hàng</dt><dd>{{ nag.NganHang }}</dd>
+      <dt>Số tài khoản</dt><dd>{{ nag.SoTaiKhoan }}</dd>
+      <dt>Chủ tài khoản</dt><dd>{{ nag.ChuTaiKhoan }}</dd>
+    </dl>
+    {% if nag.AnhMaQR %}<img class="duyet__qr" src="{{ nag.AnhMaQR.url }}" alt="Mã QR nhận tiền của {{ ten }}">{% endif %}
+  </section>
+
+  {% if lich_su %}
+  <section class="panel duyet__muc" aria-labelledby="td-lich-su">
+    <h2 id="td-lich-su">Các lần duyệt trước</h2>
+    <ul class="duyet__lich-su">
+      {% for x in lich_su %}
+      <li>
+        <strong>Lần {{ x.LanNop }}</strong> {% status_badge x.KetQua %}
+        <span class="muted">{{ x.ThoiDiemDuyet|date:"d/m/Y H:i" }} · {{ x.MaQuanTriVien.get_full_name|default:x.MaQuanTriVien.email }}</span>
+        {% if x.NoiDungPhanHoi %}<p class="duyet__van-ban">{{ x.NoiDungPhanHoi }}</p>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if dang_cho %}
+  <section class="panel duyet__muc" aria-labelledby="td-quyet-dinh">
+    <h2 id="td-quyet-dinh">Quyết định</h2>
+    <form method="post" novalidate class="stack">
+      {% csrf_token %}
+      {% for loi in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=loi %}{% endfor %}
+      <fieldset class="duyet__chon">
+        <legend class="sr-only">{{ form.hanh_dong.label }}</legend>{# tiêu đề nhóm chỉ dành cho trình đọc màn hình, vì h2 "Quyết định" ngay phía trên đã hiện #}
+        {% for radio in form.hanh_dong %}
+        <label class="duyet__lua-chon">{{ radio.tag }} <span>{{ radio.choice_label }}</span></label>
+        {% endfor %}
+        {% for loi in form.hanh_dong.errors %}<p class="duyet__loi" role="alert">{{ loi }}</p>{% endfor %}
+      </fieldset>
+      {% include "includes/form_field.html" with field=form.noi_dung %}
+      <div class="row">
+        <button class="btn btn--primary" type="submit">Xác nhận</button>
+        <a class="btn btn--secondary" href="{% url 'admin_profile_review' %}">Hủy</a>
+      </div>
+    </form>
+  </section>
+  {% else %}
+  <section class="panel duyet__muc" aria-labelledby="td-ket-qua">
+    <h2 id="td-ket-qua">Kết quả xử lý</h2>
+    <p>{% status_badge luot.KetQua %} <span class="muted">{{ luot.ThoiDiemDuyet|date:"d/m/Y H:i" }} · {{ luot.MaQuanTriVien.get_full_name|default:luot.MaQuanTriVien.email }}</span></p>
+    {% if luot.NoiDungPhanHoi %}<p class="duyet__van-ban">{{ luot.NoiDungPhanHoi }}</p>{% endif %}
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

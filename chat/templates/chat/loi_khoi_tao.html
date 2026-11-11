@@ -1,0 +1,35 @@
+{% extends "base.html" %}{# UC8.1 luồng 2a (SC8.2 - Lỗi khởi tạo). Cần biến: nag, doi_phuong, ho_so, loi_khoi_tao + ngữ cảnh cột trái #}
+{% load static %}
+{% block title %}Không thể khởi tạo cuộc trò chuyện{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'chat/css/chat.css' %}">{% endblock %}
+{% block content %}
+<div class="container chat-trang chat-trang--chi-tiet">
+  <h1 class="sr-only">Không thể khởi tạo cuộc trò chuyện</h1>
+  <div class="chat-luoi chat-luoi--3-cot">
+    {% include "chat/_danh_sach_cuoc.html" %}
+    <section class="chat-cot chat-cot--giua chat" aria-label="Lỗi khởi tạo cuộc trò chuyện">
+      <header class="chat__dau">
+        <a class="btn btn--ghost btn--sm chat__quay-lai" href="{{ ho_so }}">‹ Hồ sơ</a>
+        <span class="avatar chat__avatar" aria-hidden="true">{% if doi_phuong.anh %}<img src="{{ doi_phuong.anh }}" alt="">{% else %}{{ doi_phuong.chu_cai }}{% endif %}</span>
+        <div class="chat__nguoi"><p class="chat__ten">{{ doi_phuong.ten }}</p><p class="chat__vai-tro">{{ doi_phuong.vai_tro }}</p></div>
+      </header>
+      <div class="chat__khung">
+        <div class="chat__trong-lon chat__trong-lon--loi" role="alert">
+          <span class="chat__icon-tron" aria-hidden="true"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+          <h2 class="chat__trong-lon-tieu-de">Không thể khởi tạo cuộc trò chuyện</h2>
+          <p class="chat__trong-lon-mo-ta">Đã xảy ra lỗi khi tạo cuộc trò chuyện với {{ doi_phuong.ten }}. Vui lòng thực hiện lại.</p>
+          <div class="chat__trong-lon-nut">
+            <form method="post" action="{% url 'khoi_tao_cuoc_tro_chuyen' nag.pk %}">{% csrf_token %}<button class="btn btn--primary" type="submit">Thử lại</button></form>{# POST lại đúng view khởi tạo #}
+            <a class="btn btn--secondary" href="{{ ho_so }}">Quay lại hồ sơ</a>
+          </div>
+        </div>
+      </div>
+      <div class="chat__soan chat__soan--khoa" aria-hidden="true">{# ô nhập bị khóa như wireframe #}
+        <textarea class="input chat__o-nhap" rows="1" placeholder="Nhập nội dung tin nhắn..." disabled></textarea>
+        <button class="btn btn--primary" type="button" disabled>Gửi</button>
+      </div>
+    </section>
+    {% include "chat/_cot_phai.html" %}
+  </div>
+</div>
+{% endblock %}

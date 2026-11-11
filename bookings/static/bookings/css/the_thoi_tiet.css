@@ -1,0 +1,88 @@
+/* bookings/static/bookings/css/the_thoi_tiet.css - thẻ "Dự báo thời tiết buổi chụp" (E8). Chỉ dùng biến trong static/css/tokens.css. */
+/* Mỗi nhóm thời tiết có 1 màu nhấn --tt-dot (chấm/biểu tượng/thanh), --tt-bg (nền nhạt), --tt-fg (chữ nhấn) lấy từ bảng tone. */
+.tt { --tt-dot: var(--tone-gray-dot); --tt-bg: var(--tone-gray-bg); --tt-fg: var(--tone-gray-fg); position: relative; overflow: hidden; display: grid; gap: var(--space-5); border-top: 3px solid var(--tt-dot); }  /* viền trên màu theo thời tiết */
+.tt::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 7rem; background: linear-gradient(180deg, var(--tt-bg), transparent); pointer-events: none; }  /* quầng màu nhạt ở đầu thẻ */
+.tt > * { position: relative; }  /* nội dung nằm trên quầng màu */
+.tt .ct__the-tieu-de { margin: 0; }
+.tt--nang   { --tt-dot: var(--tone-amber-dot);  --tt-bg: var(--tone-amber-bg);  --tt-fg: var(--tone-amber-fg); }
+.tt--it-may { --tt-dot: var(--tone-orange-dot); --tt-bg: var(--tone-orange-bg); --tt-fg: var(--tone-orange-fg); }
+.tt--may    { --tt-dot: var(--tone-gray-dot);   --tt-bg: var(--tone-gray-bg);   --tt-fg: var(--tone-gray-fg); }
+.tt--suong  { --tt-dot: var(--tone-gray-dot);   --tt-bg: var(--tone-gray-bg);   --tt-fg: var(--tone-gray-fg); }
+.tt--phun, .tt--mua { --tt-dot: var(--tone-sky-dot); --tt-bg: var(--tone-sky-bg); --tt-fg: var(--tone-sky-fg); }
+.tt--dong   { --tt-dot: var(--tone-violet-dot); --tt-bg: var(--tone-violet-bg); --tt-fg: var(--tone-violet-fg); }
+.tt--mua-cao { --tt-dot: var(--tone-orange-dot); --tt-bg: var(--tone-orange-bg); --tt-fg: var(--tone-orange-fg); }  /* mưa cao: chuyển sang cam để gây chú ý */
+
+.tt__chinh { display: flex; align-items: center; gap: var(--space-4); min-width: 0; }
+.tt__bieu-tuong { flex: none; width: 3.75rem; height: 3.75rem; color: var(--tt-dot); }
+.tt__so { min-width: 0; display: grid; gap: var(--space-1); }
+.tt__nhiet { margin: 0; width: fit-content; max-width: 100%; font-size: var(--text-3xl); font-weight: var(--fw-heading); line-height: 1.1; letter-spacing: -.02em; white-space: nowrap; background: linear-gradient(135deg, var(--tt-fg), var(--tt-dot)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }  /* nhiệt độ: cỡ vừa, chữ đổ gradient theo màu thời tiết */
+.tt__mo-ta { margin: 0; font-size: var(--text-lg, var(--text-base)); color: var(--tt-fg); }
+.tt__mo-ta--lon { font-weight: var(--fw-heading); }
+
+.tt__mua { display: grid; gap: var(--space-2); padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.tt__mua-dong { display: flex; align-items: baseline; gap: var(--space-3); }
+.tt__mua-nhan { font-size: var(--text-xs); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-muted); }
+.tt__muc { padding: 0 var(--space-3); border-radius: var(--radius-pill); font-size: var(--text-xs); background: var(--tt-bg); color: var(--tt-fg); }  /* chip Thấp/Vừa/Cao */
+.tt__mua-so { margin-left: auto; font-size: var(--text-xl, var(--text-lg)); }
+.tt__thanh { appearance: none; -webkit-appearance: none; width: 100%; height: .5rem; border: 0; border-radius: var(--radius-pill); background: var(--color-border); overflow: hidden; }
+.tt__thanh::-webkit-progress-bar { background: var(--color-border); border-radius: var(--radius-pill); }
+.tt__thanh::-webkit-progress-value { background: var(--tt-dot); border-radius: var(--radius-pill); }
+.tt__thanh::-moz-progress-bar { background: var(--tt-dot); border-radius: var(--radius-pill); }
+.tt__ghi-chu { margin: 0; font-size: var(--text-xs); color: var(--color-text-muted); }
+
+.tt__nhac { display: grid; gap: var(--space-4); }
+.tt__nhac > form { justify-self: start; }
+.tt__nhac .alert { margin: 0; }
+
+.tt__nguon { margin: 0; font-size: var(--text-xs); color: var(--color-text-muted); }
+.tt__nguon a { color: inherit; text-decoration: underline; }
+.tt--trong .tt__bieu-tuong { width: 3rem; height: 3rem; }
+
+/* Dạng thẻ NGANG (with ngang=True): tiêu đề trên cùng, bên dưới 2-3 cột: biểu tượng+nhiệt độ | khả năng mưa | cảnh báo (nếu mưa cao). Chỉ bật khi đủ rộng. */
+@media (min-width: 61rem) {
+  .tt--ngang { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); grid-template-areas: "tieu tieu" "chinh mua" "nguon nguon"; align-items: center; column-gap: var(--space-8, var(--space-6)); }
+  .tt--ngang.tt--mua-cao { grid-template-columns: minmax(0, .9fr) minmax(0, 1fr) minmax(0, 1.2fr); grid-template-areas: "tieu tieu tieu" "chinh mua nhac" "nguon nguon nguon"; }
+  .tt--ngang.tt--trong { grid-template-columns: 1fr; grid-template-areas: "tieu" "chinh"; }
+  .tt--ngang > .ct__the-tieu-de { grid-area: tieu; }
+  .tt--ngang > .tt__chinh { grid-area: chinh; }
+  .tt--ngang > .tt__mua { grid-area: mua; }
+  .tt--ngang > .tt__nhac { grid-area: nhac; }
+  .tt--ngang > .tt__nguon { grid-area: nguon; }
+  .tt--ngang .tt__bieu-tuong { width: 4.5rem; height: 4.5rem; }
+}
+
+/* Dạng GỌN (with gon=True): thẻ thấp, đặt cạnh tiêu đề trang. Hàng 1: tiêu đề; hàng 2: biểu tượng + nhiệt độ | khả năng mưa; hàng 3: nguồn. */
+.tt--gon { flex: 0 1 38rem; min-width: min(100%, 20rem); gap: var(--space-2) var(--space-5); grid-template-columns: auto minmax(0, 1fr); padding: var(--space-3) var(--space-5) var(--space-4); }
+.tt--gon::before { height: 4rem; }
+.tt--gon > .ct__the-tieu-de { grid-column: 1 / -1; }
+.tt--gon .tt__chinh { gap: var(--space-4); }
+.tt--gon { column-gap: var(--space-8, var(--space-6)); }
+.tt--gon .tt__bieu-tuong { width: 2.75rem; height: 2.75rem; }
+.tt--gon .tt__nhiet { font-size: var(--text-xl); }
+.tt--gon .tt__mo-ta { font-size: var(--text-sm); }
+.tt--gon .tt__mua { padding: 0; border: 0; gap: var(--space-1); }
+.tt--gon .tt__mua .tt__ghi-chu { display: none; }  /* gọn: bỏ câu giải thích (nguồn vẫn có ở dòng dưới) */
+.tt--gon .tt__mua-nhan { white-space: nowrap; letter-spacing: .08em; }
+.tt--gon .tt__mua-so { font-size: var(--text-lg); }
+.tt--gon .tt__nguon { grid-column: 1 / -1; }
+.tt--gon.tt--trong { grid-template-columns: 1fr; }
+.tt--gon.tt--trong .tt__ghi-chu { margin: 0; }
+
+/* Tiêu đề trang (.ct__dau) có thẻ gọn: tiêu đề | thẻ cùng hàng; nhóm nút thao tác (trang Khách) xuống hàng riêng bên dưới */
+.ct__dau:has(> .tt--gon) { align-items: center; }
+.ct__dau > .tt--gon ~ .ct__hanh-dong { flex: 1 0 100%; }
+
+/* Dải nhắc đổi lịch (the_thoi_tiet_nhac.html): cảnh báo bên trái, nút bên phải; hẹp thì xếp dọc */
+.tt-nhac { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-4); }
+.tt-nhac .alert { flex: 1 1 22rem; margin: 0; }
+.tt-nhac form { margin: 0; }
+
+@media (max-width: 40rem) {  /* điện thoại: thẻ gọn xếp dọc (biểu tượng + nhiệt độ, rồi khả năng mưa) để không bị tràn */
+  .tt--gon { flex-basis: 100%; grid-template-columns: 1fr; }
+  .tt--gon .tt__mua-nhan { white-space: normal; }
+}
+
+@media (max-width: 480px) {
+  .tt__bieu-tuong { width: 3rem; height: 3rem; }
+  .tt__nhiet { font-size: var(--text-2xl); }
+}

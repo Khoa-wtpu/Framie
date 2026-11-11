@@ -1,0 +1,110 @@
+{# ===== admin_booking_list.html : trang "Tất cả Booking" của Quản trị viên ===== #}
+{# Bố cục LẤY THEO trang Duyệt hồ sơ Nhiếp ảnh gia (profiles/duyet_ho_so_danh_sach.html): tiêu đề → tab → ô tìm kiếm viên thuốc + bảng bộ lọc → hàng kết quả/sắp xếp → bảng → phân trang #}
+{# View: bookings/theo_doi.py (_trang_danh_sach_quan_tri). Biến: page_obj, tab, so_tat_ca, so_dang_xu_ly, so_ket_thuc, bo_loc, so_bo_loc, dang_loc, sap_xep_chon, so_ket_qua, co_booking #}
+{% extends "base.html" %}{# dùng khung trang chung (đầu trang, menu, chân trang) #}
+{% load static ui %}{# ui: status_badge, add_class #}
+{% block title %}{{ tieu_de }}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'bookings/css/admin_booking_list.css' %}">{% endblock %}
+{% block extra_js %}<script src="{% static 'bookings/js/admin_booking_list.js' %}" defer></script>{% endblock %}
+{% block content %}
+<div class="container abk">
+  <h1>{{ tieu_de }}</h1>
+
+  <nav class="abk__tabs" aria-label="Lọc theo nhóm trạng thái">{# giữ ?tab=... khi tìm kiếm / lọc nhờ ô ẩn "tab" trong form bên dưới #}
+    <a href="?tab={{ TAB_TAT_CA }}"{% if tab == TAB_TAT_CA %} class="is-active" aria-current="page"{% endif %}>Tất cả ({{ so_tat_ca }})</a>
+    <a href="?tab={{ TAB_DANG_XU_LY }}"{% if tab == TAB_DANG_XU_LY %} class="is-active" aria-current="page"{% endif %}>Đang xử lý ({{ so_dang_xu_ly }})</a>
+    <a href="?tab={{ TAB_KET_THUC }}"{% if tab == TAB_KET_THUC %} class="is-active" aria-current="page"{% endif %}>Đã kết thúc ({{ so_ket_thuc }})</a>
+  </nav>
+
+  <form class="abk__form" id="form-abk" method="get" role="search" aria-label="Tìm kiếm và lọc Booking" novalidate>
+    <input type="hidden" name="tab" value="{{ tab }}">
+    <div class="abk__tim-kiem">
+      {# Một ô duy nhất: [kính lúp | ô nhập | nút Bộ lọc | nút Tìm kiếm] #}
+      <div class="abk__pill">
+        <svg class="abk__bieu-tuong" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <label class="abk__o-tim">
+          <span class="sr-only">{{ bo_loc.q.label }}</span>
+          {{ bo_loc.q|add_class:"abk__input" }}
+        </label>
+        <button class="abk__nut-loc" id="nut-bo-loc-abk" type="button" aria-expanded="false" aria-controls="bang-bo-loc-abk">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+          <span class="abk__nhan">Bộ lọc</span>{% if so_bo_loc %}<span class="abk__so-loc">{{ so_bo_loc }}</span>{% endif %}
+        </button>
+        <button class="abk__gui" type="submit">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <span class="abk__nhan">Tìm kiếm</span>
+        </button>
+      </div>
+
+      <div class="abk__bang" id="bang-bo-loc-abk" role="group" aria-label="Bộ lọc Booking"{% if bo_loc.tu_ngay.errors or bo_loc.den_ngay.errors %} data-mo="1"{% endif %}>
+        <fieldset class="abk__nhom">
+          <legend>Thời điểm gửi yêu cầu</legend>
+          <div class="abk__ngay">
+            <label class="sr-only" for="{{ bo_loc.tu_ngay.id_for_label }}">{{ bo_loc.tu_ngay.label }}</label>{{ bo_loc.tu_ngay|add_class:"input" }}
+            <span aria-hidden="true">–</span>
+            <label class="sr-only" for="{{ bo_loc.den_ngay.id_for_label }}">{{ bo_loc.den_ngay.label }}</label>{{ bo_loc.den_ngay|add_class:"input" }}
+          </div>
+          {% for loi in bo_loc.tu_ngay.errors %}<p class="abk__loi" role="alert">{{ loi }}</p>{% endfor %}
+          {% for loi in bo_loc.den_ngay.errors %}<p class="abk__loi" role="alert">{{ loi }}</p>{% endfor %}
+        </fieldset>
+        <fieldset class="abk__nhom">
+          <legend>{{ bo_loc.trang_thai.label }}</legend>
+          <div class="abk__vien-ds">{% for c in bo_loc.trang_thai %}<label class="abk__vien">{{ c.tag }}<span>{{ c.choice_label }}</span></label>{% endfor %}</div>
+        </fieldset>
+        <div class="abk__nut">
+          <a class="btn btn--ghost" href="?tab={{ tab }}{% if bo_loc.q.value %}&amp;q={{ bo_loc.q.value|urlencode }}{% endif %}">Xóa bộ lọc</a>
+          <button class="btn btn--primary" type="submit">Áp dụng</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="abk__ket-qua-dau">
+      <p class="abk__dem" role="status">{% if dang_loc %}Tìm thấy {{ so_ket_qua }} Booking.{% else %}{{ so_ket_qua }} Booking{% endif %}</p>
+      <label class="abk__sap-xep">
+        <span>Sắp xếp</span>
+        <select name="sap_xep" class="input" data-tu-gui>{# đổi lựa chọn là tự tìm lại; không có JS thì dùng nút trong <noscript> #}
+          {% for gia_tri, nhan in bo_loc.sap_xep.field.choices %}<option value="{{ gia_tri }}"{% if gia_tri == sap_xep_chon %} selected{% endif %}>{{ nhan }}</option>{% endfor %}
+        </select>
+      </label>
+      <noscript><button class="btn btn--secondary btn--sm" type="submit">Sắp xếp</button></noscript>
+    </div>
+  </form>
+
+  {% if page_obj.object_list %}
+  <div class="abk__cuon abk__cuon--rong">
+    <table class="abk__bang-luot">
+      <thead>
+        <tr>
+          <th scope="col">Mã</th>
+          <th scope="col">Khách hàng</th>
+          <th scope="col">Nhiếp ảnh gia</th>
+          <th scope="col">Dịch vụ</th>
+          <th scope="col">Lịch chụp</th>
+          <th scope="col">Thời điểm gửi</th>
+          <th scope="col">Trạng thái</th>
+          <th scope="col" class="abk__thao-tac"><span class="sr-only">Thao tác</span></th>{# cột nút: luôn dính mép phải bảng (CSS .abk__thao-tac) #}
+        </tr>
+      </thead>
+      <tbody>
+        {% for bk in page_obj %}
+        <tr>
+          <th scope="row" class="abk__ma">#{{ bk.pk }}</th>
+          <td>{{ bk.MaKhachHang.get_full_name|default:bk.MaKhachHang.username }}<span class="abk__phu">{{ bk.MaKhachHang.email }}</span></td>
+          <td>{{ bk.MaNhiepAnhGia.MaTaiKhoan.get_full_name|default:bk.MaNhiepAnhGia.MaTaiKhoan.username }}<span class="abk__phu">{{ bk.MaNhiepAnhGia.MaTaiKhoan.email }}</span></td>
+          <td>{{ bk.MaGoi.TenGoi }}<span class="abk__phu">{{ bk.MaGoi.MaLoaiHinh.TenLoaiHinh }}</span></td>
+          <td><span class="abk__gio">{{ bk.NgayGioChup|date:"d/m/Y H:i" }}</span><span class="abk__phu abk__cat" title="{{ bk.DiaDiem }}">{{ bk.DiaDiem }}</span></td>
+          <td class="abk__gio">{{ bk.NgayTao|date:"d/m/Y H:i" }}</td>
+          <td>{% status_badge bk.TrangThai %}</td>{# nhãn trạng thái có màu thống nhất toàn hệ thống #}
+          <td class="abk__thao-tac"><a class="btn btn--soft btn--sm" href="{% url 'admin_booking_detail' ma_booking=bk.pk %}">Xem chi tiết</a></td>{# nút Xem chi tiết #}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include "includes/pagination.html" with page_obj=page_obj %}
+  {% else %}
+  {# Có Booking nhưng tìm / lọc ra rỗng -> báo theo bộ lọc; hệ thống chưa có Booking nào -> "Chưa có Booking nào" #}
+  <p class="abk__trong">{% if co_booking %}{{ TB_KHONG_KHOP_BO_LOC }}{% if dang_loc %} <a href="?tab={{ tab }}">Xóa tìm kiếm và bộ lọc</a>{% endif %}{% else %}{{ TB_CHUA_CO_BOOKING }}{% endif %}</p>
+  {% endif %}
+</div>
+{% endblock %}

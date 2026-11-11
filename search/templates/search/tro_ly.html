@@ -1,0 +1,64 @@
+{% extends "base.html" %}{# E4 - UC2.3: Trợ lý chọn Nhiếp ảnh gia, form 5 bước (giao diện v2). Một template cho cả 5 bước. Dùng bởi search/tro_ly.py (view assistant). #}
+{% load static ui %}{# static: nạp CSS/JS riêng; ui: bộ lọc add_class cho ô ngày #}
+{% block title %}Trợ lý chọn Nhiếp ảnh gia{% endblock %}{# chữ trên tab trình duyệt #}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'search/css/tro_ly.css' %}">{% endblock %}{# CSS riêng của Trợ lý (chỉ dùng biến của tokens.css) #}
+{% block extra_js %}<script src="{% static 'search/js/tro_ly.js' %}" defer></script>{% endblock %}{# JS: ngày chọn nhanh, giới hạn và bộ đếm phong cách #}
+
+{% block content %}
+<div class="container tro-ly" data-tro-ly>{# data-tro-ly: móc để JS tìm đúng trang #}
+  <div class="tro-ly__hep">{# cột giữa rộng khoảng 52rem #}
+
+    <header class="tro-ly__dau">
+      <div class="tro-ly__hang">{# hàng trên: nhãn bước bên trái, nút thoát bên phải #}
+        <p class="tro-ly__nhan">Trợ lý chọn Nhiếp ảnh gia · Câu {{ buoc }}/{{ tong_buoc }}</p>{# test cần chuỗi "Câu 1/5"; CSS tự in hoa #}
+        <a class="tro-ly__bo-qua" href="{{ url_bo_qua }}">Bỏ qua Trợ lý</a>{# thoát về trang tổng quan, không lưu gì thêm #}
+      </div>
+      <div class="tro-ly__tien-do" role="progressbar" aria-label="Tiến độ trả lời" aria-valuemin="1" aria-valuemax="{{ tong_buoc }}" aria-valuenow="{{ buoc }}">
+        {% for so in cac_buoc %}<span class="tro-ly__doan{% if so <= buoc %} is-xong{% endif %}"></span>{% endfor %}{# mỗi câu một đoạn; đoạn đã tới được tô sáng #}
+      </div>
+      <h1 id="tro-ly-hoi" class="tro-ly__hoi">{{ form.dap_an.label }}</h1>{# câu hỏi là tiêu đề trang (chữ gradient từ h1 chung) #}
+      {% if form.dap_an.help_text %}<p class="tro-ly__phu">{{ form.dap_an.help_text }}</p>{% endif %}{# dòng phụ dưới câu hỏi #}
+    </header>
+
+    <form method="post" action="{{ url_hien_tai }}" novalidate>{# gửi về đúng bước đang mở; novalidate để hiện lỗi của Django #}
+      {% csrf_token %}{# mã chống giả mạo form, BẮT BUỘC có #}
+
+      <div class="panel tro-ly__khung tro-ly__goc">{# khung chứa câu trả lời, có 4 góc ngắm #}
+        {% if kieu == 'ngay' %}{# ---- câu 4: ô chọn ngày + hàng 7 ngày chọn nhanh ---- #}
+          <div class="field{% if form.dap_an.errors %} has-error{% endif %}">
+            <label class="field__label" for="{{ form.dap_an.id_for_label }}">Ngày chụp<span class="field__req" aria-hidden="true"> *</span></label>{# nhãn ô ngày #}
+            {{ form.dap_an|add_class:"input tro-ly__o-ngay" }}{# ô type=date có min/max do view đặt #}
+            {% for loi in form.dap_an.errors %}<p class="field__error">{{ loi }}</p>{% endfor %}{# lỗi hiện dưới ô #}
+          </div>
+          {% if ngay_nhanh %}
+          <div class="tro-ly__ngay-nhanh" data-ngay-nhanh role="group" aria-label="Chọn nhanh trong 7 ngày tới" hidden>{# hidden: chỉ hiện khi có JS, không có JS vẫn dùng ô ngày #}
+            {% for n in ngay_nhanh %}<button class="tro-ly__ngay" type="button" data-ngay="{{ n.iso }}" aria-pressed="false"><span>{{ n.thu }}</span><strong>{{ n.so }}</strong></button>{% endfor %}{# mỗi ngày một nút; JS gán giá trị cho ô ngày #}
+          </div>
+          {% endif %}
+        {% else %}{# ---- câu 1, 2, 3 (chọn một) và câu 5 (chọn nhiều) ---- #}
+          <fieldset class="tro-ly__cau" aria-labelledby="tro-ly-hoi">{# tên của nhóm = câu hỏi ở h1 #}
+            <div class="tro-ly__chon tro-ly__chon--{% if kieu == 'chon_nhieu' %}chip{% else %}{{ bo_cuc }}{% endif %}"{% if kieu == 'chon_nhieu' %} data-toi-da="{{ toi_da_phong_cach }}"{% endif %}>{# luoi | danh_sach | chip #}
+              {% for c in form.dap_an %}
+              <label class="tro-ly__muc">{{ c.tag }}{# c.tag là thẻ input radio hoặc checkbox (ẩn bằng CSS, vẫn bấm và dùng bàn phím được) #}
+                {% if kieu == 'chon_mot' %}{% if bo_cuc == 'luoi' %}<span class="tro-ly__so">{{ forloop.counter|stringformat:"02d" }}</span>{% endif %}<span class="tro-ly__vong" aria-hidden="true"></span>{% endif %}{# số thứ tự (lưới) và vòng tròn radio #}
+                <span class="tro-ly__ten">{{ c.choice_label }}</span>{# tên đáp án #}
+              </label>
+              {% endfor %}
+            </div>
+            {% if kieu == 'chon_nhieu' %}<p class="tro-ly__dem" data-dem aria-live="polite" hidden>Đã chọn 0/{{ toi_da_phong_cach }} phong cách</p>{% endif %}{# JS đếm số đã chọn #}
+            {% for loi in form.dap_an.errors %}<p class="field__error">{{ loi }}</p>{% endfor %}{# lỗi hiện dưới nhóm đáp án #}
+          </fieldset>
+        {% endif %}
+      </div>
+
+      <div class="tro-ly__hanh-dong">
+        {% if url_quay_lai %}<a class="btn btn--ghost" href="{{ url_quay_lai }}">&lsaquo; Quay lại</a>{% else %}<span></span>{% endif %}{# từ câu 2 trở đi mới có; span rỗng giữ nút chính ở bên phải #}
+        <div class="tro-ly__nut-phai">
+          {% if la_buoc_cuoi %}<button class="btn btn--ghost tro-ly__vien" type="submit" name="bo_qua" value="1">Chưa rõ, bỏ qua</button>{% endif %}{# câu 5 không bắt buộc (E1) #}
+          <button class="btn btn--primary" type="submit">{% if la_buoc_cuoi %}Xem gợi ý{% else %}Tiếp tục{% endif %}</button>{# 1 nút chính duy nhất của màn hình #}
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

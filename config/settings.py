@@ -10,11 +10,18 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import sys
 from pathlib import Path
+
+from django.contrib.messages import constants as messages
+
+import os  # đọc biến môi trường (đặt ở đầu file settings.py cùng các import khác)
+
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+load_dotenv(BASE_DIR / '.env')  # đọc biến từ file .env (nếu có); file này không đưa lên GitHub
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
@@ -53,6 +60,10 @@ INSTALLED_APPS = [
 
 AUTH_USER_MODEL = 'accounts.User'
 
+# Django đặt tag của messages.error() là 'error', nhưng CSS (components.css) chỉ có .alert--danger.
+# Đổi tag để mọi messages.error(...) của cả nhóm hiện đúng màu đỏ.
+MESSAGE_TAGS = {messages.ERROR: 'danger'}
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -61,6 +72,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'bookings.middleware.XuLyQuaHanMiddleware',   # T10 (giới hạn tần suất: xem XU_LY_QUA_HAN_KHOANG_CACH_GIAY bên dưới)
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -75,6 +87,9 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.layout',  # thêm dòng này
+                'bookings.context_processors.giu_cho_banner',
+
             ],
         },
     },
@@ -102,13 +117,16 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': 'accounts.validators.DoDaiToiThieuMatKhau',
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
     },
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+    {
+        'NAME': 'accounts.validators.DoPhucTapMatKhau'
     },
 ]
 
@@ -139,8 +157,46 @@ MEDIA_ROOT = BASE_DIR / 'media'       # nơi file thật được lưu trên ổ
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
+FRAMIE_EMAIL_USER = os.environ.get('FRAMIE_EMAIL_USER', '')
+FRAMIE_EMAIL_PASSWORD = os.environ.get('FRAMIE_EMAIL_PASSWORD', '')
+
+if FRAMIE_EMAIL_USER and FRAMIE_EMAIL_PASSWORD:  # đã cấu hình tài khoản gửi -> gửi email
+    MAILERS = {  # Django 6.1 dùng MAILERS thay cho các biến EMAIL_*
+        'default': {  # cấu hình mặc định, send_mail() dùng cấu hình này
+            'BACKEND': 'django.core.mail.backends.smtp.EmailBackend',  # gửi qua máy chủ SMTP
+            'OPTIONS': {  # các thông số kết nối (thay cho EMAIL_HOST, EMAIL_PORT...)
+                'host': 'smtp.gmail.com',  # máy chủ SMTP của Gmail
+                'port': 587,  # cổng dùng với TLS
+                'use_tls': True,  # mã hóa đường truyền
+                'username': FRAMIE_EMAIL_USER,  # tài khoản đăng nhập SMTP
+                'password': FRAMIE_EMAIL_PASSWORD,  # mật khẩu ứng dụng
+                'timeout': 10,  # tối đa 10 giây, tránh đăng ký bị treo khi mạng chậm
+            },  # hết OPTIONS
+        }  # hết cấu hình default
+    }  # hết MAILERS
+
+    DEFAULT_FROM_EMAIL = f'FRAMIE <{FRAMIE_EMAIL_USER}>'
+else:  # chưa cấu hình -> giữ cách làm thử theo đặc tả P11
+    MAILERS = {
+        'default': {'BACKEND': 'django.core.mail.backends.console.EmailBackend'},
+    }
+    print('CẢNH BÁO: chưa đặt FRAMIE_EMAIL_USER / FRAMIE_EMAIL_PASSWORD '
+          '- email chỉ in ra Terminal, KHÔNG gửi thật.')
+
+# ---- P3: đăng nhập và phiên làm việc (Phanh) ----
+AUTHENTICATION_BACKENDS = [  # danh sách cách xác thực, Django thử lần lượt
+    'accounts.backends.EmailBackend',  # đăng nhập bằng email (dùng ở trang /dang-nhap/)
+    'django.contrib.auth.backends.ModelBackend',  # giữ cách cũ (username) để vào được /admin/ bằng tài khoản createsuperuser
+]  # hết danh sách
+
+LOGIN_URL = 'login'  # người chưa đăng nhập bị chuyển tới URL có name='login'
+LOGIN_REDIRECT_URL = 'trang_tam'  # đích dự phòng (thực tế DangNhapView đã chuyển theo vai trò)
+
+SESSION_COOKIE_AGE = 30 * 60  # phiên sống 30 phút, tính bằng giây
+SESSION_SAVE_EVERY_REQUEST = True  # mỗi lần thao tác lại gia hạn 30 phút => hết hạn sau 30 phút KHÔNG hoạt động
+
+
+# T10: middleware quá hạn (bookings/middleware.py) chỉ quét tối đa 1 lần mỗi N giây cho mỗi tiến trình web.
+# Khi chạy `manage.py test` đặt 0 (không giới hạn) để các test cũ vẫn thấy middleware chạy ở mỗi request;
+# test của giới hạn tần suất tự bật lại bằng override_settings.
+XU_LY_QUA_HAN_KHOANG_CACH_GIAY = 0 if sys.argv[1:2] == ['test'] else 45

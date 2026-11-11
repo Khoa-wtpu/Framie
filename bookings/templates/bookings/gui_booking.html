@@ -1,0 +1,105 @@
+{# UC4.2: Trang điền thông tin buổi chụp và gửi yêu cầu Booking. Dùng bởi bookings/gui_booking.py #}
+{# GIAO DIỆN: trang hẹp dạng form, thẻ gradient + viền mảnh giống trang chi tiết. CSS: bookings/css/chi_tiet_booking.css (class "ct") + bookings.css. #}
+{# QUAN TRỌNG: id dem-nguoc*, khoi-het-han, form-gui-booking, nut-gui, goi-chi-tiet và thuộc tính data-* được dem_nguoc.js / gui_booking.js đọc: KHÔNG đổi. #}
+{% extends "base.html" %}{# kế thừa khung chung #}
+{% load static ui %}{# static: nạp CSS/JS; ui: các thành phần giao diện tùy chỉnh #}
+
+{% block title %}Gửi yêu cầu Booking{% endblock %}{# chữ trên tab trình duyệt #}
+{% block extra_head %}{# nạp 2 file CSS #}
+<link rel="stylesheet" href="{% static 'bookings/css/bookings.css' %}">{# .gui-booking__dem, .goi-chi-tiet (khung chi tiết gói) #}
+<link rel="stylesheet" href="{% static 'bookings/css/chi_tiet_booking.css' %}">{# giao diện thẻ dùng chung #}
+{% endblock %}
+
+{% block content %}
+<div class="container ct ct--hep">{# khung hẹp giữa trang #}
+
+  <header>
+    <p class="ct__nhan-nho">Bước cuối cùng</p>{# dòng nhỏ viết hoa #}
+    <h1>Gửi yêu cầu Booking</h1>{# tiêu đề #}
+  </header>
+
+  <section class="ct__the ct__dem">{# thẻ khung giờ đang giữ + đếm ngược #}
+    <h2 class="ct__the-tieu-de ct__canh-trai">Khung giờ đang giữ</h2>
+    <dl class="ct__ds ct__canh-trai">
+      <div class="ct__dong"><dt>Nhiếp ảnh gia</dt><dd>{{ ten_nag }}</dd></div>{# tên nhiếp ảnh gia do view truyền sang #}
+      <div class="ct__dong"><dt>Khung giờ</dt><dd>{{ lich.Ngay|date:"l, d/m/Y" }}, {{ lich.GioBatDau|time:"H:i" }}–{{ lich.GioKetThuc|time:"H:i" }}, {{ thoi_luong_slot }}</dd></div>{# thứ, ngày, giờ + độ dài khung giờ (để khách biết gói nào còn vừa) #}
+    </dl>
+    <div id="dem-nguoc" class="ct__dem-khung" role="timer" aria-label="Thời gian giữ chỗ còn lại"
+         data-con-lai="{{ con_lai_giay }}" data-url="{{ url_trang_thai }}"
+         data-an="form-gui-booking" data-hien="khoi-het-han">{# khu vực đồng hồ đếm ngược #}
+      <span class="ct__o-nhan ct__o-nhan--khoi">Thời gian giữ chỗ còn lại</span>{# nhãn nhỏ phía trên số đếm #}
+      <span class="gui-booking__dem" id="dem-nguoc-so">--:--</span>{# JavaScript cập nhật số phút:giây #}
+      <progress class="gui-booking__thanh" id="dem-nguoc-thanh" max="{{ tong_giay }}" value="{{ con_lai_giay }}"></progress>{# thanh tiến trình thời gian còn lại #}
+    </div>
+  </section>
+
+  {# --- Hết thời gian giữ chỗ (ngoại lệ 4a, hiện khi bộ đếm về 0) --- #}
+  <div id="khoi-het-han" class="alert alert--warning" role="alert" hidden>{# ban đầu bị ẩn #}
+    <div class="alert__body">
+      <strong class="alert__title">{{ TB_SLOT_HET_HAN_GIU }}</strong>{# thông báo hết hạn từ view #}
+      <span class="alert__text"><a href="{{ url_lich }}">Chọn lại khung giờ</a>.</span>{# link quay lại chọn khung giờ khác #}
+    </div>
+  </div>
+
+  {# Form nhập thông tin buổi chụp và gửi yêu cầu Booking #}
+  <form id="form-gui-booking" class="ct__the" method="post" novalidate data-giu-tiep>{# form POST #}
+    <h2 class="ct__the-tieu-de">Thông tin buổi chụp</h2>{# tiêu đề thẻ form #}
+    <p class="ct__mo-ta gb-gioi-thieu">Điền theo 3 bước: chọn gói, chọn thời gian và địa điểm, rồi cho Nhiếp ảnh gia biết concept bạn mong muốn.</p>{# câu dẫn ngắn giúp Khách biết form gồm mấy phần #}
+    {% csrf_token %}{# mã CSRF chống giả mạo yêu cầu #}
+    {% for loi in form.non_field_errors %}{# lỗi chung không gắn với ô nào #}
+      {% include "includes/alert.html" with level="danger" text=loi %}{# hộp cảnh báo đỏ #}
+    {% endfor %}
+
+    {# Không có ô "Loại hình chụp" riêng: loại hình là của gói nên các gói được nhóm theo loại hình ngay trong ô bên dưới #}
+    <div class="gb-nhom gb-nhom--goi" role="group" aria-labelledby="gb-nhom-1">{# NHÓM 1 (tông xanh dương): chọn gói dịch vụ #}
+    <h3 class="gb-nhom__tieu-de" id="gb-nhom-1"><span class="gb-nhom__so" aria-hidden="true">1</span>Chọn gói dịch vụ</h3>{# tiêu đề nhóm kèm số bước #}
+    {% include "includes/form_field.html" with field=form.goi %}{# chọn gói dịch vụ (nhóm theo loại hình, ghi giá, thời lượng, hậu kỳ) #}
+
+    {# Khung chi tiết của gói đang chọn; gui_booking.js điền nội dung (textContent) và bỏ thuộc tính hidden khi khách chọn gói #}
+    <div id="goi-chi-tiet" class="goi-chi-tiet" aria-live="polite" hidden>
+      <p class="goi-chi-tiet__ten"><strong data-truong="ten"></strong> <span class="goi-chi-tiet__loai" data-truong="loai-hinh"></span></p>{# tên gói to + loại hình nhỏ bên cạnh #}
+      <p class="goi-chi-tiet__mo-ta" data-truong="mo-ta"></p>{# mô tả gói do Nhiếp ảnh gia nhập #}
+      <dl class="goi-chi-tiet__ds">{# 4 ô số liệu: mỗi ô nhãn nhỏ phía trên, giá trị đậm phía dưới #}
+        <div class="goi-chi-tiet__o"><dt>Thời lượng</dt><dd data-truong="thoi-luong"></dd></div>
+        <div class="goi-chi-tiet__o"><dt>Hậu kỳ</dt><dd data-truong="hau-ky"></dd></div>
+        <div class="goi-chi-tiet__o goi-chi-tiet__o--gia"><dt>Giá (VNĐ)</dt><dd data-truong="gia"></dd></div>
+        <div class="goi-chi-tiet__o"><dt>Bắt đầu muộn nhất</dt><dd data-truong="gio-muon-nhat"></dd></div>
+      </dl>
+    </div>
+    </div>{# hết NHÓM 1 #}
+
+    <div class="gb-nhom gb-nhom--thoi-gian" role="group" aria-labelledby="gb-nhom-2">{# NHÓM 2 (tông tím): thời gian + địa điểm + số người #}
+    <h3 class="gb-nhom__tieu-de" id="gb-nhom-2"><span class="gb-nhom__so" aria-hidden="true">2</span>Thời gian và địa điểm</h3>
+
+    <div class="gb-luoi">{# lưới 2 cột: ô ngắn đứng cạnh nhau cho gọn (hẹp thì xếp dọc) #}
+      {% include "includes/form_field.html" with field=form.ngay_gio_chup %}{# ngày và giờ chụp #}
+      {% include "includes/form_field.html" with field=form.so_nguoi %}{# số người tham gia #}
+      {% include "includes/form_field.html" with field=form.khu_vuc %}{# địa điểm chụp: chọn khu vực của Nhiếp ảnh gia #}
+      {% include "includes/form_field.html" with field=form.dia_chi_cu_the %}{# địa chỉ cụ thể (không bắt buộc) #}
+    </div>
+    </div>{# hết NHÓM 2 #}
+
+    <div class="gb-nhom gb-nhom--concept" role="group" aria-labelledby="gb-nhom-3">{# NHÓM 3 (tông xanh ngọc): concept + yêu cầu riêng #}
+    <h3 class="gb-nhom__tieu-de" id="gb-nhom-3"><span class="gb-nhom__so" aria-hidden="true">3</span>Concept và yêu cầu</h3>
+    {% include "includes/form_field.html" with field=form.phong_cach %}{# concept: chọn phong cách của Nhiếp ảnh gia #}
+    {% include "includes/form_field.html" with field=form.mo_ta_concept %}{# mô tả concept (không bắt buộc) #}
+    {% include "includes/form_field.html" with field=form.yeu_cau_rieng %}{# yêu cầu riêng của khách #}
+    </div>{# hết NHÓM 3 #}
+
+    <div class="ct__nut">{# hàng nút #}
+      <button id="nut-gui" class="btn btn--primary" type="submit">Gửi yêu cầu Booking</button>{# gửi dữ liệu form lên máy chủ bằng POST #}
+      <button class="btn btn--ghost" type="submit" form="form-huy-giu-cho">Chọn khung giờ khác</button>{# nhả slot đang giữ ngay rồi quay lại trang lịch #}
+    </div>
+  </form>
+  {# Form ẩn nhả giữ chỗ (chỉ khi Khách bấm nút "Chọn khung giờ khác"; rời trang thì không nhả). Nằm NGOÀI form-gui-booking. KHÔNG đổi id. #}
+  <form id="form-huy-giu-cho" method="post" action="{% url 'huy_giu_cho' giu_cho.pk %}" hidden>{% csrf_token %}</form>
+</div>
+{% endblock %}
+
+{# Hai script của UC4.2 (đều trong bookings/static/bookings/js/): #}
+{# dem_nguoc.js  - đồng hồ đếm ngược, đọc data-con-lai / data-url / data-an / data-hien của #dem-nguoc #}
+{# gui_booking.js - khung chi tiết của gói đang chọn + khóa các gói dài hơn khung giờ đang giữ #}
+{% block extra_js %}
+<script src="{% static 'bookings/js/dem_nguoc.js' %}" defer></script>
+<script src="{% static 'bookings/js/gui_booking.js' %}" defer></script>
+{% endblock %}

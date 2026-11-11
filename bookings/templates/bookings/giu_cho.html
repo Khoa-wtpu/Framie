@@ -1,0 +1,74 @@
+{# UC4.1 bước 6: màn hình giữ chỗ có đếm ngược 5 phút. Dùng bởi bookings/giu_cho.py #}
+{# GIAO DIỆN: trang hẹp, bộ đếm ngược số lớn ở giữa thẻ. CSS: bookings/css/chi_tiet_booking.css (class "ct") + bookings.css (số đếm). #}
+{# QUAN TRỌNG: các id dem-nguoc, dem-nguoc-so, dem-nguoc-thanh, khoi-dang-giu, khoi-het-han và data-* được dem_nguoc.js đọc: KHÔNG đổi. #}
+{% extends "base.html" %}{# kế thừa khung chung #}
+{% load static ui %}{# static: nạp CSS/JS; ui: status_badge #}
+
+{% block title %}Giữ chỗ khung giờ{% endblock %}{# chữ trên tab trình duyệt #}
+{% block extra_head %}{# nạp 2 file CSS #}
+<link rel="stylesheet" href="{% static 'bookings/css/bookings.css' %}">{# số đếm .giu-cho__so và thanh tiến trình #}
+<link rel="stylesheet" href="{% static 'bookings/css/chi_tiet_booking.css' %}">{# giao diện thẻ dùng chung #}
+{% endblock %}
+
+{% block content %}
+<div class="container ct ct--hep">{# khung hẹp giữa trang #}
+
+  <header>
+    <p class="ct__nhan-nho">Giữ chỗ</p>{# dòng nhỏ viết hoa #}
+    <h1>Giữ chỗ khung giờ</h1>{# tiêu đề #}
+  </header>
+
+  <section class="ct__the">{# thẻ thông tin lượt giữ chỗ #}
+    <h2 class="ct__the-tieu-de">Khung giờ của bạn</h2>
+    <dl class="ct__ds">
+      <div class="ct__dong"><dt>Nhiếp ảnh gia</dt><dd>{{ ten_nag }}</dd></div>{# ten_nag do view truyền sang #}
+      <div class="ct__dong"><dt>Khung giờ</dt><dd>{{ lich.Ngay|date:"l, d/m/Y" }}, {{ lich.GioBatDau|time:"H:i" }}–{{ lich.GioKetThuc|time:"H:i" }}</dd></div>{# thứ, ngày/tháng/năm và giờ bắt đầu–kết thúc #}
+      <div class="ct__dong"><dt>Trạng thái</dt><dd>{% status_badge giu_cho.TrangThai %}</dd></div>{# trạng thái lượt giữ chỗ dạng nhãn màu #}
+    </dl>
+  </section>
+
+  {# --- Đang giữ: chỉ hiện khi dang_giu là True; không thì thuộc tính hidden ẩn toàn bộ khối. --- #}
+  <section id="khoi-dang-giu" class="ct__the ct__dem"{% if not dang_giu %} hidden{% endif %}>{# thẻ bộ đếm ngược #}
+    <p class="ct__o-nhan">Thời gian giữ chỗ còn lại</p>{# nhãn nhỏ phía trên số đếm #}
+    {# data-con-lai: số giây còn lại do server tính; data-url: API kiểm tra trạng thái; data-an / data-hien: id khối ẩn / hiện khi hết hạn. #}
+    <div id="dem-nguoc" role="timer" aria-label="Thời gian giữ chỗ còn lại"
+         data-con-lai="{{ con_lai_giay }}" data-url="{{ url_trang_thai }}"
+         data-an="khoi-dang-giu" data-hien="khoi-het-han">
+      <div class="giu-cho__so" id="dem-nguoc-so">--:--</div>{# nơi JavaScript cập nhật số phút:giây #}
+      <progress class="giu-cho__thanh" id="dem-nguoc-thanh" max="{{ tong_giay }}" value="{{ con_lai_giay }}"></progress>{# thanh tiến trình: tối đa = tổng thời gian giữ, giá trị = số giây còn lại #}
+    </div>
+    <p class="ct__ghi-chu">Hãy gửi yêu cầu Booking trong thời gian còn lại. Hết giờ, khung giờ sẽ được trả về lịch trống.</p>{# hướng dẫn khách #}
+    <div class="ct__nut ct__nut--giua">{# hàng nút căn giữa #}
+      {% if url_gui_booking %}{# chỉ hiện nếu view đã tạo được URL sang UC4.2 #}
+        <a class="btn btn--primary" href="{{ url_gui_booking }}" data-giu-tiep>Tiếp tục gửi yêu cầu Booking</a>{# chuyển sang trang gửi yêu cầu, kèm mã lượt giữ chỗ #}
+      {% endif %}
+      <button class="btn btn--ghost" type="submit" form="form-huy-giu-cho">Chọn khung giờ khác</button>{# nhả slot đang giữ ngay rồi quay lại trang lịch #}
+    </div>
+    {# Form ẩn: nút "Chọn khung giờ khác" submit vào đây. Khách rời trang thì KHÔNG nhả: đồng hồ vẫn chạy, quay lại trang lịch vẫn thấy đếm ngược. #}
+    <form id="form-huy-giu-cho" method="post" action="{% url 'huy_giu_cho' giu_cho.pk %}" hidden>{% csrf_token %}</form>
+  </section>
+
+  {# --- Hết hạn (ngoại lệ 5b): mặc định chỉ hiện khi da_het_han là True. --- #}
+  <div id="khoi-het-han" class="alert alert--warning" role="alert"{% if not da_het_han %} hidden{% endif %}>
+    <div class="alert__body">
+      <strong class="alert__title">Hết thời gian giữ chỗ</strong>{# tiêu đề cảnh báo #}
+      <span class="alert__text">{{ TB_HET_HAN }} <a href="{{ url_lich }}">Chọn lại khung giờ</a>.</span>{# nội dung từ view + link quay lại chọn lịch #}
+    </div>
+  </div>
+
+  {% if da_hoan_tat %}{# đã gửi Booking kịp hạn #}
+    <div class="alert alert--success" role="status">
+      <div class="alert__body">
+        <strong class="alert__title">Đã gửi yêu cầu Booking</strong>{# thông báo thành công #}
+        <span class="alert__text">Lượt giữ chỗ này đã hoàn tất.</span>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{# JS đếm ngược dùng chung với gui_booking.html: bookings/static/bookings/js/dem_nguoc.js #}
+{% block extra_js %}
+{% if dang_giu %}<script src="{% static 'bookings/js/dem_nguoc.js' %}" defer></script>
+{% endif %}{# chỉ nạp đồng hồ nếu lượt giữ chỗ còn hiệu lực #}
+{% endblock %}

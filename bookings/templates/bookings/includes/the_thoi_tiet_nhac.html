@@ -1,0 +1,9 @@
+{# E8: dải nhắc đổi lịch khi khả năng mưa cao. Đi cùng thẻ gọn (the_thoi_tiet.html with gon=True); đặt ngay dưới tiêu đề trang. Không vẽ gì nếu mưa thấp / không có dự báo. #}
+{% if the_thoi_tiet and the_thoi_tiet.du_bao and the_thoi_tiet.mua_cao %}
+<div class="tt-nhac">{# CSS: bookings/css/the_thoi_tiet.css #}
+  {% include "includes/alert.html" with level="warning" text=the_thoi_tiet.TB_NHAC_DOI_LICH %}
+  {% if the_thoi_tiet.url_chat %}
+  <form method="post" action="{{ the_thoi_tiet.url_chat }}">{% csrf_token %}<button class="btn btn--secondary" type="submit">Trao đổi qua trò chuyện</button></form>
+  {% endif %}
+</div>
+{% endif %}

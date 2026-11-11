@@ -1,0 +1,17 @@
+/* core/static/core/css/trang_tinh.css - B10: Trang tĩnh (Giới thiệu, Điều khoản) và trang lỗi (403, 404, 500). */
+/* Chỉ dùng token trong tokens.css; không dùng thuộc tính style trong HTML. Tiền tố "tt-" = Trang Tĩnh. */
+
+/* Hộp nội dung hẹp, căn giữa (trang lỗi). Đứng sau .container nên ghi đè max-width của .container. */
+.tt-hop { max-width: 40rem; margin-inline: auto; padding-block: var(--space-8); text-align: center; }
+
+/* Biến thể rộng hơn, canh trái, cho Giới thiệu và Điều khoản (nhiều đoạn văn). */
+.tt-hop--rong { max-width: 48rem; padding-block: 0; text-align: left; }
+
+/* Số mã lỗi 403 / 404 / 500 cỡ lớn. */
+.tt-ma-loi { margin: 0; font-size: var(--text-3xl); font-weight: var(--fw-heading); }
+
+/* Khoảng cách phía trên hàng nút. */
+.tt-nut { margin-top: var(--space-5); }
+
+/* Tiêu đề trang lỗi: chia đều chữ giữa các dòng, không để lẻ một chữ ở dòng dưới (vd. "cập" của 403). */
+.tt-hop:not(.tt-hop--rong) h1 { font-size: var(--text-2xl); text-wrap: balance; } /* cỡ vừa để câu 403 nằm trọn một dòng ở màn hình rộng; hẹp quá thì chia đều 2 dòng */
