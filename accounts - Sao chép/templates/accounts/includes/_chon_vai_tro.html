@@ -1,0 +1,7 @@
+<div class="role-switch">{# khối chọn vai trò dùng chung cho 2 trang đăng ký; kiểu dáng nằm trong components.css (.role-switch) #}
+  <p class="card__meta role-switch__label">Bạn đăng ký với vai trò:</p>{# dòng chữ đứng riêng một hàng #}
+  <div class="role-switch__list">{# 2 nút nằm cạnh nhau, độ rộng vừa chữ #}
+    <a class="btn btn--secondary btn--sm" href="{% url 'register' %}"{% if hien_tai == 'khach_hang' %} aria-current="page"{% endif %}>Khách hàng</a>{# aria-current="page": CSS tô đậm nút đang chọn #}
+    <a class="btn btn--secondary btn--sm" href="{% url 'register_photographer' %}"{% if hien_tai == 'nhiep_anh_gia' %} aria-current="page"{% endif %}>Nhiếp ảnh gia</a>{# aria-current="page": CSS tô đậm nút đang chọn #}
+  </div>
+</div>

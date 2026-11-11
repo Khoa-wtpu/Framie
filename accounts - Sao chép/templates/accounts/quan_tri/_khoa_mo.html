@@ -1,0 +1,12 @@
+{# accounts/quan_tri/_khoa_mo.html - form khóa/mở một tài khoản; nằm ở cột Thao tác; data-khoa-mo để JS ẩn khi dòng đang sửa vai trò #}
+<form method="post" action="{% url 'admin_account_toggle' h.user.pk %}" class="admin-inline-form" data-khoa-mo>
+  {% csrf_token %}{# mã chống giả mạo form, BẮT BUỘC có #}
+  <input type="hidden" name="quay_lai" value="{{ quay_lai }}">{# nhớ trang và bộ lọc hiện tại để quay lại #}
+  {% if h.user.is_active %}
+  <input type="hidden" name="hanh_dong" value="khoa">
+  <button class="btn btn--danger btn--sm tk-nut" type="submit" data-xac-nhan-form="Khóa tài khoản {{ h.user.email }}? Người này sẽ không đăng nhập được nữa.">Khóa</button>
+  {% else %}
+  <input type="hidden" name="hanh_dong" value="mo">
+  <button class="btn btn--soft btn--sm tk-nut" type="submit">Mở khóa</button>
+  {% endif %}
+</form>

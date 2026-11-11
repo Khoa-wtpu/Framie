@@ -1,0 +1,29 @@
+{% extends "base.html" %}{# Đổi mật khẩu (mọi vai trò đã đăng nhập); nút con mắt thêm bằng hien_mat_khau.js #}
+{% load static %}
+{% block title %}Đổi mật khẩu{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'accounts/css/tai_khoan.css' %}"><script src="{% static 'accounts/js/hien_mat_khau.js' %}" defer></script>{% endblock %}
+{% block content %}
+<div class="container tk tk--hep">
+  <header class="tk__dau">
+    <h1>Đổi mật khẩu</h1>
+    <p>Nhập mật khẩu hiện tại rồi chọn mật khẩu mới. Bấm biểu tượng con mắt để xem lại chữ bạn đang gõ.</p>
+  </header>
+
+  {% if form.non_field_errors %}
+    {% include "includes/alert.html" with level="danger" text=form.non_field_errors.0 %}
+  {% endif %}
+
+  <form method="post" novalidate data-hien-mat-khau>
+    {% csrf_token %}
+    <section class="tk__khoi">
+      {% include "includes/form_field.html" with field=form.mat_khau_cu %}
+      {% include "includes/form_field.html" with field=form.mat_khau_moi %}
+      {% include "includes/form_field.html" with field=form.nhap_lai %}
+    </section>
+    <div class="tk__luoi">
+      <a class="btn btn--secondary btn--block" href="{{ huy_url }}">Hủy</a>
+      <button class="btn btn--primary btn--block" type="submit">Đổi mật khẩu</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

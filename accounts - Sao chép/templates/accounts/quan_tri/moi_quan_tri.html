@@ -1,0 +1,26 @@
+{% extends "accounts/quan_tri/khung.html" %}{# dùng khung Quản trị #}
+{% load static %}{# static: lấy file CSS #}
+{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'profiles/css/ho_so.css' %}">{% endblock %}{# giữ admin.css (block.super) rồi nạp CSS khối .ho-so__khoi cho giống trang đăng ký #}
+{% block admin_title_tab %}Tạo tài khoản quản trị viên{% endblock %}{# chữ trên tab #}
+{% block admin_eyebrow %}<p class="admin-caption">Quản trị · Tài khoản và vai trò</p>{% endblock %}{# dòng nhỏ phía trên tiêu đề #}
+{% block admin_tieu_de %}Tạo tài khoản quản trị viên{% endblock %}{# tiêu đề trang #}
+{% block admin_noi_dung %}
+{% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}{# lỗi chung #}
+<form method="post" novalidate>{# gửi bằng POST #}
+  {% csrf_token %}{# mã chống giả mạo form, BẮT BUỘC có #}
+  <section class="ho-so__khoi">
+    <header class="ho-so__khoi-dau"><h2>Người được mời</h2></header>
+    {% include "includes/form_field.html" with field=form.email %}{# ô Email #}
+  </section>
+  <button class="btn btn--primary" type="submit">Gửi lời mời</button>
+  <a class="btn btn--soft" href="{% url 'admin_accounts' %}">Quay lại</a>
+</form>
+
+{% if link_gui_tay %}{# chỉ hiện khi gửi email lỗi #}
+<section class="ho-so__khoi">
+  <header class="ho-so__khoi-dau"><h2>Link mời để gửi trực tiếp</h2></header>
+  <p class="card__meta">Link dùng được một lần, có hiệu lực {{ gio_hieu_luc }} giờ. Chỉ gửi cho đúng người được mời.</p>
+  <input class="input" type="text" readonly value="{{ link_gui_tay }}" aria-label="Link mời">{# bấm vào rồi Ctrl+A, Ctrl+C để copy (JS không được viết trong HTML) #}
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}{# Hồ sơ của tôi (Khách hàng): dùng lại bố cục hsct__ của trang NAG để đồng bộ #}
+{% load static %}
+{% block title %}Hồ sơ của tôi{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'profiles/css/ho_so_cua_toi.css' %}"><link rel="stylesheet" href="{% static 'accounts/css/tai_khoan.css' %}">{% endblock %}
+{% block content %}
+<div class="container hsct">
+  <header class="hsct__dau">
+    <div class="hsct__tieu-de"><h1>Hồ sơ của tôi</h1></div>
+    <a class="btn btn--secondary" href="{% url 'customer_profile_update' %}">Cập nhật hồ sơ</a>
+  </header>
+  <p class="hsct__mo-ta">Thông tin tài khoản của bạn trên FRAMIE.</p>
+
+  <section class="hsct__nhan-vat" aria-label="Thông tin chung">
+    <div class="hsct__anh"><span aria-hidden="true">{{ ten|slice:":1"|upper }}</span></div>
+    <div>
+      <p class="hsct__ten">{{ ten }}</p>
+      <p class="muted hsct__ma">ID: {{ ma }}</p>
+      <p class="hsct__lien-he">{{ user_kh.so_dien_thoai }}<span aria-hidden="true"> · </span>{{ user_kh.email }}</p>
+    </div>
+  </section>
+
+  <section class="hsct__muc tk__muc" aria-labelledby="hs-tai-khoan">
+    <h2 id="hs-tai-khoan">Thông tin tài khoản</h2>
+    <dl class="hsct__thong-so">
+      <div class="hsct__dong"><dt>Họ và tên</dt><dd>{{ ten }}</dd></div>
+      <div class="hsct__dong"><dt>Email</dt><dd>{{ user_kh.email }}</dd></div>
+      <div class="hsct__dong"><dt>Số điện thoại</dt><dd>{{ user_kh.so_dien_thoai }}</dd></div>
+      <div class="hsct__dong"><dt>Mật khẩu</dt>
+        <dd class="tk__hang-mk">
+          <span class="tk__mat-khau" role="img" aria-label="Mật khẩu được ẩn">••••••••</span>
+          <a class="btn btn--soft btn--sm" href="{% url 'change_password' %}">Đổi mật khẩu</a>
+        </dd>
+      </div>
+    </dl>
+  </section>
+</div>
+{% endblock %}
