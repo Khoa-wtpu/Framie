@@ -1,5 +1,5 @@
-{# accounts/quan_tri/_khoa_mo.html - form khóa/mở một tài khoản; nằm ở cột Thao tác; data-khoa-mo để JS ẩn khi dòng đang sửa vai trò #}
-<form method="post" action="{% url 'admin_account_toggle' h.user.pk %}" class="admin-inline-form" data-khoa-mo>
+{# accounts/quan_tri/_khoa_mo.html - form khóa/mở một tài khoản; nằm ở cột Thao tác #}
+<form method="post" action="{% url 'admin_account_toggle' h.user.pk %}" class="admin-inline-form">
   {% csrf_token %}{# mã chống giả mạo form, BẮT BUỘC có #}
   <input type="hidden" name="quay_lai" value="{{ quay_lai }}">{# nhớ trang và bộ lọc hiện tại để quay lại #}
   {% if h.user.is_active %}
