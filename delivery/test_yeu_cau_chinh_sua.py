@@ -250,6 +250,7 @@ class YeuCauChinhSuaViewTests(_NenYeuCau):                     # trang web của
         self.assertContains(trang, 'Màu hơi lạnh')             # nhận xét tổng quát
         self.assertContains(trang, 'Sửa ảnh 1 sáng hơn')       # nội dung sửa của ảnh
         self.assertNotContains(trang, 'ảnh cần sửa:')          # ô "Tải ảnh đã hậu kỳ" không còn dòng "Còn n ảnh cần sửa" (ảnh đã hiện ở khung yêu cầu bên dưới)
-        self.assertNotContains(trang, 'tai-anh__luoi')         # và không còn lưới ảnh lặp lại trong ô đó
+        phan_tren = trang.content.decode().split('Ảnh trong Booking')[0]   # chỉ xét phần trên, vì mục "Ảnh trong Booking" ở cuối trang vẫn có lưới ảnh riêng
+        self.assertNotIn('class="tai-anh__luoi"', phan_tren)  # và không còn lưới ảnh lặp lại trong ô tải ảnh đó
         self.assertContains(trang, 'data-xem-lon')             # ảnh trong khung yêu cầu bấm vào phóng to ngay trong trang
         self.assertContains(trang, 'xem_anh_lightbox.js')      # trang có nạp JS cửa sổ phóng to

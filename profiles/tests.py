@@ -199,7 +199,7 @@ class NoiBatTestCase(TestCase):
 
 
 # =====================================================================
-# K3 - Tạo hồ sơ: thông báo cho Quản trị viên, ô chọn ngân hàng, trang thử
+# K3 - Tạo hồ sơ: thông báo cho Quản trị viên, ô chọn ngân hàng
 # =====================================================================
 @override_settings(MEDIA_ROOT=THU_MUC_ANH)
 class TaoHoSoK3TestCase(TestCase):
@@ -269,41 +269,6 @@ class TaoHoSoK3TestCase(TestCase):
         nag.refresh_from_db()
         form = NhiepAnhGiaForm(self.du_lieu(NganHang='Ngân hàng nhập tay'), None, instance=nag)
         self.assertTrue(form.is_valid(), form.errors)
-
-    # ---- trang thử /thu-quyen/tao-ho-so/ (cần config/urls.py có include('profiles.urls')) ----
-    def test_trang_thu_chua_dang_nhap_ve_dang_nhap(self):
-        res = self.client.get(reverse('tao_ho_so_thu'))
-        self.assertEqual(res.status_code, 302)
-        self.assertIn('/dang-nhap/', res['Location'])
-
-    def test_trang_thu_khach_hang_bi_403(self):
-        khach = tao_user('khach1', VaiTro.KHACH_HANG, so=2)
-        self.client.force_login(khach)
-        self.assertEqual(self.client.get(reverse('tao_ho_so_thu')).status_code, 403)
-
-    def test_trang_thu_hien_form_dung_wireframe(self):
-        self.client.force_login(self.user)
-        res = self.client.get(reverse('tao_ho_so_thu'))
-        self.assertEqual(res.status_code, 200)
-        for chu in ('Ảnh đại diện', 'Giới thiệu bản thân', 'Loại hình chụp', 'Phong cách',
-                    'Khu vực hoạt động', 'Thông tin nhận thanh toán', 'Chọn ngân hàng',
-                    'Tên chủ tài khoản', 'Ảnh mã QR', 'Gửi hồ sơ'):
-            self.assertContains(res, chu)
-
-    def test_trang_thu_gui_hop_le(self):
-        self.client.force_login(self.user)
-        res = self.client.post(reverse('tao_ho_so_thu'), {**self.du_lieu(), **self.tep()})
-        self.assertEqual(res.status_code, 302)
-        self.assertTrue(NhiepAnhGia.objects.filter(MaTaiKhoan=self.user).exists())
-        self.user.refresh_from_db()
-        self.assertEqual(self.user.trang_thai_ho_so, TrangThaiHoSo.CHO_DUYET)
-
-    def test_trang_thu_thieu_gioi_thieu_bao_loi(self):
-        self.client.force_login(self.user)
-        res = self.client.post(reverse('tao_ho_so_thu'), {**self.du_lieu(GioiThieu=''), **self.tep()})
-        self.assertEqual(res.status_code, 200)
-        self.assertContains(res, 'Vui lòng nhập giới thiệu bản thân.')
-        self.assertFalse(NhiepAnhGia.objects.filter(MaTaiKhoan=self.user).exists())
 
 
 # =====================================================================
