@@ -3,11 +3,14 @@
 #   UC4.6 Yêu cầu hủy Booking  (+ Khách hàng xác nhận đã nhận lại tiền cọc)
 #
 # Yêu cầu (đặc tả UC4.6 + task T9):
-#   - Khách hàng HOẶC Nhiếp ảnh gia hủy khi Booking đang "Chờ đặt cọc" hoặc "Chốt Booking".
+#   - Khách hàng hủy được khi Booking đang "Chờ xác nhận" (rút yêu cầu trước khi Nhiếp ảnh gia phản hồi - C1),
+#     "Chờ đặt cọc" hoặc "Chốt Booking". Nhiếp ảnh gia hủy được khi "Chờ đặt cọc" hoặc "Chốt Booking" (C3/C4);
+#     lúc "Chờ xác nhận" Nhiếp ảnh gia dùng "Từ chối" (UC4.5) chứ không "Hủy".
 #     Từ "Đã chụp" trở đi (và các trạng thái khác) KHÔNG hủy được.
 #   - Bắt buộc nhập lý do ("Vui lòng nhập lý do hủy"), có bước xác nhận (trang xác nhận rồi mới hủy).
 #   - Booking -> "Đã hủy", slot trả về "Lịch trống" (cả hai việc do chuyen_trang_thai_booking làm).
 #   - Ghi bảng YEUCAUHUY: bên hủy, lý do, trạng thái lúc hủy, xử lý tiền cọc:
+#       Chờ xác nhận (chỉ Khách)         -> Không phát sinh   (Nhiếp ảnh gia chưa chấp nhận, chưa có cọc)
 #       Chờ đặt cọc                      -> Không phát sinh   (chưa có tiền cọc)
 #       Chốt Booking + Khách hủy         -> Mất cọc           (mất 40%)
 #       Chốt Booking + Nhiếp ảnh gia hủy -> Hoàn cọc, "Chờ hoàn tiền"
@@ -53,8 +56,10 @@ from payments.models import ThanhToan, tinh_so_tien  # ThanhToan: tìm minh ch�
 
 logger = logging.getLogger(__name__)  # tạo "cây bút ghi log" mang tên file này
 
-# Chỉ 2 trạng thái này được hủy (BR4.6-1). Từ "Đã chụp" trở đi, hoặc đã kết thúc, đều không hủy được.
-TRANG_THAI_HUY_DUOC = (TrangThaiBooking.CHO_DAT_COC, TrangThaiBooking.CHOT_BOOKING)  # bộ 2 trạng thái cho phép hủy
+# Trạng thái được hủy (BR4.6-1) tùy BÊN hủy. Từ "Đã chụp" trở đi, hoặc đã kết thúc, đều không hủy được.
+TRANG_THAI_HUY_DUOC_NAG = (TrangThaiBooking.CHO_DAT_COC, TrangThaiBooking.CHOT_BOOKING)  # Nhiếp ảnh gia: chỉ sau khi đã chấp nhận (lúc chờ xác nhận thì dùng "Từ chối")
+TRANG_THAI_HUY_DUOC_KHACH = (TrangThaiBooking.CHO_XAC_NHAN,) + TRANG_THAI_HUY_DUOC_NAG  # Khách: thêm "Chờ xác nhận" (rút yêu cầu)
+TRANG_THAI_HUY_DUOC = TRANG_THAI_HUY_DUOC_KHACH  # hợp của hai bên (giữ tên cũ cho nơi khác import)
 
 # Vai trò -> bên thực hiện ghi vào Lịch sử / YeuCauHuy. Vai trò khác (Quản trị viên) không có quyền hủy.
 BEN_THEO_VAI_TRO = {VaiTro.KHACH_HANG: BenThucHien.KHACH_HANG,  # vai trò Khách hàng -> bên hủy là "Khách hàng"
@@ -62,8 +67,10 @@ BEN_THEO_VAI_TRO = {VaiTro.KHACH_HANG: BenThucHien.KHACH_HANG,  # vai trò Khác
 
 # Câu thông báo.
 TB_THIEU_LY_DO = 'Vui lòng nhập lý do hủy'                        # UC4.6, ngoại lệ 4a
-TB_KHONG_THE_HUY = ('Chỉ Booking đang ở trạng thái "Chờ đặt cọc" hoặc "Chốt Booking" mới hủy được. '  # câu báo khi Booking không ở trạng thái được hủy (nửa đầu)
+TB_KHONG_THE_HUY = ('Chỉ Booking đang ở trạng thái "Chờ đặt cọc" hoặc "Chốt Booking" mới hủy được. '  # câu báo (Nhiếp ảnh gia) khi Booking không ở trạng thái được hủy (nửa đầu)
                     'Từ "Đã chụp" trở đi Booking không thể hủy.')  # (nửa sau của cùng câu)
+TB_KHONG_THE_HUY_KHACH = ('Chỉ Booking đang ở trạng thái "Chờ xác nhận", "Chờ đặt cọc" hoặc "Chốt Booking" mới hủy được. '  # câu báo (Khách hàng): có thêm "Chờ xác nhận"
+                          'Từ "Đã chụp" trở đi Booking không thể hủy.')  # nửa sau của cùng câu
 # Hủy khi đang "Chờ đặt cọc" nhưng đã có minh chứng cọc chờ xác nhận: vẫn cho hủy, XuLyTienCoc giữ "Không phát sinh", chỉ đổi câu hiển thị.
 TB_MINH_CHUNG_DANG_CHO_KHACH = ('Booking có minh chứng cọc đang chờ xác nhận. '
                                 'Nếu bạn đã chuyển khoản, hãy liên hệ Nhiếp ảnh gia để xử lý hoàn tiền.')
@@ -107,14 +114,28 @@ def lay_booking_cua_ben(user, vai_tro, ma_booking):  # hàm lấy Booking theo �
     return booking  # trả Booking tìm được
 
 
-def co_the_huy(booking):  # kiểm tra Booking này có hủy được không
-    """Nút 'Hủy Booking' có được hiện / bấm được không."""
-    return booking.TrangThai in TRANG_THAI_HUY_DUOC  # True nếu trạng thái hiện tại nằm trong 2 trạng thái cho phép hủy
+def trang_thai_huy_duoc(ben):  # bộ trạng thái được hủy của MỘT bên
+    """Khách hàng -> 3 trạng thái (có 'Chờ xác nhận'); Nhiếp ảnh gia -> 2 trạng thái; bên khác/None -> hợp của hai bên."""
+    if ben == BenThucHien.NHIEP_ANH_GIA:  # Nhiếp ảnh gia
+        return TRANG_THAI_HUY_DUOC_NAG  # không hủy lúc "Chờ xác nhận" (đã có nút Từ chối)
+    if ben == BenThucHien.KHACH_HANG:  # Khách hàng
+        return TRANG_THAI_HUY_DUOC_KHACH  # được rút yêu cầu lúc "Chờ xác nhận"
+    return TRANG_THAI_HUY_DUOC  # không rõ bên: dùng bộ hợp
+
+
+def thong_bao_khong_the_huy(ben):  # câu báo lỗi đúng với bên hủy
+    """Câu 'không hủy được' đúng với bên đang thao tác."""
+    return TB_KHONG_THE_HUY_KHACH if ben == BenThucHien.KHACH_HANG else TB_KHONG_THE_HUY  # Khách có thêm 'Chờ xác nhận'
+
+
+def co_the_huy(booking, ben=None):  # kiểm tra Booking này có hủy được không (theo bên hủy)
+    """Nút 'Hủy Booking' có được hiện / bấm được không. ben = BenThucHien.KHACH_HANG / NHIEP_ANH_GIA (None = hợp hai bên)."""
+    return booking.TrangThai in trang_thai_huy_duoc(ben)  # True nếu trạng thái hiện tại nằm trong bộ cho phép của bên này
 
 
 def xac_dinh_xu_ly_tien_coc(trang_thai_luc_huy, ben):  # quyết định hệ quả tiền cọc
     """Hệ quả tiền cọc theo BR4.6-2/3/4 (khớp các CHECK trong bảng YEUCAUHUY)."""
-    if trang_thai_luc_huy == TrangThaiBooking.CHO_DAT_COC:      # chưa có khoản cọc nào
+    if trang_thai_luc_huy in (TrangThaiBooking.CHO_XAC_NHAN, TrangThaiBooking.CHO_DAT_COC):      # chưa có khoản cọc nào
         return HangSoXuLyTienCoc.KHONG_PHAT_SINH  # chưa cọc -> không phát sinh mất/hoàn tiền
     if ben == BenThucHien.KHACH_HANG:                           # đã chốt (đã cọc) và Khách hủy
         return HangSoXuLyTienCoc.MAT_COC  # Khách hủy sau khi cọc -> mất cọc
@@ -193,8 +214,8 @@ def huy_booking(user, ma_booking, ly_do):  # hàm chính: thực hiện hủy Bo
             # 'Chốt Booking' (mất cọc) chứ không phải bản 'Chờ đặt cọc' cũ. Từ đây trạng thái không đổi cho tới hết transaction.
             Booking.objects.select_for_update().filter(pk=booking.pk).first()   # chỉ để khóa dòng (người khác phải chờ)
             booking.refresh_from_db(fields=['TrangThai'])                       # đọc lại trạng thái mới nhất SAU khi khóa
-            if not co_the_huy(booking):                               # tiền điều kiện của UC4.6 (kiểm tra trên trạng thái mới nhất)
-                raise XuLyBookingLoi(TB_KHONG_THE_HUY)  # trạng thái không cho hủy -> báo lỗi
+            if not co_the_huy(booking, ben):                          # tiền điều kiện của UC4.6 (kiểm tra trên trạng thái mới nhất, theo bên hủy)
+                raise XuLyBookingLoi(thong_bao_khong_the_huy(ben))  # trạng thái không cho hủy -> báo lỗi đúng với bên hủy
             trang_thai_luc_huy = booking.TrangThai  # nhớ lại trạng thái TRƯỚC khi hủy (để ghi vào Yêu cầu hủy)
             xu_ly = xac_dinh_xu_ly_tien_coc(trang_thai_luc_huy, ben)  # xác định hệ quả tiền cọc
             co_minh_chung = (xu_ly == HangSoXuLyTienCoc.KHONG_PHAT_SINH and co_minh_chung_coc_dang_cho(booking))  # có minh chứng cọc đang chờ?
@@ -269,8 +290,9 @@ def huy(request, ma_booking):  # view trang hủy Booking
         booking = lay_booking_cua_ben(request.user, vai_tro, ma_booking)  # lấy Booking trong phạm vi của người này
     except XuLyBookingLoi:  # không tìm thấy (không tồn tại / của người khác)
         raise Http404('Không tìm thấy Booking.')  # trả trang 404
-    if not co_the_huy(booking):                                       # đã hủy rồi / đã chụp / chưa được chấp nhận...
-        messages.error(request, TB_KHONG_THE_HUY)  # hiện thông báo lỗi đỏ
+    ben = BEN_THEO_VAI_TRO[vai_tro]  # bên hủy (vai trò đã được nhãn chi_khach_va_nag giới hạn nên chắc chắn có trong bảng)
+    if not co_the_huy(booking, ben):                                  # đã hủy rồi / đã chụp / Nhiếp ảnh gia hủy lúc chờ xác nhận...
+        messages.error(request, thong_bao_khong_the_huy(ben))  # hiện thông báo lỗi đỏ đúng với bên hủy
         return redirect('chi_tiet_booking', ma_booking=booking.pk)  # đưa người dùng về trang chi tiết Booking
 
     if request.method == 'POST':  # người dùng vừa bấm gửi form
@@ -295,7 +317,7 @@ def huy(request, ma_booking):  # view trang hủy Booking
         'la_khach': vai_tro == VaiTro.KHACH_HANG,  # người xem có phải Khách không (để template chọn hiện tên ai)
         'ten_khach': _ten_hien_thi(booking.MaKhachHang),  # tên Khách
         'ten_nag': _ten_hien_thi(booking.MaNhiepAnhGia.MaTaiKhoan),  # tên Nhiếp ảnh gia
-        'hau_qua': mo_ta_hau_qua(booking, BEN_THEO_VAI_TRO[vai_tro]),  # câu giải thích hệ quả tiền cọc
+        'hau_qua': mo_ta_hau_qua(booking, ben),  # câu giải thích hệ quả tiền cọc
     })
 
 

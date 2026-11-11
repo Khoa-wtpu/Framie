@@ -160,6 +160,7 @@
       {% endfor %}
     </div>
     <p class="hscc__ghi">Chọn một khung giờ trống để giữ chỗ 5 phút, sau đó điền thông tin buổi chụp.{% if vai_tro == 'khach' %} Bạn cần đăng nhập để đặt lịch.{% endif %}</p>
+    {% if vai_tro == 'khach_hang' and url_chon_lich %}<p class="hscc__ghi"><a href="{{ url_chon_lich }}">Xem toàn bộ lịch trống trong 30 ngày tới</a></p>{% endif %}{# link tới trang lịch UC4.1 (bookings/lich_chon_slot) #}
   </section>
 
   {# ---------- Đánh giá ---------- #}

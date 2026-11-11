@@ -136,3 +136,41 @@
 .ct__nhac { display: grid; gap: var(--space-4); margin-top: var(--space-5); }  /* lời nhắc mưa cao + nút trò chuyện: cách đều nhau và cách danh sách thông số phía trên */
 .ct__nhac > .btn, .ct__nhac > form { justify-self: start; }  /* nút không bị kéo dãn hết chiều ngang */
 .ct__nhac .alert { margin: 0; }  /* bỏ lề của khung cảnh báo để khoảng cách do gap quyết định */
+
+/* ==========================================================================
+   C2 + C5: THANH ĐẾM NGƯỢC HẠN ĐẶT CỌC  và  THẺ CÓ MÀU RIÊNG (dễ phân biệt các khối)
+   Chỉ dùng biến --tone-* trong static/css/tokens.css (tự đổi theo chế độ Trắng / Đen), KHÔNG gõ mã màu.
+   Quy ước màu của nhóm: vàng/cam = đang chờ; xanh dương/tím/xanh ngọc = đang xử lý; xanh lá = tiền / hoàn tất; đỏ = hủy.
+   ========================================================================== */
+
+/* ---------- Thanh đếm ngược hạn đặt cọc (vàng = đang chờ; còn dưới 1 giờ thì đỏ; hết hạn thì xám) ---------- */
+.ct__han-coc { --ct-mau: var(--tone-amber-dot); --ct-nen: var(--tone-amber-bg); --ct-chu: var(--tone-amber-fg); border-color: var(--ct-mau); background: linear-gradient(135deg, var(--ct-nen), transparent 70%), var(--surface-gradient); }  /* thẻ nền vàng nhạt chuyển dần, viền vàng */
+.ct__han-coc.is-gap { --ct-mau: var(--tone-red-dot); --ct-nen: var(--tone-red-bg); --ct-chu: var(--tone-red-fg); }  /* còn dưới 1 giờ: đổi sang đỏ để Khách thấy gấp */
+.ct__han-coc.is-het-han { --ct-mau: var(--tone-gray-dot); --ct-nen: var(--tone-gray-bg); --ct-chu: var(--tone-gray-fg); }  /* đã hết hạn: xám */
+.ct__han-coc-dau { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-4); }  /* tiêu đề bên trái, số đếm bên phải; hẹp thì xuống dòng */
+.ct__han-coc .ct__the-tieu-de { margin-bottom: var(--space-1); color: var(--ct-chu); }  /* tiêu đề cùng màu chữ của tông */
+.ct__han-coc-han { margin: 0; font-size: var(--text-sm); color: var(--color-text-muted); }  /* dòng "Hạn chót: ..." */
+.ct__han-coc-so { margin: 0; font-size: var(--text-3xl); font-weight: var(--fw-heading); line-height: 1; font-variant-numeric: tabular-nums; color: var(--ct-chu); }  /* số giờ:phút:giây thật to, chữ số đều nhau để không nhảy */
+.ct__han-coc-thanh { display: block; width: 100%; height: .5rem; margin-top: var(--space-4); border: 0; border-radius: var(--radius-pill); overflow: hidden; background: var(--color-surface-alt); accent-color: var(--ct-mau); }  /* thanh mảnh, bo tròn */
+.ct__han-coc-thanh::-webkit-progress-bar { background: var(--color-surface-alt); }  /* nền thanh (Chrome/Safari) */
+.ct__han-coc-thanh::-webkit-progress-value { background: var(--ct-mau); border-radius: var(--radius-pill); transition: width .5s linear; }  /* phần còn lại (Chrome/Safari) */
+.ct__han-coc-thanh::-moz-progress-bar { background: var(--ct-mau); border-radius: var(--radius-pill); }  /* phần còn lại (Firefox) */
+.ct__han-coc-het { margin: var(--space-3) 0 0; font-weight: 600; color: var(--ct-chu); }  /* dòng báo "Đã hết hạn..." */
+.ct__han-coc-het[hidden] { display: none; }  /* thuộc tính hidden luôn thắng (phòng khi CSS khác đặt display) */
+
+/* ---------- Thẻ có màu riêng: thanh màu trên đầu + nền loang nhẹ + tiêu đề cùng tông ---------- */
+.ct__the--mau { border-top: 3px solid var(--ct-mau); background: linear-gradient(180deg, color-mix(in srgb, var(--ct-mau) 10%, transparent), transparent 8rem), var(--surface-gradient); }  /* viền trên dày màu tông + nền loang nhẹ từ trên xuống */
+.ct__the--mau > .ct__the-tieu-de, .ct__the--mau .ct__ngang-chu > .ct__the-tieu-de, .ct__the--mau .ct__ngang-o > .ct__the-tieu-de { display: flex; align-items: center; gap: var(--space-2); color: var(--ct-chu); }  /* tiêu đề cùng màu chữ của tông */
+.ct__the--mau > .ct__the-tieu-de::before, .ct__the--mau .ct__ngang-chu > .ct__the-tieu-de::before, .ct__the--mau .ct__ngang-o > .ct__the-tieu-de::before { content: ""; flex: none; width: .5rem; height: .5rem; border-radius: 50%; background: var(--ct-mau); }  /* chấm tròn màu đứng trước tiêu đề */
+.ct__the--xanh-duong { --ct-mau: var(--tone-blue-dot); --ct-chu: var(--tone-blue-fg); }    /* Dịch vụ / Khách hàng và dịch vụ */
+.ct__the--tim { --ct-mau: var(--tone-violet-dot); --ct-chu: var(--tone-violet-fg); }       /* Yêu cầu của Khách hàng */
+.ct__the--ngoc { --ct-mau: var(--tone-teal-dot); --ct-chu: var(--tone-teal-fg); }          /* Lịch sử trạng thái */
+.ct__the--xanh-la { --ct-mau: var(--tone-green-dot); --ct-chu: var(--tone-green-fg); }     /* Thanh toán / sau buổi chụp */
+.ct__the--vang { --ct-mau: var(--tone-amber-dot); --ct-chu: var(--tone-amber-fg); }        /* Hạn chót / việc đang chờ */
+.ct__the--do { --ct-mau: var(--tone-red-dot); --ct-chu: var(--tone-red-fg); }              /* Thông tin hủy */
+
+/* ---------- Dải thông tin chính: mỗi ô một tông, nhìn phân biệt được ngày / địa điểm / số người / giá trị ---------- */
+.ct__o--ngay { background: linear-gradient(180deg, var(--tone-blue-bg), transparent 70%); box-shadow: inset 0 3px 0 var(--tone-blue-dot); }  /* ô ngày giờ: xanh dương */
+.ct__o--dia-diem { background: linear-gradient(180deg, var(--tone-violet-bg), transparent 70%); box-shadow: inset 0 3px 0 var(--tone-violet-dot); }  /* ô địa điểm: tím */
+.ct__o--so-nguoi { background: linear-gradient(180deg, var(--tone-teal-bg), transparent 70%); box-shadow: inset 0 3px 0 var(--tone-teal-dot); }  /* ô số người: xanh ngọc */
+.ct__o--gia { background: linear-gradient(180deg, var(--tone-green-bg), transparent 70%); box-shadow: inset 0 3px 0 var(--tone-green-dot); }  /* ô giá trị Booking: xanh lá (tiền) */

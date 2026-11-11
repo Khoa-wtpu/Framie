@@ -30,7 +30,8 @@ class TheThoiTietBase(nen.TiepNhanBase):  # lớp nền: Nhiếp ảnh gia có k
 
     def mo(self, bk, user):  # đăng nhập bằng user rồi mở trang chi tiết Booking
         self.client.force_login(user)
-        return self.client.get(reverse('chi_tiet_booking', kwargs={'ma_booking': bk.pk}))
+        # follow=True: Nhiếp ảnh gia được chuyển sang trang xử lý riêng (C5); thẻ thời tiết có mặt ở cả hai trang
+        return self.client.get(reverse('chi_tiet_booking', kwargs={'ma_booking': bk.pk}), follow=True)
 
 
 class TheThoiTietTest(TheThoiTietBase):

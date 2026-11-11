@@ -1,0 +1,23 @@
+{# C2: thanh đếm ngược HẠN ĐẶT CỌC. Dùng bởi theo_doi_chi_tiet.html (Khách) và nag_chi_tiet.html (Nhiếp ảnh gia). #}
+{# Biến cần: dem_nguoc_coc (dict {han, con_lai, tong} do bookings/services.py: dem_nguoc_han_dat_coc tạo; None thì không hiện gì), cho_khach (True = nội dung viết cho Khách, False = cho Nhiếp ảnh gia). #}
+{# JS: bookings/js/han_dat_coc.js (trang chứa phải nạp trong block extra_js). CSS: bookings/css/chi_tiet_booking.css (class bắt đầu bằng "ct__han-coc"). #}
+{% if dem_nguoc_coc %}{# chỉ hiện khi Booking đang "Chờ đặt cọc" và có hạn #}
+<section class="ct__the ct__han-coc" id="han-coc" data-con-lai="{{ dem_nguoc_coc.con_lai }}" data-tong="{{ dem_nguoc_coc.tong }}" aria-label="Hạn đặt cọc">{# data-con-lai: số giây còn lại do SERVER tính; data-tong: tổng thời hạn để chia phần trăm #}
+  <div class="ct__han-coc-dau">{# hàng trên: tiêu đề bên trái, số đếm bên phải #}
+    <div>
+      <h2 class="ct__the-tieu-de">Hạn đặt cọc</h2>{# tiêu đề thẻ #}
+      <p class="ct__han-coc-han">Hạn chót: <strong>{{ dem_nguoc_coc.han|date:"H:i d/m/Y" }}</strong></p>{# mốc hạn chót in ra chữ #}
+    </div>
+    <p class="ct__han-coc-so" id="han-coc-so" aria-hidden="true">--:--:--</p>{# số giờ:phút:giây do JS cập nhật; aria-hidden để trình đọc màn hình không đọc mỗi giây #}
+  </div>
+  <progress class="ct__han-coc-thanh" id="han-coc-thanh" max="{{ dem_nguoc_coc.tong }}" value="{{ dem_nguoc_coc.con_lai }}">{{ dem_nguoc_coc.con_lai }}</progress>{# thanh tiến trình giảm dần; có sẵn giá trị từ server nên không "nhảy" khi JS chưa chạy #}
+  <p class="ct__ghi-chu">
+    {% if cho_khach %}{# nội dung dành cho Khách #}
+      Bạn cần đặt cọc 40% và tải minh chứng thanh toán lên trước hạn này. Quá hạn, Booking tự chuyển sang "Hết thời hạn đặt cọc" và khung giờ được trả về lịch trống.
+    {% else %}{# nội dung dành cho Nhiếp ảnh gia #}
+      Khách hàng cần đặt cọc 40% và tải minh chứng lên trước hạn này. Quá hạn, Booking tự chuyển sang "Hết thời hạn đặt cọc" và khung giờ được trả về lịch trống.
+    {% endif %}
+  </p>
+  <p class="ct__han-coc-het" id="han-coc-het" hidden>Đã hết hạn đặt cọc. Trang sẽ tự cập nhật trạng thái Booking.</p>{# JS bỏ thuộc tính hidden khi đếm về 0 #}
+</section>
+{% endif %}

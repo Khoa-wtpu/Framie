@@ -11,6 +11,8 @@
 <link rel="stylesheet" href="{% static 'bookings/css/chi_tiet_booking.css' %}">{# nạp CSS riêng của trang chi tiết #}
 {% endblock %}
 
+{% block extra_js %}<script src="{% static 'bookings/js/han_dat_coc.js' %}" defer></script>{% endblock %}{# C2: JS thanh đếm ngược hạn đặt cọc (không có khối #han-coc thì tự bỏ qua) #}
+
 {% block content %}{# nội dung chính của trang #}
 <div class="container ct">{# khung giữa trang; các khối con tự cách đều nhau nhờ CSS #}
 
@@ -68,6 +70,12 @@
 
   {% include "bookings/includes/the_thoi_tiet_nhac.html" %}{# E8: dải nhắc đổi lịch (chỉ hiện khi khả năng mưa cao) #}
 
+  {% if khach_cho_phan_hoi %}{# C1: Khách vừa gửi yêu cầu, Nhiếp ảnh gia chưa phản hồi: cho biết đang chờ và Khách vẫn có thể hủy #}
+    {% include "includes/alert.html" with level="info" title="Đang chờ Nhiếp ảnh gia phản hồi" text="Bạn có thể bấm Hủy Booking nếu không muốn tiếp tục. Khung giờ sẽ được trả về lịch trống, không phát sinh tiền cọc." %}
+  {% endif %}
+
+  {% include "bookings/includes/dem_nguoc_han_coc.html" with cho_khach=la_khach %}{# C2: thanh đếm ngược hạn đặt cọc (chỉ hiện khi Booking đang "Chờ đặt cọc") #}
+
   {# Chỉ Quản trị viên thấy: trạng thái Booking lệch dữ liệu thanh toán (BR4.7-2). #}
   {% for cau in canh_bao %}{# mỗi chỗ lệch là một cảnh báo (Khách / Nhiếp ảnh gia nhận danh sách rỗng nên không thấy) #}
     {% include "includes/alert.html" with level="warning" title="Trạng thái không khớp dữ liệu thanh toán" text=cau %}{# khung cảnh báo vàng #}
@@ -85,7 +93,7 @@
 
   {# ===== DẢI THÔNG TIN CHÍNH: một thẻ lớn chia 3 ô, nhìn là biết "chụp khi nào, ở đâu, mấy người" ===== #}
   <section class="ct__dai" aria-label="Thông tin buổi chụp">{# thẻ lớn, CSS chia 3 cột #}
-    <div class="ct__o">{# ô 1: ngày giờ chụp #}
+    <div class="ct__o ct__o--ngay">{# ô 1: ngày giờ chụp (tông xanh dương) #}
       <p class="ct__o-nhan">Ngày giờ chụp</p>{# nhãn ô #}
       <div class="ct__ngay">{# số ngày to + tháng/năm #}
         <span class="ct__ngay-so">{{ booking.NgayGioChup|date:"d" }}</span>{# số ngày, ví dụ 04 #}
@@ -93,11 +101,11 @@
       </div>
       <p class="ct__o-phu">{{ booking.NgayGioChup|date:"l" }} · {{ booking.NgayGioChup|date:"H:i" }}</p>{# thứ trong tuần + giờ, ví dụ "Thứ 4 · 09:00" #}
     </div>
-    <div class="ct__o">{# ô 2: địa điểm #}
+    <div class="ct__o ct__o--dia-diem">{# ô 2: địa điểm (tông tím) #}
       <p class="ct__o-nhan">Địa điểm</p>{# nhãn ô #}
       <p class="ct__o-chinh">{{ booking.DiaDiem }}</p>{# địa điểm chụp #}
     </div>
-    <div class="ct__o">{# ô 3: số người #}
+    <div class="ct__o ct__o--so-nguoi">{# ô 3: số người (tông xanh ngọc) #}
       <p class="ct__o-nhan">Số người</p>{# nhãn ô #}
       <p class="ct__so-nguoi">{{ booking.SoNguoi }}</p>{# số người tham gia chụp #}
     </div>
@@ -108,7 +116,7 @@
     {# ===== CỘT CHÍNH ===== #}
     <div class="ct__cot">{# các thẻ trong cột chính xếp dọc cách đều #}
 
-      <section class="ct__the">{# thẻ: gói dịch vụ + hai người tham gia #}
+      <section class="ct__the ct__the--mau ct__the--xanh-duong">{# thẻ: gói dịch vụ + hai người tham gia (tông xanh dương) #}
         <h2 class="ct__the-tieu-de">Dịch vụ</h2>{# tiêu đề thẻ #}
         <p class="ct__goi">{{ booking.MaGoi.TenGoi }}</p>{# tên gói đã đặt, in to #}
         <p class="ct__loai">{{ booking.MaGoi.MaLoaiHinh.TenLoaiHinh }}</p>{# loại hình chụp: chân dung, cưới... #}
@@ -128,7 +136,7 @@
         </div>
       </section>
 
-      <section class="ct__the">{# thẻ: mong muốn của Khách #}
+      <section class="ct__the ct__the--mau ct__the--tim">{# thẻ: mong muốn của Khách (tông tím) #}
         <h2 class="ct__the-tieu-de">Yêu cầu của Khách hàng</h2>{# tiêu đề thẻ #}
         <dl class="ct__ds">{# danh sách "nhãn – giá trị" #}
           <div class="ct__dong"><dt>Concept</dt><dd>{{ booking.Concept|linebreaksbr }}</dd></div>{# linebreaksbr giữ các lần xuống dòng Khách đã gõ #}
@@ -138,7 +146,7 @@
       </section>
 
       {# Dòng thời gian lịch sử đổi trạng thái (UC4.7 bước 4). Dữ liệu từ bảng LichSuTrangThaiBooking, cũ -> mới. #}
-      <section class="ct__the">{# thẻ lịch sử #}
+      <section class="ct__the ct__the--mau ct__the--ngoc">{# thẻ lịch sử (tông xanh ngọc) #}
         <h2 class="ct__the-tieu-de">Lịch sử trạng thái</h2>{# tiêu đề thẻ #}
         {% if lich_su %}{# có ít nhất 1 dòng lịch sử #}
         <ol class="ct-timeline">{# danh sách có thứ tự = dòng thời gian #}
@@ -164,7 +172,7 @@
 
       {# E8: dự báo thời tiết buổi chụp (chỉ Khách / Nhiếp ảnh gia, Booking còn hiệu lực, buổi chụp chưa diễn ra). Dữ liệu: bookings/the_thoi_tiet.py #}
       {# Thanh toán: hiện cạnh trạng thái để người xem thấy hai thứ đi cùng nhau (BR4.7-2). #}
-      <section class="ct__the ct__the--noi-bat">{# thẻ thanh toán, viền đậm hơn để nổi bật #}
+      <section class="ct__the ct__the--mau ct__the--xanh-la">{# thẻ thanh toán (tông xanh lá = tiền) #}
         <h2 class="ct__the-tieu-de">Thanh toán</h2>{# tiêu đề thẻ #}
         <p class="ct__tong">{{ tong_gia }}<small>VNĐ</small></p>{# tổng giá trị, số lớn #}
         <p class="ct__ghi-chu">Tổng giá trị Booking</p>{# chú thích cho số lớn phía trên #}
@@ -188,7 +196,7 @@
 
       {# Hạn chót: chỉ hiện khi Booking đã có ít nhất một hạn (hệ thống gán khi vào trạng thái tương ứng). #}
       {% if booking.HanDatCoc or booking.HanHauKy or booking.HanThanhToanConLai %}
-      <section class="ct__the">{# thẻ hạn chót #}
+      <section class="ct__the ct__the--mau ct__the--vang">{# thẻ hạn chót (tông vàng = đang chờ) #}
         <h2 class="ct__the-tieu-de">Hạn chót</h2>{# tiêu đề thẻ #}
         <dl class="ct__ds">
           {% if booking.HanDatCoc %}<div class="ct__dong"><dt>Đặt cọc</dt><dd>{{ booking.HanDatCoc|date:"H:i d/m/Y" }}</dd></div>{% endif %}{# hạn đặt cọc #}
@@ -200,7 +208,7 @@
 
       {# T9: thông tin hủy (chỉ có khi Booking đã bị hủy) + theo dõi hoàn cọc. #}
       {% if yeu_cau_huy %}{# chỉ có giá trị khi Booking đã bị hủy (có bản ghi YeuCauHuy) #}
-      <section class="ct__the">{# thẻ "Thông tin hủy" #}
+      <section class="ct__the ct__the--mau ct__the--do">{# thẻ "Thông tin hủy" (tông đỏ) #}
         <h2 class="ct__the-tieu-de">Thông tin hủy</h2>{# tiêu đề thẻ #}
         <dl class="ct__ds">
           <div class="ct__dong"><dt>Bên hủy</dt><dd>{{ yeu_cau_huy.BenYeuCau }}</dd></div>{# ai hủy: Khách hàng hay Nhiếp ảnh gia #}

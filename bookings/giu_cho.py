@@ -529,9 +529,14 @@ def trang_lich_nhiep_anh_gia(request, ma_nhiep_anh_gia):
         theo_ngay.setdefault(slot.Ngay, []).append(slot)
 
     # Render template trang chọn slot và truyền dữ liệu cần thiết cho giao diện.
+    con_lai_giay = so_giay_con_lai(giu_cho_hien_tai) if giu_cho_hien_tai else 0   # cho đồng hồ đếm ngược ở banner
     return render(request, 'bookings/lich_chon_slot.html', {
         # Truyền đối tượng hồ sơ nhiếp ảnh gia sang template.
         'nag': nag,
+        # Dữ liệu đồng hồ đếm ngược (dem_nguoc.js): giây còn lại do server tính, tổng giây, API trạng thái.
+        'con_lai_giay': con_lai_giay,
+        'tong_giay': int(THOI_GIAN_GIU_CHO.total_seconds()),
+        'url_trang_thai': reverse('trang_thai_giu_cho', kwargs={'ma_giu_cho': giu_cho_hien_tai.pk}) if giu_cho_hien_tai else '',
         # Truyền tên hiển thị của nhiếp ảnh gia; nếu chưa có họ tên thì dùng username.
         'ten_nag': nag.MaTaiKhoan.get_full_name() or nag.MaTaiKhoan.username,
         # Truyền danh sách slot đã được nhóm theo ngày.
@@ -582,7 +587,7 @@ def chon_slot(request, ma_lich):
 # Định nghĩa view nhả lượt giữ chỗ: dùng cho nút "Chọn khung giờ khác" và cho sendBeacon khi Khách rời trang.
 def huy_giu_cho_view(request, ma_giu_cho):
     """Khách bấm "Chọn khung giờ khác"/"Hủy giữ chỗ" -> nhả slot rồi về trang lịch của Nhiếp ảnh gia.
-    nha_giu_cho.js gửi thêm nhanh=1 (sendBeacon khi rời trang) -> chỉ trả 204, không chuyển hướng, không thông báo."""
+    Khách rời trang KHÔNG còn tự nhả (đồng hồ vẫn chạy). nhanh=1 chỉ còn để gọi nhả không cần chuyển hướng (trả 204)."""
     giu_cho = get_object_or_404(GiuCho.objects.select_related('MaLich'),
                                 pk=ma_giu_cho, MaKhachHang=request.user)   # chỉ thao tác với lượt của chính mình
     da_nha = huy_giu_cho(request.user, giu_cho.pk)

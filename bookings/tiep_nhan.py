@@ -76,7 +76,7 @@ from bookings.models import Booking
 # chuyen_trang_thai_booking = hàm DUY NHẤT được phép đổi trạng thái Booking;
 # DO_DAI_LY_DO_TOI_DA = độ dài lý do tối đa (255 ký tự).
 # gui_email_sau_commit = hàm DÙNG CHUNG gửi Email sau khi lưu xong và ghi kết quả gửi vào thông báo web.
-from bookings.services import DO_DAI_LY_DO_TOI_DA, chuyen_trang_thai_booking, gui_email_sau_commit
+from bookings.services import DO_DAI_LY_DO_TOI_DA, chuyen_trang_thai_booking, dem_nguoc_han_dat_coc, gui_email_sau_commit
 # Các hằng số tên trạng thái dùng chung toàn dự án (tránh gõ tay chữ 'Chờ xác nhận' ở nhiều nơi dễ sai chính tả).
 from core.constants import BenThucHien, LoaiThanhToan, TrangThaiBooking, TrangThaiThanhToan   # TrangThaiThanhToan: để biết khoản nào đang chờ Nhiếp ảnh gia xác nhận
 # gui_thong_bao: hàm của nhóm để tạo một thông báo trên web cho người nhận.
@@ -479,6 +479,8 @@ def chi_tiet_yeu_cau(request, ma_booking):
         return redirect('chi_tiet_booking', ma_booking=booking.pk)
     # T8: import BÊN TRONG hàm vì da_chup.py đã import tiep_nhan.py ở đầu file; import ở đầu file này sẽ bị vòng import.
     from bookings.da_chup import da_den_gio_chup
+    # C3/C4: import BÊN TRONG hàm vì huy_booking.py đã import tiep_nhan.py ở đầu file (import ở đầu file này sẽ bị vòng import).
+    from bookings.huy_booking import co_the_huy
     # Dựng trang chi tiết từ 'nag_chi_tiet.html' với các dữ liệu bên dưới.
     return render(request, 'bookings/nag_chi_tiet.html', {
         # Toàn bộ thông tin Booking.
@@ -494,6 +496,12 @@ def chi_tiet_yeu_cau(request, ma_booking):
         'co_the_xu_ly': booking.TrangThai == TrangThaiBooking.CHO_XAC_NHAN,   # chỉ lúc này mới hiện nút xử lý
         # T8: Booking đang 'Chốt Booking' -> hiện khối 'Đã chụp'; nút chỉ bấm được khi buổi chụp đã diễn ra.
         'dang_chot_booking': booking.TrangThai == TrangThaiBooking.CHOT_BOOKING,   # True nếu Booking đang 'Chốt Booking' -> template hiện khối nút 'Đã chụp'
+        # C3: Booking đang 'Chờ đặt cọc' -> hiện thẻ "Chờ Khách hàng đặt cọc" (thanh đếm ngược + nút Hủy Booking của Nhiếp ảnh gia).
+        'dang_cho_dat_coc': booking.TrangThai == TrangThaiBooking.CHO_DAT_COC,
+        # C2: thanh đếm ngược hạn đặt cọc (None nếu không ở 'Chờ đặt cọc'); số giây do SERVER tính.
+        'dem_nguoc_coc': dem_nguoc_han_dat_coc(booking),
+        # C3/C4: nút 'Hủy Booking' của Nhiếp ảnh gia: được ở 'Chờ đặt cọc' và 'Chốt Booking' (theo quyền của bên Nhiếp ảnh gia; lúc 'Chờ xác nhận' dùng Từ chối).
+        'co_the_huy': co_the_huy(booking, BenThucHien.NHIEP_ANH_GIA),
         # Tổng giá trị Booking đã định dạng (ví dụ 1.500.000).
         'tong_gia': _tien(booking.TongGiaTri),
         'the_thoi_tiet': lay_the_thoi_tiet(booking, False, True),  # E8: thẻ dự báo thời tiết cho Nhiếp ảnh gia
