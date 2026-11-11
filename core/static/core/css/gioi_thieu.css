@@ -1,0 +1,218 @@
+/* core/static/core/css/gioi_thieu.css - Trang Giới thiệu (gồm Điều khoản, Chính sách bảo mật, Câu hỏi thường gặp). Tiền tố "gt-" = Giới Thiệu. */
+/* Chỉ dùng token trong tokens.css (màu pha bằng color-mix); không dùng thuộc tính style trong HTML. */
+/* Ý tưởng: "phiếu in thử" đen trắng. Khung ngắm, ống kính khẩu độ và dải phim lặp lại ngôn ngữ của trang chủ. */
+
+/* Hero tràn mép, sát header: bỏ đệm trên/dưới của khung chính chỉ ở trang này. */
+.trang-gioi-thieu .site-main { padding-block: 0; }
+
+/* ---------- Khung ngắm: 4 góc chữ L (dùng cho hero và khối cam kết) ---------- */
+.gt-khung {
+  --c: color-mix(in srgb, var(--color-white) 55%, transparent);
+  position: absolute; inset: var(--space-4); z-index: 1; pointer-events: none;
+  background:
+    linear-gradient(var(--c), var(--c)) top left / 1.75rem 2px no-repeat,
+    linear-gradient(var(--c), var(--c)) top left / 2px 1.75rem no-repeat,
+    linear-gradient(var(--c), var(--c)) top right / 1.75rem 2px no-repeat,
+    linear-gradient(var(--c), var(--c)) top right / 2px 1.75rem no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom left / 1.75rem 2px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom left / 2px 1.75rem no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom right / 1.75rem 2px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom right / 2px 1.75rem no-repeat;
+}
+
+/* Ở hero, 4 góc nằm phía trên dải mép phim. */
+.gt-hero .gt-khung { bottom: calc(2.25rem + var(--space-4)); }
+
+/* ---------- Hero (khối nền tối cố định ở cả hai chế độ nhờ class giu-mau-trang) ---------- */
+.gt-hero {
+  position: relative; overflow: hidden; isolation: isolate; color: var(--color-white);
+  background:
+    radial-gradient(ellipse 55% 85% at 80% 25%, color-mix(in srgb, var(--color-white) 20%, transparent) 0%, transparent 68%),
+    linear-gradient(135deg, var(--color-black) 0%, var(--color-black-hover) 100%);
+}
+.gt-hero__luoi { position: relative; z-index: 2; display: grid; gap: var(--space-6); align-items: center; padding-block: var(--space-8) calc(var(--space-8) + var(--space-5)); }
+.gt-hero__tieu-de {
+  max-width: 17ch; margin-bottom: var(--space-5);
+  font-size: clamp(2.125rem, 5.4vw, 3.75rem); font-weight: var(--fw-light); line-height: 1.18; letter-spacing: -.02em; text-wrap: balance;
+  color: var(--color-white); background: var(--gradient-white-gray); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.gt-hero__mo-ta { max-width: 34rem; margin-bottom: var(--space-6); font-size: var(--text-lg); opacity: .85; }
+.gt-hero__nut { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: 0; }
+/* Nút trên nền tối: đảo màu như khối tối của trang chủ. */
+.gt-hero .btn--primary { background: linear-gradient(135deg, var(--color-white) 0%, var(--color-gray) 55%, color-mix(in srgb, var(--color-gray) 60%, var(--color-black)) 100%); background-origin: border-box; color: var(--color-black); }
+.gt-hero .btn--primary:hover { background: linear-gradient(135deg, var(--color-gray) 0%, var(--color-white) 55%, var(--color-gray) 100%); background-origin: border-box; }
+.gt-hero .btn--ghost, .gt-cam-ket .btn--ghost { color: var(--color-white); border-color: color-mix(in srgb, var(--color-white) 40%, transparent); }
+.gt-hero .btn--ghost:hover, .gt-cam-ket .btn--ghost:hover { background: color-mix(in srgb, var(--color-white) 14%, transparent); }
+
+/* Ống kính khẩu độ vẽ bằng SVG. Màu lấy từ token qua các class gt-ok__*. */
+.gt-hero__hinh { display: grid; place-items: center; }
+.gt-ong-kinh { width: min(100%, 25rem); height: auto; color: var(--color-white); overflow: visible; }
+.gt-ok__vanh { fill: none; stroke: var(--color-white); }
+.gt-ok__vanh--ngoai { stroke-opacity: .28; }
+.gt-ok__vanh--trong { stroke-opacity: .18; }
+.gt-ok__vanh--khau { stroke-opacity: .55; }
+.gt-ok__vach { fill: none; stroke: var(--color-white); stroke-opacity: .42; }
+.gt-ok__canh { stroke: var(--color-white); stroke-opacity: .5; stroke-width: 1.1; stroke-linejoin: round; fill: var(--color-white); }
+.gt-ok__canh--0 { fill-opacity: .05; }
+.gt-ok__canh--1 { fill-opacity: .095; }
+.gt-ok__lo { fill: url(#gt-kinh); stroke: var(--color-white); stroke-opacity: .75; }
+.gt-ok__kinh { stop-color: var(--color-white); }
+.gt-ok__kinh--1 { stop-opacity: .6; }
+.gt-ok__kinh--2 { stop-color: var(--color-gray); stop-opacity: .22; }
+.gt-ok__kinh--3 { stop-color: var(--color-black); stop-opacity: .92; }
+/* Một khoảnh khắc duy nhất khi tải trang: cánh khẩu xoay và khép vào, lỗ sáng dần lên. */
+.gt-ok__nhom { transform-origin: 50% 50%; animation: gt-mo-khau 1.7s cubic-bezier(.2, .7, .2, 1) both; }
+.gt-ok__lo { animation: gt-sang-lo 1.7s ease-out both; }
+@keyframes gt-mo-khau { from { transform: rotate(-46deg) scale(1.16); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes gt-sang-lo { from { fill-opacity: 0; stroke-opacity: 0; } to { fill-opacity: 1; stroke-opacity: .75; } }
+
+/* Dải mép phim ở đáy hero: hàng lỗ kéo phim và dòng chữ in mép phim. */
+.gt-vien { position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; height: 2.25rem; background: color-mix(in srgb, var(--color-black) 82%, transparent); border-top: 1px solid color-mix(in srgb, var(--color-white) 14%, transparent); }
+.gt-vien::before { content: ""; position: absolute; left: 0; right: 0; top: .5rem; height: .45rem; background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--color-white) 22%, transparent) 0 .85rem, transparent .85rem 1.6rem); }
+.gt-vien__chu { position: absolute; left: var(--space-5); bottom: .2rem; font-size: .625rem; letter-spacing: .24em; color: color-mix(in srgb, var(--color-white) 45%, transparent); white-space: nowrap; }
+
+@media (min-width: 900px) {
+  .gt-hero__luoi { grid-template-columns: 1.15fr .85fr; }
+}
+
+/* ---------- Bố cục: thanh mục lục + nội dung ---------- */
+.gt-bo-cuc { display: grid; gap: var(--space-5); padding-block: 0 var(--space-8); }
+.gt-noi-dung { min-width: 0; max-width: 52rem; }
+
+/* Thanh mục lục. Điện thoại: thanh ngang dính ngay dưới header. Máy tính: cột dọc dính bên trái. */
+.gt-muc-luc {
+  position: sticky; top: var(--header-h); z-index: 40;
+  margin-inline: calc(var(--space-5) * -1); padding: var(--space-2) var(--space-5);
+  background: var(--header-bg); backdrop-filter: blur(10px); border-bottom: 1px solid var(--color-border);
+  overflow-x: auto; scrollbar-width: none;
+}
+.gt-muc-luc::-webkit-scrollbar { display: none; }
+.gt-muc-luc ul { display: flex; gap: var(--space-2); }
+.gt-muc-luc a {
+  display: inline-flex; align-items: center; gap: var(--space-2); white-space: nowrap;
+  padding: var(--space-2) var(--space-3); border: 1px solid transparent; border-radius: var(--radius-pill);
+  font-size: var(--text-sm); color: var(--color-text-muted); text-decoration: none; transition: color .15s, background .15s, border-color .15s;
+}
+.gt-muc-luc a:hover { color: var(--color-text); }
+/* Ô khung nhỏ trước mỗi mục: đặc lại khi đó là khung (mục) đang xem. */
+.gt-muc-luc a::before { content: ""; flex: none; width: 1.05rem; height: .75rem; border: 1px solid currentColor; border-radius: 2px; transition: background .15s; }
+.gt-muc-luc a.is-active { color: var(--color-text); border-color: var(--color-border); background: var(--color-surface-alt); }
+.gt-muc-luc a.is-active::before { background: currentColor; }
+
+@media (min-width: 960px) {
+  .gt-bo-cuc { grid-template-columns: 14rem minmax(0, 1fr); gap: var(--space-8); padding-top: var(--space-7); }
+  .gt-muc-luc { top: calc(var(--header-h) + var(--space-5)); align-self: start; margin: 0; padding: 0; background: none; backdrop-filter: none; border-bottom: 0; overflow: visible; }
+  .gt-muc-luc ul { flex-direction: column; gap: var(--space-1); }
+  .gt-muc-luc a { display: flex; border-radius: var(--radius-sm); }
+}
+
+/* ---------- Mỗi phần nội dung ---------- */
+.gt-muc { position: relative; scroll-margin-top: calc(var(--header-h) + 4.5rem); padding-block: var(--space-7); border-top: 1px solid var(--color-border); }
+.gt-muc:first-child { padding-top: var(--space-6); border-top: 0; }
+/* Vạch đậm ngắn trên đường kẻ: dấu đánh số khung ở mép phim. */
+.gt-muc::before { content: ""; position: absolute; top: -1px; left: 0; width: 3.5rem; height: 2px; background: var(--color-text); }
+.gt-muc:first-child::before { display: none; }
+@media (min-width: 960px) {
+  .gt-muc { scroll-margin-top: calc(var(--header-h) + var(--space-5)); }
+  .gt-muc:first-child { padding-top: 0; }
+}
+.gt-muc__tieu-de { margin-bottom: var(--space-3); font-size: clamp(1.75rem, 3.6vw, 2.5rem); font-weight: var(--fw-light); letter-spacing: -.02em; }
+.gt-dan { max-width: 40rem; margin-bottom: var(--space-5); font-size: var(--text-lg); color: var(--color-text-muted); }
+
+/* Danh sách có dấu đầu dòng là ô khung nhỏ. */
+.gt-ds { display: grid; gap: var(--space-2); margin: 0 0 var(--space-4); }
+.gt-ds li { position: relative; padding-left: 1.5rem; }
+.gt-ds li::before { content: ""; position: absolute; left: 0; top: .62em; width: .6rem; height: .45rem; border: 1px solid var(--color-text-muted); border-radius: 1px; }
+.gt-ds:last-child { margin-bottom: 0; }
+
+/* ---------- Hai khung đối xứng: Khách hàng / Nhiếp ảnh gia ---------- */
+.gt-doi { display: grid; gap: var(--space-4); margin-top: var(--space-6); }
+.gt-doi__khung { position: relative; padding: var(--space-6) var(--space-5) var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--surface-gradient); }
+.gt-doi__khung--phu { background: transparent; border-style: dashed; }
+.gt-doi__khung h3 { margin-bottom: var(--space-4); font-size: var(--text-xl); }
+@media (min-width: 720px) { .gt-doi { grid-template-columns: 1fr 1fr; } }
+
+/* ---------- Hành trình một buổi chụp: dải phim dọc ---------- */
+.gt-phu { margin-top: var(--space-8); }
+.gt-phu__tieu-de { margin-bottom: var(--space-5); font-size: var(--text-xl); }
+.gt-hanh-trinh { position: relative; padding-left: 3.75rem; }
+/* Dải phim bên trái với hai hàng lỗ kéo phim. */
+.gt-hanh-trinh::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2.5rem;
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm); background-color: var(--color-surface-alt);
+  background-image:
+    repeating-linear-gradient(to bottom, var(--color-bg) 0 .5rem, transparent .5rem 1.1rem),
+    repeating-linear-gradient(to bottom, var(--color-bg) 0 .5rem, transparent .5rem 1.1rem);
+  background-size: .45rem 100%, .45rem 100%; background-position: .35rem .3rem, calc(100% - .35rem) .3rem; background-repeat: no-repeat;
+}
+.gt-buoc { display: grid; grid-template-columns: 4rem 1fr; gap: var(--space-4); align-items: start; padding-block: var(--space-5); border-bottom: 1px solid var(--color-border); }
+.gt-buoc:first-child { padding-top: 0; }
+.gt-buoc:last-child { border-bottom: 0; padding-bottom: 0; }
+.gt-buoc__so { font-size: 3.25rem; font-weight: var(--fw-thin); line-height: 1; letter-spacing: -.04em; font-variant-numeric: tabular-nums; color: var(--color-text); }
+.gt-buoc h4 { margin-bottom: var(--space-1); font-size: var(--text-lg); }
+.gt-buoc p { margin: 0; color: var(--color-text-muted); max-width: 34rem; }
+.gt-buoc a { color: var(--color-text); }
+
+/* Màn hình nhỏ: cột số và dải phim hẹp lại để chữ rộng hơn. */
+@media (max-width: 40rem) {
+  .gt-hanh-trinh { padding-left: 3.1rem; }
+  .gt-hanh-trinh::before { width: 2rem; background-size: .35rem 100%, .35rem 100%; background-position: .3rem .3rem, calc(100% - .3rem) .3rem; }
+  .gt-buoc { grid-template-columns: 2.5rem 1fr; gap: var(--space-3); }
+  .gt-buoc__so { font-size: 2.5rem; }
+}
+
+/* ---------- Khối cam kết "không giữ tiền" ---------- */
+.gt-cam-ket { position: relative; margin-top: var(--space-8); padding: var(--space-8) var(--space-6); overflow: hidden; border: 1px solid color-mix(in srgb, var(--color-white) 14%, transparent); border-radius: var(--radius-sm); color: var(--color-white); background: linear-gradient(135deg, var(--color-black) 0%, var(--color-black-hover) 100%); }
+.gt-cam-ket > :not(.gt-khung) { position: relative; z-index: 2; }
+.gt-cam-ket__tieu-de { max-width: 18ch; margin-bottom: var(--space-4); font-size: clamp(1.875rem, 4.6vw, 3rem); font-weight: var(--fw-light); line-height: 1.15; letter-spacing: -.02em; color: var(--color-white); }
+.gt-cam-ket p { max-width: 36rem; margin-bottom: var(--space-4); opacity: .88; }
+.gt-cam-ket__nut { margin: 0; }
+@media (max-width: 40rem) { .gt-cam-ket { padding: var(--space-7) var(--space-5); } }
+
+/* ---------- Hàng nội dung kiểu biên tập: tiêu đề bên trái, nội dung bên phải (Điều khoản, Chính sách) ---------- */
+.gt-hang-ds { margin-top: var(--space-5); }
+.gt-hang { display: grid; gap: var(--space-2) var(--space-6); padding-block: var(--space-5); border-top: 1px solid var(--color-border); }
+.gt-hang h3 { margin: 0; font-size: var(--text-base); line-height: 1.4; }
+.gt-hang__noi-dung > :last-child { margin-bottom: 0; }
+.gt-hang a { color: var(--color-text); }
+@media (min-width: 720px) { .gt-hang { grid-template-columns: 12rem minmax(0, 1fr); } }
+
+/* Danh sách định nghĩa: câu hỏi "ai xem được", "lưu bao lâu". */
+.gt-cap { margin: 0; display: grid; gap: var(--space-1); }
+.gt-cap dt { margin-top: var(--space-3); font-weight: var(--fw-heading); font-size: var(--text-sm); }
+.gt-cap dt:first-child { margin-top: 0; }
+.gt-cap dd { margin: 0; color: var(--color-text-muted); }
+
+/* ---------- Câu hỏi thường gặp: accordion thuần HTML (details/summary) ---------- */
+.gt-hoi-nhom { margin-top: var(--space-6); }
+.gt-hoi-nhom h3 { margin-bottom: var(--space-3); font-size: var(--text-xl); }
+.gt-hoi { border-top: 1px solid var(--color-border); scroll-margin-top: calc(var(--header-h) + 4.5rem); }
+.gt-hoi:last-of-type { border-bottom: 1px solid var(--color-border); }
+.gt-hoi summary { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-4) 0; cursor: pointer; list-style: none; font-weight: var(--fw-heading); }
+.gt-hoi summary::-webkit-details-marker { display: none; }
+.gt-hoi summary:hover { color: var(--color-text-muted); }
+.gt-hoi summary:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; border-radius: var(--radius-sm); }
+/* Dấu cộng chuyển thành dấu trừ khi mở: thanh dọc co về 0. */
+.gt-hoi summary::after {
+  content: ""; flex: none; width: .9rem; height: .9rem;
+  background:
+    linear-gradient(currentColor, currentColor) center / 100% 2px no-repeat,
+    linear-gradient(currentColor, currentColor) center / 2px 100% no-repeat;
+  transition: background-size .2s ease;
+}
+.gt-hoi[open] summary::after { background-size: 100% 2px, 2px 0; }
+.gt-hoi__tra-loi { max-width: 42rem; padding: 0 var(--space-6) var(--space-4) 0; color: var(--color-text-muted); }
+.gt-hoi__tra-loi > :last-child { margin-bottom: 0; }
+.gt-hoi:target { background: color-mix(in srgb, var(--color-text) 5%, transparent); }
+
+/* ---------- Lời mời cuối trang ---------- */
+.gt-ket { padding-top: var(--space-7); border-top: 1px solid var(--color-border); }
+.gt-ket__tieu-de { margin-bottom: var(--space-2); font-size: clamp(1.5rem, 3vw, 2rem); font-weight: var(--fw-light); }
+.gt-ket p { max-width: 36rem; color: var(--color-text-muted); }
+.gt-ket__nut { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: var(--space-5) 0 0; }
+
+/* Người dùng bật "giảm chuyển động": bỏ hiệu ứng mở khẩu độ và chuyển đổi nhỏ. */
+@media (prefers-reduced-motion: reduce) {
+  .gt-ok__nhom, .gt-ok__lo { animation: none; }
+  .gt-hoi summary::after, .gt-muc-luc a, .gt-muc-luc a::before { transition: none; }
+}

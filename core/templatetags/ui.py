@@ -36,3 +36,13 @@ def page_url(context, number):
     query = context["request"].GET.copy()
     query["page"] = number
     return "?" + query.urlencode()
+
+
+@register.filter
+def vnd(value):
+    """{{ so_tien|vnd }} - 600000 -> 600.000, 1200000 -> 1.200.000 (bỏ số lẻ, dấu chấm ngăn mỗi 3 số)."""
+    try:
+        so = int(round(float(value)))
+    except (TypeError, ValueError):
+        return value if value is not None else ""
+    return f"{so:,}".replace(",", ".")

@@ -28,12 +28,13 @@
   .xn-step--active small { color: var(--tone-amber-fg); } /* chữ "BƯỚC" của bước đang làm: màu vàng */
 
   /* ===== Thẻ số tiền ===== */
-  .xn-amount { background: linear-gradient(135deg, #2b2b2b 0%, #1A1A1A 100%); color: #FFFFFF; border: 1px solid rgba(255, 255, 255, .12); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-md); } /* ĐÃ SỬA: nền tối + chữ trắng CỐ ĐỊNH, thêm viền mờ để không chìm ở chế độ tối */
-  .xn-amount__label { font-size: var(--text-sm); opacity: .75; } /* nhãn "Số tiền còn lại cần đối chiếu", hơi mờ */
-  .xn-amount__value { margin: var(--space-1) 0; font-size: var(--text-3xl); font-weight: var(--fw-heading); line-height: var(--leading-tight); letter-spacing: -.01em; } /* số tiền còn lại cỡ lớn */
+  .xn-amount { padding: var(--space-2) 0; } /* số tiền: bỏ ô nền tối, hiện thẳng trên nền trang */
+  .xn-amount__label { font-size: var(--text-sm); color: var(--color-text-muted); } /* nhãn số tiền cần đối chiếu */
+  .xn-amount__value { margin: var(--space-1) 0; font-size: var(--text-3xl); font-weight: var(--fw-heading); line-height: var(--leading-tight); letter-spacing: -.01em; background: linear-gradient(135deg, #FFFFFF 0%, #A8A8A8 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; width: fit-content; } /* số tiền cỡ lớn; nền đen: gradient trắng-xám */
+  :root[data-theme="light"] .xn-amount__value { background-image: linear-gradient(135deg, #1A1A1A 0%, #8A8A8A 100%); } /* nền trắng: gradient đen-xám */
   .xn-amount__value small { font-size: var(--text-lg); font-weight: var(--fw-regular); opacity: .75; } /* chữ "đ" nhỏ hơn và mờ hơn */
-  .xn-amount__foot { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid rgba(255, 255, 255, .18); font-size: var(--text-sm); } /* hàng chân thẻ: tổng giá trị, hạn thanh toán */
-  .xn-amount__foot span { opacity: .8; } /* nhãn trong chân thẻ hơi mờ */
+  .xn-amount__foot { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--color-border); font-size: var(--text-sm); } /* chân: tổng giá trị, hạn */
+  .xn-amount__foot span { color: var(--color-text-muted); } /* nhãn trong chân */
   .xn-amount__foot strong { opacity: 1; } /* giá trị trong chân thẻ rõ nét */
 
   /* ===== Khung xem minh chứng ===== */
@@ -154,11 +155,11 @@
     <aside class="xn-aside">{# cột phải #}
 
       {% if thanh_toan %}{# nếu có bản ghi thanh toán thì hiện thẻ số tiền #}
-        <section class="xn-amount">{# thẻ số tiền còn lại (nền tối cố định) #}
+        <section class="xn-amount">{# khối số tiền còn lại #}
           <div class="xn-amount__label">Số tiền còn lại cần đối chiếu</div>{# nhãn của số tiền #}
-          <div class="xn-amount__value">{{ thanh_toan.SoTien|floatformat:"0g" }} <small>đ</small></div>{# số tiền còn lại, bỏ số lẻ, có dấu ngăn nghìn #}
+          <div class="xn-amount__value">{{ thanh_toan.SoTien|vnd }} <small>đ</small></div>{# số tiền còn lại, bỏ số lẻ, có dấu ngăn nghìn #}
           <div class="xn-amount__foot">{# chân thẻ #}
-            <div><span>Tổng giá trị:</span> <strong>{{ booking.TongGiaTri|floatformat:"0g" }} đ</strong></div>{# tổng giá trị Booking #}
+            <div><span>Tổng giá trị:</span> <strong>{{ booking.TongGiaTri|vnd }} đ</strong></div>{# tổng giá trị Booking #}
             {% if booking.HanThanhToanConLai %}<div><span>Hạn thanh toán:</span> <strong>{{ booking.HanThanhToanConLai|date:"d/m/Y H:i" }}</strong></div>{% endif %}{# hạn thanh toán phần còn lại nếu có #}
           </div>{# đóng chân thẻ #}
         </section>{# đóng thẻ số tiền #}

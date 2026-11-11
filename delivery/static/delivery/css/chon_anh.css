@@ -42,12 +42,6 @@
   font-size: var(--text-xs); /* chữ nhỏ */
   overflow-wrap: anywhere; /* tên dài thì tự xuống dòng */
 }
-.chon-anh__xem-lon { /* liên kết "Xem lớn" */
-  display: inline-block; /* cho phép đặt khoảng cách */
-  margin-top: var(--space-1); /* cách tên ảnh */
-  font-size: var(--text-xs); /* chữ nhỏ */
-  text-decoration: underline; /* gạch chân cho dễ nhận biết là liên kết */
-}
 .chon-anh__nut, .chon-anh__nut-hoi { /* hàng nút */
   display: flex; /* xếp ngang */
   flex-wrap: wrap; /* hết chỗ thì xuống hàng */

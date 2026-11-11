@@ -54,7 +54,7 @@
       <div class="chon-anh__luoi">{# lưới ảnh #}
         {% for a in anhs %}{# duyệt từng ảnh #}
           <figure class="chon-anh__the">{# một ô ảnh #}
-            <a href="{% url 'xem_anh' a.pk %}" target="_blank" rel="noopener">{# bấm để xem ảnh lớn (vẫn có watermark) ở tab mới #}
+            <a href="{% url 'xem_anh' a.pk %}" data-xem-lon target="_blank" rel="noopener">{# bấm để phóng to ngay trong trang (vẫn có watermark) #}
               <img src="{% url 'xem_anh' a.pk %}?nho=1" alt="{{ a.TenAnh }}" loading="lazy" draggable="false">{# ảnh thu nhỏ có watermark #}
             </a>
             <figcaption class="muted chon-anh__chu-thich">{{ a.TenAnh }}</figcaption>{# tên ảnh #}
@@ -69,5 +69,10 @@
 {% endblock %}
 
 {% block extra_head %}
+<link rel="stylesheet" href="{% static 'delivery/css/xem_anh_lightbox.css' %}">{# CSS cửa sổ phóng to ảnh dùng chung #}
 <link rel="stylesheet" href="{% static 'delivery/css/chon_anh.css' %}">{# dùng lại CSS lưới ảnh của trang chọn ảnh (N6) #}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'delivery/js/xem_anh_lightbox.js' %}" defer></script>{# JS cửa sổ phóng to ảnh dùng chung (bấm ảnh có data-xem-lon) #}
 {% endblock %}

@@ -154,6 +154,17 @@ class YeuCauChinhSuaViewTests(_NenYeuCau):                     # trang web của
     def url(self, bk):                                         # đường dẫn trang yêu cầu chỉnh sửa
         return reverse('yeu_cau_chinh_sua', args=[bk.pk])  # trả kết quả
 
+    def test_nut_phong_to_mo_cua_so_co_o_nhan_xet_rieng_cua_anh(self):   # nút zoom thay chữ "Xem lớn"; cửa sổ phóng to có ô nhận xét của từng ảnh
+        bk = self.tao_booking_cho_kiem_tra()  # tạo Booking Chờ Khách hàng kiểm tra kèm ảnh đã hậu kỳ
+        self.client.force_login(self.kh)  # đăng nhập bằng tài khoản cần thử
+        trang = self.client.get(self.url(bk))  # mở trang yêu cầu chỉnh sửa
+        for anh in self.ds_anh:  # kiểm tra từng ảnh
+            self.assertContains(trang, f'data-xem-lon-ghi-chu="nd-{anh.pk}"')   # nút zoom trỏ tới ô nhận xét của đúng ảnh đó
+            self.assertContains(trang, f'data-xem-lon-tick="yc-tick-{anh.pk}"')   # và ô tick của đúng ảnh đó
+            self.assertContains(trang, f'id="yc-tick-{anh.pk}"')   # ô tick có id để cửa sổ phóng to tìm được
+        self.assertContains(trang, 'xal-nut-zoom--tren-anh')   # nút dạng biểu tượng đè trên ảnh
+        self.assertNotContains(trang, 'Xem lớn')               # không còn chữ "Xem lớn"
+
     def test_trang_co_dong_do_vui_long_nhap_nhan_xet_trong_moi_o(self):   # mỗi ô ảnh có sẵn dòng đỏ (JS bật/tắt)
         bk = self.tao_booking_cho_kiem_tra()  # tạo Booking Chờ Khách hàng kiểm tra kèm ảnh đã hậu kỳ
         self.client.force_login(self.kh)  # đăng nhập bằng tài khoản cần thử
@@ -238,3 +249,7 @@ class YeuCauChinhSuaViewTests(_NenYeuCau):                     # trang web của
         self.assertContains(trang, 'Khách hàng yêu cầu chỉnh sửa (lần 1/3)')  # kiểm tra trang có hiện đoạn chữ mong đợi
         self.assertContains(trang, 'Màu hơi lạnh')             # nhận xét tổng quát
         self.assertContains(trang, 'Sửa ảnh 1 sáng hơn')       # nội dung sửa của ảnh
+        self.assertNotContains(trang, 'ảnh cần sửa:')          # ô "Tải ảnh đã hậu kỳ" không còn dòng "Còn n ảnh cần sửa" (ảnh đã hiện ở khung yêu cầu bên dưới)
+        self.assertNotContains(trang, 'tai-anh__luoi')         # và không còn lưới ảnh lặp lại trong ô đó
+        self.assertContains(trang, 'data-xem-lon')             # ảnh trong khung yêu cầu bấm vào phóng to ngay trong trang
+        self.assertContains(trang, 'xem_anh_lightbox.js')      # trang có nạp JS cửa sổ phóng to

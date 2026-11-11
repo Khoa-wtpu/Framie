@@ -89,7 +89,7 @@ def tai_anh_hoan_chinh(request, ma_booking):                   # trang UC5.8
 
 
 @chi_khach_hang
-def xem_truoc_anh_hoan_chinh(request, ma_booking, ma_anh):      # ảnh THU NHỎ để Khách xem trước trong danh sách (không phải bản tải về)
+def xem_truoc_anh_hoan_chinh(request, ma_booking, ma_anh):      # ảnh THU NHỎ (hoặc cỡ vừa với ?vua=1 cho cửa sổ phóng to) để Khách xem trước (không phải bản tải về)
     # Gán giá trị cho anh.
     anh = get_object_or_404(
         Anh.objects.select_related('MaBooking'), pk=ma_anh, MaBooking=ma_booking,
@@ -104,7 +104,8 @@ def xem_truoc_anh_hoan_chinh(request, ma_booking, ma_anh):      # ảnh THU NH�
         with services.kho_anh().open(anh.DuongDanAnh, 'rb') as tep, Image.open(tep) as hinh:
             hinh = ImageOps.exif_transpose(hinh)                # xoay đúng chiều theo EXIF
             # Thực hiện lời gọi hàm để xử lý bước này.
-            hinh.thumbnail((480, 480))
+            canh = 1400 if request.GET.get('vua') == '1' else 480   # ?vua=1: cỡ vừa cho cửa sổ phóng to; mặc định ảnh thu nhỏ 480px cho danh sách
+            hinh.thumbnail((canh, canh))   # thu nhỏ về đúng cỡ (không bao giờ cho tải bản đầy đủ qua trang này)
             if hinh.mode in ('RGBA', 'LA', 'P'):                # PNG trong suốt -> nền trắng
                 # Gán giá trị cho hinh.
                 hinh = hinh.convert('RGBA')

@@ -1,0 +1,86 @@
+/* ===== Lightbox xem ảnh dùng chung (cửa sổ phóng to ngay trong trang; luôn nền tối cho dễ nhìn ảnh) ===== */
+/* Quy tắc giao diện cho: .xal (khung phủ kín màn hình) */
+.xal { width: 100vw; height: 100vh; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: rgba(10, 10, 10, .94); color: #FFFFFF; --xal-cam: #DC4C00; }
+/* Quy tắc giao diện cho: .xal[open] (khi mở: 1 cột chứa phần ảnh; hàng dưới là dải ảnh nhỏ) */
+.xal[open] { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+/* Quy tắc giao diện cho: .xal--co-ghi-chu[open] (chế độ có nhận xét: chia 2/1, ảnh chiếm 2 phần, bảng nhận xét chiếm 1 phần) */
+.xal--co-ghi-chu[open] { grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr); }
+/* Quy tắc giao diện cho: .xal::backdrop (lớp nền sau hộp) */
+.xal::backdrop { background: #000000; }
+/* Quy tắc giao diện cho: .xal__ben-anh (phần ảnh: nút < | ảnh | nút >) */
+.xal__ben-anh { grid-column: 1; grid-row: 1; min-width: 0; min-height: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; }
+/* Quy tắc giao diện cho: .xal__khung (khung ảnh lớn + chú thích, căn giữa) */
+.xal__khung { grid-column: 2; grid-row: 1; margin: 0; padding: 3.5rem 0 .5rem; min-width: 0; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; }
+/* Quy tắc giao diện cho: .xal__anh (ảnh lớn: vừa khung, không méo) */
+.xal__anh { max-width: 100%; max-height: calc(100vh - 12rem); max-height: calc(100dvh - 12rem); object-fit: contain; user-select: none; }
+/* Quy tắc giao diện cho: .xal__ten (chú thích "3 / 8 · tên ảnh") */
+.xal__ten { font-size: .875rem; opacity: .85; text-align: center; overflow-wrap: anywhere; }
+/* Quy tắc giao diện cho: .xal__dong, .xal__chuyen (nút X và nút < >) */
+.xal__dong, .xal__chuyen { background: rgba(255, 255, 255, .12); border: 0; border-radius: 50%; color: #FFFFFF; cursor: pointer; line-height: 1; }
+/* Quy tắc giao diện cho: .xal__dong (nút X ở góc trên bên phải) */
+.xal__dong { position: absolute; top: 1rem; right: 1.25rem; width: 2.5rem; height: 2.5rem; font-size: 1.25rem; z-index: 2; }
+/* Quy tắc giao diện cho: .xal__chuyen (nút < > nằm hai bên ảnh) */
+.xal__chuyen { grid-row: 1; align-self: center; width: 3rem; height: 3rem; margin: 0 1rem; font-size: 2rem; padding-bottom: .2rem; }
+/* Quy tắc giao diện cho: .xal__chuyen--truoc (nút < ở cột trái) */
+.xal__chuyen--truoc { grid-column: 1; }
+/* Quy tắc giao diện cho: .xal__chuyen--sau (nút > ở cột phải) */
+.xal__chuyen--sau { grid-column: 3; }
+/* Quy tắc giao diện cho: .xal__chuyen[hidden], .xal__dai[hidden], .xal__ghi-chu[hidden] (thuộc tính hidden luôn ẩn được) */
+.xal__chuyen[hidden], .xal__dai[hidden], .xal__ghi-chu[hidden] { display: none; }
+/* Quy tắc giao diện cho: .xal__dong:hover, .xal__chuyen:hover (rê chuột / tab tới nút thì sáng hơn) */
+.xal__dong:hover, .xal__chuyen:hover, .xal__dong:focus-visible, .xal__chuyen:focus-visible { background: rgba(255, 255, 255, .28); }
+/* Quy tắc giao diện cho: .xal__dai (dải ảnh nhỏ phía dưới, trải hết chiều ngang, cuộn ngang khi nhiều ảnh) */
+.xal__dai { grid-column: 1 / -1; grid-row: 2; display: flex; gap: .5rem; justify-content: safe center; overflow-x: auto; padding: .75rem 1rem 1rem; }
+/* Quy tắc giao diện cho: .xal__nho (nút bọc mỗi ảnh nhỏ; mờ khi chưa chọn) */
+.xal__nho { flex: none; padding: 0; border: 2px solid transparent; border-radius: .375rem; background: none; cursor: pointer; opacity: .6; overflow: hidden; }
+/* Quy tắc giao diện cho: .xal__nho img (ảnh nhỏ cao cố định, rộng theo tỉ lệ) */
+.xal__nho img { display: block; height: 4rem; width: auto; max-width: none; }
+/* Quy tắc giao diện cho: .xal__nho:hover (rê chuột thì rõ hơn) */
+.xal__nho:hover, .xal__nho:focus-visible { opacity: 1; }
+/* Quy tắc giao diện cho: .xal__nho--chon (ảnh đang xem: viền cam như logo, rõ nét) */
+.xal__nho--chon { border-color: var(--xal-cam); opacity: 1; }
+
+/* ===== Bảng nhận xét riêng của ảnh (chỉ hiện ở trang "Yêu cầu chỉnh sửa") ===== */
+/* Quy tắc giao diện cho: .xal__ghi-chu (cột bên phải chạy hết chiều cao cả 2 hàng, xếp dọc, cuộn được khi màn hình thấp) */
+.xal__ghi-chu { grid-column: 2; grid-row: 1 / -1; min-height: 0; display: flex; flex-direction: column; gap: .75rem; padding: 4rem 1.5rem 1rem; border-left: 1px solid rgba(255, 255, 255, .15); background: rgba(255, 255, 255, .04); overflow-y: auto; }
+/* Quy tắc giao diện cho: .xal--co-ghi-chu .xal__dai (chế độ nhận xét: dải ảnh nhỏ chỉ nằm dưới phần ảnh 2/3 bên trái nên căn giữa phần ảnh, không đè sang bảng nhận xét) */
+.xal--co-ghi-chu .xal__dai { grid-column: 1; }
+/* Quy tắc giao diện cho: .xal__ghi-chu-tieu-de (tiêu đề "Nội dung cần chỉnh") */
+.xal__ghi-chu-tieu-de { margin: 0; font-size: 1.125rem; font-weight: 700; color: #FFFFFF; }
+/* Quy tắc giao diện cho: .xal__ghi-chu-ten (tên ảnh đang xem) */
+.xal__ghi-chu-ten { margin: 0; font-size: .875rem; opacity: .8; overflow-wrap: anywhere; }
+/* Quy tắc giao diện cho: .xal__ghi-chu-chon (dòng "Chọn ảnh này để chỉnh sửa") */
+.xal__ghi-chu-chon { display: flex; align-items: center; gap: .5rem; cursor: pointer; font-size: .9375rem; }
+/* Quy tắc giao diện cho: .xal__ghi-chu-chon input (ô tick màu cam như logo) */
+.xal__ghi-chu-chon input { width: 1.15rem; height: 1.15rem; accent-color: var(--xal-cam); cursor: pointer; }
+/* Quy tắc giao diện cho: .xal__ghi-chu-o (ô nhập nhận xét: tối, chữ trắng, giãn theo chiều cao còn lại) */
+.xal__ghi-chu-o { width: 100%; flex: 1 1 auto; min-height: 8rem; resize: vertical; padding: .75rem; border: 1px solid rgba(255, 255, 255, .3); border-radius: .5rem; background: rgba(0, 0, 0, .4); color: #FFFFFF; font: inherit; }
+/* Quy tắc giao diện cho: .xal__ghi-chu-o:focus (đang gõ thì có viền cam) */
+.xal__ghi-chu-o:focus { outline: 2px solid var(--xal-cam); outline-offset: 1px; }
+/* Quy tắc giao diện cho: .xal__ghi-chu-dem (đếm ký tự n/500) */
+.xal__ghi-chu-dem { text-align: right; font-size: .8125rem; opacity: .7; }
+/* Quy tắc giao diện cho: .xal__ghi-chu-loi (dòng đỏ "Vui lòng nhập nhận xét") */
+.xal__ghi-chu-loi { margin: 0; color: #FF6B6B; font-size: .875rem; font-weight: 600; }
+
+/* Quy tắc giao diện cho: điện thoại (nút nhỏ lại, dải ảnh thấp hơn; chế độ nhận xét xếp dọc: ảnh trên, nhận xét dưới) */
+@media (max-width: 48rem) {
+  .xal__chuyen { width: 2.25rem; height: 2.25rem; margin: 0 .25rem; font-size: 1.5rem; }
+  .xal__nho img { height: 3rem; }
+  .xal__anh { max-height: calc(100vh - 10rem); max-height: calc(100dvh - 10rem); }
+  .xal--co-ghi-chu[open] { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto auto; overflow-y: auto; }
+  .xal--co-ghi-chu .xal__ghi-chu { grid-column: 1; grid-row: 2; padding: 1rem; border-left: 0; border-top: 1px solid rgba(255, 255, 255, .15); overflow-y: visible; }
+  .xal--co-ghi-chu .xal__dai { grid-row: 3; }
+  .xal--co-ghi-chu .xal__anh { max-height: calc(100vh - 26rem); max-height: calc(100dvh - 26rem); }
+}
+
+/* ===== Nút phóng to dạng biểu tượng (4 mũi tên), dùng chung cho các trang có ảnh ===== */
+/* Quy tắc giao diện cho: .xal-nut-zoom (nút tròn nhỏ chứa biểu tượng; nền tối mờ, biểu tượng trắng) */
+.xal-nut-zoom { display: inline-grid; place-items: center; flex: none; width: 2rem; height: 2rem; padding: 0; border: 0; border-radius: 50%; background: rgba(0, 0, 0, .6); color: #FFFFFF; cursor: zoom-in; text-decoration: none; }
+/* Quy tắc giao diện cho: .xal-nut-zoom:hover (rê chuột hoặc tab tới thì đậm hơn) */
+.xal-nut-zoom:hover, .xal-nut-zoom:focus-visible { background: rgba(0, 0, 0, .85); color: #FFFFFF; }
+/* Quy tắc giao diện cho: .xal-nut-zoom--tren-anh (đặt đè ở góc trên bên phải của ô ảnh; ô cha phải có position: relative) */
+.xal-nut-zoom--tren-anh { position: absolute; top: .5rem; right: .5rem; z-index: 2; }
+/* Quy tắc giao diện cho: .xal-nut-zoom--vien (bản có viền, nền sáng, đặt cạnh nút Tải trong danh sách) */
+.xal-nut-zoom--vien { width: 2.25rem; height: 2.25rem; border: 1px solid #888888; background: var(--color-white, #FFFFFF); color: var(--color-text, #1A1A1A); }
+/* Quy tắc giao diện cho: .xal-nut-zoom--vien:hover (rê chuột thì nền xám nhạt) */
+.xal-nut-zoom--vien:hover, .xal-nut-zoom--vien:focus-visible { background: var(--color-gray-soft, #EEEEEE); color: var(--color-text, #1A1A1A); }

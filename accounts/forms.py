@@ -65,6 +65,13 @@ class DangKyForm(forms.Form):  # P4: form đăng ký tài khoản Khách hàng (
         help_text='Từ 8 ký tự, có chữ hoa, chữ thường, chữ số và ký tự đặc biệt.',  # dòng hướng dẫn dưới ô
         error_messages={'required': 'Vui lòng nhập mật khẩu.'},  # câu báo khi để trống
     )  # hết ô mật khẩu
+    mat_khau_xac_nhan = forms.CharField(  # ô nhập lại mật khẩu (tránh gõ nhầm khi không nhìn thấy ký tự)
+        label='Xác nhận mật khẩu',  # nhãn hiển thị
+        strip=False,  # không tự cắt khoảng trắng: phải giống hệt ô trên
+        max_length=128,  # khớp ô mật khẩu
+        widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}),  # ẩn ký tự
+        error_messages={'required': 'Vui lòng nhập lại mật khẩu để xác nhận.'},  # câu báo khi để trống
+    )  # hết ô xác nhận mật khẩu
 
     def clean_ho_ten(self):  # Django tự gọi sau khi ô ho_ten qua kiểm tra cơ bản
         ho_ten = unicodedata.normalize('NFC', self.cleaned_data['ho_ten'])  # đưa về dạng dựng sẵn: gõ trên macOS hay Windows đều như nhau
@@ -99,6 +106,9 @@ class DangKyForm(forms.Form):  # P4: form đăng ký tài khoản Khách hàng (
             loi_mat_khau = kiem_tra_mat_khau(mat_khau, user_tam)  # chạy mọi luật mật khẩu bằng hàm dùng chung (P4 và P6)
             if loi_mat_khau:  # có ít nhất một lỗi
                 self.add_error('mat_khau', loi_mat_khau)  # gắn tất cả lỗi vào ô mật khẩu
+            xac_nhan = du_lieu.get('mat_khau_xac_nhan')  # ô nhập lại (None nếu để trống: đã có lỗi riêng)
+            if xac_nhan is not None and xac_nhan != mat_khau:  # hai lần nhập không giống nhau
+                self.add_error('mat_khau_xac_nhan', 'Mật khẩu xác nhận không khớp.')  # báo ngay dưới ô nhập lại
         return du_lieu  # trả dữ liệu cho view
 
 
@@ -275,3 +285,28 @@ class DoiMatKhauForm(forms.Form):  # Đổi mật khẩu khi đã đăng nhập:
         self.user.set_password(self.cleaned_data['mat_khau_moi'])  # băm và gán mật khẩu mới
         self.user.save(update_fields=['password'])  # chỉ lưu cột mật khẩu
         return self.user  # trả User đã lưu
+
+
+class MoiQuanTriForm(forms.Form):  # Admin nhập email người được mời làm Quản trị viên
+    email = forms.EmailField(  # ô email duy nhất
+        label='Email người được mời',  # nhãn hiển thị
+        max_length=100,  # khớp cột email của User
+        widget=forms.EmailInput(attrs={'autofocus': True, 'autocomplete': 'off'}),  # con trỏ tự nhảy vào ô; không gợi ý email của chính admin
+        help_text='Hệ thống gửi link đăng ký tài khoản Quản trị viên tới email này. Link dùng được một lần, hiệu lực 48 giờ.',  # dòng hướng dẫn
+        error_messages={'required': 'Vui lòng nhập email.', 'invalid': 'Email không đúng định dạng.'},  # câu báo khi trống hoặc sai dạng
+    )  # hết ô email
+
+    def clean_email(self):  # cùng luật với DangKyForm.clean_email
+        email = self.cleaned_data['email'].strip().lower()  # chữ thường
+        if User.objects.filter(Q(email__iexact=email) | Q(username__iexact=email)).exists():  # đã có tài khoản dùng email này
+            raise ValidationError('Email này đã có tài khoản.')  # báo trùng
+        return email  # trả email chữ thường
+
+
+class DangKyQuanTriForm(DangKyForm):  # người được mời đăng ký: giống form Khách hàng, nhưng email lấy từ link và bị khóa
+    def __init__(self, *args, email, **kwargs):  # nhận email đã đọc từ token
+        super().__init__(*args, **kwargs)  # khởi tạo form Khách hàng như bình thường
+        o_email = self.fields['email']  # ô email của bản form này
+        o_email.disabled = True  # khóa ô: Django bỏ qua giá trị gửi lên và luôn dùng giá trị initial, nên sửa HTML cũng vô ích
+        o_email.help_text = 'Email nhận lời mời, cũng là tên đăng nhập của bạn. Không sửa được.'  # dòng hướng dẫn
+        self.initial['email'] = email  # điền sẵn email từ link

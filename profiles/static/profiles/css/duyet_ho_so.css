@@ -85,6 +85,8 @@
 .duyet__lich-su { list-style: none; margin: 0; padding: 0; }
 .duyet__lich-su li { padding-block: var(--space-3); border-bottom: 1px solid var(--color-border); }
 .duyet__lich-su li:last-child { border-bottom: 0; }
+.duyet__lich-su-dau { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); } /* Lần N | kết quả | thời điểm · người duyệt trên một hàng */
+.duyet__phan-hoi { margin: var(--space-2) 0 0; padding: var(--space-2) var(--space-3); border-left: 3px solid var(--color-border-hover); background: var(--color-surface-alt); border-radius: 0 var(--radius-md) var(--radius-md) 0; white-space: pre-line; } /* nội dung phản hồi: khối thụt vào, có vạch bên trái */
 
 .duyet__chon { border: 0; padding: 0; margin: 0; display: grid; gap: var(--space-2); }
 .duyet__chon legend { font-weight: var(--fw-heading); margin-bottom: var(--space-2); }
@@ -95,3 +97,6 @@
   .duyet__ds { grid-template-columns: 1fr; gap: 0; }
   .duyet__ds dd { margin-bottom: var(--space-3); }
 }
+
+.duyet__nhom:disabled { opacity: .55; } /* nhóm lọc không áp dụng ở tab hiện tại */
+.duyet__ghi-chu { margin: var(--space-2) 0 0; font-size: var(--text-xs); color: var(--color-text-muted); }
