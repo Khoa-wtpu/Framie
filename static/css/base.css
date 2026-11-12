@@ -119,3 +119,16 @@ ul { margin: 0; padding: 0; list-style: none; }
 @media (min-width: 960px) and (max-width: 1019px) {
   .site-nav__link { padding-inline: .3rem; letter-spacing: 0; }
 }
+
+/* Thông báo (flash, vd. "Xin chào, <tên>") nổi ngay dưới header: không chiếm chỗ trong trang nên banner và nội dung không bị đẩy xuống.
+   Thông báo thành công / thông tin tự ẩn sau khoảng 6 giây (rê chuột vào thì dừng); lỗi và cảnh báo ở lại đến khi bấm đóng. */
+.container.flash { position: fixed; z-index: 60; top: calc(var(--header-h) + var(--space-3)); left: 50%; transform: translateX(-50%); width: min(calc(100% - var(--space-5) * 2), 36rem); max-width: none; margin: 0; padding: 0; pointer-events: none; }
+.flash .alert { pointer-events: auto; box-shadow: var(--shadow-md); animation: flash-vao .25s ease-out; }
+.flash .alert--success, .flash .alert--info { animation: flash-vao .25s ease-out, flash-ra .4s ease-in 6s forwards; }
+.flash:hover .alert { animation-play-state: paused; }
+@keyframes flash-vao { from { opacity: 0; transform: translateY(-.5rem); } to { opacity: 1; transform: none; } }
+@keyframes flash-ra { to { opacity: 0; visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) {
+  .flash .alert { animation: none; }
+  .flash .alert--success, .flash .alert--info { animation: flash-ra 0s linear 6s forwards; }
+}

@@ -40,7 +40,8 @@
       </div>
 
       {# Bảng bộ lọc: JS thu gọn lại và mở bằng nút Bộ lọc; không có JS thì luôn hiện sẵn để vẫn dùng được. #}
-      <div class="tim__bang" id="bang-bo-loc" role="group" aria-label="Bộ lọc nhiếp ảnh gia"{% if loi %} data-mo="1"{% endif %}>
+      <div class="tim__bang" id="bang-bo-loc" role="group" aria-label="Bộ lọc nhiếp ảnh gia"{% if mo_bang %} data-mo="1"{% endif %}>
+        {% if loi_bo_loc %}<div class="tim__loi-bang" role="alert">{% for e in loi_bo_loc %}<p>{{ e }}</p>{% endfor %}</div>{% endif %}
         <fieldset class="tim__nhom">
           <legend>Loại hình chụp</legend>
           <div class="tim__chon">{% for c in form.loai_hinh %}<label class="tim__muc">{{ c.tag }}<span>{{ c.choice_label }}</span></label>{% endfor %}</div>
@@ -53,22 +54,23 @@
           <legend>Khu vực</legend>
           <div class="tim__chon">{% for c in form.khu_vuc %}<label class="tim__muc">{{ c.tag }}<span>{{ c.choice_label }}</span></label>{% endfor %}</div>
         </fieldset>
-        <fieldset class="tim__nhom">
+                <fieldset class="tim__nhom" id="nhom-gia" data-gia-toi-thieu="{{ gia_toi_thieu }}">
           <legend>Mức giá</legend>
           <div class="tim__gia-khoang">
-            <label class="tim__an" for="{{ form.gia_tu.id_for_label }}">{{ form.gia_tu.label }}</label>{{ form.gia_tu|add_class:"input" }}
+            <label class="tim__an" for="{{ form.gia_tu.id_for_label }}">{{ form.gia_tu.label }}</label>{% if form.gia_tu.errors or form.non_field_errors %}{{ form.gia_tu|add_class:"input is-invalid" }}{% else %}{{ form.gia_tu|add_class:"input" }}{% endif %}
             <span aria-hidden="true">–</span>
-            <label class="tim__an" for="{{ form.gia_den.id_for_label }}">{{ form.gia_den.label }}</label>{{ form.gia_den|add_class:"input" }}
+            <label class="tim__an" for="{{ form.gia_den.id_for_label }}">{{ form.gia_den.label }}</label>{% if form.gia_den.errors or form.non_field_errors %}{{ form.gia_den|add_class:"input is-invalid" }}{% else %}{{ form.gia_den|add_class:"input" }}{% endif %}
           </div>
+          <div class="tim__loi-gia" id="loi-gia" role="alert"{% if not loi_gia %} hidden{% endif %}>{% for e in loi_gia %}<p>{{ e }}</p>{% endfor %}</div>
         </fieldset>
-        <div class="tim__nut">
+                <div class="tim__nut">
           <a class="btn btn--ghost" href="{% url 'search' %}{% if form.q.value %}?q={{ form.q.value|urlencode }}{% endif %}">Xóa bộ lọc</a>
-          <button class="btn btn--primary" type="submit">Áp dụng</button>
+          <button class="btn btn--primary" id="nut-ap-dung" type="submit">Áp dụng</button>
         </div>
       </div>
     </div>
 
-    {% for e in loi %}{% include "includes/alert.html" with level="danger" text=e %}{% endfor %}
+    {% for e in loi_ngoai %}{% include "includes/alert.html" with level="danger" text=e %}{% endfor %}
 
     {% if not loi %}
     <div class="tim__ket-qua-dau">

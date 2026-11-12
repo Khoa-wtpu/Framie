@@ -5,7 +5,11 @@ from profiles.models import KhuVuc, LoaiHinhChup, PhongCach
 from search.services import SAP_XEP, SAP_XEP_MAC_DINH
 
 GIA_TOI_DA = 10 ** 11            # nhỏ hơn giới hạn của cột Gia (12 chữ số)
+GIA_TOI_THIEU = 1000             # giá thấp nhất được lọc (VNĐ): không có gói nào rẻ hơn, nhập thấp hơn là nhập nhầm
 
+
+def _tien(so):
+    return f'{so:,}'.replace(',', '.')           # 1000 -> 1.000
 
 def _chon_nhieu(model, nhan):
     return forms.ModelMultipleChoiceField(
@@ -27,17 +31,19 @@ class TimKiemForm(forms.Form):
     phong_cach = _chon_nhieu(PhongCach, 'Phong cách')
     khu_vuc = _chon_nhieu(KhuVuc, 'Khu vực')
     gia_tu = forms.IntegerField(
-        label='Từ (VNĐ)', required=False, min_value=0, max_value=GIA_TOI_DA,
+        label='Từ (VNĐ)', required=False, min_value=GIA_TOI_THIEU, max_value=GIA_TOI_DA,
         error_messages={'invalid': 'Giá bắt đầu phải là số nguyên.',
-                        'min_value': 'Giá bắt đầu không được âm.',
+                        'min_value': f'Giá bắt đầu tối thiểu là {_tien(GIA_TOI_THIEU)} VNĐ.',
                         'max_value': 'Giá bắt đầu quá lớn.'},
-        widget=forms.NumberInput(attrs={'placeholder': 'Từ (VNĐ)', 'inputmode': 'numeric', 'min': 0}))
+        widget=forms.NumberInput(
+            attrs={'placeholder': 'Từ (VNĐ)', 'inputmode': 'numeric', 'min': GIA_TOI_THIEU, 'step': GIA_TOI_THIEU}))
     gia_den = forms.IntegerField(
-        label='Đến (VNĐ)', required=False, min_value=0, max_value=GIA_TOI_DA,
+        label='Đến (VNĐ)', required=False, min_value=GIA_TOI_THIEU, max_value=GIA_TOI_DA,
         error_messages={'invalid': 'Giá kết thúc phải là số nguyên.',
-                        'min_value': 'Giá kết thúc không được âm.',
+                        'min_value': f'Giá kết thúc tối thiểu là {_tien(GIA_TOI_THIEU)} VNĐ.',
                         'max_value': 'Giá kết thúc quá lớn.'},
-        widget=forms.NumberInput(attrs={'placeholder': 'Đến (VNĐ)', 'inputmode': 'numeric', 'min': 0}))
+        widget=forms.NumberInput(
+            attrs={'placeholder': 'Đến (VNĐ)', 'inputmode': 'numeric', 'min': GIA_TOI_THIEU, 'step': GIA_TOI_THIEU}))
     sap_xep = forms.ChoiceField(
         label='Sắp xếp', required=False,
         choices=[(khoa, nhan) for khoa, (nhan, _) in SAP_XEP.items()],

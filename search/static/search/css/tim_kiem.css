@@ -88,3 +88,11 @@
   .tim__the:hover, .tim__the:hover .card__media img { transform: none; }
   .tim__the .card__media::before { display: none; }
 }
+
+/* Lỗi mức giá và lỗi bộ lọc hiện TRONG bảng bộ lọc (không còn hiện ngoài, dưới thanh tìm kiếm). */
+.tim__loi-gia, .tim__loi-bang { color: var(--tone-red-fg); font-size: var(--text-sm); }
+.tim__loi-gia { max-width: 28rem; margin-top: var(--space-2); padding: var(--space-2) var(--space-3); background: var(--tone-red-bg); border-left: 3px solid var(--tone-red-dot); border-radius: var(--radius-sm); }
+.tim__loi-gia[hidden] { display: none; }
+.tim__loi-gia p, .tim__loi-bang p { margin: 0; }
+.tim__loi-bang { padding: var(--space-3) var(--space-4); background: var(--tone-red-bg); border: 1px solid color-mix(in srgb, var(--tone-red-dot) 30%, var(--tone-red-bg)); border-left: 4px solid var(--tone-red-dot); border-radius: var(--radius-md); }
+.tim__gia-khoang .input.is-invalid { border-color: var(--tone-red-dot); box-shadow: 0 0 0 3px color-mix(in srgb, var(--tone-red-dot) 22%, transparent); }
