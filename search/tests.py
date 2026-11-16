@@ -94,4 +94,4 @@ class TimKiemTestCase(TestCase):
         bk = Booking.objects.create(
             MaKhachHang=self.khach, MaNhiepAnhGia=nag, MaGoi=goi, MaLich=lich,
             NgayGioChup=timezone.now() + timedelta(days=30), DiaDiem='HCM', SoNguoi=2,
-            Concept='c',
+            Concept='c',)

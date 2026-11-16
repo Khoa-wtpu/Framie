@@ -26,7 +26,8 @@ DUOI_EMAIL = '@example.com'          # mọi tài khoản mẫu có đuôi này 
 # ---------------------------------------------------------------------
 LOAI_HINH = ['Chân dung', 'Cưới', 'Gia đình', 'Sự kiện', 'Sản phẩm', 'Thời trang']
 PHONG_CACH = ['Tối giản', 'Điện ảnh', 'Hoài niệm', 'Tự nhiên', 'Editorial', 'Đen trắng']
-KHU_VUC = ['TP. Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Đà Lạt', 'Nha Trang']
+# Tên khu vực không kèm chữ Tỉnh/Thành phố (F1). Chỉ số 0..4 được dùng ở trường kv bên dưới.
+KHU_VUC = ['Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Lâm Đồng', 'Khánh Hòa']
 
 # ---------------------------------------------------------------------
 # 2. NGƯỜI DÙNG (toàn thông tin giả)
@@ -102,7 +103,7 @@ TEN_GOI = {  # theo chỉ số loại hình: (gói giới hạn, gói toàn bộ
 }
 TEN_PROJECT = ['Ánh sáng buổi sớm', 'Sắc xám thành phố', 'Khoảnh khắc đời thường', 'Một ngày dài']
 DIA_DIEM = ['Công viên Gia Định, TP. Hồ Chí Minh', 'Hồ Gươm, Hà Nội', 'Bãi Xép, Đà Nẵng',
-            'Đồi chè Cầu Đất, Đà Lạt', 'Studio Framie, Quận 3, TP. Hồ Chí Minh',
+            'Đồi chè Cầu Đất, Lâm Đồng', 'Studio Framie, Quận 3, TP. Hồ Chí Minh',
             'Phố cổ Hội An', 'Nhà thờ Đức Bà, TP. Hồ Chí Minh']
 CONCEPT = ['Tối giản, tông trắng và xám', 'Phong cách điện ảnh, ánh sáng ấm',
            'Tự nhiên, nhiều khoảnh khắc đời thường', 'Đen trắng hoài niệm']
