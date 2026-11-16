@@ -107,6 +107,28 @@ class ThoiTietTest(SimpleTestCase):  # nhóm test E7
             self.assertEqual(dv.lay_du_bao_thoi_tiet('Đà Nẵng', None), {})  # không có giờ chụp
         gia.assert_not_called()  # không lần nào gọi mạng
 
+    def test_du_34_tinh_thanh_deu_co_toa_do(self):  # F2: mọi khu vực trong danh mục 34 tỉnh thành đều tra được tọa độ, chọn tỉnh nào cũng có dự báo
+        from core.du_lieu_khu_vuc import TEN_34  # danh mục 34 tên khu vực của F1
+        self.assertEqual(len(TEN_34), 34)  # danh mục đủ 34
+        for ten in TEN_34:  # thử từng tỉnh thành
+            with self.subTest(khu_vuc=ten):
+                cache.clear()  # mỗi tỉnh một ô nhớ riêng, xóa cho chắc
+                with mock.patch('urllib.request.urlopen', return_value=PhanHoiGia(du_lieu_gia())) as gia:  # giả lập API
+                    kq = dv.lay_du_bao_thoi_tiet(ten, self.gio_chup)  # gọi hàm
+                self.assertTrue(kq, f'{ten} chưa có tọa độ trong TOA_DO_KHU_VUC')  # phải có dự báo
+                self.assertEqual(gia.call_count, 1)  # đã gọi API đúng một lần
+
+    def test_toa_do_nam_trong_lanh_tho_viet_nam(self):  # F2: bắt lỗi gõ nhầm tọa độ (đảo vĩ độ/kinh độ, thiếu số)
+        for khoa, (vi_do, kinh_do) in dv.TOA_DO_KHU_VUC.items():
+            with self.subTest(khoa=khoa):
+                self.assertTrue(8.5 < vi_do < 23.5, f'{khoa}: vĩ độ {vi_do} ngoài Việt Nam')
+                self.assertTrue(102.0 < kinh_do < 110.0, f'{khoa}: kinh độ {kinh_do} ngoài Việt Nam')
+
+    def test_ten_cu_van_tra_duoc(self):  # F2: tên cũ (trước khi đổi sang 34 tỉnh) vẫn có tọa độ, trùng với tên mới
+        for cu, moi in (('TP. Hồ Chí Minh', 'Hồ Chí Minh'), ('TP.HCM', 'Hồ Chí Minh'), ('Đà Lạt', 'Lâm Đồng'), ('Nha Trang', 'Khánh Hòa')):
+            with self.subTest(cu=cu):
+                self.assertEqual(dv.TOA_DO_KHU_VUC[dv._chuan_hoa(cu)], dv.TOA_DO_KHU_VUC[dv._chuan_hoa(moi)])
+
     def test_qua_xa_ngay_du_bao_tra_rong_khong_goi_mang(self):  # tình huống 8: buổi chụp cách hôm nay hơn 16 ngày
         with mock.patch('urllib.request.urlopen') as gia:  # giả lập; nếu bị gọi thì đếm được
             kq = dv.lay_du_bao_thoi_tiet('Đà Nẵng', self.gio_chup + timedelta(days=20))  # giờ chụp 22 ngày nữa

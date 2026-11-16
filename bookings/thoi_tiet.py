@@ -35,15 +35,49 @@ GIAY_NHO_KET_QUA = 45 * 60  # nhớ kết quả 45 phút (yêu cầu: 30-60 phú
 GIAY_NHO_KHI_LOI = 60  # khi API lỗi, nhớ "đang lỗi" 1 phút để các lần xem trang sau khỏi phải chờ 3 giây nữa
 
 # Bảng tọa độ (vĩ độ, kinh độ) theo khu vực. Khóa là tên đã bỏ dấu, bỏ khoảng trắng, viết thường (xem _chuan_hoa).
-# 5 khu vực của dữ liệu mẫu + vài cách viết khác của TP.HCM (trong test của nhóm có dùng 'TP.HCM').
+# F2: đủ 34 tỉnh thành theo core/du_lieu_khu_vuc.py (Quyết định 19/2025/QĐ-TTg). Mỗi tỉnh dùng tọa độ của một thành phố/đô thị
+# đại diện (thường là nơi đặt trụ sở tỉnh hoặc nơi khách hay chụp nhất), vì API dự báo theo điểm, không theo ranh giới tỉnh.
 TOA_DO_KHU_VUC = {
+    # --- 34 tỉnh thành (khóa = core.du_lieu_khu_vuc.chuan_hoa(tên), theo thứ tự mã số Phụ lục I) ---
+    'hanoi': (21.0285, 105.8542),  # 01 Hà Nội
+    'caobang': (22.6657, 106.2579),  # 04 Cao Bằng (TP. Cao Bằng)
+    'tuyenquang': (21.8233, 105.2181),  # 08 Tuyên Quang (TP. Tuyên Quang)
+    'dienbien': (21.3860, 103.0230),  # 11 Điện Biên (TP. Điện Biên Phủ)
+    'laichau': (22.3964, 103.4580),  # 12 Lai Châu (TP. Lai Châu)
+    'sonla': (21.3256, 103.9188),  # 14 Sơn La (TP. Sơn La)
+    'laocai': (22.4809, 103.9755),  # 15 Lào Cai (TP. Lào Cai)
+    'thainguyen': (21.5942, 105.8482),  # 19 Thái Nguyên (TP. Thái Nguyên)
+    'langson': (21.8537, 106.7615),  # 20 Lạng Sơn (TP. Lạng Sơn)
+    'quangninh': (20.9712, 107.0448),  # 22 Quảng Ninh (TP. Hạ Long)
+    'bacninh': (21.1861, 106.0763),  # 24 Bắc Ninh (TP. Bắc Ninh)
+    'phutho': (21.3227, 105.4020),  # 25 Phú Thọ (TP. Việt Trì)
+    'haiphong': (20.8449, 106.6881),  # 31 Hải Phòng
+    'hungyen': (20.6464, 106.0511),  # 33 Hưng Yên (TP. Hưng Yên)
+    'ninhbinh': (20.2506, 105.9745),  # 37 Ninh Bình (TP. Ninh Bình)
+    'thanhhoa': (19.8067, 105.7852),  # 38 Thanh Hóa (TP. Thanh Hóa)
+    'nghean': (18.6796, 105.6813),  # 40 Nghệ An (TP. Vinh)
+    'hatinh': (18.3428, 105.9057),  # 42 Hà Tĩnh (TP. Hà Tĩnh)
+    'quangtri': (17.4689, 106.6223),  # 44 Quảng Trị (TP. Đồng Hới, nơi đặt trụ sở tỉnh sau sáp nhập)
+    'hue': (16.4637, 107.5909),  # 46 Huế
+    'danang': (16.0544, 108.2022),  # 48 Đà Nẵng
+    'quangngai': (15.1205, 108.7923),  # 51 Quảng Ngãi (TP. Quảng Ngãi)
+    'gialai': (13.7765, 109.2237),  # 52 Gia Lai (TP. Quy Nhơn, nơi đặt trụ sở tỉnh sau sáp nhập)
+    'khanhhoa': (12.2388, 109.1967),  # 56 Khánh Hòa (TP. Nha Trang)
+    'daklak': (12.6667, 108.0383),  # 66 Đắk Lắk (TP. Buôn Ma Thuột)
+    'lamdong': (11.9404, 108.4583),  # 68 Lâm Đồng (TP. Đà Lạt)
+    'dongnai': (10.9574, 106.8426),  # 75 Đồng Nai (TP. Biên Hòa)
+    'hochiminh': (10.8231, 106.6297),  # 79 Hồ Chí Minh
+    'tayninh': (11.3100, 106.0983),  # 80 Tây Ninh (TP. Tây Ninh)
+    'dongthap': (10.4600, 105.6330),  # 82 Đồng Tháp (TP. Cao Lãnh)
+    'vinhlong': (10.2537, 105.9722),  # 86 Vĩnh Long (TP. Vĩnh Long)
+    'angiang': (10.3711, 105.4328),  # 91 An Giang (TP. Long Xuyên)
+    'cantho': (10.0452, 105.7469),  # 92 Cần Thơ
+    'camau': (9.1769, 105.1524),  # 96 Cà Mau (TP. Cà Mau)
+    # --- Khóa CŨ giữ lại để dữ liệu/booking cũ chưa đổi tên vẫn có dự báo ---
     'tphochiminh': (10.8231, 106.6297),  # TP. Hồ Chí Minh
     'tphcm': (10.8231, 106.6297),  # TP.HCM (cách viết tắt)
-    'hochiminh': (10.8231, 106.6297),  # Hồ Chí Minh (không có "TP.")
-    'hanoi': (21.0285, 105.8542),  # Hà Nội
-    'danang': (16.0544, 108.2022),  # Đà Nẵng
-    'dalat': (11.9404, 108.4583),  # Đà Lạt
-    'nhatrang': (12.2388, 109.1967),  # Nha Trang
+    'dalat': (11.9404, 108.4583),  # Đà Lạt (nay thuộc Lâm Đồng)
+    'nhatrang': (12.2388, 109.1967),  # Nha Trang (nay thuộc Khánh Hòa)
 }
 
 # Mã thời tiết quốc tế (WMO) mà API trả về -> mô tả ngắn tiếng Việt.
