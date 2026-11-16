@@ -44,7 +44,7 @@
       {% endif %}
       <button class="btn btn--ghost" type="submit" form="form-huy-giu-cho">Chọn khung giờ khác</button>{# nhả slot đang giữ ngay rồi quay lại trang lịch #}
     </div>
-    {# Form ẩn: nút "Chọn khung giờ khác" submit vào đây. Khách rời trang thì KHÔNG nhả: đồng hồ vẫn chạy, quay lại trang lịch vẫn thấy đếm ngược. #}
+    {# Form ẩn: nút "Chọn khung giờ khác" submit vào đây. Khách rời trang (đóng tab, quay lại, sang trang khác) thì nha_giu_cho.js gửi form này bằng sendBeacon để nhả slot ngay; đi tiếp sang Gửi Booking (data-giu-tiep) thì không nhả. #}
     <form id="form-huy-giu-cho" method="post" action="{% url 'huy_giu_cho' giu_cho.pk %}" hidden>{% csrf_token %}</form>
   </section>
 
@@ -70,5 +70,6 @@
 {# JS đếm ngược dùng chung với gui_booking.html: bookings/static/bookings/js/dem_nguoc.js #}
 {% block extra_js %}
 {% if dang_giu %}<script src="{% static 'bookings/js/dem_nguoc.js' %}" defer></script>
+<script src="{% static 'bookings/js/nha_giu_cho.js' %}" defer></script>{# rời trang thì nhả slot ngay (UC4.1 luồng 6b) #}
 {% endif %}{# chỉ nạp đồng hồ nếu lượt giữ chỗ còn hiệu lực #}
 {% endblock %}
