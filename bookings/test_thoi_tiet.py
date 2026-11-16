@@ -107,6 +107,13 @@ class ThoiTietTest(SimpleTestCase):  # nhóm test E7
             self.assertEqual(dv.lay_du_bao_thoi_tiet('Đà Nẵng', None), {})  # không có giờ chụp
         gia.assert_not_called()  # không lần nào gọi mạng
 
+    def test_nho_ket_qua_30_phut(self):  # E1: bộ nhớ tạm thành công giữ đúng 30 phút
+        self.assertEqual(dv.GIAY_NHO_KET_QUA, 30 * 60)
+        with mock.patch('urllib.request.urlopen', return_value=PhanHoiGia(du_lieu_gia())):
+            with mock.patch.object(dv.cache, 'set', wraps=dv.cache.set) as dat:
+                dv.lay_du_bao_thoi_tiet('Đà Nẵng', self.gio_chup)
+        self.assertEqual(dat.call_args.args[2], 30 * 60)  # thời gian nhớ truyền cho cache.set
+
     def test_du_34_tinh_thanh_deu_co_toa_do(self):  # F2: mọi khu vực trong danh mục 34 tỉnh thành đều tra được tọa độ, chọn tỉnh nào cũng có dự báo
         from core.du_lieu_khu_vuc import TEN_34  # danh mục 34 tên khu vực của F1
         self.assertEqual(len(TEN_34), 34)  # danh mục đủ 34

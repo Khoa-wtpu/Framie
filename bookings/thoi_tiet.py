@@ -6,7 +6,7 @@
 #   - Chỉ có MỘT hàm công khai: lay_du_bao_thoi_tiet(khu_vuc, ngay_gio_chup, thoi_luong_phut=None).
 #   - Trả về nhiệt độ, khả năng mưa, mô tả ngắn. Mọi lỗi (mạng, API, quá xa ngày dự báo...) đều trả rỗng {}.
 #   - Tọa độ lấy theo KHU VỰC của Nhiếp ảnh gia (bảng khai báo sẵn bên dưới), không đoán từ địa chỉ gõ tay.
-#   - Chờ tối đa 3 giây; nhớ kết quả trong bộ nhớ tạm của Django 45 phút.
+#   - Chờ tối đa 3 giây; nhớ kết quả trong bộ nhớ tạm của Django 30 phút (E1).
 #   - Chỉ dùng thư viện chuẩn của Python (urllib) nên KHÔNG cần thêm gói mới vào requirements.txt.
 # =====================================================================
 
@@ -31,7 +31,7 @@ MUI_GIO = 'Asia/Ho_Chi_Minh'  # múi giờ Việt Nam (E6: API nhận tên này)
 GIAY_CHO_TOI_DA = 3  # chờ API tối đa 3 giây, quá thì bỏ cuộc (theo yêu cầu E7)
 SO_NGAY_DU_BAO = 16  # API dự báo theo giờ tối đa 16 ngày (kết quả E6)
 CAC_BIEN_THEO_GIO = 'temperature_2m,precipitation_probability,weather_code'  # 3 thứ cần lấy: nhiệt độ, % mưa, mã thời tiết
-GIAY_NHO_KET_QUA = 45 * 60  # nhớ kết quả 45 phút (yêu cầu: 30-60 phút)
+GIAY_NHO_KET_QUA = 30 * 60  # nhớ kết quả 30 phút (E1 ghi 30 phút; Task 6 cho phép 30-60 phút)
 GIAY_NHO_KHI_LOI = 60  # khi API lỗi, nhớ "đang lỗi" 1 phút để các lần xem trang sau khỏi phải chờ 3 giây nữa
 
 # Bảng tọa độ (vĩ độ, kinh độ) theo khu vực. Khóa là tên đã bỏ dấu, bỏ khoảng trắng, viết thường (xem _chuan_hoa).
@@ -171,7 +171,7 @@ def lay_du_bao_thoi_tiet(khu_vuc, ngay_gio_chup, thoi_luong_phut=None):  # nhậ
         if bang_du_bao is None:  # chưa có (hoặc đã hết hạn)
             try:  # thử gọi API thật
                 bang_du_bao = _goi_api(*toa_do)  # gọi API, chờ tối đa 3 giây
-                cache.set(khoa_cache, bang_du_bao, GIAY_NHO_KET_QUA)  # thành công: nhớ 45 phút
+                cache.set(khoa_cache, bang_du_bao, GIAY_NHO_KET_QUA)  # thành công: nhớ 30 phút
             except Exception as loi:  # lỗi mạng, hết giờ, bị chặn, JSON hỏng, thiếu trường...
                 logger.warning('Không lấy được dự báo thời tiết (%s): %s', ten, loi)  # chỉ ghi log, không báo lỗi lên trang
                 cache.set(khoa_cache, {}, GIAY_NHO_KHI_LOI)  # nhớ "đang lỗi" 1 phút để khỏi gọi lại liên tục
