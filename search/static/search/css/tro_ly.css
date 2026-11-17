@@ -41,6 +41,7 @@
 .tro-ly__chon { display: grid; gap: var(--space-3); }   /* nhóm đáp án */
 .tro-ly__chon--luoi { grid-template-columns: repeat(3, 1fr); }   /* câu 1, 2: lưới 3 cột */
 .tro-ly__chon--danh_sach { grid-template-columns: 1fr; }   /* câu 3: danh sách dọc (template sinh class có gạch dưới: bo_cuc = danh_sach) */
+.tro-ly__chon--tinh { grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }   /* câu 2 (F3): 34 tỉnh thành, ô gọn 3 cột, nhóm theo miền */
 .tro-ly__chon--chip { display: flex; flex-wrap: wrap; }   /* câu 5: chip tự xuống dòng */
 
 /* ô đáp án: input ẩn, vẫn bấm và dùng bàn phím được */
@@ -57,6 +58,7 @@
 .tro-ly__chon--luoi .tro-ly__so { grid-area: so; }   /* đặt số vào vùng "so" */
 .tro-ly__chon--luoi .tro-ly__vong { grid-area: vong; }   /* đặt vòng vào vùng "vong" */
 .tro-ly__chon--luoi .tro-ly__ten { grid-area: ten; align-self: end; font-size: var(--text-lg); }   /* tên to hơn, nằm dưới */
+.tro-ly__chon--tinh .tro-ly__muc { grid-template-columns: 1fr auto; padding: var(--space-3) var(--space-4); min-height: 3rem; }   /* ô tỉnh: tên trái, vòng phải, thấp hơn ô lưới cũ */
 .tro-ly__chon--danh_sach .tro-ly__muc { grid-template-columns: 1fr auto; min-height: 4.25rem; }   /* ô danh sách: tên trái, vòng phải */
 .tro-ly__chon--danh_sach .tro-ly__ten { font-size: var(--text-lg); }   /* tên to hơn */
 .tro-ly__chon--chip .tro-ly__muc { display: inline-flex; gap: var(--space-2); padding: var(--space-3) var(--space-5); border-radius: var(--radius-pill); }   /* chip phong cách dạng viên thuốc */
@@ -151,7 +153,7 @@
 
 /* ---------- điện thoại ---------- */
 @media (max-width: 720px) {   /* màn hình hẹp */
-  .tro-ly__chon--luoi { grid-template-columns: repeat(2, 1fr); }   /* lưới còn 2 cột */
+  .tro-ly__chon--luoi, .tro-ly__chon--tinh { grid-template-columns: repeat(2, 1fr); }   /* lưới còn 2 cột */
   .tro-ly__the { grid-template-columns: 1fr; }   /* thẻ xếp dọc: ảnh trên, nội dung dưới */
   .tro-ly__anh { min-height: 12rem; }   /* ảnh thấp hơn */
   .tro-ly__ngay-nhanh { grid-template-columns: repeat(4, 1fr); }   /* 7 ngày xuống 2 hàng */

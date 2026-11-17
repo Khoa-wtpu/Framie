@@ -56,7 +56,7 @@
       <label class="sr-only" for="tc-loc-khu-vuc">Khu vực</label>
       <select class="input tc-tim__chon" id="tc-loc-khu-vuc" name="khu_vuc">
         <option value="">Khu vực</option>
-        {% for kv in khu_vuc_ds %}<option value="{{ kv.ma }}">{{ kv.ten }}</option>{% endfor %}
+        {% for mien, ds in khu_vuc_nhom %}<optgroup label="{{ mien }}">{% for kv in ds %}<option value="{{ kv.ma }}">{{ kv.ten }}</option>{% endfor %}</optgroup>{% endfor %}
       </select>
       {% endif %}
       {# ▸ Khoảng giá (đồng): trang Tìm kiếm đọc gia_tu / gia_den. #}

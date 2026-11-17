@@ -4,6 +4,8 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'profiles/css/ho_so.css' %}">
 <script src="{% static 'profiles/js/ho_so.js' %}" defer></script>
+<link rel="stylesheet" href="{% static 'core/css/khu_vuc.css' %}">
+<script src="{% static 'core/js/khu_vuc.js' %}" defer></script>
 {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}
 
 <section class="ho-so__khoi">
@@ -21,7 +23,7 @@
   </header>
   {% include "profiles/includes/_nhom_hop_tich.html" with field=form.loai_hinh %}
   {% include "profiles/includes/_nhom_hop_tich.html" with field=form.phong_cach %}
-  {% include "profiles/includes/_nhom_hop_tich.html" with field=form.khu_vuc %}
+  {% include "profiles/includes/_nhom_khu_vuc.html" with field=form.khu_vuc %}
 </section>
 
 <section class="ho-so__khoi">

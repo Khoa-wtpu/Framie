@@ -18,6 +18,8 @@
 
 # ▸ Nạp công cụ Count của Django: dùng để ĐẾM số bản ghi trong cơ sở dữ liệu (ở đây là đếm số nhiếp ảnh gia).
 from django.db.models import Count
+
+from core.du_lieu_khu_vuc import nhom_theo_mien
 # ▸ Nạp hàm render: ghép dữ liệu vào file giao diện (.html) để tạo ra trang web hoàn chỉnh trả cho khách.
 from django.shortcuts import render
 # ▸ Nạp reverse (từ tên trang -> địa chỉ URL) và NoReverseMatch (lỗi xảy ra khi tên trang đó chưa tồn tại).
@@ -116,6 +118,8 @@ def trang_chu(request):
         'loai_hinh_ds': _loai_hinh_kem_so_nguoi(),
         # ▸ Gói 2b: danh sách khu vực cho bộ lọc trong ô tìm kiếm.
         'khu_vuc_ds': _khu_vuc_ds(),
+        # ▸ Gói 2c (F3): cũng danh sách đó nhưng chia nhóm Miền Bắc / Trung / Nam cho ô chọn có 34 tỉnh thành.
+        'khu_vuc_nhom': nhom_theo_mien(_khu_vuc_ds(), lay_ten=lambda kv: kv['ten']),
         # ▸ Gói 3: 5 bước đặt lịch (khối số 3).
         'buoc_dat_lich': BUOC_DAT_LICH,
     # ▸ Đóng ngoặc: kết thúc lệnh render và kết thúc hàm.

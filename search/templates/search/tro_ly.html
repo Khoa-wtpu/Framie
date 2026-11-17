@@ -1,8 +1,8 @@
 {% extends "base.html" %}{# E4 - UC2.3: Trợ lý chọn Nhiếp ảnh gia, form 5 bước (giao diện v2). Một template cho cả 5 bước. Dùng bởi search/tro_ly.py (view assistant). #}
 {% load static ui %}{# static: nạp CSS/JS riêng; ui: bộ lọc add_class cho ô ngày #}
 {% block title %}Trợ lý chọn Nhiếp ảnh gia{% endblock %}{# chữ trên tab trình duyệt #}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'search/css/tro_ly.css' %}">{% endblock %}{# CSS riêng của Trợ lý (chỉ dùng biến của tokens.css) #}
-{% block extra_js %}<script src="{% static 'search/js/tro_ly.js' %}" defer></script>{% endblock %}{# JS: ngày chọn nhanh, giới hạn và bộ đếm phong cách #}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'search/css/tro_ly.css' %}"><link rel="stylesheet" href="{% static 'core/css/khu_vuc.css' %}">{% endblock %}{# CSS riêng của Trợ lý (chỉ dùng biến của tokens.css) #}
+{% block extra_js %}<script src="{% static 'search/js/tro_ly.js' %}" defer></script><script src="{% static 'core/js/khu_vuc.js' %}" defer></script>{% endblock %}{# JS: ngày chọn nhanh, giới hạn và bộ đếm phong cách #}
 
 {% block content %}
 <div class="container tro-ly" data-tro-ly>{# data-tro-ly: móc để JS tìm đúng trang #}
@@ -37,6 +37,9 @@
           {% endif %}
         {% else %}{# ---- câu 1, 2, 3 (chọn một) và câu 5 (chọn nhiều) ---- #}
           <fieldset class="tro-ly__cau" aria-labelledby="tro-ly-hoi">{# tên của nhóm = câu hỏi ở h1 #}
+            {% if bo_cuc == 'nhom_mien' %}{# câu 2: 34 tỉnh thành nhóm theo miền + ô tìm (F3) #}
+              {% include "includes/khu_vuc_nhom.html" with field=form.dap_an lop_chon="tro-ly__chon tro-ly__chon--tinh" lop_muc="tro-ly__muc" lop_ten="tro-ly__ten" co_vong=True %}
+            {% else %}
             <div class="tro-ly__chon tro-ly__chon--{% if kieu == 'chon_nhieu' %}chip{% else %}{{ bo_cuc }}{% endif %}"{% if kieu == 'chon_nhieu' %} data-toi-da="{{ toi_da_phong_cach }}"{% endif %}>{# luoi | danh_sach | chip #}
               {% for c in form.dap_an %}
               <label class="tro-ly__muc">{{ c.tag }}{# c.tag là thẻ input radio hoặc checkbox (ẩn bằng CSS, vẫn bấm và dùng bàn phím được) #}
@@ -45,6 +48,7 @@
               </label>
               {% endfor %}
             </div>
+            {% endif %}
             {% if kieu == 'chon_nhieu' %}<p class="tro-ly__dem" data-dem aria-live="polite" hidden>Đã chọn 0/{{ toi_da_phong_cach }} phong cách</p>{% endif %}{# JS đếm số đã chọn #}
             {% for loi in form.dap_an.errors %}<p class="field__error">{{ loi }}</p>{% endfor %}{# lỗi hiện dưới nhóm đáp án #}
           </fieldset>
