@@ -125,13 +125,42 @@ class TheThoiTietTest(TheThoiTietBase):
             goi.assert_called_once()  # chỉ tra đúng 1 khu vực
             self.assertEqual(goi.call_args.args[0].TenKhuVuc, 'Hà Nội')  # đúng khu vực Khách chọn
 
-    def test_dia_diem_khong_khop_thi_dung_khu_vuc_cua_nag(self):  # Booking cũ / DiaDiem gõ tay: thử lần lượt khu vực Nhiếp ảnh gia khai
+    def test_dia_diem_go_tay_doc_dung_tinh_thanh(self):  # DiaDiem tự do: lấy đúng tỉnh thành trong chữ, KHÔNG lấy khu vực khác của Nhiếp ảnh gia
+        NhiepAnhGia_KhuVuc.objects.create(MaNhiepAnhGia=self.nag, MaKhuVuc=KhuVuc.objects.create(TenKhuVuc='Hà Nội'))  # Nhiếp ảnh gia nhận cả Đà Nẵng (từ setUp) và Hà Nội
+        ca_thu = (('Hồ Gươm, Hà Nội', 'Hà Nội'), ('Hồ Gươm Hà Nội', 'Hà Nội'), ('Bãi Xép, Đà Nẵng', 'Đà Nẵng'),
+                  ('Phố đi bộ Nguyễn Huệ, TP.HCM', 'Hồ Chí Minh'), ('Phố cổ Hội An', 'Đà Nẵng'), ('Đồi chè Cầu Đất, Lâm Đồng', 'Lâm Đồng'))
+        for i, (dia_diem, mong_doi) in enumerate(ca_thu):
+            with self.subTest(dia_diem=dia_diem):
+                bk = self.tao_booking(DiaDiem=dia_diem, gio=f'{7 + 2 * i:02d}:00')  # mỗi Booking một khung giờ riêng (không trùng lịch)
+                with mock.patch(MOCK, return_value=du_bao()) as goi:
+                    self.mo(bk, self.khach)
+                goi.assert_called_once()  # chỉ tra đúng 1 nơi
+                self.assertEqual(goi.call_args.args[0], mong_doi)  # đúng tỉnh thành Khách ghi
+
+    def test_dia_diem_khong_doc_duoc_va_nag_khai_nhieu_khu_vuc_thi_khong_doan(self):  # 'Hồ Gươm' (không ghi tỉnh) + Nhiếp ảnh gia nhận 2 khu vực: không hiện nhầm thành phố khác
         NhiepAnhGia_KhuVuc.objects.create(MaNhiepAnhGia=self.nag, MaKhuVuc=KhuVuc.objects.create(TenKhuVuc='Hà Nội'))
         bk = self.tao_booking(DiaDiem='Hồ Gươm')
-        with mock.patch(MOCK, side_effect=[{}, du_bao(10)]) as goi:  # khu vực thứ nhất rỗng, thứ hai có dự báo
+        with mock.patch(MOCK, return_value=du_bao()) as goi:
             res = self.mo(bk, self.khach)
-        self.assertEqual(goi.call_count, 2)
+        goi.assert_not_called()  # không gọi dự báo của bất kỳ khu vực nào
+        self.assertContains(res, 'Chưa có dự báo')
+
+    def test_dia_diem_khong_doc_duoc_va_nag_khai_mot_khu_vuc_thi_dung_khu_vuc_do(self):  # Nhiếp ảnh gia chỉ khai Đà Nẵng: dùng Đà Nẵng
+        bk = self.tao_booking(DiaDiem='Công viên ven sông')
+        with mock.patch(MOCK, return_value=du_bao(10)) as goi:
+            res = self.mo(bk, self.khach)
+        goi.assert_called_once()
+        self.assertEqual(goi.call_args.args[0].TenKhuVuc, 'Đà Nẵng')
         self.assertContains(res, 'Mưa rào nhẹ')
+
+    def test_doc_tinh_thanh_khong_nham_ten_duong(self):  # 'Nguyễn Huệ' là tên phố, không phải Huế
+        from bookings.the_thoi_tiet import doc_tinh_thanh_tu_dia_diem as doc
+        self.assertIsNone(doc('Phố Nguyễn Huệ'))
+        self.assertEqual(doc('Phố Nguyễn Huệ, Hồ Chí Minh'), 'Hồ Chí Minh')
+        self.assertEqual(doc('Đại Nội, Huế'), 'Huế')
+        self.assertEqual(doc('Hanoi'), 'Hà Nội')
+        self.assertIsNone(doc(''))
+        self.assertIsNone(doc(None))
 
     def test_truyen_thoi_luong_goi_cho_du_bao(self):
         bk = self.tao_booking(trang_thai=BK.CHO_DAT_COC)

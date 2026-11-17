@@ -157,20 +157,3 @@
 .ct__han-coc-thanh::-moz-progress-bar { background: var(--ct-mau); border-radius: var(--radius-pill); }  /* phần còn lại (Firefox) */
 .ct__han-coc-het { margin: var(--space-3) 0 0; font-weight: 600; color: var(--ct-chu); }  /* dòng báo "Đã hết hạn..." */
 .ct__han-coc-het[hidden] { display: none; }  /* thuộc tính hidden luôn thắng (phòng khi CSS khác đặt display) */
-
-/* ---------- Thẻ có màu riêng: thanh màu trên đầu + nền loang nhẹ + tiêu đề cùng tông ---------- */
-.ct__the--mau { border-top: 3px solid var(--ct-mau); background: linear-gradient(180deg, color-mix(in srgb, var(--ct-mau) 10%, transparent), transparent 8rem), var(--surface-gradient); }  /* viền trên dày màu tông + nền loang nhẹ từ trên xuống */
-.ct__the--mau > .ct__the-tieu-de, .ct__the--mau .ct__ngang-chu > .ct__the-tieu-de, .ct__the--mau .ct__ngang-o > .ct__the-tieu-de { display: flex; align-items: center; gap: var(--space-2); color: var(--ct-chu); }  /* tiêu đề cùng màu chữ của tông */
-.ct__the--mau > .ct__the-tieu-de::before, .ct__the--mau .ct__ngang-chu > .ct__the-tieu-de::before, .ct__the--mau .ct__ngang-o > .ct__the-tieu-de::before { content: ""; flex: none; width: .5rem; height: .5rem; border-radius: 50%; background: var(--ct-mau); }  /* chấm tròn màu đứng trước tiêu đề */
-.ct__the--xanh-duong { --ct-mau: var(--tone-blue-dot); --ct-chu: var(--tone-blue-fg); }    /* Dịch vụ / Khách hàng và dịch vụ */
-.ct__the--tim { --ct-mau: var(--tone-violet-dot); --ct-chu: var(--tone-violet-fg); }       /* Yêu cầu của Khách hàng */
-.ct__the--ngoc { --ct-mau: var(--tone-teal-dot); --ct-chu: var(--tone-teal-fg); }          /* Lịch sử trạng thái */
-.ct__the--xanh-la { --ct-mau: var(--tone-green-dot); --ct-chu: var(--tone-green-fg); }     /* Thanh toán / sau buổi chụp */
-.ct__the--vang { --ct-mau: var(--tone-amber-dot); --ct-chu: var(--tone-amber-fg); }        /* Hạn chót / việc đang chờ */
-.ct__the--do { --ct-mau: var(--tone-red-dot); --ct-chu: var(--tone-red-fg); }              /* Thông tin hủy */
-
-/* ---------- Dải thông tin chính: mỗi ô một tông, nhìn phân biệt được ngày / địa điểm / số người / giá trị ---------- */
-.ct__o--ngay { background: linear-gradient(180deg, var(--tone-blue-bg), transparent 70%); box-shadow: inset 0 3px 0 var(--tone-blue-dot); }  /* ô ngày giờ: xanh dương */
-.ct__o--dia-diem { background: linear-gradient(180deg, var(--tone-violet-bg), transparent 70%); box-shadow: inset 0 3px 0 var(--tone-violet-dot); }  /* ô địa điểm: tím */
-.ct__o--so-nguoi { background: linear-gradient(180deg, var(--tone-teal-bg), transparent 70%); box-shadow: inset 0 3px 0 var(--tone-teal-dot); }  /* ô số người: xanh ngọc */
-.ct__o--gia { background: linear-gradient(180deg, var(--tone-green-bg), transparent 70%); box-shadow: inset 0 3px 0 var(--tone-green-dot); }  /* ô giá trị Booking: xanh lá (tiền) */

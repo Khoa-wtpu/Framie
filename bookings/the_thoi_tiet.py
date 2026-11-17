@@ -7,7 +7,9 @@
 #     (không phải Đã từ chối / Hết thời hạn đặt cọc / Đã hủy) VÀ buổi chụp chưa diễn ra.
 #   - Có dự báo: hiện nhiệt độ, khả năng mưa, mô tả. Không có dự báo (E7 trả {}): ghi "Chưa có dự báo".
 #   - Khả năng mưa cao (>= NGUONG_MUA_CAO %): nhắc hai bên trao đổi đổi lịch, kèm nút sang trò chuyện.
-#   - Khu vực tra dự báo = khu vực Khách đã chọn khi đặt (phần đầu của DiaDiem); không khớp thì dùng khu vực của Nhiếp ảnh gia.
+#   - Khu vực tra dự báo = nơi Khách chụp: (1) khu vực Khách chọn trong form (phần đầu của DiaDiem); (2) tỉnh thành đọc được trong
+#     DiaDiem gõ tay ("Hồ Gươm, Hà Nội" -> Hà Nội); (3) chỉ khi không đọc được mới dùng khu vực Nhiếp ảnh gia khai, và CHỈ khi
+#     Nhiếp ảnh gia khai đúng 1 khu vực (khai nhiều khu vực thì không đoán, ghi "Chưa có dự báo" thay vì hiện nhầm thành phố).
 #   - Dự báo lấy từ bookings.thoi_tiet.lay_du_bao_thoi_tiet (E7, của Nguyên); file này KHÔNG tự gọi mạng.
 # =====================================================================
 from django.contrib import messages  # hộp thông báo ngắn trên đầu trang
@@ -20,10 +22,13 @@ from django.views.decorators.http import require_POST  # chỉ nhận POST (trá
 
 from accounts.permissions import vai_tro_required  # nhãn chặn sai vai trò
 from core.constants import VaiTro  # tên vai trò dùng chung
+from core.du_lieu_khu_vuc import TEN_34, TEN_CU_SANG_MOI  # F1: danh mục 34 tỉnh thành + tên cũ
 from profiles.models import KhuVuc  # bảng khu vực
 
 from bookings.models import TRANG_THAI_HET_HIEU_LUC  # 3 trạng thái hết hiệu lực của Booking
 from bookings.thoi_tiet import lay_du_bao_thoi_tiet  # E7: trả {'nhiet_do', 'xac_suat_mua', 'mo_ta'} hoặc {}
+import unicodedata  # bỏ dấu tiếng Việt để so tên địa điểm
+import re  # tách chữ theo dấu câu
 
 NGUONG_MUA_CAO = 60  # khả năng mưa từ mức này (%) trở lên thì nhắc trao đổi đổi lịch
 TB_CHUA_CO_DU_BAO = 'Chưa có dự báo'  # câu hiện khi E7 không trả được dự báo
@@ -31,16 +36,67 @@ TB_NHAC_DOI_LICH = ('Khả năng mưa cao vào giờ chụp. Khách hàng và Nh
                     'để cân nhắc đổi lịch chụp.')  # câu nhắc hai bên khi mưa cao
 
 
+# Tên gọi quen thuộc (thành phố, địa danh, viết tắt) -> tỉnh thành hiện hành, để đọc được DiaDiem gõ tay như "Phố cổ Hội An".
+BI_DANH_DIA_DANH = dict(TEN_CU_SANG_MOI)
+BI_DANH_DIA_DANH.update({'Sài Gòn': 'Hồ Chí Minh', 'Saigon': 'Hồ Chí Minh', 'HCM': 'Hồ Chí Minh', 'Hội An': 'Đà Nẵng',\
+                         'Vũng Tàu': 'Hồ Chí Minh', 'Hạ Long': 'Quảng Ninh', 'Sa Pa': 'Lào Cai', 'Phú Quốc': 'An Giang'})
+TIEN_TO_BO = ('tinh ', 'thanh pho ', 'tp ')  # chữ đứng đầu tên tỉnh thành cần bỏ khi so sánh
+
+
+def _tu(chu):  # 'TP. Hồ Chí Minh' -> 'tp ho chi minh' (bỏ dấu, chỉ giữ chữ/số, cách nhau một dấu cách)
+    chu = unicodedata.normalize('NFD', str(chu).lower().replace('đ', 'd'))
+    chu = ''.join(c for c in chu if not unicodedata.combining(c))
+    return ' '.join(re.sub(r'[^a-z0-9]+', ' ', chu).split())
+
+
+def _bo_tien_to(chu):  # 'thanh pho da nang' -> 'da nang'
+    for tt in TIEN_TO_BO:
+        if (chu + ' ').startswith(tt):
+            return chu[len(tt):].strip()
+    return chu
+
+
+# dạng so sánh (đã bỏ dấu, cách chữ) -> tên tỉnh thành trong danh mục 34
+_TEN_THEO_DANG = {_tu(t): t for t in TEN_34}
+_TEN_THEO_DANG.update({_tu(bd): tinh for bd, tinh in BI_DANH_DIA_DANH.items()})
+_TEN_THEO_DANG_LIEN = {k.replace(' ', ''): v for k, v in _TEN_THEO_DANG.items()}  # viết liền không dấu: 'hanoi', 'danang'
+
+
+def doc_tinh_thanh_tu_dia_diem(dia_diem):  # đọc tỉnh thành trong DiaDiem gõ tay; không đọc được -> None
+    """'Hồ Gươm, Hà Nội' -> 'Hà Nội'; 'Phố đi bộ Nguyễn Huệ, TP.HCM' -> 'Hồ Chí Minh'; 'Hồ Gươm Hà Nội' -> 'Hà Nội'.
+    Cách đọc (đi từ cuối địa chỉ ngược lên, vì người Việt ghi tỉnh thành ở cuối):
+      1) một đoạn (ngăn bằng dấu phẩy hoặc ' - ') trùng hẳn tên tỉnh thành / tên gọi quen thuộc;
+      2) đoạn cuối KẾT THÚC bằng tên có từ 2 chữ trở lên (tên 1 chữ như 'Huế' không xét kiểu này, tránh nhầm 'Nguyễn Huệ').
+    Không đoán bừa: không khớp thì trả None."""
+    doan = [_bo_tien_to(_tu(d)) for d in re.split(r'[,;]|\s-\s', dia_diem or '') if _tu(d)]
+    for d in reversed(doan):  # 1) khớp trọn một đoạn, từ đoạn cuối trở lên
+        if d in _TEN_THEO_DANG:
+            return _TEN_THEO_DANG[d]
+        if d.replace(' ', '') in _TEN_THEO_DANG_LIEN:  # gõ liền như 'Hanoi'
+            return _TEN_THEO_DANG_LIEN[d.replace(' ', '')]
+    if doan:  # 2) đoạn cuối kết thúc bằng tên tỉnh thành (tên dài nhất thắng)
+        for dang in sorted(_TEN_THEO_DANG, key=len, reverse=True):
+            if ' ' in dang and (' ' + doan[-1]).endswith(' ' + dang):
+                return _TEN_THEO_DANG[dang]
+    return None
+
+
 def _khu_vuc_can_tra(booking):  # danh sách khu vực dùng để tra dự báo, theo thứ tự ưu tiên
-    """Form gửi Booking (gui_booking.py) lưu DiaDiem = "<Khu vực>" hoặc "<Khu vực> - <Địa chỉ cụ thể>", nên khu vực Khách
-    ĐÃ CHỌN là phần đầu của DiaDiem: khớp tên KhuVuc (chọn tên dài nhất nếu nhiều tên cùng khớp).
-    Không khớp (Booking cũ / DiaDiem gõ tay) thì dùng các khu vực Nhiếp ảnh gia đã khai."""
+    """1) Form gửi Booking (gui_booking.py) lưu DiaDiem = "<Khu vực>" hoặc "<Khu vực> - <Địa chỉ cụ thể>": khớp tên KhuVuc
+    (chọn tên dài nhất nếu nhiều tên cùng khớp).
+    2) DiaDiem gõ tay / Booking cũ ("Hồ Gươm, Hà Nội"): đọc tỉnh thành trong chữ địa điểm (doc_tinh_thanh_tu_dia_diem).
+    3) Vẫn không đọc được: dùng khu vực Nhiếp ảnh gia đã khai, nhưng CHỈ khi khai đúng 1 khu vực. Khai nhiều khu vực thì không
+       biết Khách chụp ở đâu, nên trả rỗng (thẻ ghi "Chưa có dự báo") thay vì hiện nhầm thời tiết thành phố khác."""
     dia_diem = (booking.DiaDiem or '').strip()  # chữ địa điểm Khách đã lưu
     khop = [k for k in KhuVuc.objects.all()  # mọi khu vực của hệ thống (vài dòng)
             if dia_diem == k.TenKhuVuc or dia_diem.startswith(k.TenKhuVuc + ' - ')]
-    if khop:  # tìm được khu vực Khách đã chọn
+    if khop:  # 1) khu vực Khách đã chọn trong form
         return [max(khop, key=lambda k: len(k.TenKhuVuc))]
-    return list(booking.MaNhiepAnhGia.khu_vuc.all())  # dự phòng: khu vực Nhiếp ảnh gia nhận chụp
+    tinh = doc_tinh_thanh_tu_dia_diem(dia_diem)  # 2) đọc từ chữ gõ tay
+    if tinh:
+        return [tinh]
+    khu_vuc_nag = list(booking.MaNhiepAnhGia.khu_vuc.all())  # 3) dự phòng
+    return khu_vuc_nag if len(khu_vuc_nag) == 1 else []
 
 
 def _lay_du_bao_theo_khu_vuc(booking):  # lấy dự báo đầu tiên có theo thứ tự ưu tiên của _khu_vuc_can_tra
