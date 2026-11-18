@@ -72,6 +72,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'bookings.middleware.NhaGiuChoKhiRoiLuongMiddleware',   # UC4.1/4.2 luồng 6b: rời luồng đặt lịch thì nhả giữ chỗ
     'bookings.middleware.XuLyQuaHanMiddleware',   # T10 (giới hạn tần suất: xem XU_LY_QUA_HAN_KHOANG_CACH_GIAY bên dưới)
 ]
 
@@ -88,7 +89,6 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.layout',  # thêm dòng này
-                'bookings.context_processors.giu_cho_banner',
 
             ],
         },
