@@ -5,7 +5,8 @@
 # Lưu ý: khi DEBUG = True, Django hiện trang lỗi chi tiết của nó để lập trình viên sửa lỗi;
 # trang lỗi tiếng Việt này chỉ hiện khi DEBUG = False (chạy thật).
 # =====================================================================
-from django.shortcuts import render
+from django.shortcuts import redirect, render
+from django.urls import reverse
 
 
 def loi_403(request, exception=None):
@@ -24,10 +25,10 @@ def loi_500(request):
 
 
 def gioi_thieu(request):
-    """Trang tĩnh Giới thiệu (khớp menu của Khách: name='about')."""
+    """Trang tĩnh Giới thiệu (khớp menu của Khách: name='about'). Gồm cả Điều khoản sử dụng, Chính sách bảo mật và Câu hỏi thường gặp."""
     return render(request, "core/gioi_thieu.html")
 
 
 def dieu_khoan(request):
-    """Trang tĩnh Điều khoản sử dụng (name='terms')."""
-    return render(request, "core/dieu_khoan.html")
+    """Địa chỉ cũ /dieu-khoan/ (name='terms'): Điều khoản nay nằm trong trang Giới thiệu, nên chuyển tới đúng phần đó."""
+    return redirect(reverse("about") + "#dieu-khoan")

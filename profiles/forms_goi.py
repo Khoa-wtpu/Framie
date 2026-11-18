@@ -16,6 +16,7 @@ from profiles.models import GoiDichVu, LoaiHinhChup
 THOI_LUONG_TOI_DA = 1440        # một ngày
 SO_ANH_TOI_DA = 10000
 MO_TA_TOI_DA = 2000
+GIA_TOI_THIEU = 1000        # giá gói tối thiểu (VNĐ); khớp thuộc tính min của ô nhập
 
 
 class GoiForm(forms.ModelForm):
@@ -32,7 +33,7 @@ class GoiForm(forms.ModelForm):
         widgets = {
             'TenGoi': forms.TextInput(attrs={'placeholder': 'Nhập tên gói dịch vụ'}),
             'MoTa': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Mô tả nội dung và quyền lợi của gói'}),
-            'Gia': forms.NumberInput(attrs={'placeholder': 'Nhập giá gói', 'inputmode': 'numeric', 'min': 1}),
+            'Gia': forms.NumberInput(attrs={'placeholder': 'Nhập giá gói', 'inputmode': 'numeric', 'min': GIA_TOI_THIEU}),
             'ThoiLuongChup': forms.NumberInput(attrs={'placeholder': 'Nhập số phút', 'inputmode': 'numeric', 'min': 1}),
             'LoaiHauKy': forms.RadioSelect,
             'SoAnhHauKyToiDa': forms.NumberInput(attrs={'placeholder': 'Nhập số ảnh', 'inputmode': 'numeric', 'min': 1}),
@@ -42,7 +43,7 @@ class GoiForm(forms.ModelForm):
             'TenGoi': {'required': 'Vui lòng nhập tên gói.'},
             'MaLoaiHinh': {'required': 'Vui lòng chọn loại hình chụp.'},
             'MoTa': {'required': 'Vui lòng nhập mô tả và quyền lợi của gói.'},
-            'Gia': {'required': 'Vui lòng nhập giá gói.', 'invalid': 'Giá phải là số nguyên lớn hơn 0.',
+            'Gia': {'required': 'Vui lòng nhập giá gói.', 'invalid': 'Giá phải là số nguyên, tối thiểu 1.000đ.',
                     'max_digits': 'Giá quá lớn.', 'max_whole_digits': 'Giá quá lớn.',
                     'max_decimal_places': 'Giá phải là số nguyên (không có phần lẻ).'},
             'ThoiLuongChup': {'required': 'Vui lòng nhập thời lượng chụp.',
@@ -68,6 +69,7 @@ class GoiForm(forms.ModelForm):
             self.initial.setdefault('LoaiHauKy', LoaiHauKy.GIOI_HAN)
         for ten in ('Gia', 'ThoiLuongChup', 'SoAnhHauKyToiDa'):
             self.fields[ten].localize = False
+        self.fields['MoTa'].required = True                           # clean_MoTa đã bắt buộc; đặt required để nhãn hiện dấu * cho đồng nhất
 
     def clean_TenGoi(self):
         ten = ' '.join(self.cleaned_data['TenGoi'].split())
@@ -91,10 +93,12 @@ class GoiForm(forms.ModelForm):
 
     def clean_Gia(self):
         gia = self.cleaned_data['Gia']
-        if gia is None or gia <= 0:
-            raise ValidationError('Giá phải là số nguyên lớn hơn 0.')
+        if gia is None:
+            raise ValidationError('Vui lòng nhập giá gói.')
         if gia != gia.to_integral_value():
             raise ValidationError('Giá phải là số nguyên (không có phần lẻ).')
+        if gia < GIA_TOI_THIEU:
+            raise ValidationError('Giá tối thiểu là 1.000đ.')
         return gia
 
     def clean_ThoiLuongChup(self):

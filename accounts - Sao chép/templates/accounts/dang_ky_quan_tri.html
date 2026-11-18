@@ -1,0 +1,28 @@
+{% extends "base.html" %}{# dùng khung chung: header, footer, messages #}
+{% load static %}{# static: lấy đường dẫn CSS #}
+{% block title %}Đăng ký Quản trị viên{% endblock %}{# chữ trên tab #}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'profiles/css/ho_so.css' %}">{% endblock %}{# cùng CSS với trang đăng ký Khách hàng #}
+{% block content %}
+<div class="container">{# cùng khung với trang đăng ký Khách hàng #}
+  <h1>Đăng ký tài khoản Quản trị viên</h1>{# tiêu đề trang #}
+
+  {% if loi_link %}{# link sai, hết hạn hoặc đã dùng: không hiện form #}
+  {% include "includes/alert.html" with level="danger" text=loi_link %}
+  <p class="card__meta auth-switch-note"><a href="{% url 'login' %}">Về trang đăng nhập</a></p>
+  {% else %}
+  {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}{# lỗi chung hiện hộp đỏ #}
+  <form method="post" novalidate>
+    {% csrf_token %}{# mã chống giả mạo form, BẮT BUỘC có #}
+    <section class="ho-so__khoi">
+      <header class="ho-so__khoi-dau"><h2>Thông tin tài khoản</h2></header>
+      {% include "includes/form_field.html" with field=form.ho_ten %}{# ô Họ và tên #}
+      {% include "includes/form_field.html" with field=form.email %}{# ô Email (đã điền sẵn, bị khóa) #}
+      {% include "includes/form_field.html" with field=form.so_dien_thoai %}{# ô Số điện thoại #}
+      {% include "includes/form_field.html" with field=form.mat_khau %}{# ô Mật khẩu #}
+    </section>
+    <button class="btn btn--primary btn--block" type="submit">Đăng ký</button>{# 1 nút chính duy nhất #}
+  </form>
+  <p class="card__meta auth-switch-note">Đã có tài khoản? <a href="{% url 'login' %}">Đăng nhập</a></p>
+  {% endif %}
+</div>
+{% endblock %}

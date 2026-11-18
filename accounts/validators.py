@@ -1,5 +1,6 @@
 import unicodedata  # chuẩn hóa chữ tiếng Việt về một dạng duy nhất (dấu dựng sẵn) trước khi kiểm tra
 
+from django.contrib.auth.password_validation import MinimumLengthValidator  # luật độ dài tối thiểu của Django (bản gốc báo lỗi bằng tiếng Anh)
 from django.core.exceptions import ValidationError  # lỗi chuẩn của Django để báo mật khẩu không hợp lệ
 
 
@@ -22,3 +23,12 @@ class DoPhucTapMatKhau:  # luật độ phức tạp mật khẩu của FRAMIE (
 
     def get_help_text(self):  # Django dùng để hiển thị gợi ý quy tắc cho người dùng
         return 'Mật khẩu phải có chữ hoa, chữ thường, số và ký tự đặc biệt.'  # gợi ý hiển thị
+
+
+class DoDaiToiThieuMatKhau(MinimumLengthValidator):  # cùng luật với Django nhưng thông báo bằng tiếng Việt (bản dịch 'vi' của Django thiếu câu này)
+    def validate(self, password, user=None):  # kiểm tra độ dài
+        if len(password) < self.min_length:  # ngắn hơn mức tối thiểu
+            raise ValidationError(f'Mật khẩu quá ngắn, cần có ít nhất {self.min_length} ký tự.', code='password_too_short')  # báo bằng tiếng Việt
+
+    def get_help_text(self):  # gợi ý quy tắc
+        return f'Mật khẩu cần có ít nhất {self.min_length} ký tự.'  # gợi ý hiển thị

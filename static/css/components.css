@@ -41,7 +41,7 @@
 
 
 /* ---------- Ô nhập ---------- */
-.field { display: grid; gap: var(--space-1); margin-bottom: var(--space-4); }
+.field { display: grid; align-content: start; gap: var(--space-1); margin-bottom: var(--space-4); } /* align-content: start = hai ô cạnh nhau cao khác nhau (một ô có dòng lỗi) thì ô thấp không bị kéo giãn làm lệch hàng */
 .field__label { font-size: var(--text-sm); font-weight: var(--fw-heading); }
 .field__req { color: var(--danger-fg); }
 .input { width: 100%; min-height: 2.75rem; padding: var(--space-2) var(--space-4); background: var(--color-input-bg); color: var(--color-text); border: 1px solid var(--color-border); border-radius: var(--radius-md); font: inherit; font-size: var(--text-base); transition: border-color .15s, box-shadow .15s; }

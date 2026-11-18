@@ -110,7 +110,7 @@ class DangKyTests(TestCase):  # nhóm test của P4 (UC7.1a)
         'ho_ten': 'Nguyễn Văn An',  # họ tên hợp lệ
         'email': 'an@example.com',  # email hợp lệ
         'so_dien_thoai': '0912345678',  # 10 số, bắt đầu bằng 0
-        'mat_khau': 'Xk9#mQ2vLp',  # đủ 8 ký tự, có hoa, thường, số, ký tự đặc biệt, không phổ biến
+        'mat_khau': 'Xk9#mQ2vLp', 'mat_khau_xac_nhan': 'Xk9#mQ2vLp',  # đủ 8 ký tự, có hoa, thường, số, ký tự đặc biệt, không phổ biến
     }  # hết dữ liệu mẫu
 
     def test_dang_ky_dung_tao_user_va_gui_mot_email(self):  # luồng chính
@@ -156,7 +156,7 @@ class DangKyTests(TestCase):  # nhóm test của P4 (UC7.1a)
         }  # hết danh sách
         for mk, cau_bao in ca_sai.items():  # duyệt từng mật khẩu sai
             with self.subTest(mat_khau=mk):  # báo riêng từng mật khẩu nếu lỗi
-                res = self.client.post('/dang-ky/', {**self.DU_LIEU, 'mat_khau': mk})  # gửi form
+                res = self.client.post('/dang-ky/', {**self.DU_LIEU, 'mat_khau': mk, 'mat_khau_xac_nhan': mk})  # gửi form
                 self.assertEqual(res.status_code, 200)  # ở lại trang đăng ký, không chuyển trang
                 if cau_bao:  # có câu báo cần kiểm tra
                     self.assertContains(res, cau_bao)  # trang hiện đúng câu báo lỗi
@@ -179,7 +179,7 @@ class DangKyTests(TestCase):  # nhóm test của P4 (UC7.1a)
         self.assertEqual(tach_ho_ten(''), ('', ''))  # chuỗi rỗng không gây lỗi
 
     def test_loi_mat_khau_chi_hien_mot_lan(self):  # feedback P4-1: mỗi câu lỗi mật khẩu chỉ được hiện đúng 1 lần
-        res = self.client.post('/dang-ky/', {**self.DU_LIEU, 'mat_khau': 'xk9#mq2vlp'})  # mật khẩu thiếu chữ hoa
+        res = self.client.post('/dang-ky/', {**self.DU_LIEU, 'mat_khau': 'xk9#mq2vlp', 'mat_khau_xac_nhan': 'xk9#mq2vlp'})  # mật khẩu thiếu chữ hoa
         self.assertContains(res, 'Mật khẩu phải có ít nhất một chữ hoa.', count=1)  # câu báo xuất hiện đúng 1 lần, không bị lặp do hai nơi cùng kiểm tra
 
     @override_settings(ALLOWED_HOSTS=['framie.example.com'])  # cho phép tên miền giả này trong test, nếu không Django từ chối vì Host lạ

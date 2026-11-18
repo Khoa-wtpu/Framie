@@ -62,7 +62,8 @@ def _dong_goi_tin(danh_sach, nguoi_xem, cuoc):  # đổi danh sách TinNhan thà
     xoa_den = services.lay_tham_gia(cuoc, nguoi_xem).XoaDenMaTin  # mốc đã xóa phía mình: trích dẫn "trả lời" không được lộ tin đã xóa
     return [  # mỗi tin một phần tử
         {'id': tin.pk, 'html': render_to_string('chat/_tin_nhan.html', {'tin': tin, 'nguoi_xem_id': nguoi_xem.pk, 'doi_phuong': doi_phuong, 'xoa_den': xoa_den}),  # HTML đã được Django tự escape; tin đã thu hồi chỉ có câu thay thế
-         'anh': [] if tin.DaThuHoi or services.anh_het_han(tin) else [{'ma': dk.pk, 'url': reverse('xem_anh_chat', args=[dk.pk])} for dk in tin.dinh_kem.all()]}  # ảnh của tin (đã nạp sẵn) cho panel "File phương tiện"; tin đã thu hồi hoặc ảnh quá 6 tháng thì KHÔNG đưa ảnh ra
+         'anh': [] if tin.DaThuHoi or services.anh_het_han(tin) else [{'ma': dk.pk, 'url': reverse('xem_anh_chat', args=[dk.pk])} for dk in tin.dinh_kem.all()],  # ảnh của tin (đã nạp sẵn) cho panel "File phương tiện"; tin đã thu hồi hoặc ảnh quá 6 tháng thì KHÔNG đưa ảnh ra
+         'lk': [] if tin.DaThuHoi else [{'url': l['href'], 'hien_thi': l['hien_thi']} for l in services.tim_lien_ket(tin.NoiDung)]}  # link trong chữ của tin, để chat.js thêm vào mục "Liên kết" ở cột phải; tin đã thu hồi thì KHÔNG đưa ra
         for tin in danh_sach  # duyệt từng tin
     ]  # hết danh sách
 
@@ -82,12 +83,13 @@ def chi_tiet_cuoc_tro_chuyen(request, ma_cuoc):  # SC8.2 + UC8.3: mở cuộc tr
         cuoc = services.lay_cuoc_cua_nguoi_dung(request.user, ma_cuoc)  # người ngoài cuộc bị 404
     except Http404:  # trang 404 riêng của chat
         return render(request, 'chat/khong_tim_thay.html', status=404)  # "Không tìm thấy cuộc trò chuyện" + nút về hộp thư
-    tin_nhan, con_cu, loi_tai, anh_chia_se, xoa_den = [], False, '', [], 0  # mặc định: chưa có tin, không còn tin cũ, không lỗi, chưa có ảnh chia sẻ, chưa xóa gì
+    tin_nhan, con_cu, loi_tai, anh_chia_se, xoa_den, lien_ket = [], False, '', [], 0, []  # mặc định: chưa có tin, không còn tin cũ, không lỗi, chưa có ảnh chia sẻ, chưa xóa gì
     try:  # luồng ngoại lệ 2a của UC8.3: không truy xuất được lịch sử
         tham_gia = services.lay_tham_gia(cuoc, request.user)  # trạng thái riêng của mình (đã xóa tới tin nào...)
         tin_nhan, con_cu = services.lay_tin_gan_nhat(cuoc, sau_ma=tham_gia.XoaDenMaTin)  # các tin gần nhất, bỏ phần đã xóa phía mình
         xoa_den = tham_gia.XoaDenMaTin  # mốc đã xóa phía mình, template dùng để che trích dẫn của tin đã xóa
         anh_chia_se = services.lay_anh_chia_se(cuoc, tham_gia.XoaDenMaTin)  # ảnh hiện ở cột phải (bỏ ảnh tin đã thu hồi và phần đã xóa phía mình)
+        lien_ket = services.lay_lien_ket_chia_se(cuoc, tham_gia.XoaDenMaTin)  # link hiện ở mục "Liên kết" cột phải (bỏ link của tin đã thu hồi và phần đã xóa phía mình)
         services.danh_dau_da_xem(cuoc, request.user, tin_nhan[-1].pk if tin_nhan else 0, mo_trang=True)  # mở cuộc = đã xem hết, bỏ dấu "chưa đọc" tự đánh
     except DatabaseError:  # lỗi bất ngờ
         loi_tai = services.LOI_TAI_LICH_SU  # báo lỗi, trang vẫn hiện để người dùng bấm tải lại
@@ -107,6 +109,7 @@ def chi_tiet_cuoc_tro_chuyen(request, ma_cuoc):  # SC8.2 + UC8.3: mở cuộc tr
         'doi_da_xem': services.doi_phuong_da_xem_toi(cuoc, request.user),  # mốc đối phương đã xem, chat.js hiện "Đã xem"
         'anh_theo_thang': services.nhom_anh_theo_thang(anh_chia_se),  # panel "File phương tiện" ở cột phải: ảnh chia theo tháng, mới nhất trước
         'thoi_han_anh_thang': services.THOI_HAN_ANH_THANG,  # ghi chú "Ảnh được lưu 6 tháng" ở panel
+        'lien_ket': lien_ket,  # mục "Liên kết" ở cột phải
 
         'xoa_den': xoa_den,  # mốc đã xóa phía mình
         'so_anh_toi_da': services.SO_ANH_TOI_DA,  # chat.js kiểm số ảnh trước khi gửi

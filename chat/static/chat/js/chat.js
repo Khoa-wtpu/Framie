@@ -296,13 +296,15 @@
   function chenCuoi(cacTin, ep) {  // thêm các tin MỚI vào cuối danh sách (cacTin đã sắp cũ trước mới sau)
     var html = '';  // gom HTML
     var anhMoi = [];  // ảnh của các tin mới, để thêm vào panel "Ảnh đã chia sẻ"
+    var lkMoi = [];  // link của các tin mới, để thêm vào mục "Liên kết" ở cột phải
     cacTin.forEach(function (t) {  // duyệt từng tin
-      if (!thanTin.querySelector('[data-id="' + t.id + '"]')) { html += t.html; (t.anh || []).forEach(function (a) { anhMoi.push(a); }); }  // chỉ thêm nếu chưa có (chống trùng khi hai lần polling chồng nhau)
+      if (!thanTin.querySelector('[data-id="' + t.id + '"]')) { html += t.html; (t.anh || []).forEach(function (a) { anhMoi.push(a); }); (t.lk || []).forEach(function (l) { lkMoi.push({ ma: t.id, url: l.url, hien: l.hien_thi }); }); }  // chỉ thêm nếu chưa có (chống trùng khi hai lần polling chồng nhau)
       if (t.id > idCuoi) idCuoi = t.id;  // nâng mốc tin cuối
       if (idDau === 0 || t.id < idDau) idDau = t.id;  // danh sách đang trống thì đặt mốc tin đầu
     });
     if (!html) return;  // không có gì mới
     themAnhVaoPanel(anhMoi);  // ảnh mới lên đầu panel bên phải
+    themLienKetVaoPanel(lkMoi);  // link mới lên đầu mục "Liên kết" bên phải
     var trong = thanTin.querySelector('[data-chat-trong]');  // câu "Cuộc trò chuyện đã được khởi tạo"
     if (trong) trong.remove();  // có tin rồi thì bỏ câu này
     var dangODay = ganDay();  // đo trước khi chèn
@@ -542,6 +544,45 @@
     capNhatPanelRong();  // cập nhật trạng thái rỗng
   }
 
+  function capNhatLienKetRong() {  // hiện danh sách khi có link, ngược lại hiện câu "Chưa có liên kết nào"
+    var ds = document.querySelector('[data-chat-lien-ket]');  // danh sách link ở cột phải
+    var rong = document.querySelector('[data-chat-lk-rong]');  // câu trạng thái rỗng
+    if (!ds) return;  // cột phải không có mục này
+    var coLink = !!ds.querySelector('[data-chat-lk]');  // còn link nào không
+    ds.hidden = !coLink;  // ẩn danh sách khi trống
+    if (rong) rong.hidden = coLink;  // hiện câu rỗng khi trống
+  }
+
+  function themLienKetVaoPanel(cacLk) {  // cacLk: [{ma, url, hien}] cũ trước mới sau; link mới nhất nằm đầu danh sách
+    var ds = document.querySelector('[data-chat-lien-ket]');  // danh sách link ở cột phải
+    if (!ds) return;  // cột phải không có mục này
+    cacLk.forEach(function (lk) {  // từng link
+      var daCo = Array.prototype.some.call(ds.querySelectorAll('[data-chat-lk]'), function (o) { return o.dataset.url === lk.url; });  // link này đã có trong danh sách chưa
+      if (daCo) return;  // có rồi thì bỏ qua
+      var li = document.createElement('li');  // một dòng link
+      li.className = 'chat-lien-ket__muc';  // giống phần server dựng
+      li.setAttribute('data-chat-lk', '');  // đánh dấu để tìm lại
+      li.dataset.maTin = lk.ma;  // mã tin chứa link, để gỡ khi tin bị thu hồi
+      li.dataset.url = lk.url;  // địa chỉ, để chống trùng
+      var a = document.createElement('a');  // thẻ link
+      a.href = lk.url;  // server chỉ đưa ra link http hoặc https
+      a.target = '_blank';  // mở tab mới
+      a.rel = 'noopener noreferrer nofollow';  // an toàn như phần server dựng
+      a.title = lk.url;  // rê chuột xem địa chỉ đầy đủ
+      a.textContent = lk.hien;  // textContent nên không bị chèn HTML
+      li.appendChild(a);  // ghép link vào dòng
+      ds.insertBefore(li, ds.firstChild);  // mới nhất lên đầu
+    });
+    capNhatLienKetRong();  // cập nhật trạng thái rỗng
+  }
+
+  function goLienKetKhoiPanel(maTin) {  // bỏ các link của tin vừa thu hồi khỏi mục "Liên kết"
+    var ds = document.querySelector('[data-chat-lien-ket]');  // danh sách link ở cột phải
+    if (!ds) return;  // cột phải không có mục này
+    Array.prototype.slice.call(ds.querySelectorAll('[data-chat-lk][data-ma-tin="' + maTin + '"]')).forEach(function (o) { o.remove(); });  // gỡ từng link của tin đó
+    capNhatLienKetRong();  // hết link thì hiện câu rỗng
+  }
+
   // ----- trang xem ảnh (lightbox): bấm ảnh trong tin hoặc trong panel -----
   var hopXem = null;  // hộp xem ảnh (tạo khi bấm lần đầu)
   var anhXem = [];  // các nút ảnh cùng bộ với ảnh đang xem
@@ -656,6 +697,7 @@
 
   function thuHoiTrenTrang(cacId) {  // đổi các bong bóng đã thu hồi thành câu thay thế, gỡ ảnh, gỡ nút, sửa các trích dẫn
     cacId.forEach(function (id) {
+      goLienKetKhoiPanel(id);  // link của tin bị thu hồi biến mất khỏi mục "Liên kết" (kể cả khi tin không nằm trên trang)
       Array.prototype.forEach.call(thanTin.querySelectorAll('[data-chat-di-den="' + id + '"] .tn__tl-nd'), function (x) { x.textContent = CHU_THU_HOI_DOI; });  // các tin trả lời tin này không còn hiện nội dung gốc
       if (maTraLoi === id) huyTraLoi();  // đang định trả lời đúng tin vừa bị thu hồi thì hủy
       var tin = thanTin.querySelector('.tn[data-id="' + id + '"]');  // bong bóng của tin

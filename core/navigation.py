@@ -19,6 +19,7 @@ URL_NAMES = {
     "register": "register",
     "notifications": "notifications",
     "about": "about",   # B10 Giới thiệu
+    "search": "search", # trang Tìm kiếm (footer)
     "terms": "terms",   # B10 Điều khoản sử dụng
     "logout_confirm": "logout_confirm",  # SC7.5 Xác nhận đăng xuất
 }
@@ -26,7 +27,7 @@ URL_NAMES = {
 # (nhãn, tên URL)
 MENUS = {
     GUEST: [("Trang chủ", "home"), ("Tìm nhiếp ảnh gia", "search"), ("Giới thiệu", "about")],
-    CUSTOMER: [("Hồ sơ của tôi", "customer_profile"), ("Tìm kiếm", "search"), ("Booking của tôi", "my_bookings"), ("Tin nhắn", "inbox")],
+    CUSTOMER: [("Hồ sơ của tôi", "customer_profile"), ("Tìm kiếm", "search"), ("Booking của tôi", "my_bookings"), ("Tin nhắn", "inbox"), ("Giới thiệu", "about")],
     PHOTOGRAPHER: [
         ("Hồ sơ của tôi", "photographer_profile"),
         ("Portfolio", "portfolio"),
@@ -34,6 +35,7 @@ MENUS = {
         ("Lịch của tôi", "my_calendar"),
         ("Quản lý Booking", "manage_bookings"),
         ("Tin nhắn", "inbox"),
+        ("Giới thiệu", "about"),
     ],
     # Menu Quản trị viên: chỉnh lại cho đúng danh sách màn hình admin của nhóm
     ADMIN: [
@@ -47,9 +49,10 @@ MENUS = {
 # Menu thả xuống của "Tài khoản" (chuông thông báo nằm riêng trên header)
 # Mỗi vai trò có trang "Hồ sơ của tôi" riêng: Khách hàng -> customer_profile (accounts), Nhiếp ảnh gia -> photographer_profile (profiles)
 _DOI_MAT_KHAU = ("Đổi mật khẩu", "change_password")
+_TONG_QUAN = ("Tổng quan", "dashboard")  # trang "Xin chào, <tên>" (sau đăng nhập); luôn có lối quay lại từ menu avatar
 ACCOUNT_MENUS = {
-    CUSTOMER: [("Hồ sơ của tôi", "customer_profile"), _DOI_MAT_KHAU],
-    PHOTOGRAPHER: [("Hồ sơ của tôi", "photographer_profile"), _DOI_MAT_KHAU],
+    CUSTOMER: [_TONG_QUAN, ("Hồ sơ của tôi", "customer_profile"), _DOI_MAT_KHAU],
+    PHOTOGRAPHER: [_TONG_QUAN, ("Hồ sơ của tôi", "photographer_profile"), _DOI_MAT_KHAU],
     ADMIN: [("Hồ sơ của tôi", "account_profile"), _DOI_MAT_KHAU],  # Quản trị viên chưa có trang hồ sơ nên link tạm "#"
 }
 

@@ -33,6 +33,19 @@ class DuyetHoSoTestCase(TestCase):
         self.url_ds = reverse('admin_profile_review')
         self.url_ct = reverse('duyet_ho_so_chi_tiet', args=[self.luot.pk])
 
+    def test_chuyen_tab_giu_tim_kiem_va_bo_loc(self):
+        self.client.force_login(self.qtv)
+        res = self.client.get(self.url_ds, {'tab': 'da_xu_ly', 'q': 'Khôi', 'trang_thai': 'Chờ duyệt', 'ket_qua': 'Đã từ chối'})
+        html = res.content.decode()
+        self.assertIn('?tab=cho&amp;', html)                 # link tab Chờ xử lý còn mang tham số lọc
+        self.assertIn('q=Kh%C3%B4i', html)
+
+    def test_tab_cho_giu_ket_qua_xu_ly_bang_o_an(self):
+        self.client.force_login(self.qtv)
+        res = self.client.get(self.url_ds, {'tab': 'cho', 'ket_qua': 'Đã từ chối'})
+        self.assertContains(res, 'type="hidden" name="ket_qua" value="Đã từ chối"')
+        self.assertContains(res, 'Chỉ áp dụng cho tab')
+
     # ---- dữ liệu mẫu ----
     def tao_user(self, ten_dang_nhap, nhom, **kw):
         self.dem += 1
@@ -403,7 +416,8 @@ class DuyetHoSoTestCase(TestCase):
         # nút Bộ lọc nằm bên trong khối .duyet__pill (trước nút Tìm kiếm), không xuống hàng riêng
         pill = html[html.index('class="duyet__pill"'):html.index('id="bang-bo-loc"')]
         self.assertLess(pill.index('nut-bo-loc'), pill.index('duyet__gui'))
-        self.assertNotIn('Kết quả', html[html.index('id="bang-bo-loc"'):html.index('duyet__ket-qua-dau')])   # tab Chờ xử lý: không có nhóm Kết quả
+        bang = html[html.index('id="bang-bo-loc"'):html.index('duyet__ket-qua-dau')]
+        self.assertIn('<fieldset class="duyet__nhom" disabled>\n          <legend>Kết quả xử lý', bang)   # tab Chờ xử lý: nhóm Kết quả hiện nhưng bị khóa (chỉ áp dụng cho tab Đã xử lý)
 
     def test_sap_xep_mac_dinh_va_dao_nguoc(self):
         moi = self.tao_luot('Hồ', 'Giang', ThoiDiemNop=timezone.now() + timedelta(hours=1))

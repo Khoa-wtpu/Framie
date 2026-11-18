@@ -32,7 +32,7 @@ def cap_nhat_ho_so_khach_hang(request):  # trang "Cập nhật hồ sơ" của K
 
 
 def _ve_ho_so(user):  # đích quay về sau khi đổi mật khẩu hoặc bấm Hủy: trang hồ sơ của đúng vai trò
-    ten_url = {VaiTro.KHACH_HANG: 'customer_profile', VaiTro.NHIEP_ANH_GIA: 'photographer_profile'}.get(lay_vai_tro(user))  # Khách hàng và Nhiếp ảnh gia có trang hồ sơ riêng
+    ten_url = {VaiTro.KHACH_HANG: 'customer_profile', VaiTro.NHIEP_ANH_GIA: 'photographer_profile', VaiTro.QUAN_TRI_VIEN: 'account_profile'}.get(lay_vai_tro(user))  # cả 3 vai trò đều có trang hồ sơ riêng
     if ten_url:  # vai trò có trang hồ sơ
         try:  # URL có thể chưa nối
             return reverse(ten_url)  # đường dẫn trang hồ sơ

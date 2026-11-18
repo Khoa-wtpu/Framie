@@ -1,0 +1,31 @@
+{% extends "base.html" %}{# dùng khung chung: header, footer, messages #}
+{% load static %}{# nạp thư viện static để lấy đường dẫn file CSS; load phải đặt sau extends #}
+{% block title %}Đăng ký Nhiếp ảnh gia{% endblock %}{# chữ trên tab trình duyệt #}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'profiles/css/ho_so.css' %}">{% endblock %}{# nạp CSS của khối .ho-so__khoi; hai trang đăng ký nạp giống nhau nên khung và khoảng cách giống nhau #}
+{% block content %}{# phần nội dung riêng của trang #}
+<div class="container">{# hộp rộng vì form hồ sơ có nhiều khối #}
+  <h1>Đăng ký tài khoản Nhiếp ảnh gia</h1>{# tiêu đề trang #}
+  {% include "accounts/includes/_chon_vai_tro.html" with hien_tai="nhiep_anh_gia" %}{# 2 nút chọn vai trò, nút của trang hiện tại màu xám #}
+
+  {% for error in form_tai_khoan.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}{# lỗi chung của form tài khoản hiện hộp đỏ #}
+  {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}{# lỗi chung của form hồ sơ hiện hộp đỏ #}
+  <form method="post" enctype="multipart/form-data" novalidate>{# enctype BẮT BUỘC có, thiếu thì ảnh đại diện và ảnh QR không gửi lên được #}
+    {% csrf_token %}{# mã chống giả mạo form, BẮT BUỘC có #}
+
+    {% include "profiles/includes/_ho_so_anh_dai_dien.html" %}{# khối Ảnh đại diện của Khoa, đặt trên cùng #}
+
+    <section class="ho-so__khoi">{# khối Thông tin tài khoản của Phanh, bọc đúng class để đồng bộ #}
+      <header class="ho-so__khoi-dau"><h2>Thông tin tài khoản</h2></header>{# tiêu đề khối #}
+      {% include "includes/form_field.html" with field=form_tai_khoan.ho_ten %}{# ô Họ và tên #}
+      {% include "includes/form_field.html" with field=form_tai_khoan.email %}{# ô Email #}
+      {% include "includes/form_field.html" with field=form_tai_khoan.so_dien_thoai %}{# ô Số điện thoại #}
+      {% include "includes/form_field.html" with field=form_tai_khoan.mat_khau %}{# ô Mật khẩu #}
+    </section>
+
+    {% include "profiles/includes/_ho_so_chi_tiet.html" %}{# 3 khối còn lại của Khoa #}
+
+    <button class="btn btn--primary btn--block" type="submit">Gửi hồ sơ đăng ký</button>{# 1 nút chính duy nhất của màn hình #}
+  </form>
+  <p class="card__meta auth-switch-note">Đã có tài khoản? <a href="{% url 'login' %}">Đăng nhập</a></p>{# class thay cho style inline #}
+</div>
+{% endblock %}

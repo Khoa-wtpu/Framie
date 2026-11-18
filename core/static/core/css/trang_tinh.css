@@ -12,3 +12,6 @@
 
 /* Khoảng cách phía trên hàng nút. */
 .tt-nut { margin-top: var(--space-5); }
+
+/* Tiêu đề trang lỗi: chia đều chữ giữa các dòng, không để lẻ một chữ ở dòng dưới (vd. "cập" của 403). */
+.tt-hop:not(.tt-hop--rong) h1 { font-size: var(--text-2xl); text-wrap: balance; } /* cỡ vừa để câu 403 nằm trọn một dòng ở màn hình rộng; hẹp quá thì chia đều 2 dòng */

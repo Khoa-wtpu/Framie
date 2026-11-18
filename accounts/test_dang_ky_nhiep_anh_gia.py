@@ -67,7 +67,7 @@ class DangKyNhiepAnhGiaThatTests(TestCase):  # P5 (feedback a, b, c): chạy v�
     def du_lieu(self, **doi):  # dữ liệu hợp lệ đủ cả tài khoản lẫn hồ sơ; **doi để ghi đè từng ô
         data = {  # phần tài khoản (form của Phanh)
             'ho_ten': 'Nguyễn Văn An', 'email': 'an@example.com',  # họ tên và email
-            'so_dien_thoai': '0912345678', 'mat_khau': 'Xk9#mQ2vLp',  # SĐT 10 số; mật khẩu đủ 4 loại ký tự
+            'so_dien_thoai': '0912345678', 'mat_khau': 'Xk9#mQ2vLp', 'mat_khau_xac_nhan': 'Xk9#mQ2vLp',  # SĐT 10 số; mật khẩu đủ 4 loại ký tự
             # phần hồ sơ (form của Khoa)
             'GioiThieu': 'Xin chào', 'NganHang': NGAN_HANG[0], 'SoTaiKhoan': '0123456789',  # giới thiệu và ngân hàng
             'ChuTaiKhoan': 'NGUYEN VAN AN',  # tên chủ tài khoản
@@ -110,7 +110,7 @@ class DangKyNhiepAnhGiaThatTests(TestCase):  # P5 (feedback a, b, c): chạy v�
         self.assertNotContains(res, 'Thiếu tài khoản')  # câu lỗi vô lý này phải bị ẩn
 
     def test_hien_loi_ca_hai_form_cung_luc(self):  # feedback P5-3: sai cả tài khoản lẫn hồ sơ thì thấy hết lỗi một lần
-        res = self.client.post(self.url, {**self.bo_o('loai_hinh'), 'mat_khau': 'xk9#mq2vlp'})  # mật khẩu thiếu chữ hoa VÀ thiếu loại hình
+        res = self.client.post(self.url, {**self.bo_o('loai_hinh'), 'mat_khau': 'xk9#mq2vlp', 'mat_khau_xac_nhan': 'xk9#mq2vlp'})  # mật khẩu thiếu chữ hoa VÀ thiếu loại hình
         self.assertContains(res, 'Mật khẩu phải có ít nhất một chữ hoa.')  # lỗi của form tài khoản
         self.assertContains(res, 'Vui lòng chọn ít nhất một loại hình chụp.')  # lỗi của form hồ sơ, hiện cùng lúc
         self.assertEqual(User.objects.count(), 0)  # chưa tạo User nào
@@ -128,3 +128,41 @@ class DangKyNhiepAnhGiaThatTests(TestCase):  # P5 (feedback a, b, c): chạy v�
         self.assertEqual(res.status_code, 200)  # ở lại trang đăng ký
         self.assertContains(res, 'vừa được đăng ký bởi người khác')  # hiện câu báo trùng
         self.assertEqual(NhiepAnhGia.objects.count(), 0)  # không có hồ sơ nào được tạo
+
+class LoiMatKhauTiengVietTests(TestCase):
+    """Thông báo lỗi mật khẩu phải bằng tiếng Việt (không còn câu 'This password is too short…' của Django)."""
+    def test_mat_khau_ngan_bao_tieng_viet(self):
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError
+        with self.assertRaises(ValidationError) as ctx:
+            validate_password('Ab1!')
+        chu = ' '.join(ctx.exception.messages)
+        self.assertIn('Mật khẩu quá ngắn, cần có ít nhất 8 ký tự.', chu)
+        self.assertNotIn('This password', chu)
+
+
+class XacNhanMatKhauTests(TestCase):
+    """Form đăng ký (Khách hàng và Nhiếp ảnh gia dùng chung DangKyForm) bắt nhập mật khẩu 2 lần."""
+    DU_LIEU = {'ho_ten': 'Nguyễn Văn An', 'email': 'an@example.com', 'so_dien_thoai': '0912345678',
+               'mat_khau': 'Xk9#mQ2vLp', 'mat_khau_xac_nhan': 'Xk9#mQ2vLp'}
+
+    def form(self, **doi):
+        from accounts.forms import DangKyForm
+        return DangKyForm({**self.DU_LIEU, **doi})
+
+    def test_khop_thi_hop_le(self):
+        self.assertTrue(self.form().is_valid())
+
+    def test_khong_khop_bi_chan(self):
+        f = self.form(mat_khau_xac_nhan='Xk9#mQ2vLq')
+        self.assertFalse(f.is_valid())
+        self.assertIn('Mật khẩu xác nhận không khớp.', f.errors['mat_khau_xac_nhan'])
+
+    def test_de_trong_bi_chan(self):
+        f = self.form(mat_khau_xac_nhan='')
+        self.assertFalse(f.is_valid())
+        self.assertIn('Vui lòng nhập lại mật khẩu để xác nhận.', f.errors['mat_khau_xac_nhan'])
+
+    def test_hai_trang_dang_ky_deu_co_o_xac_nhan(self):
+        for url in ('/dang-ky/', '/dang-ky/nhiep-anh-gia/'):
+            self.assertContains(self.client.get(url), 'name="mat_khau_xac_nhan"')

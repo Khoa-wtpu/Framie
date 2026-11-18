@@ -18,7 +18,7 @@
 </div>
 {% endif %}
 {% endif %}
-{% if tin.NoiDung %}<p class="tn__noi-dung">{{ tin.NoiDung|linebreaksbr }}</p>{% endif %}{# linebreaksbr tự escape HTML trước, chống XSS; tin chỉ có ảnh thì không có bong bóng chữ #}
+{% if tin.NoiDung %}<p class="tn__noi-dung">{{ tin.NoiDung|lien_ket|linebreaksbr }}</p>{% endif %}{# lien_ket escape từng đoạn rồi mới gắn thẻ <a> cho link http, https, www (bấm mở tab mới); linebreaksbr tự escape HTML trước, chống XSS; tin chỉ có ảnh thì không có bong bóng chữ #}
 {% endwith %}
 <div class="tn__hanh-dong" role="group" aria-label="Tùy chọn tin nhắn">{# hiện khi rê chuột hoặc dùng phím Tab; chat.js xử lý bằng event delegation #}
   <button class="tn__hd-nut" type="button" data-chat-tra-loi aria-label="Trả lời tin nhắn này" title="Trả lời"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v3"/></svg></button>

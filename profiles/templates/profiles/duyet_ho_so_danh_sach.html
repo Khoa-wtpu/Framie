@@ -8,8 +8,8 @@
   <h1>Duyệt hồ sơ Nhiếp ảnh gia</h1>
 
   <nav class="duyet__tabs" aria-label="Lọc theo trạng thái xử lý">
-    <a href="?tab={{ TAB_CHO }}"{% if tab == TAB_CHO %} class="is-active" aria-current="page"{% endif %}>Chờ xử lý ({{ so_cho }})</a>
-    <a href="?tab={{ TAB_DA_XU_LY }}"{% if tab == TAB_DA_XU_LY %} class="is-active" aria-current="page"{% endif %}>Đã xử lý ({{ so_da_xu_ly }})</a>
+    <a href="?tab={{ TAB_CHO }}{% if giu_loc %}&amp;{{ giu_loc|force_escape }}{% endif %}"{% if tab == TAB_CHO %} class="is-active" aria-current="page"{% endif %}>Chờ xử lý ({{ so_cho }})</a>
+    <a href="?tab={{ TAB_DA_XU_LY }}{% if giu_loc %}&amp;{{ giu_loc|force_escape }}{% endif %}"{% if tab == TAB_DA_XU_LY %} class="is-active" aria-current="page"{% endif %}>Đã xử lý ({{ so_da_xu_ly }})</a>
   </nav>
 
   <form class="duyet__form" id="form-duyet" method="get" role="search" aria-label="Tìm kiếm và lọc hồ sơ" novalidate>
@@ -51,12 +51,12 @@
           <legend>{{ bo_loc.lan_nop.label }}</legend>
           <div class="duyet__vien-ds">{% for c in bo_loc.lan_nop %}<label class="duyet__vien">{{ c.tag }}<span>{{ c.choice_label }}</span></label>{% endfor %}</div>
         </fieldset>
-        {% if tab == TAB_DA_XU_LY %}
-        <fieldset class="duyet__nhom">
+        {# Nhóm "Kết quả xử lý" chỉ áp dụng cho tab Đã xử lý. Ở tab Chờ xử lý vẫn hiện (mờ, không chọn được) và giữ giá trị đã chọn, để chuyển tab qua lại không làm mất bộ lọc. #}
+        <fieldset class="duyet__nhom"{% if tab != TAB_DA_XU_LY %} disabled{% endif %}>
           <legend>{{ bo_loc.ket_qua.label }}</legend>
           <div class="duyet__vien-ds">{% for c in bo_loc.ket_qua %}<label class="duyet__vien">{{ c.tag }}<span>{{ c.choice_label }}</span></label>{% endfor %}</div>
+          {% if tab != TAB_DA_XU_LY %}<p class="duyet__ghi-chu">Chỉ áp dụng cho tab "Đã xử lý".</p>{% for gt in ket_qua_giu %}<input type="hidden" name="ket_qua" value="{{ gt }}">{% endfor %}{% endif %}
         </fieldset>
-        {% endif %}
         <div class="duyet__nut">
           <a class="btn btn--ghost" href="?tab={{ tab }}{% if bo_loc.q.value %}&amp;q={{ bo_loc.q.value|urlencode }}{% endif %}">Xóa bộ lọc</a>
           <button class="btn btn--primary" type="submit">Áp dụng</button>

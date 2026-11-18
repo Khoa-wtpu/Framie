@@ -40,10 +40,13 @@ def danh_sach(request):
     sap_xep_chon = du_lieu.get('sap_xep') or ('moi' if da_xu_ly else 'cu')
     so_bo_loc = so_bo_loc_dang_dung(du_lieu, da_xu_ly)
     dang_loc = bool(so_bo_loc or du_lieu.get('q'))                       # có tìm kiếm hoặc bộ lọc (sắp xếp thì không tính)
+    giu_loc = request.GET.copy()                                         # chuyển tab vẫn giữ tìm kiếm, bộ lọc, sắp xếp (bỏ tab và page)
+    for k in ('tab', 'page'):
+        giu_loc.pop(k, None)
     trang = Paginator(ds, SO_MOI_TRANG).get_page(request.GET.get('page'))       # page sai -> về trang hợp lệ
     return render(request, 'profiles/duyet_ho_so_danh_sach.html', {
         'tab': tab, 'page_obj': trang, 'cac_luot': trang.object_list, 'bo_loc': bo_loc, 'dang_loc': dang_loc, 'so_bo_loc': so_bo_loc, 'sap_xep_chon': sap_xep_chon,
-        'so_ket_qua': trang.paginator.count,
+        'so_ket_qua': trang.paginator.count, 'giu_loc': giu_loc.urlencode(), 'ket_qua_giu': du_lieu.get('ket_qua') or [],
         'so_cho': so_cho, 'so_da_xu_ly': so_da_xu_ly, 'trang_thai_cho': TrangThaiHoSo.CHO_DUYET,
         'TAB_CHO': TAB_CHO, 'TAB_DA_XU_LY': TAB_DA_XU_LY,
     })

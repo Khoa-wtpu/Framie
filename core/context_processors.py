@@ -2,7 +2,7 @@ from django.conf import settings
 
 from core.constants import TrangThaiHoSo
 
-from .navigation import (ACCOUNT_MENUS, GUEST, MENUS, PHOTOGRAPHER, PREVIEW_KEYS,
+from .navigation import (ACCOUNT_MENUS, CUSTOMER, GUEST, MENUS, PHOTOGRAPHER, PREVIEW_KEYS,
                          URL_NAMES, count_unread, get_role, is_active, resolve)
 
 
@@ -37,7 +37,7 @@ def layout(request):
     chua_duyet = pending_preview or (user.is_authenticated
                                      and user.trang_thai_ho_so != TrangThaiHoSo.DA_DUYET)
     if role == PHOTOGRAPHER and chua_duyet:
-        menu = [m for m in menu if m[1] == "photographer_profile"]
+        menu = [m for m in menu if m[1] in ("photographer_profile", "about")]   # chỉ theo dõi hồ sơ + trang Giới thiệu (chỉ đọc)
 
     # Ảnh đại diện trên header: Nhiếp ảnh gia có AnhDaiDien thì hiện ảnh, không có thì hiện chữ cái đầu.
     avatar_url = ""
@@ -50,6 +50,7 @@ def layout(request):
 
     return {
         "role": role,
+        "can_search": role in (GUEST, CUSTOMER),   # chỉ khách vãng lai và Khách hàng được dùng "Tìm nhiếp ảnh gia"; Nhiếp ảnh gia / Quản trị viên thì ẩn (header cũng không có mục này)
         "display_avatar_url": avatar_url,
         "is_logged_in": logged_in,
         "display_name": name,
