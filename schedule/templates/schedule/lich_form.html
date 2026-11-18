@@ -6,8 +6,7 @@
 <div class="container lich lich--hep">
   <p><a href="{{ url_quay_lai }}">◂ Quay lại Quản lý lịch</a></p>
   <h1>{{ tieu_de }}</h1>
-  <p class="lich__mo-ta">Chọn ngày và khoảng giờ bạn nhận chụp.</p>
-  <form class="panel" method="post" novalidate>
+    <form class="panel" method="post" novalidate>
     {% csrf_token %}
     {% if form.errors %}{# UC3.1 ngoại lệ 4a: MỘT hộp báo lỗi duy nhất; lý do chung (vd. chồng giờ) nằm trong cùng hộp, lỗi từng ô hiện ngay dưới ô #}
     <div class="alert alert--danger lich-form__bao" role="alert">

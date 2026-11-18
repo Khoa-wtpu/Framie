@@ -1,4 +1,4 @@
-# bookings/test_huy_giu_cho.py - Khách bấm "Chọn khung giờ khác" thì slot nhả ngay; rời trang thì giữ nguyên, đồng hồ đếm ngược vẫn hiện ở trang lịch.
+# bookings/test_huy_giu_cho.py - Khách bấm "Chọn khung giờ khác" hoặc rời trang giữ chỗ / trang Gửi Booking thì slot nhả ngay; không có beacon thì vẫn giữ tới hết 5 phút.
 # Chạy: python manage.py test bookings.test_huy_giu_cho
 from datetime import timedelta
 
@@ -84,13 +84,13 @@ class HuyGiuChoTests(TestCase):
         self.client.post(reverse('chon_slot', args=[self.s1.pk]), {'ma_nhiep_anh_gia': self.nag.pk})
         self.assertTrue(GiuCho.objects.filter(MaKhachHang=self.b, TrangThai=GC.DANG_GIU).exists())
 
-    def test_trang_giu_cho_va_gui_booking_co_form_huy_nhung_khong_tu_nha_khi_roi_trang(self):
+    def test_trang_giu_cho_va_gui_booking_nap_script_nha_slot_khi_roi_trang(self):
         for ten in ('man_hinh_giu_cho', 'gui_booking'):
             html = self.client.get(reverse(ten, args=[self.giu.pk])).content.decode()
             self.assertIn(self.url_huy, html, ten)                   # vẫn có nút "Chọn khung giờ khác"
-            self.assertNotIn('nha_giu_cho.js', html, ten)            # rời trang không còn tự nhả slot
+            self.assertIn('nha_giu_cho.js', html, ten)               # rời trang thì script gửi beacon nhả slot
 
-    def test_roi_sang_trang_lich_van_con_dem_nguoc_va_slot_van_giu(self):
+    def test_khong_co_beacon_thi_slot_van_giu_va_trang_lich_con_dem_nguoc(self):   # dự phòng: beacon bị mất thì tới 5 phút mới hết
         html = self.client.get(reverse('lich_chon_slot', args=[self.nag.pk])).content.decode()
         self.assertIn('id="dem-nguoc"', html)
         self.assertIn('dem_nguoc.js', html)

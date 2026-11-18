@@ -1,0 +1,8 @@
+/* core/static/core/css/khu_vuc.css - F3: ô chọn khu vực nhóm theo miền + ô tìm tỉnh thành. Chỉ dùng biến của tokens.css. */
+.kv-loc { display: grid; gap: var(--space-4); }
+.kv-loc__o { width: 100%; }
+.kv-loc__mien { display: grid; gap: var(--space-2); }
+.kv-loc__ten { margin: 0; font-size: var(--text-sm); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--color-text-muted); }
+.kv-loc__trong { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+/* thuộc tính hidden phải thắng display của chip/ô (các class chip đặt display riêng) */
+.kv-loc [hidden] { display: none !important; }

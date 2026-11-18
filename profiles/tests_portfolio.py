@@ -126,7 +126,7 @@ class PortfolioTestCase(TestCase):
 
     def test_danh_sach_trong(self):
         res = self.client.get(reverse('portfolio'))
-        self.assertContains(res, 'Bạn chưa có project nào.')
+        self.assertContains(res, 'Chưa có project nào.')
         self.assertContains(res, 'Thêm project')
 
     # ---- thêm ----

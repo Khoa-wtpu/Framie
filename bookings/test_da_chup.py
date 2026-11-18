@@ -107,9 +107,9 @@ class DaChupTest(nen.TiepNhanBase):  # nhóm test T8, kế thừa dữ liệu m�
         self.assertTrue(res_sau.context['dang_chot_booking'])  # đang "Chốt Booking" -> hiện khối Đã chụp
         self.assertTrue(res_sau.context['da_den_gio_chup'])  # đã tới giờ -> True
         self.assertFalse(res_truoc.context['da_den_gio_chup'])  # chưa tới giờ -> False
-        self.assertContains(res_sau, 'Sau khi chụp xong, bấm')  # nhánh đã tới giờ: lời hướng dẫn + nút
+        self.assertContains(res_sau, 'Chụp xong, bấm')  # nhánh đã tới giờ: lời hướng dẫn + nút
         self.assertContains(res_truoc, 'Buổi chụp chưa diễn ra nên chưa thể bấm Đã chụp.')  # nhánh chưa tới giờ: dòng thông tin
-        self.assertNotContains(res_truoc, 'Sau khi chụp xong, bấm')  # và không có lời hướng dẫn / nút
+        self.assertNotContains(res_truoc, 'Chụp xong, bấm')  # và không có lời hướng dẫn / nút
 
     def test_nut_da_chup_va_viec_bam_dung_chung_mot_cach_tinh_gio(self):  # tình huống: nút hiện thì bấm phải được, nút ẩn thì bấm bị chặn
         bk = self.booking_chot()  # Booking đã qua giờ chụp

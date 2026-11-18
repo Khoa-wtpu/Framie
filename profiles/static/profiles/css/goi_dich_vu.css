@@ -2,7 +2,7 @@
 .gv { padding-block: var(--space-6); }
 .gv--hep { max-width: 48rem; }
 .gv__dau { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-5); }
-.gv__dau h1 { margin: 0 0 var(--space-1); font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.gv__dau h1 { margin: 0 0 var(--space-1); }
 .gv__dau p { margin: 0; color: var(--color-text-muted); }
 
 /* ---- tìm kiếm + bộ lọc ---- */
@@ -39,7 +39,7 @@
 .gv-popup::backdrop { background: rgba(0, 0, 0, .5); }
 .gv-popup__khung { display: grid; gap: var(--space-3); justify-items: center; padding: var(--space-8) var(--space-6) var(--space-6); text-align: center; }
 .gv-popup__khung--trang { background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
-.gv-popup__tieu-de { margin: 0; font-size: var(--text-xl, 1.25rem); font-weight: 700; }
+.gv-popup__tieu-de { margin: 0; font-size: var(--text-xl); text-transform: none; letter-spacing: 0; }
 .gv-popup__hoi { margin: 0; color: var(--color-text-muted); line-height: 1.6; }
 .gv-popup__nut { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-3); margin-top: var(--space-3); }
 .gv-popup__nut .btn { min-width: 8rem; }

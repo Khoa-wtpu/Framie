@@ -2,8 +2,8 @@
 {% load static %}{# static: lấy file JS #}
 {% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'accounts/css/quan_tri_tai_khoan.css' %}">{% endblock %}{# giữ admin.css của khung (block.super) rồi nạp thêm CSS của trang tài khoản #}
 {% block admin_title_tab %}Tài khoản và vai trò{% endblock %}{# chữ trên tab trình duyệt #}
-{% block admin_eyebrow %}<p class="admin-caption">Quản trị · {{ page_obj.paginator.count }} tài khoản</p>{% endblock %}{# dòng nhỏ phía trên tiêu đề; số này là số tài khoản khớp bộ lọc hiện tại #}
-{% block admin_tieu_de %}<span class="tk-tieu-de">Tài khoản<br>và vai trò</span>{% endblock %}{# tiêu đề hai dòng, khớp mục menu; chữ gradient lấy từ h1 của khung #}
+{% block admin_eyebrow %}<p class="admin-caption">{{ page_obj.paginator.count }} tài khoản</p>{% endblock %}{# dòng nhỏ phía trên tiêu đề; số này là số tài khoản khớp bộ lọc hiện tại #}
+{% block admin_tieu_de %}Tài khoản và vai trò{% endblock %}{# tiêu đề một dòng, khớp mục menu #}
 {% block admin_hanh_dong %}<a class="btn btn--primary tk-nut-moi" href="{% url 'admin_invite' %}">Tạo tài khoản quản trị viên</a>{% endblock %}{# nút mời Quản trị viên mới, cùng hàng với tiêu đề (CSS lưới ở quan_tri_tai_khoan.css) #}
 {% block admin_noi_dung %}{# nội dung trang #}
 <div class="tk-thanh">{# hàng lọc: ô tìm kiếm + nhóm nút lọc vai trò + nhóm nút lọc trạng thái #}

@@ -176,12 +176,10 @@ def giai_phong_giu_cho_het_han():
     # Nêu kết quả mong muốn: lượt giữ hết hạn, slot tương ứng trở lại lịch trống.
     slot tương ứng -> 'Lịch trống'. Trả về số lượt đã nhả.
 
-    # Giải thích cơ chế hiện tại: dự án chưa có tác vụ chạy nền nên kiểm tra khi người dùng truy cập view.
-    Project không có tác vụ chạy nền, nên hàm này được gọi "lười" ngay đầu các view đọc/đổi slot
-    # Liệt kê các view sẽ gọi hàm giải phóng lượt hết hạn.
-    (trang lịch, chọn slot, màn hình đếm ngược). Muốn nhả đúng giờ cả khi không ai mở web thì gọi
-    # Gợi ý có thể cấu hình tác vụ chạy định kỳ nếu muốn tự giải phóng đúng giờ dù không có người truy cập.
-    định kỳ (vd mỗi phút) bằng lệnh quản trị/Task Scheduler."""
+    # Cơ chế hiện tại: luồng nền + gọi "lười" khi có người truy cập.
+    Hàm này được gọi (1) mỗi 60 giây bởi luồng nền bookings/nen_qua_han.py khi web server chạy, nên slot được nhả
+    # kể cả khi không ai mở web; (2) ngay đầu các view đọc/đổi slot (trang lịch, chọn slot, màn hình đếm ngược);
+    (3) bởi lệnh xu_ly_qua_han nếu có lên lịch. Web server tắt hẳn thì chỉ (3) còn hiệu lực."""
     # Lấy thời điểm hiện tại theo timezone của Django để so sánh với hạn giữ chỗ.
     bay_gio = timezone.now()
     # Truy vấn các lượt đang giữ nhưng có thời điểm hết hạn nhỏ hơn hoặc bằng hiện tại.
@@ -587,7 +585,7 @@ def chon_slot(request, ma_lich):
 # Định nghĩa view nhả lượt giữ chỗ: dùng cho nút "Chọn khung giờ khác" và cho sendBeacon khi Khách rời trang.
 def huy_giu_cho_view(request, ma_giu_cho):
     """Khách bấm "Chọn khung giờ khác"/"Hủy giữ chỗ" -> nhả slot rồi về trang lịch của Nhiếp ảnh gia.
-    Khách rời trang KHÔNG còn tự nhả (đồng hồ vẫn chạy). nhanh=1 chỉ còn để gọi nhả không cần chuyển hướng (trả 204)."""
+    Khách rời trang thì nha_giu_cho.js gọi view này bằng sendBeacon với nhanh=1 (không chuyển hướng, trả 204). Mất beacon (sập trình duyệt, mất mạng) thì lượt giữ vẫn tự hết hạn sau 5 phút."""
     giu_cho = get_object_or_404(GiuCho.objects.select_related('MaLich'),
                                 pk=ma_giu_cho, MaKhachHang=request.user)   # chỉ thao tác với lượt của chính mình
     da_nha = huy_giu_cho(request.user, giu_cho.pk)

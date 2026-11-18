@@ -531,5 +531,5 @@ class UC41(TestCase):
         # Khách hàng mở trang chọn lịch khi không còn slot nào.
         r = self.client.get(reverse('lich_chon_slot', args=[self.nag.pk]))
         # Xác nhận trang hiển thị thông báo chưa có khung giờ trống.
-        self.assertContains(r, 'chưa có khung giờ trống')
+        self.assertContains(r, 'Chưa có khung giờ trống')
 

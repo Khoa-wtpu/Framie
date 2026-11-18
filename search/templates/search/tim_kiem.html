@@ -1,20 +1,19 @@
 {% extends "base.html" %}{# K8 - UC2.1 + UC2.2: Tìm kiếm & lọc nhiếp ảnh gia (wireframe Module 2, SC2.1 và SC2.2). Không cần đăng nhập. #}
 {% load static ui tro_ly_tags %}
 {% block title %}Tìm kiếm Nhiếp ảnh gia{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'search/css/tim_kiem.css' %}">{% if user|hien_tro_ly %}<link rel="stylesheet" href="{% static 'search/css/tro_ly.css' %}">{% endif %}{% endblock %}
-{% block extra_js %}<script src="{% static 'search/js/tim_kiem.js' %}" defer></script>{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'search/css/tim_kiem.css' %}"><link rel="stylesheet" href="{% static 'core/css/khu_vuc.css' %}">{% if user|hien_tro_ly %}<link rel="stylesheet" href="{% static 'search/css/tro_ly.css' %}">{% endif %}{% endblock %}
+{% block extra_js %}<script src="{% static 'search/js/tim_kiem.js' %}" defer></script><script src="{% static 'core/js/khu_vuc.js' %}" defer></script>{% endblock %}
 {% block content %}
 <div class="container tim">
   <header class="tim__dau">
     <h1>Tìm kiếm Nhiếp ảnh gia</h1>
-    <p>Tìm theo từ khóa hoặc ID Nhiếp ảnh gia, sau đó dùng bộ lọc để thu hẹp kết quả.</p>
-  </header>
+      </header>
 
   {% if user|hien_tro_ly %}{# E5: khối gợi ý Trợ lý, Khách chưa đăng nhập và Khách hàng thấy; Nhiếp ảnh gia, Quản trị viên không thấy (CSS ở search/css/tro_ly.css) #}
   <section class="panel tro-ly__goc tro-ly-moi" aria-labelledby="tro-ly-moi-tieu-de">
     <div>
       <h2 id="tro-ly-moi-tieu-de" class="tro-ly-moi__tieu-de">Chưa biết chọn ai?</h2>
-      <p class="tro-ly-moi__mo-ta">Trả lời 5 câu hỏi ngắn, Trợ lý gợi ý nhiếp ảnh gia phù hợp kèm khung giờ trống.{% if not user.is_authenticated %} Bạn cần đăng nhập để dùng.{% endif %}</p>
+      <p class="tro-ly-moi__mo-ta">Trả lời 5 câu hỏi, Trợ lý gợi ý nhiếp ảnh gia phù hợp.{% if not user.is_authenticated %} Cần đăng nhập.{% endif %}</p>
     </div>
     <a class="btn btn--secondary" href="{% if user.is_authenticated %}{% url 'assistant' %}{% else %}{% url 'login' %}?next={% url 'assistant' %}{% endif %}">Trợ lý chọn Nhiếp ảnh gia</a>
   </section>
@@ -52,7 +51,7 @@
         </fieldset>
         <fieldset class="tim__nhom">
           <legend>Khu vực</legend>
-          <div class="tim__chon">{% for c in form.khu_vuc %}<label class="tim__muc">{{ c.tag }}<span>{{ c.choice_label }}</span></label>{% endfor %}</div>
+          {% include "includes/khu_vuc_nhom.html" with field=form.khu_vuc lop_chon="tim__chon" lop_muc="tim__muc" lop_ten="" co_vong=False %}{# F3: 34 tỉnh thành nhóm theo miền + ô tìm #}
         </fieldset>
                 <fieldset class="tim__nhom" id="nhom-gia" data-gia-toi-thieu="{{ gia_toi_thieu }}">
           <legend>Mức giá</legend>

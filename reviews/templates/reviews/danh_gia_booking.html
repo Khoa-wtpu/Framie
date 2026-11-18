@@ -15,7 +15,7 @@
       <h2>Đánh giá của bạn</h2>
       <p>{% sao danh_gia.Diem %} <strong>{{ danh_gia.Diem }}/5</strong> · <span class="muted">{{ danh_gia.NgayDanhGia|date:"d/m/Y H:i" }}</span></p>
       {% if danh_gia.NhanXet %}<p>{{ danh_gia.NhanXet|linebreaksbr }}</p>{% else %}<p class="muted">Bạn không để lại nhận xét.</p>{% endif %}
-      <p class="muted">Mỗi Booking chỉ được đánh giá một lần. Đánh giá này đang hiển thị công khai trên hồ sơ nhiếp ảnh gia.</p>
+      <p class="muted">Đánh giá đã gửi, hiển thị công khai trên hồ sơ nhiếp ảnh gia.</p>
       <p><a class="btn btn--secondary" href="{% url 'photographer_reviews' booking.MaNhiepAnhGia_id %}">Xem đánh giá công khai</a></p>
     </section>
   {% elif ly_do %}{# Booking chưa Hoàn thành #}
@@ -42,7 +42,7 @@
         {% for loi in form.nhan_xet.errors %}<p class="field__error">{{ loi }}</p>{% endfor %}
       </div>
 
-      <p class="muted">Đánh giá sẽ hiển thị công khai trên hồ sơ nhiếp ảnh gia và chỉ gửi được một lần cho mỗi Booking.</p>
+      <p class="muted">Đánh giá hiển thị công khai và chỉ gửi được một lần.</p>
       <div><button class="btn btn--primary" type="submit">Gửi đánh giá</button></div>
     </form>
   {% endif %}

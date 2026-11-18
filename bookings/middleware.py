@@ -2,8 +2,8 @@
 # Trước khi chạy view, nếu địa chỉ thuộc các trang liên quan thì quét xử lý quá hạn (bookings/qua_han.py).
 # Không bao giờ làm hỏng trang: mọi lỗi chỉ ghi log.
 # Giới hạn tần suất: quét quá hạn tối đa 1 lần mỗi XU_LY_QUA_HAN_KHOANG_CACH_GIAY giây (mặc định 45, xem config/settings.py),
-# tính theo từng tiến trình web. Việc quá hạn theo NGÀY không cần chính xác từng giây; muốn đúng giờ thì chạy thêm lệnh
-#   python manage.py xu_ly_qua_han --lap 60     (xem README.md, mục "Xử lý quá hạn tự động").
+# tính theo từng tiến trình web. Đây là lớp phụ: việc nhả đúng giờ do luồng nền bookings/nen_qua_han.py (mỗi 60 giây khi web chạy)
+# và/hoặc lệnh  python manage.py xu_ly_qua_han --lap 60  đảm nhiệm (xem README.md, mục "Xử lý quá hạn tự động").
 import logging
 import threading
 import time
@@ -63,3 +63,43 @@ class XuLyQuaHanMiddleware:
             except Exception:  # noqa: BLE001
                 logger.exception('XuLyQuaHanMiddleware: lỗi khi xử lý quá hạn')
         return self.get_response(request)
+
+
+# ---------------------------------------------------------------------------------------------------------
+# UC4.1 / UC4.2 luồng 6b: Khách rời khỏi luồng đặt lịch thì MẤT lượt giữ chỗ ngay (không treo đồng hồ ở trang khác).
+# Lớp CHẮC CHẮN ở phía server, đi kèm nha_giu_cho.js (sendBeacon). Beacon có thể tới trễ hơn request của trang kế tiếp
+# hoặc bị mất; nên khi Khách mở một TRANG khác (không thuộc luồng đặt lịch) mà vẫn còn lượt 'Đang giữ chỗ' thì nhả luôn.
+# ---------------------------------------------------------------------------------------------------------
+# Các trang thuộc luồng đặt lịch: ở các trang này KHÔNG nhả. (huy_giu_cho / trang_thai_giu_cho là request nền của chính luồng.)
+TRANG_TRONG_LUONG_DAT_LICH = {
+    'lich_chon_slot', 'chon_slot', 'man_hinh_giu_cho', 'gui_booking', 'huy_giu_cho', 'trang_thai_giu_cho',
+}
+
+
+class NhaGiuChoKhiRoiLuongMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        return self.get_response(request)
+
+    def process_view(self, request, view_func, view_args, view_kwargs):
+        try:
+            user = getattr(request, 'user', None)
+            if user is None or not user.is_authenticated or request.method not in ('GET', 'HEAD'):
+                return None
+            # Chỉ tính khi Khách MỞ TRANG (trình duyệt gửi Accept: text/html). fetch() chạy nền (đếm ngược, thông báo...) thì bỏ qua.
+            if 'text/html' not in request.headers.get('Accept', '') or request.headers.get('X-Requested-With'):
+                return None
+            khop = request.resolver_match
+            if khop is None or khop.url_name in TRANG_TRONG_LUONG_DAT_LICH:
+                return None
+            from bookings.giu_cho import huy_giu_cho
+            from bookings.models import GiuCho
+            from core.constants import TrangThaiGiuCho
+            for ma in list(GiuCho.objects.filter(MaKhachHang=user, TrangThai=TrangThaiGiuCho.DANG_GIU)
+                           .values_list('pk', flat=True)):
+                huy_giu_cho(user, ma)      # chỉ nhả lượt 'Đang giữ chỗ' của chính Khách; lượt đã gửi Booking không bị đụng
+        except Exception:  # noqa: BLE001
+            logger.exception('NhaGiuChoKhiRoiLuongMiddleware: lỗi khi nhả giữ chỗ')
+        return None

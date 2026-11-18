@@ -158,7 +158,7 @@ class GoiDichVuTestCase(TestCase):
 
     def test_danh_sach_trong(self):
         res = self.client.get(self.url_ds)
-        self.assertContains(res, 'chưa có gói dịch vụ nào')
+        self.assertContains(res, 'Chưa có gói dịch vụ nào')
         self.assertContains(res, 'Hiển thị 0 gói dịch vụ')
 
     def test_nut_thao_tac_theo_trang_thai(self):
@@ -178,7 +178,6 @@ class GoiDichVuTestCase(TestCase):
     def test_mo_form_them(self):
         res = self.client.get(reverse('goi_them'))
         self.assertContains(res, 'Thêm gói dịch vụ')
-        self.assertContains(res, 'Nhập thông tin gói dịch vụ hiển thị cho Khách hàng khi đặt lịch.')
 
     def test_them_goi_hop_le(self):
         res = self.client.post(reverse('goi_them'), self.du_lieu())
@@ -332,7 +331,7 @@ class GoiDichVuTestCase(TestCase):
 
     def test_popup_ngung_ap_dung_noi_ve_cuoi_danh_sach(self):
         self.tao_goi()
-        self.assertContains(self.client.get(self.url_ds), 'chuyển xuống cuối danh sách')
+        self.assertContains(self.client.get(self.url_ds), 'hiển thị mờ')
 
     def test_chuyen_trang_thai_khong_hop_le(self):
         goi = self.tao_goi()                                     # đang áp dụng: không "áp dụng lại" được

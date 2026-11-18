@@ -14,7 +14,6 @@
 <div class="container ct ct--hep">{# khung hẹp giữa trang #}
 
   <header>
-    <p class="ct__nhan-nho">Bước cuối cùng</p>{# dòng nhỏ viết hoa #}
     <h1>Gửi yêu cầu Booking</h1>{# tiêu đề #}
   </header>
 
@@ -44,8 +43,7 @@
   {# Form nhập thông tin buổi chụp và gửi yêu cầu Booking #}
   <form id="form-gui-booking" class="ct__the" method="post" novalidate data-giu-tiep>{# form POST #}
     <h2 class="ct__the-tieu-de">Thông tin buổi chụp</h2>{# tiêu đề thẻ form #}
-    <p class="ct__mo-ta gb-gioi-thieu">Điền theo 3 bước: chọn gói, chọn thời gian và địa điểm, rồi cho Nhiếp ảnh gia biết concept bạn mong muốn.</p>{# câu dẫn ngắn giúp Khách biết form gồm mấy phần #}
-    {% csrf_token %}{# mã CSRF chống giả mạo yêu cầu #}
+        {% csrf_token %}{# mã CSRF chống giả mạo yêu cầu #}
     {% for loi in form.non_field_errors %}{# lỗi chung không gắn với ô nào #}
       {% include "includes/alert.html" with level="danger" text=loi %}{# hộp cảnh báo đỏ #}
     {% endfor %}
@@ -91,7 +89,7 @@
       <button class="btn btn--ghost" type="submit" form="form-huy-giu-cho">Chọn khung giờ khác</button>{# nhả slot đang giữ ngay rồi quay lại trang lịch #}
     </div>
   </form>
-  {# Form ẩn nhả giữ chỗ (chỉ khi Khách bấm nút "Chọn khung giờ khác"; rời trang thì không nhả). Nằm NGOÀI form-gui-booking. KHÔNG đổi id. #}
+  {# Form ẩn nhả giữ chỗ (Khách bấm "Chọn khung giờ khác" hoặc rời trang thì nha_giu_cho.js gửi form này để nhả slot; gửi Booking thì không nhả). Nằm NGOÀI form-gui-booking. KHÔNG đổi id. #}
   <form id="form-huy-giu-cho" method="post" action="{% url 'huy_giu_cho' giu_cho.pk %}" hidden>{% csrf_token %}</form>
 </div>
 {% endblock %}
@@ -101,5 +99,6 @@
 {# gui_booking.js - khung chi tiết của gói đang chọn + khóa các gói dài hơn khung giờ đang giữ #}
 {% block extra_js %}
 <script src="{% static 'bookings/js/dem_nguoc.js' %}" defer></script>
+<script src="{% static 'bookings/js/nha_giu_cho.js' %}" defer></script>{# rời trang thì nhả slot ngay (UC4.1 luồng 6b) #}
 <script src="{% static 'bookings/js/gui_booking.js' %}" defer></script>
 {% endblock %}

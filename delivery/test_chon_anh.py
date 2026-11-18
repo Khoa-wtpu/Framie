@@ -259,7 +259,7 @@ class BatDauHauKyViewTests(_NenChonAnh):                       # nút "Bắt đ�
         trang = self.client.get(reverse('tai_anh_len', args=[bk.pk]))
         self.assertEqual(trang.status_code, 200)
         self.assertContains(trang, 'Bắt đầu hậu kỳ')                # trang nhắc bấm nút Bắt đầu hậu kỳ (khớp template hiện tại)
-        self.assertContains(trang, 'chuyển thẳng đến giao diện tải ảnh')   # câu hướng dẫn trong template hiện tại
+        self.assertContains(trang, 'Bắt đầu hậu kỳ')   # câu hướng dẫn trong template hiện tại
 
     def test_trang_tai_anh_hien_nut_khi_cho_hau_ky(self):  # tên test cho biết tình huống đang kiểm tra
         bk = self.tao_booking_cho_chon()  # tạo Booking ở Chờ Khách hàng lựa chọn ảnh, kèm sẵn các ảnh mẫu

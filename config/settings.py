@@ -72,6 +72,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'bookings.middleware.NhaGiuChoKhiRoiLuongMiddleware',   # UC4.1/4.2 luồng 6b: rời luồng đặt lịch thì nhả giữ chỗ
     'bookings.middleware.XuLyQuaHanMiddleware',   # T10 (giới hạn tần suất: xem XU_LY_QUA_HAN_KHOANG_CACH_GIAY bên dưới)
 ]
 
@@ -88,7 +89,6 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.layout',  # thêm dòng này
-                'bookings.context_processors.giu_cho_banner',
 
             ],
         },
@@ -201,3 +201,7 @@ SESSION_SAVE_EVERY_REQUEST = True  # mỗi lần thao tác lại gia hạn 30 ph
 # Khi chạy `manage.py test` đặt 0 (không giới hạn) để các test cũ vẫn thấy middleware chạy ở mỗi request;
 # test của giới hạn tần suất tự bật lại bằng override_settings.
 XU_LY_QUA_HAN_KHOANG_CACH_GIAY = 0 if sys.argv[1:2] == ['test'] else 45
+
+# Luồng nền tự xử lý quá hạn khi web server chạy (bookings/nen_qua_han.py): chạy mỗi N giây, 0 = tắt.
+# Đặt 0 khi `manage.py test` (test không được tự sinh luồng nền).
+XU_LY_QUA_HAN_NEN_GIAY = 0 if sys.argv[1:2] == ['test'] else 60

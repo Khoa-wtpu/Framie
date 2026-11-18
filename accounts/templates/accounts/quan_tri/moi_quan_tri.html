@@ -19,7 +19,7 @@
 {% if link_gui_tay %}{# chỉ hiện khi gửi email lỗi #}
 <section class="ho-so__khoi">
   <header class="ho-so__khoi-dau"><h2>Link mời để gửi trực tiếp</h2></header>
-  <p class="card__meta">Link dùng được một lần, có hiệu lực {{ gio_hieu_luc }} giờ. Chỉ gửi cho đúng người được mời.</p>
+  <p class="card__meta">Link dùng một lần, hiệu lực {{ gio_hieu_luc }} giờ.</p>
   <input class="input" type="text" readonly value="{{ link_gui_tay }}" aria-label="Link mời">{# bấm vào rồi Ctrl+A, Ctrl+C để copy (JS không được viết trong HTML) #}
 </section>
 {% endif %}

@@ -9,7 +9,8 @@
 #     4. Ảnh quá 3 ngày sau khi mở quyền tải -> xóa file ảnh, ảnh 'Đã xóa' (phần xóa: delivery/xoa_anh_het_han.py, dùng kho ảnh của Nguyên)
 #     5. Quá giờ chụp mà Nhiếp ảnh gia chưa xác nhận -> Booking 'Đã hủy' (Hệ thống tự hủy, không bắt Nhiếp ảnh gia từ chối), khung giờ về 'Lịch trống'
 #
-#   Được gọi từ 2 nơi:
+#   Được gọi từ 3 nơi:
+#     - bookings/nen_qua_han.py : luồng nền mở khi web server chạy, mỗi 60 giây (không cần ai mở web)
 #     - bookings/middleware.py : mỗi khi mở các trang liên quan (Booking, Tổng quan, Thanh toán, Bàn giao, Tìm kiếm)
 #     - lệnh  python manage.py xu_ly_qua_han  : chạy định kỳ (mỗi phút) bằng Task Scheduler / cron
 #   Hạn chót lấy từ cột trong database (HanDatCoc, HanThanhToanConLai, ThoiHanTaiAnh) do bookings/services.py gán,
