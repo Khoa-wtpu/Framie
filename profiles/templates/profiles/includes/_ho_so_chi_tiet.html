@@ -4,6 +4,8 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'profiles/css/ho_so.css' %}">
 <script src="{% static 'profiles/js/ho_so.js' %}" defer></script>
+<link rel="stylesheet" href="{% static 'core/css/khu_vuc.css' %}">
+<script src="{% static 'core/js/khu_vuc.js' %}" defer></script>
 {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}
 
 <section class="ho-so__khoi">
@@ -17,17 +19,17 @@
 <section class="ho-so__khoi">
   <header class="ho-so__khoi-dau">
     <h2>Chuyên môn và khu vực</h2>
-    <p>Chọn một hoặc nhiều mục cho mỗi nhóm. Khách hàng dùng các mục này để tìm bạn.</p>
+    <p>Chọn một hoặc nhiều mục mỗi nhóm.</p>
   </header>
   {% include "profiles/includes/_nhom_hop_tich.html" with field=form.loai_hinh %}
   {% include "profiles/includes/_nhom_hop_tich.html" with field=form.phong_cach %}
-  {% include "profiles/includes/_nhom_hop_tich.html" with field=form.khu_vuc %}
+  {% include "profiles/includes/_nhom_khu_vuc.html" with field=form.khu_vuc %}
 </section>
 
 <section class="ho-so__khoi">
   <header class="ho-so__khoi-dau">
     <h2>Thông tin nhận thanh toán</h2>
-    <p>Khách hàng chuyển khoản trực tiếp cho bạn. FRAMIE không giữ hay chuyển tiền.</p>
+    <p>Khách chuyển khoản trực tiếp cho bạn.</p>
   </header>
   <div class="ho-so__luoi">
     {% include "includes/form_field.html" with field=form.NganHang %}

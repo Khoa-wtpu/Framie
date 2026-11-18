@@ -31,7 +31,7 @@
       {% endfor %}
     </div>
     <section class="panel stack gallery-hau-ky__hanh-dong">{# 2 nút quyết định sau khi xem ảnh #}
-      <p>Xem kỹ ảnh rồi chọn: hài lòng thì xác nhận bàn giao, chưa hài lòng thì gửi yêu cầu chỉnh sửa{% if co_the_yeu_cau %} (còn {{ so_lan_con_lai }} lần){% endif %}.</p>
+      <p>Hài lòng thì xác nhận bàn giao, chưa hài lòng thì yêu cầu chỉnh sửa{% if co_the_yeu_cau %} (còn {{ so_lan_con_lai }} lần){% endif %}.</p>
       <div class="gallery-hau-ky__nut">
         <a class="btn btn--primary" href="{% url 'xac_nhan_ban_giao' booking.pk %}">Xác nhận hoàn tất bàn giao</a>{# sang trang xác nhận bàn giao #}
         {% if co_the_yeu_cau %}
@@ -56,7 +56,7 @@
                aria-label="Kéo ngang để so sánh ảnh trước và ảnh sau">
       </div>
       <p class="so-sanh__loi" id="so-sanh-loi" role="alert" hidden>Không tải được ảnh để so sánh, vui lòng thử lại.</p>
-      <p class="muted so-sanh__goi-y">Kéo thanh ngang (hoặc bấm phím ← →) để so sánh. Bên trái là ảnh Trước, bên phải là ảnh Sau.</p>
+      <p class="muted so-sanh__goi-y">Kéo thanh ngang để so sánh Trước / Sau.</p>
     </dialog>
     {% endif %}
   {% endif %}

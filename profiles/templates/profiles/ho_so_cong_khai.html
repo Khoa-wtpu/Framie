@@ -113,7 +113,7 @@
     {% if goi_chon %}
     <p class="hscc__dang-chon" role="status">Đang xem lịch cho <strong>{{ goi_chon.TenGoi }}</strong> (cần {{ thoi_luong_goi_chon }}). Khung giờ ngắn hơn thời lượng này sẽ bị khóa. <a href="{{ url_bo_chon_goi }}">Bỏ chọn gói</a></p>
     {% elif co_goi %}
-    <p class="hscc__ghi">Mẹo: bấm “Chọn gói” ở phần Gói dịch vụ để lịch chỉ cho chọn những khung giờ đủ dài cho gói đó.</p>
+    <p class="hscc__ghi">Bấm “Chọn gói” để chỉ thấy khung giờ đủ dài cho gói đó.</p>
     {% endif %}
     {# Bố cục dùng chung với màn Quản lý lịch của Nhiếp ảnh gia (schedule/css/lich.css): thẻ theo ngày, viền trái theo màu trạng thái #}
     <div class="lich__thanh hscc__lich-thanh">
@@ -159,7 +159,7 @@
       </section>
       {% endfor %}
     </div>
-    <p class="hscc__ghi">Chọn một khung giờ trống để giữ chỗ 5 phút, sau đó điền thông tin buổi chụp.{% if vai_tro == 'khach' %} Bạn cần đăng nhập để đặt lịch.{% endif %}</p>
+    <p class="hscc__ghi">Chọn khung giờ trống để giữ chỗ 5 phút.{% if vai_tro == 'khach' %} Cần đăng nhập để đặt lịch.{% endif %}</p>
     {% if vai_tro == 'khach_hang' and url_chon_lich %}<p class="hscc__ghi"><a href="{{ url_chon_lich }}">Xem toàn bộ lịch trống trong 30 ngày tới</a></p>{% endif %}{# link tới trang lịch UC4.1 (bookings/lich_chon_slot) #}
   </section>
 
@@ -176,7 +176,7 @@
       </li>
       {% endfor %}
     </ul>
-    {% if so_dg > so_danh_gia_hien %}<p class="hscc__ghi">Đang hiện {{ so_danh_gia_hien }} đánh giá mới nhất trong tổng số {{ so_dg }}.</p>{% endif %}
+    {% if so_dg > so_danh_gia_hien %}<p class="hscc__ghi">Hiện {{ so_danh_gia_hien }}/{{ so_dg }} đánh giá mới nhất.</p>{% endif %}
     {% else %}<p class="hscc__trong">Chưa có đánh giá nào.</p>{% endif %}
   </section>
 </div>

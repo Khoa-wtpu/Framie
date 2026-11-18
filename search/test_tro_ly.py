@@ -258,7 +258,7 @@ class NutTimKiemTest(TroLyTestCase):
         self.client.logout()  # đăng xuất
         r = self.client.get(reverse('search'))  # mở trang Tìm kiếm khi chưa đăng nhập
         self.assertContains(r, 'Trợ lý chọn Nhiếp ảnh gia')  # vẫn thấy khối gợi ý (E5)
-        self.assertContains(r, 'Bạn cần đăng nhập để dùng')  # kèm dòng nhắc đăng nhập
+        self.assertContains(r, 'Cần đăng nhập')  # kèm dòng nhắc đăng nhập
         self.assertContains(r, f"{reverse('login')}?next={reverse('assistant')}")  # nút dẫn sang đăng nhập, xong quay lại Trợ lý
 
     def test_nhiep_anh_gia_khong_thay_nut(self):

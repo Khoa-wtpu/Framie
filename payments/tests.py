@@ -457,7 +457,7 @@ class XacNhanCocViewTests(_NenXacNhanCoc):                     # view UC5.2: dù
         self.assertRedirects(phan_hoi, reverse('chi_tiet_booking', args=[bk.pk]), fetch_redirect_response=False)   # chuyển về trang chi tiết Booking chung
         self.assertTrue(any('Đã xác nhận tiền cọc. Booking được chốt.' in str(m) for m in get_messages(phan_hoi.wsgi_request)))
         trang = self.client.get(self.url(bk))                                            # mở lại trang xác nhận cọc
-        self.assertContains(trang, 'Booking đã được chốt.')                              # dòng thân thiện khi đã chốt
+        self.assertContains(trang, 'Đã chốt Booking.')                              # dòng thân thiện khi đã chốt
         self.assertNotContains(trang, self.NUT_XAC_NHAN)
         bk.refresh_from_db()
         self.assertEqual(bk.TrangThai, TT.CHOT_BOOKING)

@@ -114,6 +114,7 @@ class BuocKhuVucForm(_FormChonMot):  # câu 2
     TB_THIEU = 'Vui lòng chọn một khu vực.'  # báo khi bỏ trống
     TB_SAI = 'Khu vực không hợp lệ.'  # báo khi chọn sai
     GOI_Y = 'Nhiếp ảnh gia được lọc theo khu vực hoạt động.'  # dòng phụ
+    BO_CUC = 'nhom_mien'  # F3: 34 tỉnh thành xếp theo Miền Bắc / Trung / Nam, có ô tìm (không dùng lưới 3 cột đánh số nữa)
 
     def lua_chon(self):  # danh sách đáp án lấy từ bảng Khu vực
         return list(KhuVuc.objects.order_by('TenKhuVuc').values_list('pk', 'TenKhuVuc'))  # [(mã, tên)]

@@ -7,8 +7,7 @@
 <div class="container tq">{# khung nội dung của trang #}
   <header class="tq-dau">{# phần đầu trang: lời chào #}
     <h1>Xin chào, {{ display_name }}</h1>{# tên người dùng (biến display_name do context processor của dự án cấp) #}
-    <p class="muted">{% if la_nhiep_anh_gia %}Tổng quan công việc của bạn trên FRAMIE.{% else %}Theo dõi Booking và thông báo của bạn trên FRAMIE.{% endif %}</p>{# câu mô tả theo vai trò #}
-  </header>
+      </header>
 
 {% if not la_nhiep_anh_gia %}{# ====== NHÁNH KHÁCH HÀNG ====== #}
   <ul class="tq-so">{# hàng ô số liệu (2 ô) #}

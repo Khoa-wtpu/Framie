@@ -13,8 +13,7 @@
 <div class="container pf pf--hep">
   <header class="ho-so__trang-dau">
     <h1>{% if project %}Chỉnh sửa project{% else %}Thêm project mới{% endif %}</h1>
-    <p>Nhập thông tin project và tải các hình ảnh hiển thị trong Portfolio.</p>
-  </header>
+    </header>
 
   <form method="post" enctype="multipart/form-data" novalidate>
     {% csrf_token %}

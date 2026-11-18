@@ -18,6 +18,8 @@
 
 # ▸ Nạp công cụ Count của Django: dùng để ĐẾM số bản ghi trong cơ sở dữ liệu (ở đây là đếm số nhiếp ảnh gia).
 from django.db.models import Count
+
+from core.du_lieu_khu_vuc import nhom_theo_mien
 # ▸ Nạp hàm render: ghép dữ liệu vào file giao diện (.html) để tạo ra trang web hoàn chỉnh trả cho khách.
 from django.shortcuts import render
 # ▸ Nạp reverse (từ tên trang -> địa chỉ URL) và NoReverseMatch (lỗi xảy ra khi tên trang đó chưa tồn tại).
@@ -39,7 +41,7 @@ SO_NHIEP_ANH_GIA_NOI_BAT = 3   # số thẻ ở khối "Nhiếp ảnh gia nổi 
 # ▸ Nội dung viết cứng tại đây nên muốn đổi chữ trên trang chủ chỉ cần sửa trong danh sách này.
 BUOC_DAT_LICH = [
     # ▸ Bước 1: khách tìm nhiếp ảnh gia theo nhiều tiêu chí.
-    ('Tìm nhiếp ảnh gia', 'Tìm theo từ khóa, loại hình, khu vực hoặc mức giá, rồi xem hồ sơ và Portfolio.'),
+    ('Tìm nhiếp ảnh gia', 'Tìm theo từ khóa, loại hình, khu vực hoặc mức giá.'),
     # ▸ Bước 2: chọn giờ trống; hệ thống giữ chỗ tạm 5 phút để không ai khác đặt trùng.
     ('Chọn lịch và giữ chỗ', 'Chọn khung giờ còn trống, FRAMIE giữ chỗ cho bạn trong 5 phút.'),
     # ▸ Bước 3: điền thông tin buổi chụp và gửi yêu cầu đặt lịch (Booking).
@@ -47,7 +49,7 @@ BUOC_DAT_LICH = [
     # ▸ Bước 4: nhiếp ảnh gia đồng ý, khách đặt cọc 40% để chốt lịch.
     ('Xác nhận và đặt cọc', 'Nhiếp ảnh gia chấp nhận yêu cầu, bạn đặt cọc 40% để chốt lịch.'),
     # ▸ Bước 5: chụp xong, khách chọn ảnh, kiểm tra ảnh đã chỉnh sửa và thanh toán phần còn lại để nhận ảnh.
-    ('Chụp và nhận ảnh', 'Sau buổi chụp, bạn chọn ảnh, kiểm tra ảnh hậu kỳ và nhận ảnh sau khi thanh toán phần còn lại.'),
+    ('Chụp và nhận ảnh', 'Chọn ảnh, kiểm tra ảnh hậu kỳ và nhận ảnh hoàn chỉnh.'),
 # ▸ Dấu ] đóng danh sách 5 bước.
 ]
 
@@ -116,6 +118,8 @@ def trang_chu(request):
         'loai_hinh_ds': _loai_hinh_kem_so_nguoi(),
         # ▸ Gói 2b: danh sách khu vực cho bộ lọc trong ô tìm kiếm.
         'khu_vuc_ds': _khu_vuc_ds(),
+        # ▸ Gói 2c (F3): cũng danh sách đó nhưng chia nhóm Miền Bắc / Trung / Nam cho ô chọn có 34 tỉnh thành.
+        'khu_vuc_nhom': nhom_theo_mien(_khu_vuc_ds(), lay_ten=lambda kv: kv['ten']),
         # ▸ Gói 3: 5 bước đặt lịch (khối số 3).
         'buoc_dat_lich': BUOC_DAT_LICH,
     # ▸ Đóng ngoặc: kết thúc lệnh render và kết thúc hàm.

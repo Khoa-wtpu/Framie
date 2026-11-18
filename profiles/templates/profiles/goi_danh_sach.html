@@ -8,8 +8,7 @@
   <header class="gv__dau">
     <div>
       <h1>Quản lý gói dịch vụ</h1>
-      <p>Hãy quản lý gói dịch vụ của bạn tại đây để Khách hàng dễ dàng chọn và đặt lịch với bạn.</p>
-    </div>
+          </div>
     <a class="btn btn--primary" href="{% url 'goi_them' %}">Thêm gói dịch vụ</a>
   </header>
 
@@ -65,7 +64,7 @@
       <p>Không tìm thấy gói dịch vụ nào phù hợp.</p>
       <a class="btn btn--secondary" href="{% url 'service_packages' %}">Xóa bộ lọc</a>
     {% else %}
-      <p>Bạn chưa có gói dịch vụ nào. Thêm gói để Khách hàng chọn khi đặt lịch.</p>
+      <p>Chưa có gói dịch vụ nào.</p>
       <a class="btn btn--primary" href="{% url 'goi_them' %}">Thêm gói dịch vụ</a>
     {% endif %}
   </div>

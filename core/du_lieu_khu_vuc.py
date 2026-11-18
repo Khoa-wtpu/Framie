@@ -75,6 +75,34 @@ def chuan_hoa(ten):
     ten = unicodedata.normalize('NFD', ten)
     return ''.join(c for c in ten if c.isalnum() and not unicodedata.combining(c))
 
+# Nhóm theo miền để giao diện chọn khu vực (F3) không phải hiện 34 ô lẫn lộn.
+# Quy ước dễ hiểu với khách hàng: Bắc Bộ = Miền Bắc; từ Thanh Hóa đến Tây Nguyên và Khánh Hòa,
+# Lâm Đồng = Miền Trung; Đông Nam Bộ và Tây Nam Bộ = Miền Nam.
+MIEN = [
+    ('Miền Bắc', ['Hà Nội', 'Hải Phòng', 'Quảng Ninh', 'Bắc Ninh', 'Hưng Yên', 'Ninh Bình', 'Thái Nguyên',
+                  'Phú Thọ', 'Tuyên Quang', 'Cao Bằng', 'Lạng Sơn', 'Lào Cai', 'Lai Châu', 'Điện Biên', 'Sơn La']),
+    ('Miền Trung', ['Thanh Hóa', 'Nghệ An', 'Hà Tĩnh', 'Quảng Trị', 'Huế', 'Đà Nẵng', 'Quảng Ngãi', 'Gia Lai',
+                    'Đắk Lắk', 'Khánh Hòa', 'Lâm Đồng']),
+    ('Miền Nam', ['Hồ Chí Minh', 'Đồng Nai', 'Tây Ninh', 'Cần Thơ', 'Vĩnh Long', 'Đồng Tháp', 'An Giang', 'Cà Mau']),
+]
+TEN_KHAC = 'Khác'   # khu vực không thuộc 34 (do người dùng tự thêm) rơi vào nhóm này
+
+
+def nhom_theo_mien(muc, lay_ten=str):
+    """Chia danh sách `muc` (mỗi phần tử có tên khu vực lấy bằng lay_ten) thành các nhóm theo miền.
+    Trả về [(tên miền, [phần tử...]), ...]: nhóm rỗng bị bỏ, trong nhóm xếp A-Z theo tiếng Việt
+    (Đà Nẵng đứng ở vần Đ chứ không nhảy xuống cuối). Khu vực lạ nằm ở nhóm 'Khác' cuối cùng."""
+    tra_cuu = {ten: ten_mien for ten_mien, ds in MIEN for ten in ds}
+    nhom = {ten_mien: [] for ten_mien, _ in MIEN}
+    nhom[TEN_KHAC] = []
+    for m in muc:
+        nhom[tra_cuu.get(lay_ten(m), TEN_KHAC)].append(m)
+    ket_qua = []
+    for ten_mien in [t for t, _ in MIEN] + [TEN_KHAC]:
+        if nhom[ten_mien]:
+            ket_qua.append((ten_mien, sorted(nhom[ten_mien], key=lambda m: chuan_hoa(lay_ten(m)))))
+    return ket_qua
+
 
 def kiem_tra():
     """Trả về danh sách lỗi (rỗng là đạt)."""
@@ -100,6 +128,9 @@ def kiem_tra():
         khoa[k] = ten
     if sum(1 for _, _, loai in DANH_SACH_34 if loai == 'Thành phố') != 6:
         loi.append('Phải có đúng 6 thành phố')
+    ten_theo_mien = [ten for _, ds in MIEN for ten in ds]
+    if sorted(ten_theo_mien) != sorted(TEN_34):
+        loi.append('Nhóm theo miền phải chứa đúng 34 tên, mỗi tên một lần')
     for cu, moi in TEN_CU_SANG_MOI.items():
         if moi not in TEN_34:
             loi.append(f'Tên mới {moi!r} (của {cu!r}) không nằm trong 34')

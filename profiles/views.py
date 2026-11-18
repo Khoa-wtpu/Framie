@@ -41,14 +41,12 @@ def cap_nhat_ho_so(request):
         messages.info(request, 'Bạn chưa có hồ sơ nên chưa thể cập nhật.')
         return _ve_ho_so_cua_toi()
     if ho_so_dang_cho_duyet(nag):             # đang chờ duyệt: chỉ được theo dõi
-        messages.info(request, 'Hồ sơ đang chờ Quản trị viên duyệt. '
-                               'Bạn có thể cập nhật sau khi có kết quả.')
+        messages.info(request, 'Hồ sơ đang chờ duyệt, bạn có thể cập nhật sau.')
         return _ve_ho_so_cua_toi()
     form = CapNhatHoSoForm(request.POST or None, request.FILES or None, instance=nag)
     if request.method == 'POST' and form.is_valid():
         form.save()
-        messages.success(request, 'Đã gửi lại hồ sơ thành công. '
-                                  'Hồ sơ chuyển sang trạng thái "Chờ duyệt" để Quản trị viên xem xét.')
+        messages.success(request, 'Đã gửi lại hồ sơ, trạng thái "Chờ duyệt".')
         return _ve_ho_so_cua_toi()
     return render(request, 'profiles/cap_nhat_ho_so.html', {
         'form': form,

@@ -135,7 +135,7 @@
 /* ▸ text-wrap: balance = cân đối độ dài các dòng, tránh dòng cuối chỉ có 1 chữ lẻ loi; color: trắng (dự phòng khi trình duyệt không hỗ trợ hiệu ứng chữ gradient); */
 /* ▸ background: dải màu trắng -> xám (token --gradient-white-gray) làm nền; -webkit-background-clip: text / background-clip: text = "cắt" nền theo hình dáng chữ, tức nền gradient chỉ hiện ở những nét chữ; */
 /* ▸ -webkit-text-fill-color: transparent = làm màu chữ trong suốt để nhìn thấy nền gradient bên dưới => chữ có màu chuyển từ trắng sang xám. */
-.tc-banner__tieu-de { max-width: 20ch; margin-bottom: var(--space-4); font-size: clamp(2rem, 6vw, 3.5rem); line-height: 1.12; text-wrap: balance;
+.tc-banner__tieu-de { max-width: 20ch; margin-bottom: var(--space-4); font-size: var(--text-hero); line-height: 1.12; text-wrap: balance;
   color: var(--color-white); background: var(--gradient-white-gray); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 /* ▸ .tc-banner__mo-ta = câu mô tả dưới tiêu đề: max-width: 36rem = giới hạn độ rộng dòng; margin-bottom: cách ô tìm kiếm; font-size: cỡ chữ lớn (--text-lg); opacity: .85 = hơi mờ cho nhẹ nhàng hơn tiêu đề. */
 .tc-banner__mo-ta { max-width: 36rem; margin-bottom: var(--space-6); font-size: var(--text-lg); opacity: .85; }
@@ -262,11 +262,11 @@
 /* ---- nhãn đánh số + gạch dài (kiểu tạp chí) ---- */
 .tc-nhan--so { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); color: var(--color-text-muted); opacity: 1; }
 .tc-nhan--so::after { content: ""; flex: 1 1 auto; max-width: 8rem; height: 1px; background: linear-gradient(90deg, var(--color-text-muted), transparent); }
-.tc-dau-khoi h2 { font-size: clamp(var(--text-2xl), 4.5vw, var(--text-3xl)); line-height: 1.35; letter-spacing: -.01em; }
+.tc-dau-khoi h2 { font-size: var(--text-title); line-height: 1.35; letter-spacing: -.01em; }
 .tc-dau-khoi--hang > div { max-width: 40rem; }
 
 /* ---- hero: chữ lớn hơn, ô tìm kiếm như một "ống ngắm" ---- */
-.tc-banner__tieu-de { font-size: clamp(2.25rem, 6.5vw, 4.25rem); padding-bottom: .1em; }
+.tc-banner__tieu-de { font-size: var(--text-hero); padding-bottom: .1em; }
 .tc-tim { padding: var(--space-3); border: 1px solid color-mix(in srgb, var(--color-white) 22%, transparent); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--color-black) 38%, transparent); backdrop-filter: blur(6px); box-shadow: var(--shadow-md); }
 
 /* ---- dải phim chạy ngang ---- */
@@ -311,7 +311,7 @@
 /* ---- lời mời cuối trang: tiêu đề lớn, khung ống ngắm ---- */
 .tc-moi { position: relative; overflow: hidden; padding-block: calc(var(--space-8) * 1.4); }
 .tc-moi .tc-khung { inset: var(--space-5); }
-.tc-moi h2 { font-size: clamp(var(--text-2xl), 5.5vw, 3.5rem); line-height: 1.3; padding-bottom: .1em; }
+.tc-moi h2 { font-size: var(--text-hero-sm); line-height: 1.3; padding-bottom: .1em; }
 
 /* ---- hiện dần khi cuộn tới (trình duyệt hỗ trợ mới có, không thì hiện sẵn) ---- */
 @supports (animation-timeline: view()) {

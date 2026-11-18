@@ -33,7 +33,7 @@
 .tro-ly__tien-do { display: flex; gap: var(--space-2); margin-bottom: var(--space-6); }   /* thanh tiến độ: các đoạn xếp ngang */
 .tro-ly__doan { flex: 1; height: .25rem; border-radius: var(--radius-pill); background: var(--color-border-hover); transition: background .2s; }   /* đoạn chưa tới */
 .tro-ly__doan.is-xong { background: var(--color-black); }   /* đoạn đã tới: màu chữ (sáng ở chế độ Đen) */
-.tro-ly__hoi { margin-bottom: var(--space-2); font-size: clamp(var(--text-2xl), 5vw, var(--text-3xl)); text-wrap: balance; }   /* câu hỏi cỡ lớn (chữ gradient từ h1 chung) */
+.tro-ly__hoi { margin-bottom: var(--space-2); font-size: var(--text-title); text-wrap: balance; }   /* câu hỏi cỡ lớn (chữ gradient từ h1 chung) */
 
 /* ---------- khung câu trả lời ---------- */
 .tro-ly__khung { padding: var(--space-5) var(--space-5); margin-bottom: var(--space-5); border-radius: var(--radius-lg); }   /* khung chứa đáp án */
@@ -41,6 +41,7 @@
 .tro-ly__chon { display: grid; gap: var(--space-3); }   /* nhóm đáp án */
 .tro-ly__chon--luoi { grid-template-columns: repeat(3, 1fr); }   /* câu 1, 2: lưới 3 cột */
 .tro-ly__chon--danh_sach { grid-template-columns: 1fr; }   /* câu 3: danh sách dọc (template sinh class có gạch dưới: bo_cuc = danh_sach) */
+.tro-ly__chon--tinh { grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }   /* câu 2 (F3): 34 tỉnh thành, ô gọn 3 cột, nhóm theo miền */
 .tro-ly__chon--chip { display: flex; flex-wrap: wrap; }   /* câu 5: chip tự xuống dòng */
 
 /* ô đáp án: input ẩn, vẫn bấm và dùng bàn phím được */
@@ -57,6 +58,7 @@
 .tro-ly__chon--luoi .tro-ly__so { grid-area: so; }   /* đặt số vào vùng "so" */
 .tro-ly__chon--luoi .tro-ly__vong { grid-area: vong; }   /* đặt vòng vào vùng "vong" */
 .tro-ly__chon--luoi .tro-ly__ten { grid-area: ten; align-self: end; font-size: var(--text-lg); }   /* tên to hơn, nằm dưới */
+.tro-ly__chon--tinh .tro-ly__muc { grid-template-columns: 1fr auto; padding: var(--space-3) var(--space-4); min-height: 3rem; }   /* ô tỉnh: tên trái, vòng phải, thấp hơn ô lưới cũ */
 .tro-ly__chon--danh_sach .tro-ly__muc { grid-template-columns: 1fr auto; min-height: 4.25rem; }   /* ô danh sách: tên trái, vòng phải */
 .tro-ly__chon--danh_sach .tro-ly__ten { font-size: var(--text-lg); }   /* tên to hơn */
 .tro-ly__chon--chip .tro-ly__muc { display: inline-flex; gap: var(--space-2); padding: var(--space-3) var(--space-5); border-radius: var(--radius-pill); }   /* chip phong cách dạng viên thuốc */
@@ -97,7 +99,7 @@
 .tro-ly__hanh-dong { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); flex-wrap: wrap; }   /* Quay lại bên trái, nút chính bên phải */
 
 /* ---------- trang kết quả: phần đầu ---------- */
-.tro-ly__tieu-de { margin: var(--space-2) 0 var(--space-4); font-size: clamp(var(--text-2xl), 5vw, 3.25rem); line-height: 1.2; text-wrap: balance; max-width: 16ch; }   /* tiêu đề cỡ vừa, hai dòng sát nhau như mẫu (padding chống cắt dấu lấy từ h1 chung) */
+.tro-ly__tieu-de { margin: var(--space-2) 0 var(--space-4); font-size: var(--text-hero-sm); line-height: 1.2; text-wrap: balance; max-width: 16ch; }   /* tiêu đề cỡ vừa, hai dòng sát nhau như mẫu (padding chống cắt dấu lấy từ h1 chung) */
 .tro-ly__thanh-tt { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: var(--space-4) var(--space-6); }   /* hàng chip tóm tắt (trái) + 2 nút (phải), cùng căn lên đầu để thẳng hàng với dòng chip đầu tiên */
 .tro-ly__tom-tat { display: flex; flex-wrap: wrap; gap: var(--space-2); }   /* các chip tóm tắt 5 đáp án */
 .tro-ly__tom-tat--giua { justify-content: center; margin-block: var(--space-4) var(--space-6); }   /* bản căn giữa cho màn hình rỗng */
@@ -151,7 +153,7 @@
 
 /* ---------- điện thoại ---------- */
 @media (max-width: 720px) {   /* màn hình hẹp */
-  .tro-ly__chon--luoi { grid-template-columns: repeat(2, 1fr); }   /* lưới còn 2 cột */
+  .tro-ly__chon--luoi, .tro-ly__chon--tinh { grid-template-columns: repeat(2, 1fr); }   /* lưới còn 2 cột */
   .tro-ly__the { grid-template-columns: 1fr; }   /* thẻ xếp dọc: ảnh trên, nội dung dưới */
   .tro-ly__anh { min-height: 12rem; }   /* ảnh thấp hơn */
   .tro-ly__ngay-nhanh { grid-template-columns: repeat(4, 1fr); }   /* 7 ngày xuống 2 hàng */

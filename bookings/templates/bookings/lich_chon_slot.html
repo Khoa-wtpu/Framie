@@ -10,10 +10,9 @@
 <div class="container ct">{# khung giữa trang #}
 
   <header>
-    <p class="ct__nhan-nho">Chọn lịch chụp</p>{# dòng nhỏ viết hoa #}
     <h1>Chọn lịch chụp với {{ ten_nag }}</h1>{# tiêu đề: cho khách biết đang chọn lịch với ai #}
     {# so_phut_giu lấy từ THOI_GIAN_GIU_CHO, không viết cứng. Giữ nguyên thẻ <strong> vì test kiểm tra đúng chuỗi này. #}
-    <p class="ct__mo-ta">Các khung giờ còn trống trong {{ so_ngay }} ngày tới. Khi bạn chọn một khung giờ, hệ thống giữ chỗ cho bạn <strong>{{ so_phut_giu|floatformat:"-1" }} phút</strong> để gửi yêu cầu Booking.</p>
+    <p class="ct__mo-ta">Chọn khung giờ trống trong {{ so_ngay }} ngày tới. Hệ thống giữ chỗ <strong>{{ so_phut_giu|floatformat:"-1" }} phút</strong>.</p>
   </header>
 
   {% if giu_cho_hien_tai %}{# chỉ hiện khi khách đang có một lượt giữ chỗ #}
@@ -37,7 +36,7 @@
       </form>
     </div>
   </div>
-  <div id="khoi-het-han" class="alert alert--warning" role="alert" hidden>Khung giờ bạn đang giữ đã hết hạn và được trả về lịch trống. Vui lòng chọn lại.</div>
+  <div id="khoi-het-han" class="alert alert--warning" role="alert" hidden>Khung giờ giữ chỗ đã hết hạn. Vui lòng chọn lại.</div>
   {% endif %}
 
   {% for ngay, slots in lich_theo_ngay %}{# lặp qua từng ngày (view đã gom slot theo ngày) #}
@@ -60,7 +59,7 @@
   </section>
   {% empty %}{# không có ngày/slot nào #}
   <section class="ct__the">
-    <p class="ct__o-phu ct__o-phu--khong-le">Hiện chưa có khung giờ trống trong {{ so_ngay }} ngày tới. Bạn hãy quay lại sau hoặc chọn nhiếp ảnh gia khác.</p>{# gợi ý khi chưa có lịch #}
+    <p class="ct__o-phu ct__o-phu--khong-le">Chưa có khung giờ trống trong {{ so_ngay }} ngày tới.</p>{# gợi ý khi chưa có lịch #}
   </section>
   {% endfor %}
 </div>

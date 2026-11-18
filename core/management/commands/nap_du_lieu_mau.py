@@ -4,12 +4,21 @@
 #
 #   python manage.py nap_du_lieu_mau                 xóa dữ liệu mẫu cũ (nếu có) rồi nạp mới
 #   python manage.py nap_du_lieu_mau --chi-xoa        chỉ xóa dữ liệu mẫu
-#   python manage.py nap_du_lieu_mau --khong-danh-gia-nen   bỏ 14 Booking nền (chỉ còn BK01..BK17)
+#   python manage.py nap_du_lieu_mau --khong-danh-gia-nen   bỏ 14 Booking nền (chỉ còn BK01..BK19)
+#   python manage.py nap_du_lieu_mau --khong-anh-that        không dùng ảnh trong du_lieu_mau/anh, chỉ vẽ ảnh giữ chỗ (nhanh)
+#   python manage.py nap_du_lieu_mau --anh-that-cho-tat-ca   cả 6 NAG còn lại đều dùng ảnh Portfolio thật (mặc định chỉ nag02, nag06 là 2 NAG nổi bật ở Trang chủ)
+#
+# ẢNH THẬT (F4): đặt trong du_lieu_mau/anh (xem NGUON_ANH.md). Thiếu ảnh nào thì ảnh đó tự được vẽ giữ chỗ, lệnh không lỗi.
+#   avatar/nag01..nag07.jpg    ảnh đại diện 7 NAG đã duyệt
+#   nag05/<project>/NN.jpg, bia.jpg    Portfolio 3 project của NAG chính (cuoi, gia_dinh, chan_dung);  nag05/qr.png    mã QR
+#   Ảnh trong các Booking mẫu lấy từ Portfolio của nag05, Booking BK09 (Slider) dùng 7 ảnh chan_dung:
+#   bản trước = ảnh màu, bản hậu kỳ hiện tại = đen trắng.
 #
 # Dữ liệu mẫu nhận biết bằng email có đuôi @example.com, nên lệnh KHÔNG đụng vào tài
 # khoản thật bạn tự tạo. Danh mục (loại hình, phong cách, khu vực) được giữ lại, chỉ
 # thêm nếu chưa có. Mọi dữ liệu và mốc thời gian nằm ở _du_lieu_mau.py.
 # =====================================================================
+import shutil
 import unicodedata
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
@@ -25,6 +34,7 @@ from django.utils import timezone
 
 from accounts.models import YeuCauDatLaiMatKhau
 from bookings.models import Booking, GiuCho, LichSuTrangThaiBooking, YeuCauHuy
+from chat.models import CuocTroChuyen, DinhKemTinNhan, ThamGia, TinNhan
 from core.constants import (HOAN_TAT_BAN_GIAO, DinhDangTep, KetQuaDuyetHoSo,
                             KetQuaTaiAnh, LoaiAnh, LoaiThanhToan, LuuTruAnh,
                             TrangThaiGiuCho, TrangThaiGoi, TrangThaiHoSo, TrangThaiSlot,
@@ -100,18 +110,55 @@ def ve_anh(duong_dan, rong, cao, chi_so, dong1, dong2='', watermark=False):
     return Path(duong_dan).stat().st_size
 
 
+def chep_anh(nguon, dich, canh_dai=None, trang_den=False, watermark=False):
+    """Đưa ảnh THẬT vào chỗ cần dùng. Không đổi gì (canh_dai=None, không trắng đen, không watermark) thì chép nguyên tệp.
+    Ngược lại: xoay theo EXIF, thu nhỏ cạnh dài còn `canh_dai`, tùy chọn đen trắng, tùy chọn watermark FRAMIE. Trả về dung lượng (byte)."""
+    from PIL import Image, ImageDraw, ImageOps
+    Path(dich).parent.mkdir(parents=True, exist_ok=True)
+    if canh_dai is None and not trang_den and not watermark:
+        shutil.copyfile(nguon, dich)
+        return Path(dich).stat().st_size
+    img = ImageOps.exif_transpose(Image.open(nguon)).convert('RGB')
+    if canh_dai:
+        img.thumbnail((canh_dai, canh_dai))
+    if trang_den:
+        img = ImageOps.autocontrast(ImageOps.grayscale(img), cutoff=1).convert('RGB')
+    if watermark:                          # chữ FRAMIE lặp, trắng mờ, để ảnh chưa thanh toán đủ vẫn xem được nhưng khó dùng
+        rong, cao = img.size
+        lop = Image.new('RGBA', img.size, (0, 0, 0, 0))
+        d = ImageDraw.Draw(lop)
+        f, _ = _font(max(16, cao // 14))
+        for yy in range(int(cao * 0.08), cao, max(60, cao // 4)):
+            for xx in range(int(rong * 0.05), rong, max(240, int(rong * 0.5))):
+                d.text((xx + 1, yy + 1), 'FRAMIE', fill=(0, 0, 0, 70), font=f)
+                d.text((xx, yy), 'FRAMIE', fill=(255, 255, 255, 120), font=f)
+        img = Image.alpha_composite(img.convert('RGBA'), lop).convert('RGB')
+    img.save(dich, 'JPEG', quality=85, optimize=True)
+    return Path(dich).stat().st_size
+
+
 class Command(BaseCommand):
-    help = 'Xóa và nạp lại dữ liệu mẫu FRAMIE (10 nhiếp ảnh gia, 8 khách hàng, 17 Booking mẫu...).'
+    help = 'Xóa và nạp lại dữ liệu mẫu FRAMIE (10 nhiếp ảnh gia, 8 khách hàng, 19 Booking mẫu...), dùng ảnh thật trong du_lieu_mau/anh nếu có.'
+
 
     def add_arguments(self, parser):
         parser.add_argument('--chi-xoa', action='store_true', help='Chỉ xóa dữ liệu mẫu, không nạp lại.')
         parser.add_argument('--khong-danh-gia-nen', action='store_true',
-                            help='Không tạo 14 Booking nền đã hoàn thành + đánh giá (chỉ còn BK01..BK17).')
+                            help='Không tạo 14 Booking nền đã hoàn thành + đánh giá (chỉ còn BK01..BK19).')
+        parser.add_argument('--khong-anh-that', action='store_true',
+                            help='Không dùng ảnh trong du_lieu_mau/anh, vẽ ảnh giữ chỗ cho mọi thứ (nhanh hơn).')
+        parser.add_argument('--anh-that-cho-tat-ca', action='store_true',
+                            help='Cả 6 NAG còn lại đều dùng ảnh Portfolio thật (mặc định chỉ nag02, nag06 là 2 NAG nổi bật ở Trang chủ).')
 
     # -----------------------------------------------------------------
     def handle(self, *args, **opts):
         self.media = Path(settings.MEDIA_ROOT)
+        self.thu_muc_anh = Path(getattr(settings, 'BASE_DIR', '.')) / 'du_lieu_mau' / 'anh'
+        self.dung_anh_that = not opts['khong_anh_that'] and self.thu_muc_anh.is_dir()
+        self.anh_that_cho_tat_ca = opts['anh_that_cho_tat_ca']
+        self.so_anh_that = self.so_anh_ve = 0
         self.rieng = Path(getattr(settings, 'PRIVATE_MEDIA_ROOT', Path(settings.BASE_DIR) / 'private_media'))
+        self.kiem_tra_email_that()
         try:
             with transaction.atomic():
                 self.xoa()
@@ -124,13 +171,38 @@ class Command(BaseCommand):
             raise CommandError(
                 'Không xóa được dữ liệu mẫu cũ vì còn bản ghi khác (do bạn tự tạo) đang trỏ tới nó:\n'
                 f'{e}\nHãy xóa các bản ghi đó trong trang quản trị rồi chạy lại.')
-        self.in_tom_tat(co_nen=not opts['khong_danh_gia_nen'])
+        self.in_tom_tat(co_nen=not opts['khong_danh_gia_nen'], khong_anh_that=opts['khong_anh_that'])
 
     # -----------------------------------------------------------------
     # XÓA
     # -----------------------------------------------------------------
+    def loc_tai_khoan_mau(self):
+        """Điều kiện nhận ra tài khoản mẫu: email đuôi @example.com, HOẶC đúng username mẫu mang đúng email thật đặt trong .env
+        (DEMO_EMAIL_NAG05...). Cả hai vế đều phải khớp nên tài khoản thật của bạn không bị xóa nhầm."""
+        q = Q(email__iendswith=dl.DUOI_EMAIL)
+        for ten, email in dl.email_that().items():
+            q |= Q(username=ten, email__iexact=email)
+        return q
+
+    def kiem_tra_email_that(self):
+        """Kiểm tra các DEMO_EMAIL_* trước khi xóa/nạp gì, để báo lỗi sớm và không làm dở dang."""
+        from django.core.exceptions import ValidationError
+        from django.core.validators import validate_email
+        da_thay = {}
+        for ten, email in dl.email_that().items():
+            try:
+                validate_email(email)
+            except ValidationError:
+                raise CommandError(f'DEMO_EMAIL_{ten.upper()} = "{email}" không phải địa chỉ email hợp lệ. Hãy sửa trong file .env.')
+            if email.lower().endswith(dl.DUOI_EMAIL):
+                raise CommandError(f'DEMO_EMAIL_{ten.upper()} không được dùng đuôi {dl.DUOI_EMAIL} (đó là đuôi email giả của dữ liệu mẫu).')
+            if email.lower() in da_thay:
+                raise CommandError(f'DEMO_EMAIL_{ten.upper()} trùng với DEMO_EMAIL_{da_thay[email.lower()].upper()}: mỗi tài khoản cần một email khác nhau '
+                                   '(Gmail có thể dùng dạng ten+nag05@gmail.com và ten+kh01@gmail.com, hai địa chỉ khác nhau nhưng cùng về một hộp thư).')
+            da_thay[email.lower()] = ten
+
     def xoa(self):
-        users = User.objects.filter(email__iendswith=dl.DUOI_EMAIL)
+        users = User.objects.filter(self.loc_tai_khoan_mau())
         ids = list(users.values_list('pk', flat=True))
         nag_q = Q(MaNhiepAnhGia__MaTaiKhoan__in=ids)
         bk = Booking.objects.filter(Q(MaKhachHang__in=ids) | nag_q)
@@ -146,6 +218,13 @@ class Command(BaseCommand):
         YeuCauHuy.objects.filter(MaBooking__in=bk).delete()
         LichSuTrangThaiBooking.objects.filter(MaBooking__in=bk).delete()
         ThongBao.objects.filter(Q(MaNguoiNhan__in=ids) | Q(MaBooking__in=bk)).delete()
+        # Chat: cuộc trò chuyện của các Khách hàng MẪU (ví dụ kh01 nhắn thử với nag01...) cũng là dữ liệu thử nên xóa cùng.
+        # Cuộc trò chuyện giữa NAG mẫu với tài khoản THẬT thì giữ lại: khi đó lệnh dừng và báo lỗi như bên dưới.
+        chat = CuocTroChuyen.objects.filter(MaKhachHang__in=ids)
+        DinhKemTinNhan.objects.filter(MaTinNhan__MaCuocTroChuyen__in=chat).delete()
+        TinNhan.objects.filter(MaCuocTroChuyen__in=chat).delete()
+        ThamGia.objects.filter(MaCuocTroChuyen__in=chat).delete()
+        chat.delete()
         bk.delete()
         GiuCho.objects.filter(Q(MaKhachHang__in=ids) | Q(MaLich__MaNhiepAnhGia__MaTaiKhoan__in=ids)).delete()
         LichKhaDung.objects.filter(nag_q).delete()
@@ -169,6 +248,10 @@ class Command(BaseCommand):
     def nap(self, co_nen):
         now = self.now
         self.kiem_tra_trung()
+        nag05 = self.thu_muc_anh / 'nag05'
+        self.kho_anh = (sorted(f for k in ('cuoi', 'gia_dinh', 'chan_dung') for f in (nag05 / k).glob('[0-9][0-9].jpg'))
+                        if self.dung_anh_that else [])           # mọi ảnh Portfolio của NAG chính
+        self.kho_chan_dung = sorted((nag05 / 'chan_dung').glob('[0-9][0-9].jpg')) if self.dung_anh_that else []
         self.nap_nhom_va_danh_muc()
         self.nap_nguoi_dung()
         self.nap_ho_so_va_duyet()
@@ -180,6 +263,37 @@ class Command(BaseCommand):
             self.nap_booking(b)
         self.nap_giu_cho_het_han()
         self.nap_thong_bao()
+
+    def anh_nguon(self, *phan):
+        """Đường dẫn ảnh thật trong du_lieu_mau/anh, hoặc None (tắt ảnh thật / chưa có tệp -> sẽ vẽ ảnh giữ chỗ)."""
+        if not self.dung_anh_that:
+            return None
+        f = self.thu_muc_anh.joinpath(*phan)
+        return f if f.is_file() else None
+
+    def anh_booking(self, ma, i):
+        """Ảnh thật cho ảnh thứ i của Booking `ma`: BK09 (Slider) dùng đúng 7 ảnh Chân dung, còn lại lấy luân phiên trong Portfolio."""
+        if ma == 'BK09' and self.kho_chan_dung:
+            return self.kho_chan_dung[i % len(self.kho_chan_dung)]
+        if not self.kho_anh:
+            return None
+        return self.kho_anh[(sum(map(ord, ma)) + i) % len(self.kho_anh)]
+
+    def nguon_project(self, i, j, pr):
+        """(ảnh bìa, [ảnh 1..n]) của project; phần tử None nghĩa là vẽ ảnh giữ chỗ."""
+        n = pr['so_anh']
+        if pr.get('thu_muc'):                                    # NAG chính: Portfolio thật
+            return (self.anh_nguon('nag05', pr['thu_muc'], 'bia.jpg'),
+                    [self.anh_nguon('nag05', pr['thu_muc'], f'{k:02d}.jpg') for k in range(1, n + 1)])
+        if (i in dl.CHI_SO_NAG_NOI_BAT or self.anh_that_cho_tat_ca) and self.kho_anh:
+            # 2 NAG nổi bật ở Trang chủ (hoặc mọi NAG nếu bật cờ): lấy ảnh của nag05 theo đúng loại hình của project,
+            # mỗi project bắt đầu ở một ảnh khác nhau để không trùng ảnh bìa với nag05 và với nhau.
+            thu_muc = dl.THU_MUC_THEO_LOAI.get(pr['loai_hinh'], 'cuoi')
+            kho = [f for f in self.kho_anh if f.parent.name == thu_muc] or self.kho_anh
+            sach = [f for f in kho if f.name in dl.ANH_BIA_SACH.get(thu_muc, [])] or kho       # bìa: ảnh không dính logo bên khác
+            lech = i * 2 + j * 3
+            return (sach[(i // 2 + j) % len(sach)], [kho[(lech + k) % len(kho)] for k in range(n)])
+        return None, [None] * n
 
     def kiem_tra_trung(self):
         """Email/số điện thoại là duy nhất: báo rõ nếu trùng với tài khoản THẬT của bạn."""
@@ -215,10 +329,24 @@ class Command(BaseCommand):
         now = self.now
         self.nag = []
         for i, p in enumerate(dl.NHIEP_ANH_GIA):
-            ten_dd = f'avatars/mau_nag{i + 1:02d}.png'
-            ten_qr = f'qr/mau_qr_nag{i + 1:02d}.png'
-            ve_anh(self.media / ten_dd, 400, 400, i, f'{p["ten"]}', 'Ảnh đại diện mẫu')
-            ve_anh(self.media / ten_qr, 360, 360, 4, 'QR mẫu', p['nh'])
+            nguon_dd = self.anh_nguon('avatar', f'nag{i + 1:02d}.jpg')
+            if nguon_dd:                                         # F4: ảnh đại diện thật đã căn cỡ mặt
+                ten_dd = f'avatars/mau_nag{i + 1:02d}.jpg'
+                chep_anh(nguon_dd, self.media / ten_dd)
+                self.so_anh_that += 1
+            else:
+                ten_dd = f'avatars/mau_nag{i + 1:02d}.png'
+                ve_anh(self.media / ten_dd, 400, 400, i, f'{p["ten"]}', 'Ảnh đại diện mẫu')
+                self.so_anh_ve += 1
+            nguon_qr = self.anh_nguon('nag05', 'qr.png') if i == dl.CHI_SO_NAG_CHINH else None
+            if nguon_qr:                                         # F4: QR thật của NAG chính
+                ten_qr = f'qr/mau_qr_nag{i + 1:02d}.png'
+                chep_anh(nguon_qr, self.media / ten_qr)
+                self.so_anh_that += 1
+            else:
+                ten_qr = f'qr/mau_qr_nag{i + 1:02d}.png'
+                ve_anh(self.media / ten_qr, 360, 360, 4, 'QR mẫu', p['nh'])
+                self.so_anh_ve += 1
             n = NhiepAnhGia.objects.create(
                 MaTaiKhoan=self.user_nag[i], AnhDaiDien=ten_dd, GioiThieu=dl.GIOI_THIEU[i],
                 NganHang=p['nh'], SoTaiKhoan=p['stk'], ChuTaiKhoan=_bo_dau(f'{p["ho"]} {p["ten"]}').upper(),
@@ -266,18 +394,28 @@ class Command(BaseCommand):
                     MoTa=f'Gói {g["ten"].lower()}, thời lượng {g["thoi_luong"]} phút.',
                     Gia=g['gia'], ThoiLuongChup=g['thoi_luong'], LoaiHauKy=g['hau_ky'],
                     SoAnhHauKyToiDa=g['so_anh'], TrangThai=g['trang_thai'])
-                if g['trang_thai'] == TrangThaiGoi.DANG_AP_DUNG:
+                if g['trang_thai'] == TrangThaiGoi.DANG_AP_DUNG and g['chinh']:      # Booking mẫu dùng gói của loại hình chính
                     self.goi[i]['gioi_han' if g['so_anh'] else 'toan_bo'] = obj
             for j, pr in enumerate(dl.project_cua(i, self.now)):
+                nguon_bia, nguon_anh = self.nguon_project(i, j, pr)
+                ten_bia = f'portfolio/mau_p{i + 1:02d}_{j + 1}_bia' + ('.jpg' if nguon_bia else '.png')
                 p = Project.objects.create(
                     MaNhiepAnhGia=n, MaLoaiHinh=self.loai_hinh[pr['loai_hinh']], TenProject=pr['ten'],
-                    Concept=pr['concept'], NgayChup=pr['ngay_chup'],
-                    AnhBia=f'portfolio/mau_p{i + 1:02d}_{j + 1}_bia.png')
-                ve_anh(self.media / f'portfolio/mau_p{i + 1:02d}_{j + 1}_bia.png', 800, 600, i + j,
-                       pr['ten'], 'Ảnh bìa mẫu')
-                for k in range(1, pr['so_anh'] + 1):
-                    ten = f'portfolio/mau_p{i + 1:02d}_{j + 1}_{k:02d}.png'
-                    ve_anh(self.media / ten, 800, 600, i + j + k, pr['ten'], f'Ảnh {k}/{pr["so_anh"]}')
+                    Concept=pr['concept'], NgayChup=pr['ngay_chup'], AnhBia=ten_bia)
+                if nguon_bia:
+                    chep_anh(nguon_bia, self.media / ten_bia)       # ảnh thật: giữ nguyên tệp, không cắt, không nén thêm
+                    self.so_anh_that += 1
+                else:
+                    ve_anh(self.media / ten_bia, 800, 600, i + j, pr['ten'], 'Ảnh bìa mẫu')
+                    self.so_anh_ve += 1
+                for k, nguon in enumerate(nguon_anh, 1):
+                    ten = f'portfolio/mau_p{i + 1:02d}_{j + 1}_{k:02d}' + ('.jpg' if nguon else '.png')
+                    if nguon:
+                        chep_anh(nguon, self.media / ten)
+                        self.so_anh_that += 1
+                    else:
+                        ve_anh(self.media / ten, 800, 600, i + j + k, pr['ten'], f'Ảnh {k}/{pr["so_anh"]}')
+                        self.so_anh_ve += 1
                     HinhAnhProject.objects.create(MaProject=p, DuongDanHinhAnh=ten, ThuTu=k)
 
     def nap_khung_gio(self, bk, nen):
@@ -362,17 +500,28 @@ class Command(BaseCommand):
         for i in range(a['so_luong']):
             ten_file = f'{b["ma"].lower()}_anh_{i + 1:02d}.jpg'
             duong_dan = f'mau/booking_{b["ma"].lower()}/{ten_file}'
+            phien_ban = a.get('phien_ban', {}).get(i, 1)
+            co_truoc = phien_ban > 1 and a['loai'] == LoaiAnh.DA_HAU_KY and not da_xoa
+            nguon = None if da_xoa else self.anh_booking(b['ma'], i)
             if da_xoa:
                 dung_luong = 150000 + 1000 * i      # file đã bị hệ thống xóa, chỉ còn bản ghi lịch sử
+            elif nguon:
+                # F4: ảnh hậu kỳ có bản trước thì bản HIỆN TẠI là đen trắng (Slider: trước = màu, sau = đen trắng)
+                dung_luong = chep_anh(nguon, self.rieng / duong_dan, canh_dai=1280, trang_den=co_truoc,
+                                      watermark=not hoan_chinh)
+                self.so_anh_that += 1
             else:
                 dung_luong = ve_anh(self.rieng / duong_dan, 640, 427, i, f'{b["ma"]} - ảnh {i + 1}',
                                     a['loai'], watermark=not hoan_chinh)
-            phien_ban = a.get('phien_ban', {}).get(i, 1)
+                self.so_anh_ve += 1
             duong_dan_truoc = None                  # E2: ảnh hậu kỳ từ phiên bản 2 trở đi mới có bản có watermark liền trước
-            if phien_ban > 1 and a['loai'] == LoaiAnh.DA_HAU_KY and not da_xoa:
+            if co_truoc:
                 duong_dan_truoc = f'mau/booking_{b["ma"].lower()}/{ten_file[:-4]}_truoc.jpg'
-                ve_anh(self.rieng / duong_dan_truoc, 640, 427, i + 4, f'{b["ma"]} - ảnh {i + 1}',
-                       'Bản trước', watermark=True)
+                if nguon:
+                    chep_anh(nguon, self.rieng / duong_dan_truoc, canh_dai=1280, watermark=True)
+                else:
+                    ve_anh(self.rieng / duong_dan_truoc, 640, 427, i + 4, f'{b["ma"]} - ảnh {i + 1}',
+                           'Bản trước', watermark=True)
             ds.append(Anh.objects.create(
                 MaBooking=bk, TenAnh=ten_file, DuongDanAnh=duong_dan, DuongDanAnhTruoc=duong_dan_truoc,
                 DinhDangAnh=DinhDangTep.JPG,
@@ -401,12 +550,26 @@ class Command(BaseCommand):
             ThongBao.objects.create(MaNguoiNhan=nguoi, MaBooking=booking, TieuDe=tieu_de, NoiDung=noi_dung)
 
     # -----------------------------------------------------------------
-    def in_tom_tat(self, co_nen):
+    def in_tom_tat(self, co_nen, khong_anh_that=False):
         self.stdout.write(self.style.SUCCESS('Đã nạp xong dữ liệu mẫu.'))
-        self.stdout.write(f'  Nhiếp ảnh gia: {NhiepAnhGia.objects.filter(MaTaiKhoan__email__iendswith=dl.DUOI_EMAIL).count()}'
-                          f' | Khách hàng: {len(dl.KHACH_HANG)} | Booking: {Booking.objects.filter(MaKhachHang__email__iendswith=dl.DUOI_EMAIL).count()}'
+        mau = self.loc_tai_khoan_mau()
+        self.stdout.write(f'  Nhiếp ảnh gia: {NhiepAnhGia.objects.filter(MaTaiKhoan__in=User.objects.filter(mau)).count()}'
+                          f' | Khách hàng: {len(dl.KHACH_HANG)} | Booking: {Booking.objects.filter(MaKhachHang__in=User.objects.filter(mau)).count()}'
                           f'{" (gồm 14 Booking nền đã đánh giá)" if co_nen else ""}')
         self.stdout.write(f'  Mật khẩu chung của mọi tài khoản mẫu: {dl.MAT_KHAU_MAU}')
         self.stdout.write(f'  Quản trị viên: {dl.email_cua(dl.QUAN_TRI_VIEN["user"])}')
         self.stdout.write(f'  Nhiếp ảnh gia đã duyệt: {dl.email_cua("nag01")} ... {dl.email_cua("nag07")}')
         self.stdout.write(f'  Chờ duyệt: nag08, nag09 | Đã từ chối: nag10 | Khách hàng: kh01 ... kh08 (cùng đuôi {dl.DUOI_EMAIL})')
+        self.stdout.write(f'  Ảnh: {self.so_anh_that} ảnh thật, {self.so_anh_ve} ảnh vẽ giữ chỗ')
+        if khong_anh_that:
+            self.stdout.write('  (đã tắt ảnh thật bằng --khong-anh-that)')
+        elif not self.thu_muc_anh.is_dir():
+            self.stdout.write(self.style.WARNING(
+                f'  Chưa có thư mục ảnh {self.thu_muc_anh}: toàn bộ ảnh được vẽ giữ chỗ. Chép du_lieu_mau/anh vào gốc dự án rồi nạp lại.'))
+        self.stdout.write(self.style.SUCCESS('  TÀI KHOẢN DEMO: Khách hàng kh01 + Nhiếp ảnh gia nag05 (Đà Nẵng)'))
+        self.stdout.write(f'    Đăng nhập bằng email: nag05 = {dl.email_cua("nag05")} | kh01 = {dl.email_cua("kh01")} | mật khẩu: {dl.MAT_KHAU_MAU}')
+        self.stdout.write('    BK18 có thẻ thời tiết, BK09 có Slider trước/sau, BK19 chờ nag05 chấp nhận.')
+        if dl.email_that():
+            self.stdout.write('    Email thật đã đặt cho: ' + ', '.join(sorted(dl.email_that())) + ' (hệ thống gửi email thật tới các địa chỉ này nếu .env có tài khoản gửi).')
+        else:
+            self.stdout.write('    Đang dùng email giả @example.com: hệ thống không gửi được email thật. Muốn nhận email thật, xem du_lieu_mau/README_DEMO.md.')

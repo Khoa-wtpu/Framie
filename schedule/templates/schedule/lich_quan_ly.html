@@ -8,8 +8,7 @@
   <header class="lich__dau">
     <div>
       <h1>Quản lý lịch khả dụng</h1>
-      <p>Thiết lập các khung giờ bạn nhận chụp. Khách hàng chỉ đặt được các slot Lịch trống.</p>
-    </div>
+          </div>
     <a class="btn btn--primary" href="{{ url_them }}">Thêm khung giờ</a>
   </header>
 
@@ -63,7 +62,7 @@
     {% endfor %}
   </div>
   {% if tong_slot == 0 %}
-  <p class="lich__trong" role="status">Tuần này bạn chưa có khung giờ nào. Thêm khung giờ để Khách hàng có thể đặt lịch với bạn.</p>
+  <p class="lich__trong" role="status">Tuần này chưa có khung giờ nào.</p>
   {% endif %}
 
   {% else %}
@@ -91,7 +90,7 @@
     </table>
   </div>
   {% if tong_slot == 0 %}
-  <p class="lich__trong" role="status">Tháng này bạn chưa có khung giờ nào. Thêm khung giờ để Khách hàng có thể đặt lịch với bạn.</p>
+  <p class="lich__trong" role="status">Tháng này chưa có khung giờ nào.</p>
   {% endif %}
   {% endif %}
 </div>
