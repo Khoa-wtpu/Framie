@@ -192,7 +192,7 @@ class XacNhanConLaiViewTests(_NenConLai):                      # view UC5.7
         bk, _ = self.booking_con_lai(minh_chung=False, trang_thai=TTT.QUA_HAN)
         self.client.force_login(self.nag_user)
         r = self.client.get(self.url(bk))
-        self.assertContains(r, 'Khoản thanh toán đã quá hạn')
+        self.assertContains(r, 'Đã quá hạn thanh toán')
         self.assertContains(r, self.NUT_XAC_NHAN)
         self.assertNotContains(r, 'Yêu cầu bổ sung')
 

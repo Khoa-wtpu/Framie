@@ -2,8 +2,8 @@
 # Trước khi chạy view, nếu địa chỉ thuộc các trang liên quan thì quét xử lý quá hạn (bookings/qua_han.py).
 # Không bao giờ làm hỏng trang: mọi lỗi chỉ ghi log.
 # Giới hạn tần suất: quét quá hạn tối đa 1 lần mỗi XU_LY_QUA_HAN_KHOANG_CACH_GIAY giây (mặc định 45, xem config/settings.py),
-# tính theo từng tiến trình web. Việc quá hạn theo NGÀY không cần chính xác từng giây; muốn đúng giờ thì chạy thêm lệnh
-#   python manage.py xu_ly_qua_han --lap 60     (xem README.md, mục "Xử lý quá hạn tự động").
+# tính theo từng tiến trình web. Đây là lớp phụ: việc nhả đúng giờ do luồng nền bookings/nen_qua_han.py (mỗi 60 giây khi web chạy)
+# và/hoặc lệnh  python manage.py xu_ly_qua_han --lap 60  đảm nhiệm (xem README.md, mục "Xử lý quá hạn tự động").
 import logging
 import threading
 import time

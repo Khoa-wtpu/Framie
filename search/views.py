@@ -3,7 +3,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.urls import NoReverseMatch, reverse
 
-from search.forms import TimKiemForm
+from search.forms import GIA_TOI_THIEU, TimKiemForm
 from search.services import (SAP_XEP, SAP_XEP_MAC_DINH, SO_MOI_TRANG, dinh_dang_tien,
                              tim_kiem_nhiep_anh_gia)
 
@@ -37,6 +37,9 @@ def _the(nag):
         'href': _duong_dan_ho_so(nag.pk),
     }
 
+# Lỗi của ô nào thì hiện ở đó: lỗi bộ lọc hiện TRONG bảng bộ lọc (và mở sẵn bảng), lỗi từ khóa / sắp xếp hiện ngoài bảng.
+O_GIA = ('gia_tu', 'gia_den', '__all__')            # '__all__' = lỗi khoảng giá (giá từ lớn hơn giá đến)
+O_LOC_KHAC = ('loai_hinh', 'phong_cach', 'khu_vuc')
 
 def tim_kiem(request):
     du_lieu = request.GET.copy()             # bản sao có thể sửa của dữ liệu trên URL
@@ -47,9 +50,15 @@ def tim_kiem(request):
     ngu_canh = {'form': form, 'loi': [], 'trang': None, 'cac_the': [], 'tong': 0,
                 'co_tu_khoa': False, 'so_bo_loc': 0,
                 'cach_sap_xep': [(khoa, nhan) for khoa, (nhan, _) in SAP_XEP.items()],
-                'sap_xep_chon': sap_xep if sap_xep in SAP_XEP else SAP_XEP_MAC_DINH}
+                'sap_xep_chon': sap_xep if sap_xep in SAP_XEP else SAP_XEP_MAC_DINH,
+                'loi_gia': [], 'loi_bo_loc': [], 'loi_ngoai': [], 'mo_bang': False, 'gia_toi_thieu': GIA_TOI_THIEU,
+                }
     if not form.is_valid():                  # 4a: thông tin tìm kiếm / tiêu chí lọc không hợp lệ
-        ngu_canh['loi'] = [str(e) for loi_o in form.errors.values() for e in loi_o]
+        for ten_o, ds_loi in form.errors.items():
+            nhom = ('loi_gia' if ten_o in O_GIA else 'loi_bo_loc' if ten_o in O_LOC_KHAC else 'loi_ngoai')
+            ngu_canh[nhom] += [str(e) for e in ds_loi]
+        ngu_canh['loi'] = ngu_canh['loi_gia'] + ngu_canh['loi_bo_loc'] + ngu_canh['loi_ngoai']
+        ngu_canh['mo_bang'] = bool(ngu_canh['loi_gia'] or ngu_canh['loi_bo_loc'])  # chỉ mở bảng khi lỗi nằm trong bảng
         return render(request, 'search/tim_kiem.html', ngu_canh)
 
     ket_qua = tim_kiem_nhiep_anh_gia(form.cleaned_data)

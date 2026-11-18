@@ -1,20 +1,19 @@
 {% extends "base.html" %}{# K8 - UC2.1 + UC2.2: Tìm kiếm & lọc nhiếp ảnh gia (wireframe Module 2, SC2.1 và SC2.2). Không cần đăng nhập. #}
 {% load static ui tro_ly_tags %}
 {% block title %}Tìm kiếm Nhiếp ảnh gia{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'search/css/tim_kiem.css' %}">{% if user|hien_tro_ly %}<link rel="stylesheet" href="{% static 'search/css/tro_ly.css' %}">{% endif %}{% endblock %}
-{% block extra_js %}<script src="{% static 'search/js/tim_kiem.js' %}" defer></script>{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'search/css/tim_kiem.css' %}"><link rel="stylesheet" href="{% static 'core/css/khu_vuc.css' %}">{% if user|hien_tro_ly %}<link rel="stylesheet" href="{% static 'search/css/tro_ly.css' %}">{% endif %}{% endblock %}
+{% block extra_js %}<script src="{% static 'search/js/tim_kiem.js' %}" defer></script><script src="{% static 'core/js/khu_vuc.js' %}" defer></script>{% endblock %}
 {% block content %}
 <div class="container tim">
   <header class="tim__dau">
     <h1>Tìm kiếm Nhiếp ảnh gia</h1>
-    <p>Tìm theo từ khóa hoặc ID Nhiếp ảnh gia, sau đó dùng bộ lọc để thu hẹp kết quả.</p>
-  </header>
+      </header>
 
   {% if user|hien_tro_ly %}{# E5: khối gợi ý Trợ lý, Khách chưa đăng nhập và Khách hàng thấy; Nhiếp ảnh gia, Quản trị viên không thấy (CSS ở search/css/tro_ly.css) #}
   <section class="panel tro-ly__goc tro-ly-moi" aria-labelledby="tro-ly-moi-tieu-de">
     <div>
       <h2 id="tro-ly-moi-tieu-de" class="tro-ly-moi__tieu-de">Chưa biết chọn ai?</h2>
-      <p class="tro-ly-moi__mo-ta">Trả lời 5 câu hỏi ngắn, Trợ lý gợi ý nhiếp ảnh gia phù hợp kèm khung giờ trống.{% if not user.is_authenticated %} Bạn cần đăng nhập để dùng.{% endif %}</p>
+      <p class="tro-ly-moi__mo-ta">Trả lời 5 câu hỏi, Trợ lý gợi ý nhiếp ảnh gia phù hợp.{% if not user.is_authenticated %} Cần đăng nhập.{% endif %}</p>
     </div>
     <a class="btn btn--secondary" href="{% if user.is_authenticated %}{% url 'assistant' %}{% else %}{% url 'login' %}?next={% url 'assistant' %}{% endif %}">Trợ lý chọn Nhiếp ảnh gia</a>
   </section>
@@ -40,7 +39,8 @@
       </div>
 
       {# Bảng bộ lọc: JS thu gọn lại và mở bằng nút Bộ lọc; không có JS thì luôn hiện sẵn để vẫn dùng được. #}
-      <div class="tim__bang" id="bang-bo-loc" role="group" aria-label="Bộ lọc nhiếp ảnh gia"{% if loi %} data-mo="1"{% endif %}>
+      <div class="tim__bang" id="bang-bo-loc" role="group" aria-label="Bộ lọc nhiếp ảnh gia"{% if mo_bang %} data-mo="1"{% endif %}>
+        {% if loi_bo_loc %}<div class="tim__loi-bang" role="alert">{% for e in loi_bo_loc %}<p>{{ e }}</p>{% endfor %}</div>{% endif %}
         <fieldset class="tim__nhom">
           <legend>Loại hình chụp</legend>
           <div class="tim__chon">{% for c in form.loai_hinh %}<label class="tim__muc">{{ c.tag }}<span>{{ c.choice_label }}</span></label>{% endfor %}</div>
@@ -51,24 +51,25 @@
         </fieldset>
         <fieldset class="tim__nhom">
           <legend>Khu vực</legend>
-          <div class="tim__chon">{% for c in form.khu_vuc %}<label class="tim__muc">{{ c.tag }}<span>{{ c.choice_label }}</span></label>{% endfor %}</div>
+          {% include "includes/khu_vuc_nhom.html" with field=form.khu_vuc lop_chon="tim__chon" lop_muc="tim__muc" lop_ten="" co_vong=False %}{# F3: 34 tỉnh thành nhóm theo miền + ô tìm #}
         </fieldset>
-        <fieldset class="tim__nhom">
+                <fieldset class="tim__nhom" id="nhom-gia" data-gia-toi-thieu="{{ gia_toi_thieu }}">
           <legend>Mức giá</legend>
           <div class="tim__gia-khoang">
-            <label class="tim__an" for="{{ form.gia_tu.id_for_label }}">{{ form.gia_tu.label }}</label>{{ form.gia_tu|add_class:"input" }}
+            <label class="tim__an" for="{{ form.gia_tu.id_for_label }}">{{ form.gia_tu.label }}</label>{% if form.gia_tu.errors or form.non_field_errors %}{{ form.gia_tu|add_class:"input is-invalid" }}{% else %}{{ form.gia_tu|add_class:"input" }}{% endif %}
             <span aria-hidden="true">–</span>
-            <label class="tim__an" for="{{ form.gia_den.id_for_label }}">{{ form.gia_den.label }}</label>{{ form.gia_den|add_class:"input" }}
+            <label class="tim__an" for="{{ form.gia_den.id_for_label }}">{{ form.gia_den.label }}</label>{% if form.gia_den.errors or form.non_field_errors %}{{ form.gia_den|add_class:"input is-invalid" }}{% else %}{{ form.gia_den|add_class:"input" }}{% endif %}
           </div>
+          <div class="tim__loi-gia" id="loi-gia" role="alert"{% if not loi_gia %} hidden{% endif %}>{% for e in loi_gia %}<p>{{ e }}</p>{% endfor %}</div>
         </fieldset>
-        <div class="tim__nut">
+                <div class="tim__nut">
           <a class="btn btn--ghost" href="{% url 'search' %}{% if form.q.value %}?q={{ form.q.value|urlencode }}{% endif %}">Xóa bộ lọc</a>
-          <button class="btn btn--primary" type="submit">Áp dụng</button>
+          <button class="btn btn--primary" id="nut-ap-dung" type="submit">Áp dụng</button>
         </div>
       </div>
     </div>
 
-    {% for e in loi %}{% include "includes/alert.html" with level="danger" text=e %}{% endfor %}
+    {% for e in loi_ngoai %}{% include "includes/alert.html" with level="danger" text=e %}{% endfor %}
 
     {% if not loi %}
     <div class="tim__ket-qua-dau">

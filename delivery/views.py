@@ -250,7 +250,7 @@ def yeu_cau_chinh_sua(request, ma_booking):                    # trang UC5.5
         try:                                                   # bắt lỗi nghiệp vụ
             kq = services.gui_yeu_cau_chinh_sua(booking.pk, request.user, nhan_xet, noi_dung_nhap)   # bước 5-6: lưu và báo Nhiếp ảnh gia
             messages.success(request, f'Đã gửi yêu cầu chỉnh sửa lần {kq["so_lan"]}/{services.SO_LAN_CHINH_SUA_TOI_DA} '  # báo thành công: lần thứ mấy, bao nhiêu ảnh
-                                      f'cho {kq["so_anh"]} ảnh. Nhiếp ảnh gia sẽ chỉnh sửa và tải phiên bản mới.')   # báo thành công
+                                      f'cho {kq["so_anh"]} ảnh.')   # báo thành công
             if not kq['da_bao_nag']:                           # ngoại lệ 6a: yêu cầu đã lưu nhưng thông báo bị lỗi
                 messages.warning(request, 'Yêu cầu đã được lưu nhưng hệ thống chưa gửi được thông báo đến Nhiếp ảnh gia. '  # báo yêu cầu đã lưu nhưng thông báo bị lỗi
                                           'Hệ thống đã ghi nhận để xử lý lại.')   # báo cho Khách biết
@@ -291,8 +291,8 @@ def xac_nhan_ban_giao(request, ma_booking):                    # trang UC5.6
                 hoi_xac_nhan = True                            # hiện hộp xác nhận, CHƯA ghi gì
             elif hanh_dong == 'xac_nhan':                      # Khách bấm "Có, xác nhận hoàn tất bàn giao"
                 kq = services.xac_nhan_hoan_tat_ban_giao(booking.pk, request.user)   # bước 5-7: tạo Bàn giao, khoản 60%, đổi trạng thái, thông báo
-                messages.success(request, f'Đã xác nhận hoàn tất bàn giao. Vui lòng thanh toán {services.dinh_dang_tien(kq["so_tien"])} '  # báo thành công kèm số tiền
-                                          f'(phần còn lại) trước {timezone.localtime(kq["han"]).strftime("%d/%m/%Y %H:%M")}.')   # báo thành công kèm số tiền và hạn
+                messages.success(request, f'Đã xác nhận bàn giao. Hãy thanh toán {services.dinh_dang_tien(kq["so_tien"])} '  # báo thành công kèm số tiền
+                                          f'trước {timezone.localtime(kq["han"]).strftime("%d/%m/%Y %H:%M")}.')   # báo thành công kèm số tiền và hạn
                 return redirect('chi_tiet_booking', ma_booking=booking.pk)   # đã xác nhận bàn giao
             else:                                              # nút lạ
                 messages.error(request, 'Thao tác không hợp lệ.')   # báo thao tác lạ

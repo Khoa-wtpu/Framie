@@ -214,8 +214,7 @@ class GuiBookingForm(forms.Form):
     goi = GoiChoiceField(
         queryset=GoiDichVu.objects.none(), label='Gói dịch vụ', empty_label='-- Chọn gói dịch vụ --',
         widget=GoiSelect, error_messages={'required': 'Vui lòng chọn gói dịch vụ.'},
-        help_text='Chỉ hiện các gói Nhiếp ảnh gia đang áp dụng, nhóm theo loại hình chụp. '
-                  'Gói có 🔒 dài hơn khung giờ bạn đang giữ nên không chọn được.')
+        help_text='Gói có 🔒 dài hơn khung giờ bạn đang giữ nên không chọn được.')
     ngay_gio_chup = forms.DateTimeField(
         label='Ngày giờ chụp', input_formats=DINH_DANG_NGAY_GIO,
         widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
@@ -243,7 +242,7 @@ class GuiBookingForm(forms.Form):
         help_text='Các phong cách Nhiếp ảnh gia theo đuổi.')
     mo_ta_concept = forms.CharField(
         max_length=MAX_MO_TA_CONCEPT, required=False, label='Mô tả concept', widget=forms.Textarea(attrs={'rows': 3}),
-        help_text='Không bắt buộc. Mô tả những gì bạn mong muốn (tông màu, trang phục, ý tưởng...).')
+        help_text='Không bắt buộc: tông màu, trang phục, ý tưởng...')
     yeu_cau_rieng = forms.CharField(
         max_length=1000, required=False, label='Yêu cầu riêng', widget=forms.Textarea(attrs={'rows': 3}))
 
@@ -267,8 +266,7 @@ class GuiBookingForm(forms.Form):
         self.fields['ngay_gio_chup'].widget.attrs.update(
             {'min': bat_dau.strftime(dang_html), 'max': ket_thuc.strftime(dang_html)})
         self.fields['ngay_gio_chup'].help_text = (
-            f'Chọn trong khung giờ đã giữ: {lich.Ngay:%d/%m/%Y} {lich.GioBatDau:%H:%M}–{lich.GioKetThuc:%H:%M}. '
-            f'Buổi chụp (theo thời lượng gói) phải kết thúc trước giờ kết thúc khung giờ này.')
+            f'Trong khung giờ đã giữ: {lich.Ngay:%d/%m/%Y} {lich.GioBatDau:%H:%M}–{lich.GioKetThuc:%H:%M}.')
 
     def clean_ngay_gio_chup(self):
         gia_tri = self.cleaned_data['ngay_gio_chup']

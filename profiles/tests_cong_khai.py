@@ -258,7 +258,7 @@ class HoSoCongKhaiTestCase(TestCase):
         self.assertNotContains(res, reverse('chon_slot', args=[trong.pk]))
         self.assertContains(res, f'href="{res.context["url_dang_nhap"]}"')
         self.assertIn('next=', res.context['url_dang_nhap'])
-        self.assertContains(res, 'Bạn cần đăng nhập để đặt lịch')
+        self.assertContains(res, 'Cần đăng nhập để đặt lịch')
 
     def test_nhiep_anh_gia_chi_xem_lich(self):
         trong = self.tao_slot(time(8, 0), time(10, 0), SL.TRONG)
@@ -330,7 +330,7 @@ class HoSoCongKhaiTestCase(TestCase):
             self.tao_danh_gia(5, f'Nhận xét số {i}')
         res = self.client.get(self.url)
         self.assertEqual(len(res.context['cac_danh_gia']), vck.SO_DANH_GIA_HIEN)
-        self.assertContains(res, f'trong tổng số {vck.SO_DANH_GIA_HIEN + 2}')
+        self.assertContains(res, f'/{vck.SO_DANH_GIA_HIEN + 2} đánh giá')
 
     def test_danh_gia_cua_nguoi_khac_khong_lan_sang(self):
         khac = self.tao_nag('Người', 'Khác')

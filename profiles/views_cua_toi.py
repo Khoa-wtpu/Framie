@@ -29,10 +29,10 @@ def xac_dinh_trang_thai(luot_moi_nhat):
 
 # Chữ hiển thị theo trạng thái: (câu mô tả dưới tiêu đề, nhãn nút, nút có dùng được không, câu trong khung Thao tác)
 NOI_DUNG = {
-    CHO_DUYET: ('Hồ sơ đang được Quản trị viên xem xét. Bạn chỉ có thể theo dõi trạng thái hồ sơ cho đến khi được duyệt.',
+    CHO_DUYET: ('Hồ sơ đang được Quản trị viên xem xét.',
                 'Cập nhật hồ sơ', False,
-                'Hồ sơ đang chờ Quản trị viên xử lý nên chưa thể chỉnh sửa. Bạn có thể cập nhật sau khi có kết quả.'),
-    CAN_CHINH_SUA: ('Quản trị viên đã yêu cầu chỉnh sửa hồ sơ. Hồ sơ vẫn ở trạng thái "Chờ duyệt" cho đến khi bạn cập nhật và gửi lại.',
+                'Hồ sơ đang chờ duyệt nên chưa thể chỉnh sửa.'),
+    CAN_CHINH_SUA: ('Quản trị viên yêu cầu chỉnh sửa hồ sơ. Hãy cập nhật và gửi lại.',
                     'Cập nhật hồ sơ', True, 'Chỉnh sửa hồ sơ và gửi lại để Quản trị viên xem xét.'),
     DA_TU_CHOI: ('Hồ sơ chưa được phê duyệt. Vui lòng xem lý do, chỉnh sửa và nộp lại hồ sơ.',
                  'Chỉnh sửa & nộp lại hồ sơ', True, 'Chỉnh sửa hồ sơ và gửi lại để Quản trị viên xem xét.'),

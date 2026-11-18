@@ -1,0 +1,19 @@
+{# F3 - Ô chọn khu vực 34 tỉnh thành: nhóm theo miền + ô tìm nhanh (JS bật ô tìm; không có JS vẫn thấy đủ 34 mục). #}
+{# Dùng: {% include "includes/khu_vuc_nhom.html" with field=form.khu_vuc lop_chon="..." lop_muc="..." lop_ten="..." co_vong=False %} #}
+{# field: ô chọn Khu vực (hộp tích hoặc radio). lop_chon / lop_muc / lop_ten: class của khung chứa, nhãn từng mục, chữ tên (mỗi trang một kiểu). co_vong: True để vẽ vòng tròn radio (Trợ lý). #}
+{% load khu_vuc %}
+<div class="kv-loc" data-loc-khu-vuc>
+  <div class="kv-loc__tim" data-loc-tim hidden>
+    <label class="sr-only" for="kv-loc-o-{{ field.auto_id }}">Tìm tỉnh thành</label>
+    <input class="input kv-loc__o" id="kv-loc-o-{{ field.auto_id }}" type="search" autocomplete="off" placeholder="Tìm tỉnh thành, ví dụ: Lâm Đồng" data-loc-o>
+  </div>
+  {% for mien, ds in field|nhom_theo_mien %}
+  <div class="kv-loc__mien" data-loc-mien>
+    <p class="kv-loc__ten">{{ mien }}</p>
+    <div class="{{ lop_chon }}">
+      {% for c in ds %}<label class="{{ lop_muc }}" data-loc-muc>{{ c.tag }}{% if co_vong %}<span class="tro-ly__vong" aria-hidden="true"></span>{% endif %}<span class="{{ lop_ten }}">{{ c.choice_label }}</span></label>{% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+  <p class="kv-loc__trong" data-loc-trong hidden>Không tìm thấy tỉnh thành phù hợp.</p>
+</div>

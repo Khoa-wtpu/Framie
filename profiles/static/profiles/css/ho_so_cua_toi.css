@@ -14,7 +14,7 @@
 .hsct__nhan-vat { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); padding: var(--space-6) 0; text-align: center; }
 .hsct__anh { display: grid; place-items: center; width: 9rem; height: 9rem; overflow: hidden; background: var(--gradient-white-gray); border: 1px solid var(--color-border); border-radius: var(--radius-pill); font-size: var(--text-3xl); font-weight: var(--fw-heading); }
 .hsct__anh img { width: 100%; height: 100%; object-fit: cover; }
-.hsct__ten { margin: 0 0 var(--space-1); font-size: clamp(var(--text-xl), 4vw, var(--text-3xl)); font-weight: var(--fw-heading); line-height: var(--leading-tight); }
+.hsct__ten { margin: 0 0 var(--space-1); font-size: var(--text-hero-sm); font-weight: var(--fw-heading); line-height: var(--leading-tight); }
 .hsct__ma { margin: 0 0 var(--space-2); font-size: var(--text-sm); letter-spacing: .04em; }
 .hsct__lien-he { margin: 0; color: var(--color-text-muted); overflow-wrap: anywhere; }
 

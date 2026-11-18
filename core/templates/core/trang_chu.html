@@ -56,7 +56,7 @@
       <label class="sr-only" for="tc-loc-khu-vuc">Khu vực</label>
       <select class="input tc-tim__chon" id="tc-loc-khu-vuc" name="khu_vuc">
         <option value="">Khu vực</option>
-        {% for kv in khu_vuc_ds %}<option value="{{ kv.ma }}">{{ kv.ten }}</option>{% endfor %}
+        {% for mien, ds in khu_vuc_nhom %}<optgroup label="{{ mien }}">{% for kv in ds %}<option value="{{ kv.ma }}">{{ kv.ten }}</option>{% endfor %}</optgroup>{% endfor %}
       </select>
       {% endif %}
       {# ▸ Khoảng giá (đồng): trang Tìm kiếm đọc gia_tu / gia_den. #}
@@ -84,7 +84,7 @@
   <section class="tc-tro-ly" aria-labelledby="tc-tro-ly-tieu-de">
     <div>
       <h2 id="tc-tro-ly-tieu-de" class="tc-tro-ly__tieu-de">Chưa biết chọn ai?</h2>
-      <p class="tc-tro-ly__mo-ta">Trả lời 5 câu hỏi ngắn, Trợ lý gợi ý nhiếp ảnh gia phù hợp kèm khung giờ trống.{% if not user.is_authenticated %} Bạn cần đăng nhập để dùng.{% endif %}</p>
+      <p class="tc-tro-ly__mo-ta">Trả lời 5 câu hỏi, Trợ lý gợi ý nhiếp ảnh gia phù hợp.{% if not user.is_authenticated %} Cần đăng nhập.{% endif %}</p>
     </div>
     <a class="btn btn--secondary btn--lg" href="{% if user.is_authenticated %}{% url 'assistant' %}{% else %}{% url 'login' %}?next={% url 'assistant' %}{% endif %}">Trợ lý chọn Nhiếp ảnh gia</a>
   </section>
@@ -193,7 +193,7 @@
     {# ▸ Khung thông báo trống ("panel" = khung viền, "tc-rong" = căn giữa, chữ xám). #}
     <div class="panel tc-rong">
       {# ▸ Nội dung thông báo, kèm gợi ý để khách bấm tìm kiếm. #}
-      <p>Chưa có nhiếp ảnh gia nổi bật. Bạn có thể tìm kiếm để xem tất cả nhiếp ảnh gia đang hoạt động.</p>
+      <p>Chưa có nhiếp ảnh gia nổi bật.</p>
     {# ▸ Đóng khung thông báo. #}
     </div>
     {# ▸ Kết thúc điều kiện "có dữ liệu / không có dữ liệu". #}

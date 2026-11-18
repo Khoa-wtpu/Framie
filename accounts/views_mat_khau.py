@@ -48,7 +48,7 @@ def quen_mat_khau(request):  # bước 1: nhập email, hệ thống gửi mã
         form.add_error(None, 'Không gửi được email lúc này. Vui lòng thử lại sau.')  # báo lỗi chung, KHÔNG cho sang bước 2
     return render(request, TEMPLATE, {  # GET hoặc form còn lỗi
         'form': form, 'tieu_de': 'Quên mật khẩu', 'ten_nut': 'Gửi mã xác thực',  # tiêu đề và chữ trên nút
-        'mo_ta': 'Nhập email đã đăng ký. Chúng tôi sẽ gửi mã 6 chữ số để bạn đặt lại mật khẩu.',  # câu giải thích
+        'mo_ta': 'Nhập email đã đăng ký để nhận mã 6 chữ số.',  # câu giải thích
     })  # hết dict
 
 

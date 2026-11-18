@@ -138,7 +138,7 @@ class XacNhanBanGiaoViewTests(_NenYeuCau):                     # trang web của
         self.client.force_login(self.kh)  # đăng nhập bằng tài khoản cần thử
         phan_hoi = self.client.post(self.url(bk), {'hanh_dong': 'hoi'})  # gửi yêu cầu tới trang
         self.assertEqual(phan_hoi.status_code, 200)            # chưa chuyển trang
-        self.assertContains(phan_hoi, 'Bạn có chắc chắn đã hài lòng')  # kiểm tra trang có hiện đoạn chữ mong đợi
+        self.assertContains(phan_hoi, 'Hoàn tất bàn giao?')  # kiểm tra trang có hiện đoạn chữ mong đợi
         self.assertContains(phan_hoi, 'Có, xác nhận hoàn tất bàn giao')  # kiểm tra trang có hiện đoạn chữ mong đợi
         self.assertEqual(BanGiao.objects.count(), 0)           # chưa ghi gì
         bk.refresh_from_db()  # đọc lại dữ liệu mới nhất từ database

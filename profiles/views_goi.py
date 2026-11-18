@@ -36,21 +36,19 @@ MAU_HUY_HIEU = {TG.DANG_AP_DUNG: 'green', TG.NGUNG_AP_DUNG: 'amber', TG.DA_AN: '
 HANH_DONG = {
     'ngung': (
         {TG.DANG_AP_DUNG}, TG.NGUNG_AP_DUNG, 'Ngừng áp dụng', 'Xác nhận ngừng áp dụng', 'danger',
-        lambda goi: (f'Gói "{goi.TenGoi}" sẽ hiển thị mờ trên hồ sơ, Khách hàng không thể chọn khi đặt lịch '
-                     'và được chuyển xuống cuối danh sách gói dịch vụ. Bạn có thể áp dụng lại bất cứ lúc nào.'),
+        lambda goi: f'Gói "{goi.TenGoi}" sẽ hiển thị mờ và Khách hàng không thể chọn khi đặt lịch.',
         lambda goi: f'Đã ngừng áp dụng gói "{goi.TenGoi}".'),
     'ap-dung-lai': (
         {TG.NGUNG_AP_DUNG}, TG.DANG_AP_DUNG, 'Áp dụng lại', 'Xác nhận áp dụng lại', 'primary',
-        lambda goi: f'Gói "{goi.TenGoi}" sẽ được áp dụng lại và Khách hàng có thể chọn khi đặt lịch.',
+        lambda goi: f'Khách hàng sẽ chọn lại được gói "{goi.TenGoi}" khi đặt lịch.',
         lambda goi: f'Đã áp dụng lại gói "{goi.TenGoi}".'),
     'an': (
         {TG.DANG_AP_DUNG, TG.NGUNG_AP_DUNG}, TG.DA_AN, 'Ẩn', 'Xác nhận ẩn', 'danger',
-        lambda goi: (f'Gói "{goi.TenGoi}" sẽ không hiển thị với Khách hàng nhưng vẫn nằm trong danh sách của bạn (chữ mờ). '
-                     f'Khi hiện lại, gói sẽ về trạng thái "{goi.TrangThai}" như hiện tại.'),
+        lambda goi: f'Gói "{goi.TenGoi}" sẽ không hiển thị với Khách hàng. Bạn có thể hiện lại sau.',
         lambda goi: f'Đã ẩn gói "{goi.TenGoi}".'),
     'hien-lai': (
         {TG.DA_AN}, None, 'Hiện lại', 'Xác nhận hiện lại', 'primary',     # trạng thái mới = trạng thái trước khi ẩn
-        lambda goi: f'Gói "{goi.TenGoi}" sẽ hiện lại ở trạng thái "{_trang_thai_sau_khi_hien(goi)}".',
+        lambda goi: f'Gói "{goi.TenGoi}" sẽ hiện lại (trạng thái "{_trang_thai_sau_khi_hien(goi)}").',
         lambda goi: f'Đã hiện lại gói "{goi.TenGoi}" (trạng thái "{_trang_thai_sau_khi_hien(goi)}").'),
 }
 HANH_DONG_XOA = 'xoa'
@@ -80,8 +78,7 @@ THU_TU_TRANG_THAI = {TG.DANG_AP_DUNG: 0, TG.DA_AN: 1, TG.NGUNG_AP_DUNG: 2}
 def _cau_hoi_xoa(ten, da_co_booking):
     cau_hoi = f'Bạn có chắc muốn xóa gói "{ten}"? Thao tác này không thể hoàn tác.'
     if da_co_booking:
-        cau_hoi += (f' Gói này đã có Booking nên sẽ không bị xóa hẳn mà chuyển sang "{TG.DA_AN}" '
-                    'để giữ lịch sử đặt lịch.')
+        cau_hoi += (f' Gói đã có Booking nên sẽ chuyển sang "{TG.DA_AN}" thay vì xóa hẳn.')
     return cau_hoi
 
 
@@ -157,8 +154,7 @@ def goi_hanh_dong(request, nag, pk, hanh_dong):
         if request.method == 'POST':
             if da_co_booking:                               # có lịch sử đặt lịch thì không xóa hẳn được: chuyển sang Đã ẩn
                 _an_goi(goi)
-                messages.info(request, f'Gói "{ten}" đã có Booking nên không thể xóa hẳn, '
-                                       f'hệ thống chuyển gói sang "{TG.DA_AN}" để giữ lịch sử.')
+                messages.info(request, f'Gói "{ten}" đã có Booking nên được chuyển sang "{TG.DA_AN}".')
             else:
                 goi.delete()
                 messages.success(request, f'Đã xóa gói "{ten}".')

@@ -10,6 +10,7 @@
 #
 # Cách kiểm tra riêng:  python core/management/commands/_du_lieu_mau.py
 # =====================================================================
+import os
 from datetime import timedelta
 from zoneinfo import ZoneInfo
 
@@ -26,7 +27,8 @@ DUOI_EMAIL = '@example.com'          # mọi tài khoản mẫu có đuôi này 
 # ---------------------------------------------------------------------
 LOAI_HINH = ['Chân dung', 'Cưới', 'Gia đình', 'Sự kiện', 'Sản phẩm', 'Thời trang']
 PHONG_CACH = ['Tối giản', 'Điện ảnh', 'Hoài niệm', 'Tự nhiên', 'Editorial', 'Đen trắng']
-KHU_VUC = ['TP. Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Đà Lạt', 'Nha Trang']
+# Tên khu vực không kèm chữ Tỉnh/Thành phố (F1). Chỉ số 0..4 được dùng ở trường kv bên dưới.
+KHU_VUC = ['Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Lâm Đồng', 'Khánh Hòa']
 
 # ---------------------------------------------------------------------
 # 2. NGƯỜI DÙNG (toàn thông tin giả)
@@ -35,19 +37,20 @@ KHU_VUC = ['TP. Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Đà Lạt', 'Nha 
 NHIEP_ANH_GIA = [
     # --- 7 hồ sơ ĐÃ DUYỆT (chỉ số 0..6) ---
     dict(ho='Lê', ten='Minh Khôi', user='nag01', sdt='0900000001', nh='Vietcombank',
-         stk='9704000000000001', loai=[0, 2], pc=[0, 3], kv=[0], hs='Đã duyệt'),
+         stk='9704000000000001', loai=[0, 2], pc=[0, 3], kv=[0, 2], hs='Đã duyệt'),
     dict(ho='Trần', ten='Bảo Ngọc', user='nag02', sdt='0900000002', nh='Techcombank',
-         stk='9704000000000002', loai=[1, 2], pc=[1, 5], kv=[0, 3], hs='Đã duyệt'),
+         stk='9704000000000002', loai=[1, 2], pc=[1, 5], kv=[0, 3, 2], hs='Đã duyệt'),
     dict(ho='Phạm', ten='Gia Huy', user='nag03', sdt='0900000003', nh='MB Bank',
-         stk='9704000000000003', loai=[3, 0], pc=[2, 4], kv=[1], hs='Đã duyệt'),
+         stk='9704000000000003', loai=[3, 0], pc=[2, 4], kv=[1, 2], hs='Đã duyệt'),
     dict(ho='Võ', ten='Thanh Trúc', user='nag04', sdt='0900000004', nh='ACB',
-         stk='9704000000000004', loai=[5, 0], pc=[4, 0], kv=[0, 1], hs='Đã duyệt'),
-    dict(ho='Đặng', ten='Quốc Anh', user='nag05', sdt='0900000005', nh='BIDV',
-         stk='9704000000000005', loai=[4, 5], pc=[0, 4], kv=[2], hs='Đã duyệt'),
+         stk='9704000000000004', loai=[5, 0], pc=[4, 0], kv=[0, 1, 2], hs='Đã duyệt'),
+    # nag05 là NAG CHÍNH của buổi demo (F4): ở Đà Nẵng, 3 loại hình, ảnh Portfolio thật, QR thật, Booking thời tiết và Slider
+    dict(ho='Đặng', ten='Quốc Anh', user='nag05', sdt='0900000005', nh='MB Bank',
+         stk='9704000000000005', loai=[0, 1, 2], pc=[3, 1, 4], kv=[2], hs='Đã duyệt'),
     dict(ho='Hoàng', ten='Mỹ Linh', user='nag06', sdt='0900000006', nh='VPBank',
          stk='9704000000000006', loai=[1, 3], pc=[3, 1], kv=[4, 2], hs='Đã duyệt'),
     dict(ho='Bùi', ten='Đức Long', user='nag07', sdt='0900000007', nh='Sacombank',
-         stk='9704000000000007', loai=[2, 1], pc=[5, 2], kv=[3], hs='Đã duyệt'),
+         stk='9704000000000007', loai=[2, 1], pc=[5, 2], kv=[3, 2], hs='Đã duyệt'),
     # --- 2 hồ sơ CHỜ DUYỆT (chỉ số 7, 8) ---
     dict(ho='Ngô', ten='Khánh Vy', user='nag08', sdt='0900000008', nh='TPBank',
          stk='9704000000000008', loai=[0], pc=[3], kv=[0], hs='Chờ duyệt'),
@@ -72,8 +75,21 @@ KHACH_HANG = [
 QUAN_TRI_VIEN = dict(ho='Quản trị', ten='Mẫu', user='admin_mau', sdt='0920000001')
 
 
+def email_that():
+    """{username: email thật} của các tài khoản mẫu đã được đặt email thật.
+    Đặt trong file .env (không đưa lên GitHub), ví dụ:  DEMO_EMAIL_NAG05=ten+nag05@gmail.com  và  DEMO_EMAIL_KH01=ten+kh01@gmail.com
+    Quy tắc tên biến: DEMO_EMAIL_ + username viết HOA. Mỗi email phải khác nhau (email là duy nhất và dùng để đăng nhập)."""
+    ket_qua = {}
+    for p in NHIEP_ANH_GIA + KHACH_HANG + [QUAN_TRI_VIEN]:
+        gia_tri = os.environ.get(f"DEMO_EMAIL_{p['user'].upper()}", '').strip()
+        if gia_tri:
+            ket_qua[p['user']] = gia_tri
+    return ket_qua
+
+
 def email_cua(user):
-    return f'{user}{DUOI_EMAIL}'
+    """Email của tài khoản mẫu: mặc định user@example.com (email giả, hệ thống không gửi tới được); có đặt DEMO_EMAIL_<USER> thì dùng email thật đó."""
+    return email_that().get(user) or f'{user}{DUOI_EMAIL}'
 
 
 GIOI_THIEU = {
@@ -81,7 +97,7 @@ GIOI_THIEU = {
     1: 'Chụp ảnh cưới và gia đình theo phong cách điện ảnh, nhẹ nhàng, tôn trọng khoảnh khắc.',
     2: 'Nhiếp ảnh sự kiện và chân dung báo chí, làm việc nhanh gọn và đúng hẹn.',
     3: 'Thời trang và chân dung phong cách editorial, có sẵn ekip trang điểm khi cần.',
-    4: 'Ảnh sản phẩm và thời trang tối giản cho thương hiệu nhỏ, bố cục sạch, nền đơn sắc.',
+    4: 'Chân dung, ảnh cưới ngoại cảnh và ảnh gia đình tại Đà Nẵng, Hội An. Phong cách tự nhiên, điện ảnh, giữ trọn khoảnh khắc.',
     5: 'Ảnh cưới ngoại cảnh và sự kiện, thích bắt khoảnh khắc đời thường giữa thiên nhiên.',
     6: 'Ảnh gia đình, trẻ em và kỷ niệm, phong cách đen trắng hoài niệm.',
     7: 'Mới bắt đầu nhận khách chụp chân dung, mong được góp ý để hoàn thiện hồ sơ.',
@@ -101,41 +117,90 @@ TEN_GOI = {  # theo chỉ số loại hình: (gói giới hạn, gói toàn bộ
     5: ('Thời trang 1 look', 'Thời trang lookbook', 'Thời trang - capsule (cũ)'),
 }
 TEN_PROJECT = ['Ánh sáng buổi sớm', 'Sắc xám thành phố', 'Khoảnh khắc đời thường', 'Một ngày dài']
-DIA_DIEM = ['Công viên Gia Định, TP. Hồ Chí Minh', 'Hồ Gươm, Hà Nội', 'Bãi Xép, Đà Nẵng',
-            'Đồi chè Cầu Đất, Đà Lạt', 'Studio Framie, Quận 3, TP. Hồ Chí Minh',
-            'Phố cổ Hội An', 'Nhà thờ Đức Bà, TP. Hồ Chí Minh']
+# Địa điểm chụp theo đúng định dạng của form đặt lịch: "<Khu vực> - <Địa chỉ>". Thẻ thời tiết (E8) lấy phần đầu làm khu vực.
+DIA_DIEM_THEO_KV = {      # chỉ số khu vực (KHU_VUC) -> các địa điểm
+    0: ['Hồ Chí Minh - Công viên Gia Định', 'Hồ Chí Minh - Studio Framie, Quận 3', 'Hồ Chí Minh - Nhà thờ Đức Bà'],
+    1: ['Hà Nội - Hồ Gươm', 'Hà Nội - Hồ Tây', 'Hà Nội - Phố cổ'],
+    2: ['Đà Nẵng - Bãi Xép', 'Đà Nẵng - Phố cổ Hội An', 'Đà Nẵng - Cầu Rồng', 'Đà Nẵng - Bán đảo Sơn Trà'],
+    3: ['Lâm Đồng - Đồi chè Cầu Đất', 'Lâm Đồng - Hồ Xuân Hương'],
+    4: ['Khánh Hòa - Bãi Dài, Nha Trang', 'Khánh Hòa - Tháp Bà Ponagar'],
+}
+
+
+def dia_diem_cua(nag, khach):
+    """Địa điểm của một Booking: luôn nằm trong khu vực Nhiếp ảnh gia nhận chụp."""
+    kv = NHIEP_ANH_GIA[nag]['kv']
+    ds = DIA_DIEM_THEO_KV[kv[khach % len(kv)]]
+    return ds[(nag + khach) % len(ds)]
+
+
 CONCEPT = ['Tối giản, tông trắng và xám', 'Phong cách điện ảnh, ánh sáng ấm',
            'Tự nhiên, nhiều khoảnh khắc đời thường', 'Đen trắng hoài niệm']
 
 
+# Giá nền theo loại hình (đồng) cho các loại hình THỨ HAI, THỨ BA của một NAG: (gói giới hạn ảnh, gói toàn bộ)
+GIA_THEO_LOAI = {0: (1500000, 3000000), 1: (4500000, 9000000), 2: (2000000, 4000000),
+                 3: (3500000, 7000000), 4: (2500000, 5000000), 5: (3000000, 6000000)}
+
+
 def goi_cua(chi_so_nag):
-    """Các gói của một nhiếp ảnh gia ĐÃ DUYỆT: danh sách dict (2 gói, hoặc 3 gói nếu chỉ số chẵn)."""
+    """Các gói của một nhiếp ảnh gia ĐÃ DUYỆT (F4: mỗi loại hình của NAG có 2 gói, khác giá, thời lượng, số ảnh).
+    Loại hình ĐẦU TIÊN là loại 'chính': các Booking mẫu dùng gói của loại này (khóa 'chinh'), và nếu chỉ số NAG chẵn
+    thì loại này có thêm gói thứ ba đã ngừng/ẩn."""
     i = chi_so_nag
-    loai = NHIEP_ANH_GIA[i]['loai'][0]
-    ten = TEN_GOI[loai]
-    ds = [
-        dict(ten=ten[0], loai_hinh=loai, gia=1500000 + 100000 * (i % 4), thoi_luong=60 + 30 * (i % 3),
-             hau_ky=LoaiHauKy.GIOI_HAN, so_anh=6 + 2 * (i % 3), trang_thai='Đang áp dụng'),
-        dict(ten=ten[1], loai_hinh=loai, gia=3000000 + 200000 * (i % 3), thoi_luong=180,
-             hau_ky=LoaiHauKy.TOAN_BO, so_anh=None, trang_thai='Đang áp dụng'),
-    ]
-    if i % 2 == 0:  # NAG số 0, 2, 4, 6 có thêm gói thứ ba đã ngừng/ẩn
-        ds.append(dict(ten=ten[2], loai_hinh=loai, gia=2000000, thoi_luong=120,
-                       hau_ky=LoaiHauKy.GIOI_HAN, so_anh=10,
-                       trang_thai='Ngừng áp dụng' if i % 4 == 0 else 'Đã ẩn'))
+    ds = []
+    for k, loai in enumerate(NHIEP_ANH_GIA[i]['loai'][:3]):
+        ten = TEN_GOI[loai]
+        if k == 0:
+            gia_gh, gia_tb = 1500000 + 100000 * (i % 4), 3000000 + 200000 * (i % 3)
+            tl_gh, so_anh = 60 + 30 * (i % 3), 6 + 2 * (i % 3)
+        else:
+            nen_gh, nen_tb = GIA_THEO_LOAI[loai]
+            gia_gh, gia_tb = nen_gh + 100000 * ((i + k) % 4), nen_tb + 200000 * ((i + k) % 3)
+            tl_gh, so_anh = 90 + 30 * ((i + k) % 3), 8 + 2 * ((i + k) % 3)
+        ds.append(dict(ten=ten[0], loai_hinh=loai, gia=gia_gh, thoi_luong=tl_gh, hau_ky=LoaiHauKy.GIOI_HAN,
+                       so_anh=so_anh, trang_thai='Đang áp dụng', chinh=(k == 0)))
+        ds.append(dict(ten=ten[1], loai_hinh=loai, gia=gia_tb, thoi_luong=180 + 60 * k, hau_ky=LoaiHauKy.TOAN_BO,
+                       so_anh=None, trang_thai='Đang áp dụng', chinh=(k == 0)))
+        if k == 0 and i % 2 == 0:  # NAG số 0, 2, 4, 6 có thêm gói thứ ba đã ngừng/ẩn
+            ds.append(dict(ten=ten[2], loai_hinh=loai, gia=2000000, thoi_luong=120, hau_ky=LoaiHauKy.GIOI_HAN,
+                           so_anh=10, trang_thai='Ngừng áp dụng' if i % 4 == 0 else 'Đã ẩn', chinh=True))
     return ds
 
 
+# Project THẬT của nag05 (F4). 'thu_muc' là thư mục con của du_lieu_mau/anh/nag05 chứa ảnh 01.jpg, 02.jpg... và bia.jpg
+PROJECT_NAG_CHINH = [
+    dict(ten='Cưới - Khởi đầu mới', loai_hinh=1, thu_muc='cuoi', so_anh=8, ngay=34,
+         concept='Ngoại cảnh, phong cách điện ảnh, cỏ xanh và bầu trời rộng'),
+    dict(ten='Gia đình - Khoảnh khắc lưu mãi', loai_hinh=2, thu_muc='gia_dinh', so_anh=8, ngay=64,
+         concept='Tự nhiên, công viên lúc nắng dịu, bóng bay và nụ cười của trẻ nhỏ'),
+    dict(ten='Chân dung', loai_hinh=0, thu_muc='chan_dung', so_anh=7, ngay=94,
+         concept='Editorial, nền trắng, sơ mi xanh sọc và đồ vật cổ điển'),
+]
+CHI_SO_NAG_CHINH = 4   # nag05
+# 2 NAG còn lại trong top 3 "Nhiếp ảnh gia nổi bật" ở Trang chủ (điểm trung bình cao nhất trong dữ liệu mẫu): nag02, nag06.
+# Thẻ nổi bật lấy ảnh bìa của project MỚI NHẤT, nên hai người này cũng phải có ảnh Portfolio thật (xem nguon_project trong nap_du_lieu_mau.py).
+CHI_SO_NAG_NOI_BAT = (1, 5)
+THU_MUC_THEO_LOAI = {0: 'chan_dung', 1: 'cuoi', 2: 'gia_dinh'}   # chỉ số loại hình (LOAI_HINH) -> thư mục ảnh của nag05; loại khác dùng 'cuoi'
+# Ảnh dùng làm BÌA cho NAG khác (nổi bật ở Trang chủ): chỉ chọn ảnh không dính logo/watermark/số trang của bên khác (xem NGUON_ANH.md)
+ANH_BIA_SACH = {'cuoi': ['02.jpg', '04.jpg', '05.jpg', '07.jpg'], 'gia_dinh': ['05.jpg'],
+                'chan_dung': ['01.jpg', '02.jpg', '03.jpg', '04.jpg', '05.jpg', '06.jpg', '07.jpg']}
+
+
 def project_cua(chi_so_nag, now):
-    """3-4 project, mỗi project 5-8 ảnh."""
+    """3-4 project, mỗi project 5-8 ảnh. NAG chính (nag05) có 3 project thật theo PROJECT_NAG_CHINH."""
     i = chi_so_nag
+    if i == CHI_SO_NAG_CHINH:
+        return [dict(ten=p['ten'], loai_hinh=p['loai_hinh'], concept=p['concept'], so_anh=p['so_anh'],
+                     ngay_chup=(now - timedelta(days=p['ngay'])).date(), thu_muc=p['thu_muc'])
+                for p in PROJECT_NAG_CHINH]
     loai_ds = NHIEP_ANH_GIA[i]['loai']
     ds = []
     for j in range(3 + (i % 2)):
         ds.append(dict(ten=f'{TEN_PROJECT[j]}', loai_hinh=loai_ds[j % len(loai_ds)],
                        concept=CONCEPT[(i + j) % len(CONCEPT)],
                        ngay_chup=(now - timedelta(days=30 * (j + 1) + i)).date(),
-                       so_anh=5 + ((i + j) % 4)))
+                       so_anh=5 + ((i + j) % 4), thu_muc=None))
     return ds
 
 
@@ -210,7 +275,7 @@ def lich_su_tu_moc(cuoi, gioi_han, t, lap_chinh_sua=(), ben_huy=None, ly_do_huy=
 def _bk(ma, nag, khach, gioi_han, cuoi, tao, chup, t, **kw):
     """Dựng một Booking mẫu. t = thời điểm vào từng trạng thái (đã tính sẵn)."""
     s = dict(ma=ma, nag=nag, khach=khach, gioi_han=gioi_han, trang_thai=cuoi, tao=tao, chup=chup,
-             dia_diem=DIA_DIEM[(nag + khach) % len(DIA_DIEM)], so_nguoi=1 + (khach % 4),
+             dia_diem=dia_diem_cua(nag, khach), so_nguoi=1 + (khach % 4),
              concept=CONCEPT[(nag + khach) % len(CONCEPT)],
              yeu_cau='Mong nhiếp ảnh gia liên hệ trước buổi chụp 1 ngày.' if khach % 2 == 0 else None,
              ly_do_tu_choi=None, han_coc=None, han_chon=None, han_hau_ky=None, han_tt=None,
@@ -240,7 +305,7 @@ def _chuoi_moc(tao, **moc):
 
 
 def lich_booking(now):
-    """17 Booking mẫu BK01..BK17 (mục 6.2). Mọi mốc thời gian tính từ `now`."""
+    """19 Booking mẫu BK01..BK19 (mục 6.2 và F4). Mọi mốc thời gian tính từ `now`."""
     h = timedelta
     N = now
     ds = []
@@ -302,17 +367,18 @@ def lich_booking(now):
                   coc=dict(trang_thai=TTT.DA_DAT_COC, ngay_tt=N - h(days=12, hours=2),
                            ngay_xn=N - h(days=12), minh_chung=True),
                   anh=dict(so_luong=14, loai=LoaiAnh.CHUA_HAU_KY, chon='toi_da', ngay=t[TT.CHO_KH_CHON_ANH])))
-    # BK09 Chờ Khách hàng kiểm tra (đã dùng 2 lần chỉnh sửa)
+    # BK09 Chờ Khách hàng kiểm tra (đã dùng 2 lần chỉnh sửa). F4: của NAG chính (nag05) và Khách kh01, dùng cho Slider trước/sau:
+    # 3 ảnh đầu có bản trước (màu), bản hiện tại là bản hậu kỳ đen trắng.
     tao = N - h(days=20)
     chup = _chup_luc(N, -14, 9)
     t = _chuoi_moc(tao, **{TT.CHO_DAT_COC: tao + h(hours=1), TT.CHOT_BOOKING: N - h(days=18),
                            TT.DA_CHUP: chup + h(hours=3), TT.CHO_HAU_KY: N - h(days=13),
                            TT.DANG_HAU_KY: N - h(days=12), TT.CHO_KH_KIEM_TRA: N - h(days=9)})
     lap = [(N - h(days=8), N - h(days=6)), (N - h(days=5), N - h(days=3))]
-    ds.append(_bk('BK09', 1, 0, False, TT.CHO_KH_KIEM_TRA, tao, chup, t,
+    ds.append(_bk('BK09', CHI_SO_NAG_CHINH, 0, False, TT.CHO_KH_KIEM_TRA, tao, chup, t,
                   coc=dict(trang_thai=TTT.DA_DAT_COC, ngay_tt=N - h(days=18, hours=2),
                            ngay_xn=N - h(days=18), minh_chung=True),
-                  anh=dict(so_luong=8, loai=LoaiAnh.DA_HAU_KY, chon=8, ngay=t[TT.CHO_KH_KIEM_TRA],
+                  anh=dict(so_luong=7, loai=LoaiAnh.DA_HAU_KY, chon=7, ngay=t[TT.CHO_KH_KIEM_TRA],
                            phien_ban={0: 2, 1: 3, 2: 2}),
                   chinh_sua=[
                       dict(so_lan=1, ngay=lap[0][0], noi_dung='Ảnh hơi tối, mong chỉnh sáng lại một chút.',
@@ -418,6 +484,17 @@ def lich_booking(now):
                   huy=dict(ben='Nhiếp ảnh gia', ly_do='Nhiếp ảnh gia bị ốm, không thể thực hiện buổi chụp.',
                            trang_thai_luc_huy=TT.CHOT_BOOKING, xu_ly='Hoàn cọc',
                            hoan_tien='Chờ hoàn tiền', ngay=N - h(days=2), ngay_xn_hoan=None)))
+    # BK18 (F4) Chốt Booking của NAG chính, buổi chụp 3 ngày nữa ở Đà Nẵng: thẻ dự báo thời tiết hiện cho Khách kh01 và nag05
+    tao = N - h(days=3)
+    t = _chuoi_moc(tao, **{TT.CHO_DAT_COC: tao + h(hours=1), TT.CHOT_BOOKING: N - h(days=2)})
+    ds.append(_bk('BK18', CHI_SO_NAG_CHINH, 0, False, TT.CHOT_BOOKING, tao, _chup_luc(N, 3, 9), t,
+                  dia_diem='Đà Nẵng - Bãi Xép',
+                  coc=dict(trang_thai=TTT.DA_DAT_COC, ngay_tt=N - h(days=2, hours=3),
+                           ngay_xn=N - h(days=2), minh_chung=True)))
+    # BK19 (F4) Chờ xác nhận của NAG chính, buổi chụp 9 ngày nữa ở Hội An: nag05 đăng nhập sẽ thấy yêu cầu mới để chấp nhận
+    tao = N - h(hours=5)
+    ds.append(_bk('BK19', CHI_SO_NAG_CHINH, 2, False, TT.CHO_XAC_NHAN, tao, _chup_luc(N, 9, 14), _chuoi_moc(tao),
+                  dia_diem='Đà Nẵng - Phố cổ Hội An', slot_trang_thai=TrangThaiSlot.DANG_GIU))
     return ds
 
 
@@ -467,13 +544,18 @@ def _khoang_cua(b):
     return bd.date(), bd.time().replace(tzinfo=None), kt.time().replace(tzinfo=None)
 
 
+SO_NGAY_LICH = 45          # F4: lịch trống 45 ngày tới (còn hạn khi nạp sát ngày báo cáo)
+
+
 def lich_khung_gio(bookings, nen, now):
     """Trả về danh sách khung giờ cho từng NAG đã duyệt:
     [{'nag', 'ngay', 'bat_dau', 'ket_thuc', 'trang_thai', 'ma_booking'}, ...].
-    Khung giờ của Booking mẫu lấy theo giờ chụp; các khung giờ phụ lấp cho đủ 15-20,
-    có đủ cả ba trạng thái (mỗi nhiếp ảnh gia thêm 1 'Đang giữ chỗ' và 1 'Đã đặt lịch' để xem giao diện lịch)."""
+    Khung giờ của Booking mẫu lấy theo giờ chụp. Ngoài ra mỗi NAG có lịch trống rải đều SO_NGAY_LICH ngày tới
+    (mỗi ngày làm việc 2 khung, vài ngày nghỉ rải rác, lệch giữa các NAG), trong đó có 1 'Đang giữ chỗ' và
+    1 'Đã đặt lịch' không gắn Booking để xem giao diện lịch."""
     from datetime import time
     ket_qua = []
+    homnay = now.astimezone(MUI_GIO).date()
     for nag in range(SO_NAG_DA_DUYET):
         slots = []
         for b in bookings + nen:
@@ -482,25 +564,21 @@ def lich_khung_gio(bookings, nen, now):
             ngay, bd, kt = _khoang_cua(b)
             slots.append(dict(nag=nag, ngay=ngay, bat_dau=bd, ket_thuc=kt,
                               trang_thai=b['slot_trang_thai'], ma_booking=b['ma']))
-        muc_tieu = 15 + (nag % 6)
         ung_vien = []
-        homnay = now.astimezone(MUI_GIO).date()
-        for so_ngay in range(1, 15):
-            for (a, z) in KHOI_GIO:
-                ngay = homnay + timedelta(days=so_ngay)
+        for so_ngay in range(1, SO_NGAY_LICH + 1):
+            if (so_ngay + nag) % 4 == 0:            # ngày nghỉ của NAG này
+                continue
+            ngay = homnay + timedelta(days=so_ngay)
+            for lech in (0, 1):
+                a, z = KHOI_GIO[(so_ngay + nag + lech) % len(KHOI_GIO)]
                 bd, kt = time(a), time(z)
                 trung = any(s['ngay'] == ngay and bd < s['ket_thuc'] and s['bat_dau'] < kt for s in slots)
-                if not trung:
+                if not trung and (ngay, bd, kt) not in [(u[0], u[1], u[2]) for u in ung_vien]:
                     ung_vien.append((ngay, bd, kt))
-        can_them = max(muc_tieu - len(slots), 2)
-        # 2 khung giờ cuối là 'Đang giữ chỗ' và 'Đã đặt lịch' (không gắn Booking), còn lại Trống
-        for idx, (ngay, bd, kt) in enumerate(ung_vien[:can_them]):
-            if idx == can_them - 1:
-                tt = TrangThaiSlot.DA_DAT
-            elif idx == can_them - 2:
-                tt = TrangThaiSlot.DANG_GIU
-            else:
-                tt = TrangThaiSlot.TRONG
+        mau_giu, mau_dat = len(ung_vien) // 4, len(ung_vien) // 4 + 1     # khoảng ngày 11-12: một khung 'Đang giữ chỗ', một 'Đã đặt lịch'
+        for idx, (ngay, bd, kt) in enumerate(ung_vien):
+            tt = (TrangThaiSlot.DANG_GIU if idx == mau_giu else
+                  TrangThaiSlot.DA_DAT if idx == mau_dat else TrangThaiSlot.TRONG)
             slots.append(dict(nag=nag, ngay=ngay, bat_dau=bd, ket_thuc=kt, trang_thai=tt, ma_booking=None))
         slots.sort(key=lambda s: (s['ngay'], s['bat_dau']))
         ket_qua.extend(slots)
@@ -514,7 +592,7 @@ def kiem_tra(now):
     bk = lich_booking(now)
     nen = lich_nen(now)
     loi = []
-    assert [b['ma'] for b in bk] == [f'BK{i:02d}' for i in range(1, 18)]
+    assert [b['ma'] for b in bk] == [f'BK{i:02d}' for i in range(1, 20)]
     for b in bk + nen:
         m = b['ma']
         if not b['chup'] > b['tao']:
@@ -561,7 +639,7 @@ def kiem_tra(now):
                 loi.append(f'{m}: hủy trước NgayTao')
     # trạng thái -> điều kiện thanh toán / ảnh
     tt_coc = {b['ma']: b['coc'] for b in bk}
-    for ma in ('BK01', 'BK02', 'BK14', 'BK15'):
+    for ma in ('BK01', 'BK02', 'BK14', 'BK15', 'BK19'):
         if tt_coc[ma] is not None:
             loi.append(f'{ma}: chưa nên có khoản cọc')
     for ma in [f'BK{i:02d}' for i in range(4, 14)] + ['BK16', 'BK17']:
@@ -585,8 +663,11 @@ def kiem_tra(now):
         for a, c in zip(ds, ds[1:]):
             if a['ngay'] == c['ngay'] and c['bat_dau'] < a['ket_thuc']:
                 loi.append(f'NAG {nag}: khung giờ chồng nhau ngày {a["ngay"]}')
-        if not 15 <= len(ds) <= 20:
-            loi.append(f'NAG {nag}: có {len(ds)} khung giờ (cần 15-20)')
+        if len(ds) < 40:
+            loi.append(f'NAG {nag}: chỉ có {len(ds)} khung giờ (cần từ 40 để phủ {SO_NGAY_LICH} ngày)')
+        ngay_cuoi = max(s['ngay'] for s in ds if s['trang_thai'] == TrangThaiSlot.TRONG)
+        if (ngay_cuoi - now.astimezone(MUI_GIO).date()).days < SO_NGAY_LICH - 4:
+            loi.append(f'NAG {nag}: lịch trống chưa phủ tới {SO_NGAY_LICH} ngày')
         tt = {s['trang_thai'] for s in ds}
         if len(tt) != 3:
             loi.append(f'NAG {nag}: chưa đủ 3 trạng thái khung giờ')

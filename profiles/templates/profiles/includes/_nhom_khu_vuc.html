@@ -1,0 +1,6 @@
+{# F3 - Nhóm chọn Khu vực hoạt động (34 tỉnh thành, nhóm theo miền + ô tìm). Dùng: {% include "profiles/includes/_nhom_khu_vuc.html" with field=form.khu_vuc %} #}
+<fieldset class="field{% if field.errors %} has-error{% endif %}">
+  <legend class="field__label">{{ field.label }}<span class="field__req" aria-hidden="true"> *</span></legend>
+  {% include "includes/khu_vuc_nhom.html" with field=field lop_chon="ho-so__chon" lop_muc="ho-so__muc" lop_ten="" co_vong=False %}
+  {% for error in field.errors %}<p class="field__error">{{ error }}</p>{% endfor %}
+</fieldset>

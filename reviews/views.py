@@ -29,7 +29,7 @@ def danh_gia_booking(request, ma_booking):                     # trang UC6.1
             except services.LoiDanhGia as loi:
                 messages.error(request, str(loi))
             else:
-                thanh_cong_co_nut(request, 'Cảm ơn bạn! Đánh giá đã được gửi và hiển thị công khai trên hồ sơ nhiếp ảnh gia.',
+                thanh_cong_co_nut(request, 'Cảm ơn bạn! Đánh giá đã được gửi.',
                                   url_booking(booking), 'Quay lại Booking')   # ở lại trang đánh giá, kèm nút về Booking
                 return redirect('danh_gia_booking', ma_booking=booking.pk)   # tránh gửi lại khi F5
 
