@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 # Câu thông báo (UC3.1 bước 7 và các ngoại lệ)
 TB_THANH_CONG = 'Cập nhật lịch thành công.'
 TB_KHONG_TIM_THAY = 'Không tìm thấy khung giờ.'
-TB_CHI_XEM = 'Chỉ sửa hoặc xóa được khung giờ ở trạng thái "Lịch trống". Khung giờ đang giữ chỗ hoặc đã đặt lịch chỉ để xem.'
+TB_CHI_XEM = 'Chỉ sửa hoặc xóa được khung giờ "Lịch trống".'
 TB_DA_QUA = 'Khung giờ này đã bắt đầu hoặc đã qua nên chỉ để xem.'
 TB_CO_LICH_SU = 'Khung giờ này đã có lượt giữ chỗ hoặc Booking nên không thể xóa.'
 TB_LOI_LUU = 'Không thể cập nhật lịch lúc này. Vui lòng thử lại.'    # UC3.1 ngoại lệ 6a

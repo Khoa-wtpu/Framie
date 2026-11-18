@@ -10,9 +10,8 @@
   <a class="ct__quay-lai" href="{% url 'chi_tiet_booking' ma_booking=booking.pk %}"><span aria-hidden="true">←</span> Quay lại chi tiết Booking</a>{# về trang chi tiết của đúng Booking này #}
 
   <header>
-    <p class="ct__nhan-nho">Hủy Booking</p>{# dòng nhỏ viết hoa #}
     <h1>Hủy Booking #{{ booking.pk }}</h1>{# tiêu đề kèm mã Booking #}
-    <p class="ct__mo-ta">Sau khi hủy, Booking không thể khôi phục và khung giờ được trả về lịch trống ngay.</p>{# nhắc hủy là không quay lại được #}
+    <p class="ct__mo-ta">Không thể hoàn tác sau khi hủy.</p>{# nhắc hủy là không quay lại được #}
   </header>
 
   <section class="ct__the">{# thẻ nhắc lại Booking đang hủy để không hủy nhầm #}

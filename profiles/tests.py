@@ -337,7 +337,7 @@ class CapNhatHoSoK4TestCase(TestCase):
         self.client.force_login(self.user)
         res = self.client.get(self.url)
         self.assertEqual(res.status_code, 302)
-        self.assertTrue(any('đang chờ Quản trị viên duyệt' in t for t in self.lay_tin_nhan(res)))
+        self.assertTrue(any('đang chờ duyệt' in t for t in self.lay_tin_nhan(res)))
 
     def test_dang_cho_duyet_gui_thang_post_van_bi_chan(self):
         self.client.force_login(self.user)
@@ -374,7 +374,7 @@ class CapNhatHoSoK4TestCase(TestCase):
         res = self.client.post(self.url, self.du_lieu(GioiThieu='Giới thiệu mới',
                                                       loai_hinh=[self.loai.pk, self.loai2.pk]))
         self.assertEqual(res.status_code, 302)
-        self.assertTrue(any('Đã gửi lại hồ sơ thành công' in t for t in self.lay_tin_nhan(res)))
+        self.assertTrue(any('Đã gửi lại hồ sơ' in t for t in self.lay_tin_nhan(res)))
         self.nag.refresh_from_db()
         self.assertEqual(self.nag.GioiThieu, 'Giới thiệu mới')
         self.assertEqual(self.nag.loai_hinh_chup.count(), 2)

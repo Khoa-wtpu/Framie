@@ -7,14 +7,13 @@
 <div class="container tim">
   <header class="tim__dau">
     <h1>Tìm kiếm Nhiếp ảnh gia</h1>
-    <p>Tìm theo từ khóa hoặc ID Nhiếp ảnh gia, sau đó dùng bộ lọc để thu hẹp kết quả.</p>
-  </header>
+      </header>
 
   {% if user|hien_tro_ly %}{# E5: khối gợi ý Trợ lý, Khách chưa đăng nhập và Khách hàng thấy; Nhiếp ảnh gia, Quản trị viên không thấy (CSS ở search/css/tro_ly.css) #}
   <section class="panel tro-ly__goc tro-ly-moi" aria-labelledby="tro-ly-moi-tieu-de">
     <div>
       <h2 id="tro-ly-moi-tieu-de" class="tro-ly-moi__tieu-de">Chưa biết chọn ai?</h2>
-      <p class="tro-ly-moi__mo-ta">Trả lời 5 câu hỏi ngắn, Trợ lý gợi ý nhiếp ảnh gia phù hợp kèm khung giờ trống.{% if not user.is_authenticated %} Bạn cần đăng nhập để dùng.{% endif %}</p>
+      <p class="tro-ly-moi__mo-ta">Trả lời 5 câu hỏi, Trợ lý gợi ý nhiếp ảnh gia phù hợp.{% if not user.is_authenticated %} Cần đăng nhập.{% endif %}</p>
     </div>
     <a class="btn btn--secondary" href="{% if user.is_authenticated %}{% url 'assistant' %}{% else %}{% url 'login' %}?next={% url 'assistant' %}{% endif %}">Trợ lý chọn Nhiếp ảnh gia</a>
   </section>

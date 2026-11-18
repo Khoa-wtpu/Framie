@@ -5,9 +5,8 @@
 .admin-content__head { /* đầu trang */
   margin-bottom: var(--space-5); /* cách nội dung bên dưới */
 }
-.admin-content__title { /* tiêu đề trang */
+.admin-content__title { /* tiêu đề trang: cỡ chữ, IN HOA lấy từ h1 chung (base.css) cho giống mọi vai trò */
   margin: 0; /* bỏ khoảng mặc định */
-  font-size: var(--text-2xl); /* cỡ chữ tiêu đề */
 }
 .admin-stats { /* lưới thẻ số liệu */
   display: grid; /* dùng lưới */
@@ -196,16 +195,6 @@
 /* ---- P7: trang Tài khoản và vai trò (chỉ dùng biến trong tokens.css) ---- */
 .admin-page:has(.tk-cuon) { /* chỉ khung của trang Tài khoản: chừa khoảng trống trên và dưới giống trang Duyệt hồ sơ (.duyet) */
   padding-block: var(--space-6); /* 2rem trên và dưới */
-}
-.admin-content__head:has(.tk-tieu-de) { /* đầu trang Tài khoản: chừa khoảng thoáng giữa tiêu đề và hàng lọc như mockup */
-  margin-bottom: var(--space-6); /* 2rem */
-}
-.tk-tieu-de { /* tiêu đề hai dòng cỡ lớn; chữ gradient lấy từ h1 nên dòng dưới tự nhạt dần */
-  display: block; /* thành khối riêng để dòng chữ không chịu line-height 1.35 của h1 */
-  font-size: clamp(var(--text-3xl), 7vw, 4.5rem); /* to nhất 72px như mockup, màn hình nhỏ thì thu lại nhưng không dưới 44px */
-  line-height: 1.15; /* hai dòng sát nhau như mockup */
-  padding-block: .06em; /* chừa chỗ cho dấu tiếng Việt, không bị cắt (chữ gradient cắt theo khung) */
-  letter-spacing: -.04em; /* chữ sát nhau cho gọn ở cỡ lớn */
 }
 .tk-thanh { /* hàng lọc: ô tìm kiếm + hai nhóm nút lọc */
   display: flex; /* xếp ngang */

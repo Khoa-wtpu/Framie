@@ -14,13 +14,13 @@
 /* Quy tắc giao diện cho: .xal__anh (ảnh lớn: vừa khung, không méo) */
 .xal__anh { max-width: 100%; max-height: calc(100vh - 12rem); max-height: calc(100dvh - 12rem); object-fit: contain; user-select: none; }
 /* Quy tắc giao diện cho: .xal__ten (chú thích "3 / 8 · tên ảnh") */
-.xal__ten { font-size: .875rem; opacity: .85; text-align: center; overflow-wrap: anywhere; }
+.xal__ten { font-size: var(--text-sm); opacity: .85; text-align: center; overflow-wrap: anywhere; }
 /* Quy tắc giao diện cho: .xal__dong, .xal__chuyen (nút X và nút < >) */
 .xal__dong, .xal__chuyen { background: rgba(255, 255, 255, .12); border: 0; border-radius: 50%; color: #FFFFFF; cursor: pointer; line-height: 1; }
 /* Quy tắc giao diện cho: .xal__dong (nút X ở góc trên bên phải) */
-.xal__dong { position: absolute; top: 1rem; right: 1.25rem; width: 2.5rem; height: 2.5rem; font-size: 1.25rem; z-index: 2; }
+.xal__dong { position: absolute; top: 1rem; right: 1.25rem; width: 2.5rem; height: 2.5rem; font-size: var(--text-lg); z-index: 2; }
 /* Quy tắc giao diện cho: .xal__chuyen (nút < > nằm hai bên ảnh) */
-.xal__chuyen { grid-row: 1; align-self: center; width: 3rem; height: 3rem; margin: 0 1rem; font-size: 2rem; padding-bottom: .2rem; }
+.xal__chuyen { grid-row: 1; align-self: center; width: 3rem; height: 3rem; margin: 0 1rem; font-size: var(--text-2xl); padding-bottom: .2rem; }
 /* Quy tắc giao diện cho: .xal__chuyen--truoc (nút < ở cột trái) */
 .xal__chuyen--truoc { grid-column: 1; }
 /* Quy tắc giao diện cho: .xal__chuyen--sau (nút > ở cột phải) */
@@ -46,11 +46,11 @@
 /* Quy tắc giao diện cho: .xal--co-ghi-chu .xal__dai (chế độ nhận xét: dải ảnh nhỏ chỉ nằm dưới phần ảnh 2/3 bên trái nên căn giữa phần ảnh, không đè sang bảng nhận xét) */
 .xal--co-ghi-chu .xal__dai { grid-column: 1; }
 /* Quy tắc giao diện cho: .xal__ghi-chu-tieu-de (tiêu đề "Nội dung cần chỉnh") */
-.xal__ghi-chu-tieu-de { margin: 0; font-size: 1.125rem; font-weight: 700; color: #FFFFFF; }
+.xal__ghi-chu-tieu-de { margin: 0; font-size: var(--text-lg); font-weight: 700; color: #FFFFFF; }
 /* Quy tắc giao diện cho: .xal__ghi-chu-ten (tên ảnh đang xem) */
-.xal__ghi-chu-ten { margin: 0; font-size: .875rem; opacity: .8; overflow-wrap: anywhere; }
+.xal__ghi-chu-ten { margin: 0; font-size: var(--text-sm); opacity: .8; overflow-wrap: anywhere; }
 /* Quy tắc giao diện cho: .xal__ghi-chu-chon (dòng "Chọn ảnh này để chỉnh sửa") */
-.xal__ghi-chu-chon { display: flex; align-items: center; gap: .5rem; cursor: pointer; font-size: .9375rem; }
+.xal__ghi-chu-chon { display: flex; align-items: center; gap: .5rem; cursor: pointer; font-size: var(--text-base); }
 /* Quy tắc giao diện cho: .xal__ghi-chu-chon input (ô tick màu cam như logo) */
 .xal__ghi-chu-chon input { width: 1.15rem; height: 1.15rem; accent-color: var(--xal-cam); cursor: pointer; }
 /* Quy tắc giao diện cho: .xal__ghi-chu-o (ô nhập nhận xét: tối, chữ trắng, giãn theo chiều cao còn lại) */
@@ -58,13 +58,13 @@
 /* Quy tắc giao diện cho: .xal__ghi-chu-o:focus (đang gõ thì có viền cam) */
 .xal__ghi-chu-o:focus { outline: 2px solid var(--xal-cam); outline-offset: 1px; }
 /* Quy tắc giao diện cho: .xal__ghi-chu-dem (đếm ký tự n/500) */
-.xal__ghi-chu-dem { text-align: right; font-size: .8125rem; opacity: .7; }
+.xal__ghi-chu-dem { text-align: right; font-size: var(--text-sm); opacity: .7; }
 /* Quy tắc giao diện cho: .xal__ghi-chu-loi (dòng đỏ "Vui lòng nhập nhận xét") */
-.xal__ghi-chu-loi { margin: 0; color: #FF6B6B; font-size: .875rem; font-weight: 600; }
+.xal__ghi-chu-loi { margin: 0; color: #FF6B6B; font-size: var(--text-sm); font-weight: 600; }
 
 /* Quy tắc giao diện cho: điện thoại (nút nhỏ lại, dải ảnh thấp hơn; chế độ nhận xét xếp dọc: ảnh trên, nhận xét dưới) */
 @media (max-width: 48rem) {
-  .xal__chuyen { width: 2.25rem; height: 2.25rem; margin: 0 .25rem; font-size: 1.5rem; }
+  .xal__chuyen { width: 2.25rem; height: 2.25rem; margin: 0 .25rem; font-size: var(--text-xl); }
   .xal__nho img { height: 3rem; }
   .xal__anh { max-height: calc(100vh - 10rem); max-height: calc(100dvh - 10rem); }
   .xal--co-ghi-chu[open] { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto auto; overflow-y: auto; }

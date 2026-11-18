@@ -177,8 +177,8 @@ class DemNguocHanCoc(CaiTienBase):  # nhóm test thanh đếm ngược hạn đ�
         for res in (khach, nag):  # cả hai
             self.assertContains(res, 'id="han-coc"')  # có khối đếm ngược
             self.assertContains(res, 'han_dat_coc.js')  # có nạp JS
-        self.assertContains(khach, 'Bạn cần đặt cọc')  # chữ viết cho Khách
-        self.assertContains(nag, 'Khách hàng cần đặt cọc')  # chữ viết cho Nhiếp ảnh gia
+        self.assertContains(khach, 'Đặt cọc 40%')  # chữ viết cho Khách
+        self.assertContains(nag, 'Khách cần đặt cọc')  # chữ viết cho Nhiếp ảnh gia
 
     def test_khong_co_thanh_dem_nguoc_o_trang_thai_khac(self):  # ẩn khi không "Chờ đặt cọc"
         bk = self.tao_booking(BK.CHOT_BOOKING)  # "Chốt Booking"

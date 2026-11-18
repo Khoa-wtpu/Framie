@@ -41,7 +41,7 @@ SO_NHIEP_ANH_GIA_NOI_BAT = 3   # số thẻ ở khối "Nhiếp ảnh gia nổi 
 # ▸ Nội dung viết cứng tại đây nên muốn đổi chữ trên trang chủ chỉ cần sửa trong danh sách này.
 BUOC_DAT_LICH = [
     # ▸ Bước 1: khách tìm nhiếp ảnh gia theo nhiều tiêu chí.
-    ('Tìm nhiếp ảnh gia', 'Tìm theo từ khóa, loại hình, khu vực hoặc mức giá, rồi xem hồ sơ và Portfolio.'),
+    ('Tìm nhiếp ảnh gia', 'Tìm theo từ khóa, loại hình, khu vực hoặc mức giá.'),
     # ▸ Bước 2: chọn giờ trống; hệ thống giữ chỗ tạm 5 phút để không ai khác đặt trùng.
     ('Chọn lịch và giữ chỗ', 'Chọn khung giờ còn trống, FRAMIE giữ chỗ cho bạn trong 5 phút.'),
     # ▸ Bước 3: điền thông tin buổi chụp và gửi yêu cầu đặt lịch (Booking).
@@ -49,7 +49,7 @@ BUOC_DAT_LICH = [
     # ▸ Bước 4: nhiếp ảnh gia đồng ý, khách đặt cọc 40% để chốt lịch.
     ('Xác nhận và đặt cọc', 'Nhiếp ảnh gia chấp nhận yêu cầu, bạn đặt cọc 40% để chốt lịch.'),
     # ▸ Bước 5: chụp xong, khách chọn ảnh, kiểm tra ảnh đã chỉnh sửa và thanh toán phần còn lại để nhận ảnh.
-    ('Chụp và nhận ảnh', 'Sau buổi chụp, bạn chọn ảnh, kiểm tra ảnh hậu kỳ và nhận ảnh sau khi thanh toán phần còn lại.'),
+    ('Chụp và nhận ảnh', 'Chọn ảnh, kiểm tra ảnh hậu kỳ và nhận ảnh hoàn chỉnh.'),
 # ▸ Dấu ] đóng danh sách 5 bước.
 ]
 

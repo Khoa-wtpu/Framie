@@ -8,7 +8,7 @@
               background: linear-gradient(120deg, var(--color-gray-soft) 0%, var(--color-white) 100%); }
 .tahc__hero h1 { margin: 0; }
 .tahc__hero-sub { margin: var(--space-1) 0 0; color: var(--color-text-muted); }
-.tahc__hero-icon { display: grid; place-items: center; flex: none; width: 3.5rem; height: 3.5rem; font-size: 1.75rem;
+.tahc__hero-icon { display: grid; place-items: center; flex: none; width: 3.5rem; height: 3.5rem; font-size: var(--text-2xl);
                    background: var(--color-white); border-radius: var(--radius-md); box-shadow: var(--shadow-md); }
 
 /* ---------- Khung thông tin ---------- */

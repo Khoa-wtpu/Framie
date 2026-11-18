@@ -5,31 +5,24 @@
 <div class="container stack tai-anh">
   <header>
     <h1>Tải ảnh lên hệ thống</h1>
-    <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaKhachHang.get_full_name }} · {{ booking.MaGoi.TenGoi }} · {% status_badge booking.TrangThai %}</p>
+    <p class="muted">Booking #{{ booking.pk }} · {{ booking.MaKhachHang.get_full_name }} · {{ booking.MaGoi.TenGoi }}</p>
   </header>
 
   {% if cho_bat_dau_hau_ky %}
-    {% include "includes/alert.html" with level="info" text="Bấm “Bắt đầu hậu kỳ” tại trang chi tiết Booking để chuyển thẳng đến giao diện tải ảnh." %}
+    {% include "includes/alert.html" with level="info" text="Bấm “Bắt đầu hậu kỳ” ở trang chi tiết Booking." %}
   {% else %}
   {% if not giai_doan %}
-    {% include "includes/alert.html" with level="info" text="Booking này chưa đến lúc tải ảnh. Chỉ tải được sau khi buổi chụp hoàn tất (Đã chụp) hoặc khi đang hậu kỳ." %}
+    {% include "includes/alert.html" with level="info" text="Booking này chưa đến bước tải ảnh." %}
   {% else %}
     <section class="panel stack">
       <h2>{{ giai_doan.tieu_de }}</h2>
       {% if dang_o_buoc_goc %}
-        <p>Chọn các ảnh đã chụp. Hệ thống tự động chèn watermark trước khi lưu.
-          Tải xong, Booking chuyển sang
-          {% if gioi_han %}<strong>Chờ Khách hàng lựa chọn ảnh</strong> (Khách chọn không giới hạn thời gian){% else %}<strong>Chờ hậu kỳ</strong> (gói hậu kỳ toàn bộ ảnh){% endif %}.
-          Tên ảnh (không tính đuôi) không được trùng nhau.</p>
+        <p>Chọn các ảnh đã chụp. Hệ thống tự chèn watermark. Tên ảnh (không tính đuôi) không được trùng nhau.</p>
       {% else %}
         {% if yeu_cau_moi %}{# N7: Khách đã yêu cầu chỉnh sửa -> không cần trùng tên, chỉ cần đủ số lượng #}
-          <p>Chọn <strong>đúng {{ yeu_cau_anhs|length }} ảnh</strong> đã chỉnh sửa theo yêu cầu của Khách hàng (tên tệp tùy ý).{# nhắc số lượng cần tải #}
-            Hệ thống tự ghép từng ảnh mới với ảnh cần sửa dựa trên <strong>hình ảnh</strong> (không dựa vào tên tệp). Ảnh nào chưa ghép chắc chắn được sẽ hiện danh sách để bạn tự chọn ảnh tương ứng.{# giải thích cách ghép #}
-            Khi đủ ảnh, Booking chuyển sang <strong>Chờ Khách hàng kiểm tra</strong>.</p>{# nhắc bước tiếp theo #}
+          <p>Chọn <strong>đúng {{ yeu_cau_anhs|length }} ảnh</strong> đã chỉnh sửa. Ảnh nào chưa tự ghép được, bạn chọn tay ở bước sau.</p>
         {% else %}{# lượt hậu kỳ đầu tiên #}
-          <p>Chọn <strong>đúng {{ cho_hau_ky|length }} ảnh</strong> đã hậu kỳ (tên tệp tùy ý).
-            Hệ thống tự ghép từng ảnh mới với ảnh cần sửa dựa trên <strong>hình ảnh</strong> (không dựa vào tên tệp). Ảnh nào chưa ghép chắc chắn được sẽ hiện danh sách để bạn tự chọn ảnh tương ứng.
-            Khi đủ ảnh, Booking chuyển sang <strong>Chờ Khách hàng kiểm tra</strong>.</p>
+          <p>Chọn <strong>đúng {{ cho_hau_ky|length }} ảnh</strong> đã hậu kỳ. Ảnh nào chưa tự ghép được, bạn chọn tay ở bước sau.</p>
         {% endif %}
         {% if cho_hau_ky and not yeu_cau_moi %}{# khi Khách đã yêu cầu chỉnh sửa thì ảnh cần sửa đã hiện ở khung "Khách hàng yêu cầu chỉnh sửa" bên dưới, không hiện lặp lại #}
           <p>Còn <strong>{{ cho_hau_ky|length }}</strong> ảnh cần sửa:</p>
@@ -93,7 +86,7 @@
       </div>
       <section id="khung-chua-ghep" class="tai-anh__chua-ghep" hidden aria-live="polite">{# E10: ảnh chưa tự ghép được -> Nhiếp ảnh gia chọn tay ảnh tương ứng; JS điền nội dung #}
         <h3 class="tai-anh__chua-ghep-tieu-de">Ảnh chưa ghép được</h3>
-        <p class="muted">Với mỗi ảnh bên dưới, chọn ảnh cần sửa tương ứng rồi bấm “Tải ảnh lên” lần nữa. Các ảnh đã ghép được sẽ không bị ảnh hưởng.</p>
+        <p class="muted">Chọn ảnh cần sửa tương ứng cho từng ảnh, rồi bấm “Tải ảnh lên” lần nữa.</p>
         <div id="ds-chua-ghep" class="tai-anh__chua-ghep-ds"></div>
       </section>
       <div>

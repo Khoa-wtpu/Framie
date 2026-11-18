@@ -2,7 +2,7 @@
 .pf { padding-block: var(--space-6); }
 .pf--hep { max-width: 48rem; }
 .pf__dau { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-6); }
-.pf__dau h1 { margin: 0 0 var(--space-1); font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.pf__dau h1 { margin: 0 0 var(--space-1); }
 .pf__dau p { margin: 0; color: var(--color-text-muted); }
 
 /* ---- danh sách project ---- */

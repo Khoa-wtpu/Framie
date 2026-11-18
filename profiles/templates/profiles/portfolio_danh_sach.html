@@ -7,8 +7,7 @@
   <header class="pf__dau">
     <div>
       <h1>Quản lý Portfolio</h1>
-      <p>Quản lý các project hiển thị trên hồ sơ công khai của bạn.</p>
-    </div>
+          </div>
     <a class="btn btn--primary" href="{% url 'project_them' %}">Thêm project</a>
   </header>
 
@@ -33,7 +32,7 @@
     </ul>
   {% else %}
     <div class="pf__trong" role="status">
-      <p>Bạn chưa có project nào. Thêm project để khách hàng xem được phong cách của bạn trên hồ sơ công khai.</p>
+      <p>Chưa có project nào.</p>
       <a class="btn btn--primary" href="{% url 'project_them' %}">Thêm project</a>
     </div>
   {% endif %}

@@ -53,6 +53,7 @@
 
   /* nút nguy hiểm: chữ luôn trắng */
   --on-danger: #FFFFFF;
+  --on-media: #FFFFFF;            /* chữ nằm TRÊN ẢNH (có lớp tối phủ): luôn trắng, không đổi theo chế độ đen/trắng */
   --danger-solid-bg: linear-gradient(135deg, #C9443F 0%, #A12A2A 100%);
 
   --shine: rgba(255, 255, 255, .16);        /* vệt lóe sáng khi rê chuột vào nút / hộp */
@@ -76,6 +77,14 @@
   --text-2xl: 2rem;
   --text-3xl: 2.75rem;
   --text-display: 4rem; /* cỡ số lớn trong thẻ nhóm trạng thái (64px) */
+
+  /* --- Cỡ chữ theo VAI TRÒ: giá trị lấy từ thang trên, KHÔNG gõ rem/px/clamp riêng trong CSS của từng trang ---
+         tiêu đề trang (h1, IN HOA) > tiêu đề khối (h2) > tiêu đề thẻ (h3) > nội dung (base) > chú thích (sm / xs) */
+  --text-title: clamp(var(--text-2xl), 4vw, var(--text-3xl));   /* h1: tiêu đề trang, tự nhỏ lại trên điện thoại */
+  --text-hero: clamp(var(--text-2xl), 6.5vw, var(--text-display)); /* chữ lớn nhất: banner Trang chủ, Giới thiệu */
+  --text-hero-sm: clamp(var(--text-xl), 3.6vw, var(--text-3xl));   /* tiêu đề khối lớn của trang giới thiệu (h2 nổi bật) */
+  --ls-title: .04em;  /* giãn chữ cho tiêu đề IN HOA */
+  --ls-label: .08em;  /* giãn chữ cho nhãn nhỏ IN HOA */
   --leading: 1.6;
   --leading-tight: 1.2;
 

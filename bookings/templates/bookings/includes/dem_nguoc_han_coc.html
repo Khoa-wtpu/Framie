@@ -13,9 +13,9 @@
   <progress class="ct__han-coc-thanh" id="han-coc-thanh" max="{{ dem_nguoc_coc.tong }}" value="{{ dem_nguoc_coc.con_lai }}">{{ dem_nguoc_coc.con_lai }}</progress>{# thanh tiến trình giảm dần; có sẵn giá trị từ server nên không "nhảy" khi JS chưa chạy #}
   <p class="ct__ghi-chu">
     {% if cho_khach %}{# nội dung dành cho Khách #}
-      Bạn cần đặt cọc 40% và tải minh chứng thanh toán lên trước hạn này. Quá hạn, Booking tự chuyển sang "Hết thời hạn đặt cọc" và khung giờ được trả về lịch trống.
+      Đặt cọc 40% và tải minh chứng trước hạn này. Quá hạn, Booking tự hết hạn đặt cọc.
     {% else %}{# nội dung dành cho Nhiếp ảnh gia #}
-      Khách hàng cần đặt cọc 40% và tải minh chứng lên trước hạn này. Quá hạn, Booking tự chuyển sang "Hết thời hạn đặt cọc" và khung giờ được trả về lịch trống.
+      Khách cần đặt cọc 40% trước hạn này. Quá hạn, Booking tự hết hạn đặt cọc.
     {% endif %}
   </p>
   <p class="ct__han-coc-het" id="han-coc-het" hidden>Đã hết hạn đặt cọc. Trang sẽ tự cập nhật trạng thái Booking.</p>{# JS bỏ thuộc tính hidden khi đếm về 0 #}
