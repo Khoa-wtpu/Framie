@@ -585,7 +585,7 @@ def chon_slot(request, ma_lich):
 # Định nghĩa view nhả lượt giữ chỗ: dùng cho nút "Chọn khung giờ khác" và cho sendBeacon khi Khách rời trang.
 def huy_giu_cho_view(request, ma_giu_cho):
     """Khách bấm "Chọn khung giờ khác"/"Hủy giữ chỗ" -> nhả slot rồi về trang lịch của Nhiếp ảnh gia.
-    Khách rời trang KHÔNG còn tự nhả (đồng hồ vẫn chạy). nhanh=1 chỉ còn để gọi nhả không cần chuyển hướng (trả 204)."""
+    Khách rời trang thì nha_giu_cho.js gọi view này bằng sendBeacon với nhanh=1 (không chuyển hướng, trả 204). Mất beacon (sập trình duyệt, mất mạng) thì lượt giữ vẫn tự hết hạn sau 5 phút."""
     giu_cho = get_object_or_404(GiuCho.objects.select_related('MaLich'),
                                 pk=ma_giu_cho, MaKhachHang=request.user)   # chỉ thao tác với lượt của chính mình
     da_nha = huy_giu_cho(request.user, giu_cho.pk)
