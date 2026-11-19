@@ -191,3 +191,4 @@ media/*
 !media/.gitkeep
 private_media/
 staticfiles/
+*.bak
