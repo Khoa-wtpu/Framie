@@ -190,5 +190,5 @@ db.sqlite3-journal
 media/*
 !media/.gitkeep
 private_media/
-staticfiles/
 *.bak
+staticfiles/

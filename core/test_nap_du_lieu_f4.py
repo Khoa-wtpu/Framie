@@ -170,8 +170,16 @@ class DuLieuDemoAnhThatTest(DuLieuDemoTest):
 
 
 class DuLieuDemoEmailThatTest(DuLieuDemoTest):
-    """DEMO_EMAIL_<USER> trong .env: tài khoản demo nhận email thật mà việc xóa/nạp lại vẫn nhận ra tài khoản mẫu."""
+    """DEMO_EMAIL_<USER> trong .env: ..."""
     MOI_TRUONG = {'DEMO_EMAIL_NAG05': 'nguoi.demo+nag05@gmail.com', 'DEMO_EMAIL_KH01': 'nguoi.demo+kh01@gmail.com'}
+    KHONG_EMAIL_THAT = {'DEMO_EMAIL_NAG05': '', 'DEMO_EMAIL_KH01': ''}
+
+    def setUp(self):
+        super().setUp()
+        # Mặc định mọi test chạy như "máy chưa đặt email thật", bất kể .env của người chạy có gì.
+        p = mock.patch.dict(os.environ, self.KHONG_EMAIL_THAT)
+        p.start()
+        self.addCleanup(p.stop)
 
     def test_dat_email_that_cho_nag05_va_kh01(self):
         User = get_user_model()
