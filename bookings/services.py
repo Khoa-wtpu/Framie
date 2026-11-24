@@ -146,7 +146,7 @@ def dem_nguoc_han_dat_coc(booking):  # dữ liệu cho thanh đếm ngược h�
             'con_lai': max(0, con_lai),  # số giây còn lại, không âm
             'tong': SO_NGAY_HAN_DAT_COC * 24 * 60 * 60}  # tổng thời hạn (giây) để tính phần trăm thanh tiến trình
 
-
+#Hàm đổi trạng thái
 def chuyen_trang_thai_booking(booking, trang_thai_moi, ben_thuc_hien, ly_do=None):  # khai báo hàm; ly_do mặc định None (không bắt buộc)
     """Đổi trạng thái một Booking và tự ghi một dòng Lịch sử trạng thái.
 
