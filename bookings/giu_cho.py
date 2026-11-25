@@ -170,6 +170,9 @@ def _het_han_mot_luot(ma_giu_cho, bay_gio):
 
 
 # Định nghĩa hàm quét và giải phóng tất cả lượt giữ đã quá hạn.
+#6 Nếu hết 5 phút mà khách chưa gửi Booking,
+# hàm tổng giai_phong_giu_cho_het_han sẽ gọi hàm con _het_han_mot_luot
+# để xử lý lượt hết hạn và trả slot về “Lịch trống”.
 def giai_phong_giu_cho_het_han():
     # Docstring mô tả chức năng xử lý ngoại lệ hết 5 phút theo yêu cầu UC4.1.
     """Ngoại lệ 5b / BR4.1-1: mọi lượt 'Đang giữ chỗ' đã quá ThoiDiemHetHan -> 'Hết hạn',
@@ -215,6 +218,8 @@ def so_giay_con_lai(giu_cho):
 
 
 # Định nghĩa hàm chính xử lý yêu cầu khách hàng giữ một slot cụ thể.
+#3 Hàm này giải phóng các lượt giữ hết hạn, khóa dòng slot bằng select_for_update(),
+# và kiểm tra slot còn trống. Sau đó, gọi hàm doi_trang_thai_khung_gio
 def giu_cho_slot(khach_hang, ma_lich):
     # Docstring mô tả luồng chính: khách chọn slot, hệ thống kiểm tra rồi giữ trong 5 phút.
     """Bước 3-5 của Basic Flow: Khách chọn slot -> kiểm tra -> giữ 5 phút.
@@ -296,10 +301,12 @@ def giu_cho_slot(khach_hang, ma_lich):
                 # Thông báo lỗi hệ thống cho view nếu không thể giải phóng slot cũ.
                 raise GiuChoLoi(TB_LOI_HE_THONG)
 
-            # 5. Sau đó,  gọi doi_trang_thai_khung_gio để chuyển slot sang “Đang giữ chỗ” và tạo bản ghi GiuCho có thời hạn 5 phút.
+            #4. Sau đó,  gọi doi_trang_thai_khung_gio để chuyển slot sang “Đang giữ chỗ” và
+            # tạo bản ghi GiuCho có thời hạn 5 phút.
             #Đổi slot -> 'Đang giữ chỗ' bằng hàm của Khoa. Hàm này tự chặn slot đã qua giờ bắt đầu
-            #    và dùng UPDATE có điều kiện nên nếu có người nhanh tay hơn thì báo lỗi.
-            # Nếu giữ chỗ thành công, chuyển đến màn hình giữ chỗ với mã lượt giữ vừa tạo gồm đồng hồ đếm ngược và nút tiếp tục gửi Booking.
+            #  và dùng UPDATE có điều kiện nên nếu có người nhanh tay hơn thì báo lỗi.
+            # Nếu giữ chỗ thành công, chuyển đến view màn hình giữ chỗ với mã lượt giữ vừa
+            # tạo gồm đồng hồ đếm ngược và nút tiếp tục gửi Booking.
             # Bắt lỗi khi chuyển trạng thái slot mới sang Đang giữ chỗ.
             try:
                 # Gọi service dùng chung của module schedule để chuyển slot sang Đang giữ chỗ.
@@ -511,7 +518,9 @@ def _ve_trang_lich(ma_nhiep_anh_gia):
 # Chỉ cho phép request GET vì view này chỉ đọc và hiển thị dữ liệu.
 @require_GET
 # Định nghĩa view trang lịch của một nhiếp ảnh gia, nhận mã nhiếp ảnh gia từ URL.
-def trang_lich_nhiep_anh_gia(request, ma_nhiep_anh_gia): #gọi render dòng 531
+#1 Đầu tiên, view trang_lich_nhiep_anh_gia gọi render() để hiển thị trang lich_chon_slot.html.
+#Khi khách chọn khung giờ, form gửi yêu cầu POST đến URL chon_slot
+def trang_lich_nhiep_anh_gia(request, ma_nhiep_anh_gia): #gọi render dòng 534
     # Docstring mô tả view hiển thị các slot còn trống theo đặc tả UC4.1.
     """Bước 1-2: trang lịch công khai, liệt kê các slot 'Lịch trống' của một nhiếp ảnh gia."""
     # Tìm hồ sơ nhiếp ảnh gia và tải sẵn tài khoản liên quan để giảm truy vấn.
@@ -558,7 +567,8 @@ def trang_lich_nhiep_anh_gia(request, ma_nhiep_anh_gia): #gọi render dòng 531
 @khach_hang_required
 # Chỉ cho phép POST vì đây là thao tác làm thay đổi trạng thái dữ liệu.
 @require_POST
-# Định nghĩa view xử lý khi khách bấm chọn một slot. -> gọi hàm giữ chỗ slot (569)
+# Định nghĩa view xử lý khi khách bấm chọn một slot.
+# View chon_slot gọi hàm giu_cho_slot để xử lý nghiệp vụ giữ chỗ. -> 575
 def chon_slot(request, ma_lich):
     # Docstring mô tả: giữ chỗ thành công thì chuyển khách đến màn hình đếm ngược.
     """Bước 3: Khách bấm chọn một slot. Thành công -> sang màn hình đếm ngược (bước 6).
@@ -606,6 +616,8 @@ def huy_giu_cho_view(request, ma_giu_cho):
 # Chỉ cho phép GET vì view chỉ hiển thị thông tin.
 @require_GET
 # Định nghĩa view hiển thị thông tin slot đang giữ và bộ đếm ngược.
+#5 view man_hinh_giu_cho với mã lượt giữ vừa tạo gồm đồng hồ đếm ngược và nút tiếp tục gửi Booking.
+
 def man_hinh_giu_cho(request, ma_giu_cho):
     # Docstring mô tả nội dung màn hình và nút tiếp tục sang UC4.2.
     """Bước 6: màn hình hiện slot đang giữ + đếm ngược 5 phút (và nút sang Gửi yêu cầu Booking)."""

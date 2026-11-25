@@ -376,7 +376,8 @@ def _gom_loi(loi_validation):
         return {ten: ' '.join(ds) for ten, ds in loi_validation.message_dict.items()}
     return {'__all__': ' '.join(loi_validation.messages)}
 
-
+#8 Cuối cùng, hệ thống ghi lịch sử trạng thái và gọi _gui_thong_bao_booking_moi
+    # để gửi thông báo cho nhiếp ảnh gia qua website và email.
 def _gui_thong_bao_booking_moi(booking, lich, goi, khach_hang):
     """Gửi thông báo sau khi tạo Booking thành công (bước 6-7 + hậu điều kiện):
     - Thông báo web + Email cho Nhiếp ảnh gia
@@ -401,7 +402,8 @@ def _gui_thong_bao_booking_moi(booking, lich, goi, khach_hang):
                   f'Vui lòng chờ Nhiếp ảnh gia xác nhận.',
                   booking=booking)
 
-
+#7 Sau đó, hàm _tao_booking khóa dòng slot, kiểm tra slot chưa có Booking còn hiệu lực,
+    # lấy giá gói từ database và tạo Booking với trạng thái “Chờ xác nhận”.
 def _tao_booking(khach_hang, giu_cho, ma_goi, ngay_gio_chup, dia_diem, so_nguoi, concept, yeu_cau_rieng):
     """Tạo Booking trạng thái 'Chờ xác nhận' (bước 5).
     Phải được gọi bên trong transaction.atomic().
@@ -476,7 +478,8 @@ def _tao_booking(khach_hang, giu_cho, ma_goi, ngay_gio_chup, dia_diem, so_nguoi,
     _gui_thong_bao_booking_moi(booking, lich, goi, khach_hang)
     return booking
 
-
+#6 #Nếu dữ liệu hợp lệ, view gọi hàm gui_yeu_cau_booking để kiểm tra lượt giữ chỗ có thuộc
+    # đúng khách hàng, chưa được sử dụng và còn trong thời hạn 5 phút.
 def gui_yeu_cau_booking(khach_hang, ma_giu_cho, ma_goi, ngay_gio_chup, dia_diem, so_nguoi, concept,
                         yeu_cau_rieng=None):
     # gui_yeu_cau_booking để kiểm tra
@@ -592,6 +595,8 @@ def _initial_goi_chon_san(request, nag, lich):
 
 @khach_hang_required                                          # Chỉ khách hàng mới vào được
 @require_http_methods(['GET', 'POST'])                        # Chỉ cho phép GET và POST
+# Dạ, khi khách hàng bấm nút “Tiếp tục gửi Booking”,
+# hệ thống gọi view gui_booking trong file bookings/gui_booking.py.
 def gui_booking(request, ma_giu_cho):
     #  Nếu request là GET (664), view khởi tạo form từ class GuiBookingForm,
     #  sau đó sử dụng render() để truyền form vào template gui_booking.html
@@ -637,7 +642,9 @@ def gui_booking(request, ma_giu_cho):
         return _ve_trang_lich(nag)
 
     if request.method == 'POST':
-        # Khách bấm nút "Gửi yêu cầu Booking"
+        #4 Khách bấm nút "Gửi yêu cầu Booking", view tiếp nhận dữ liệu thông qua request.POST
+    # và gọi form.is_valid() để kiểm tra tính hợp lệ của dữ liệu.
+        #Nếu dữ liệu hợp lệ, view gọi hàm gui_yeu_cau_booking
         form = GuiBookingForm(request.POST, lich=lich)
         if form.is_valid(): #Nếu dữ liệu hợp lệ, view gọi hàm gui_yeu_cau_booking để kiểm tra
             # lượt giữ chỗ có thuộc đúng khách hàng, chưa được sử dụng và còn trong thời hạn 5 phút.
@@ -662,12 +669,13 @@ def gui_booking(request, ma_giu_cho):
                 messages.success(request, TB_DA_GUI)  # Bước 8
                 return _trang_sau_khi_gui(booking, giu_cho)
     else:
-        # Lần đầu mở form (GET)
+        #2 Lần đầu mở form (GET). Nếu request là GET, view khởi tạo form từ class GuiBookingForm
         form = GuiBookingForm(lich=lich, initial=_initial_goi_chon_san(request, nag, lich))
         # lich=lich: thông tin khung giờ đang giữ.
         # initial: dữ liệu gói dịch vụ được chọn sẵn (nếu có).
 
-    # Render trang form
+    #3 Render trang form. sau đó sử dụng render() để truyền form vào template gui_booking.html
+    # và hiển thị cho khách hàng nhập thông tin.
     return render(request, 'bookings/gui_booking.html', {
         'form': form,
         'giu_cho': giu_cho,

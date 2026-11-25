@@ -121,23 +121,34 @@ def _nut_tro_chuyen(booking, la_khach, la_nag):  # địa chỉ nút "Trao đổ
         pass
     return None
 
-
+#1 Đầu tiên, khi người dùng mở trang chi tiết Booking,
+# hàm _trang_chi_tiet trong file theo_doi.py gọi
+# hàm lay_the_thoi_tiet để kiểm tra điều kiện hiển thị thẻ thời tiết. (129->137)
 def lay_the_thoi_tiet(booking, la_khach, la_nag):  # dữ liệu cho thẻ; None = không hiện thẻ
     """Trả dict {du_bao, mua_cao, url_chat, TB_...} hoặc None khi không được hiện thẻ."""
-    if not (la_khach or la_nag):  # Quản trị viên và vai trò khác không thấy thẻ
+    if not (la_khach or la_nag):
+        # Quản trị viên và vai trò khác không thấy thẻ
         return None
-    if booking.TrangThai in TRANG_THAI_HET_HIEU_LUC:  # Booking đã hết hiệu lực
+    if booking.TrangThai in TRANG_THAI_HET_HIEU_LUC:
+        # Booking đã hết hiệu lực
         return None
-    if booking.NgayGioChup <= timezone.now():  # buổi chụp đã diễn ra (hoặc đang diễn ra)
+    if booking.NgayGioChup <= timezone.now():
+        # buổi chụp đã diễn ra (hoặc đang diễn ra)
         return None
+    #2 Nếu đủ điều kiện, hàm này gọi _lay_du_bao_theo_khu_vuc,
+    # trong đó sử dụng _khu_vuc_can_tra để xác định khu vực chụp,
+    # sau đó gọi lay_du_bao_thoi_tiet trong file thoi_tiet.py.
     du_bao = _lay_du_bao_theo_khu_vuc(booking)  # {} nếu không có dự báo
     # Nếu xác suất mưa từ 60% trở lên, hệ thống gọi _nut_tro_chuyen để lấy đường dẫn trò chuyện
     # và hiển thị cảnh báo khuyến khích hai bên trao đổi đổi lịch.
+    #4 # Nếu xác suất mưa từ 60% trở lên, hệ thống gọi _nut_tro_chuyen để lấy đường
+    # dẫn trò chuyện và hiển thị cảnh báo khuyến khích hai bên trao đổi đổi lịch.
     mua_cao = bool(du_bao) and du_bao['xac_suat_mua'] >= NGUONG_MUA_CAO  # chỉ nhắc khi có dự báo và mưa cao
-    url_chat = _nut_tro_chuyen(booking, la_khach, la_nag) if mua_cao else None  # nút chỉ cần khi nhắc đổi đổi lịch
+    url_chat = _nut_tro_chuyen(booking, la_khach, la_nag) if mua_cao else None
+    # nút chỉ cần khi nhắc đổi đổi lịch
     return {'du_bao': du_bao, 'mua_cao': mua_cao, 'url_chat': url_chat,
             'TB_CHUA_CO_DU_BAO': TB_CHUA_CO_DU_BAO, 'TB_NHAC_DOI_LICH': TB_NHAC_DOI_LICH}
-
+#5 Cuối cùng, dữ liệu được hiển thị thông qua template bookings/includes/the_thoi_tiet.html. 
 
 @vai_tro_required(VaiTro.NHIEP_ANH_GIA)  # chỉ Nhiếp ảnh gia (chưa đăng nhập -> trang đăng nhập; sai vai trò -> 403)
 @require_POST  # chỉ POST

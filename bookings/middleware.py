@@ -57,6 +57,13 @@ class XuLyQuaHanMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        # Trong hàm __call__(), hệ thống kiểm tra đường dẫn người dùng đang truy
+        # cập có thuộc các trang liên quan hay không để xử lý giữ chỗ hết hạn,
+        # quá hạn đặt cọc, quá hạn chờ xác nhận, quá hạn thanh toán 60% và xóa ảnh hết hạn),
+        # đồng thời gọi hàm _den_luc_quet() để kiểm tra đã đủ khoảng cách 45 giây
+        # kể từ lần quét trước chưa.
+        # Nếu thỏa mãn cả hai điều kiện, hệ thống gọi hàm xu_ly_qua_han()
+        # trong file bookings/qua_han.py để xử lý các trường hợp quá hạn.
         if request.path.startswith(TIEN_TO_LIEN_QUAN) and _den_luc_quet():
             try:
                 xu_ly_qua_han()
@@ -77,6 +84,17 @@ TRANG_TRONG_LUONG_DAT_LICH = {
 
 
 class NhaGiuChoKhiRoiLuongMiddleware:
+#Trong hàm process_view(), hệ thống kiểm tra người dùng đã đăng nhập chưa và
+# trang đang truy cập có thuộc luồng đặt lịch hay không.
+#Nếu khách hàng thực sự mở một trang ngoài luồng đặt lịch, hệ thống sử dụng
+# GiuCho.objects.filter() để tìm các lượt giữ chỗ của khách hàng đang có
+# trạng thái “Đang giữ chỗ”.
+#Sau đó, hệ thống gọi hàm huy_giu_cho() trong file bookings/giu_cho.py
+# để giải phóng lượt giữ chỗ ngay mà không cần đợi hết 5 phút.
+#Cả hai lớp middleware đều sử dụng try...except để bắt lỗi.
+# Nếu xảy ra lỗi trong quá trình xử lý, hệ thống gọi logger.exception()
+# để ghi lại thông tin lỗi và vẫn cho phép người dùng tiếp tục truy cập trang.
+
     def __init__(self, get_response):
         self.get_response = get_response
 

@@ -166,8 +166,9 @@ def lay_du_bao_thoi_tiet(khu_vuc, ngay_gio_chup, thoi_luong_phut=None):
             return {}  # dự báo cho quá khứ vô nghĩa -> rỗng
         if gio_chup >= dau_ngay_nay + timedelta(days=SO_NGAY_DU_BAO):  # buổi chụp xa hơn 16 ngày so với ngày booking
             return {}  # quá xa ngày dự báo -> rỗng
-#Hàm lay_du_bao_thoi_tiet tra tọa độ khu vực và kiểm tra cache.
-        # Nếu đã có dữ liệu trong cache thì sử dụng lại, nếu chưa có thì gọi _goi_api để lấy dữ liệu từ Open-Meteo
+#3 Hàm lay_du_bao_thoi_tiet tra tọa độ khu vực và kiểm tra cache.
+        # Nếu đã có dữ liệu trong cache thì sử dụng lại,
+        # nếu chưa có thì gọi hàm _goi_api để lấy dữ liệu từ Open-Meteo (175-176)
         khoa_cache = f'thoi_tiet:{toa_do[0]}:{toa_do[1]}'  # mỗi tọa độ một ô nhớ (cả bảng 16 ngày, nên nhiều Booking cùng khu vực dùng chung)
         bang_du_bao = cache.get(khoa_cache)  # xem trong bộ nhớ tạm đã có chưa
         if bang_du_bao is None:  # chưa có (hoặc đã hết hạn)
@@ -178,8 +179,9 @@ def lay_du_bao_thoi_tiet(khu_vuc, ngay_gio_chup, thoi_luong_phut=None):
                 logger.warning('Không lấy được dự báo thời tiết (%s): %s', ten, loi)  # chỉ ghi log, không báo lỗi lên trang
                 cache.set(khoa_cache, {}, GIAY_NHO_KHI_LOI)  # nhớ "đang lỗi" 1 phút để khỏi gọi lại liên tục
                 return {}  # trả rỗng
-# Sau đó, hệ thống lấy nhiệt độ, xác suất mưa lớn nhất trong khung giờ chụp và
-        # mô tả thời tiết bằng tiếng Việt.
+#4 Sau đó, hệ thống lấy nhiệt độ, xác suất mưa lớn nhất trong khung giờ chụp và
+        # mô tả thời tiết bằng tiếng Việt. (197-201)
+        # Dữ liệu được trả về hàm lay_the_thoi_tiet.
         cac_gio = _cac_gio_cua_buoi_chup(gio_chup, thoi_luong_phut)  # các giờ buổi chụp đi qua
         mot_gio = bang_du_bao.get(cac_gio[0].strftime('%Y-%m-%dT%H:00'))  # giờ bắt đầu
         if mot_gio is None:  # không có giờ đó trong bảng (hoặc bảng rỗng vì đang lỗi)

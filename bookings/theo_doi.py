@@ -158,6 +158,21 @@ def chuan_hoa_trang_thai(trang_thai):  # làm sạch giá trị lọc trạng th
     """Giá trị lạ trên URL (gõ tay) -> quay về 'tất cả', không gây lỗi."""
     return trang_thai if trang_thai in TrangThaiBooking.ALL else LOC_TAT_CA  # hợp lệ thì giữ, lạ thì coi như "tất cả"
 
+#1 Đầu tiên, khi người dùng truy cập trang quản lý Booking, URL sẽ gọi view tương ứng
+# với vai trò của người dùng.
+# Nếu xem danh sách, view gọi hàm lay_danh_sach_booking.
+# Nếu xem chi tiết, view gọi hàm lay_chi_tiet_booking.
+# Cả hai hàm đều gọi booking_cua_nguoi_dung
+# Đối với danh sách, hệ thống hỗ trợ lọc theo trạng thái và sắp xếp Booking mới nhất lên đầu.
+# Riêng quản trị viên có thêm chức năng tìm kiếm.
+# Đối với trang chi tiết, hàm lay_chi_tiet_booking sử dụng get_object_or_404()
+# để đảm bảo người dùng không xem được Booking ngoài phạm vi quyền của mình.
+# Sau đó, hàm _trang_chi_tiet dựng trang chi tiết, hiển thị trạng thái,
+# lịch sử Booking và các thông tin liên quan.
+
+#2 Nếu xem danh sách, view gọi hàm lay_danh_sach_booking
+#Đối với danh sách, hệ thống hỗ trợ lọc theo trạng thái và sắp xếp Booking mới nhất lên đầu.
+# Riêng quản trị viên có thêm chức năng tìm kiếm.
 
 def lay_danh_sach_booking(user, vai_tro, trang_thai=LOC_TAT_CA, tu_khoa=''):  # danh sách Booking đã lọc, mới nhất lên đầu
     """UC4.7 bước 2 và luồng 2a: danh sách Booking của người dùng, lọc theo trạng thái, mới nhất lên đầu.
@@ -178,7 +193,8 @@ def lay_danh_sach_booking(user, vai_tro, trang_thai=LOC_TAT_CA, tu_khoa=''):  # 
             dieu_kien |= Q(pk=int(tu_khoa.lstrip('#')))  # HOẶC mã Booking đúng bằng số đó
         ds = ds.filter(dieu_kien)  # áp điều kiện tìm kiếm lên danh sách
     # '-MaBooking' đặt sau cùng để hai Booking cùng thời điểm vẫn có thứ tự cố định.
-    return ds.order_by('-NgayTao', '-MaBooking')  # dấu '-' = giảm dần: Booking mới nhất lên đầu
+    return ds.order_by('-NgayTao', '-MaBooking')
+    # dấu '-' = giảm dần: Booking mới nhất lên đầu
 
 
 class BoLocBookingQuanTriForm(forms.Form):  # bộ lọc của trang "Tất cả Booking" (cùng kiểu BoLocDuyetForm của trang Duyệt hồ sơ)
@@ -233,6 +249,14 @@ def loc_booking_quan_tri(ds, du_lieu):  # áp tìm kiếm + bộ lọc (cleaned_
         return ds.order_by('NgayTao', 'MaBooking')
     return ds.order_by('-NgayTao', '-MaBooking')  # mặc định: mới nhất trước
 
+#3
+# Đối với trang chi tiết, hàm lay_chi_tiet_booking sử dụng get_object_or_404() để đảm bảo người dùng không xem
+# được Booking ngoài phạm vi quyền của mình.
+# Cả hai hàm đều gọi booking_cua_nguoi_dung để giới hạn dữ liệu theo vai trò:
+# khách hàng chỉ xem Booking của mình, nhiếp ảnh gia chỉ xem Booking gửi đến mình,
+# quản trị viên xem tất cả.
+# Sau đó, hàm _trang_chi_tiet dựng trang chi tiết, hiển thị trạng thái, lịch sử Booking và
+# các thông tin liên quan.
 
 def lay_chi_tiet_booking(user, vai_tro, ma_booking):  # một Booking của người dùng; của người khác -> 404
     """UC4.7 bước 3-4: một Booking của người dùng. Của người khác hoặc không tồn tại -> Http404 (BR4.7-1)."""

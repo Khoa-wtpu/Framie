@@ -57,12 +57,19 @@ def da_den_gio_chup(booking):  # buổi chụp đã diễn ra chưa (nút hiện
     thì chỉ sửa đúng hàm này (view và template đều gọi qua đây)."""
     return booking.NgayGioChup <= timezone.now()  # True nếu giờ chụp <= bây giờ (đã tới hoặc đã qua)
 
+#1 Đầu tiên, hàm co_the_bam_da_chup kiểm tra điều kiện của nút “Đã chụp”,
+# đảm bảo Booking đang ở trạng thái “Chốt Booking”
+# và đã đến giờ chụp thông qua hàm da_den_gio_chup.
+# Khi nhiếp ảnh gia bấm nút, yêu cầu POST được gửi đến view da_chup. -> 3
 
-def co_the_bam_da_chup(booking):  # nút Đã chụp có bấm được không
+def co_the_bam_da_chup(booking):
+    # nút Đã chụp có bấm được không
     """Nút 'Đã chụp' có được hiện / có bấm được không: đang 'Chốt Booking' VÀ buổi chụp đã diễn ra."""
-    return booking.TrangThai == TrangThaiBooking.CHOT_BOOKING and da_den_gio_chup(booking)  # phải thỏa CẢ HAI điều kiện
+    return booking.TrangThai == TrangThaiBooking.CHOT_BOOKING and da_den_gio_chup(booking)
+    # phải thỏa CẢ HAI điều kiện
 
-
+#3 View gọi hàm danh_dau_da_chup để kiểm tra Booking có thuộc đúng nhiếp ảnh gia,
+# đúng trạng thái "chốt booking" và đã đến giờ chụp hay chưa.
 def danh_dau_da_chup(nag_user, ma_booking):  # service: đánh dấu Đã chụp, đổi trạng thái qua hàm chung
     """Nhiếp ảnh gia bấm 'Đã chụp'. Trả về Booking đã cập nhật.
       - Gói 'Giới hạn số lượng ảnh': Chốt Booking -> Đã chụp (dừng, chờ tải ảnh).
@@ -71,18 +78,26 @@ def danh_dau_da_chup(nag_user, ma_booking):  # service: đánh dấu Đã chụp
     diễn ra, có người vừa đổi trạng thái trước, hoặc lỗi hệ thống. Lỗi ở đâu thì không đổi gì (kể cả bước đầu)."""
     try:  # khối bắt lỗi cơ sở dữ liệu (xem except DatabaseError ở dưới)
         with transaction.atomic():  # mọi thay đổi bên trong: hoặc thành công hết, hoặc hủy hết nếu có lỗi
-            booking = lay_booking_cua_nag(nag_user, ma_booking)            # lấy Booking; của Nhiếp ảnh gia khác -> báo "không tìm thấy" (BR4.3-1)
+            booking = lay_booking_cua_nag(nag_user, ma_booking)
+            # lấy Booking; của Nhiếp ảnh gia khác -> báo "không tìm thấy" (BR4.3-1)
             if booking.TrangThai != TrangThaiBooking.CHOT_BOOKING:  # Booking không ở "Chốt Booking"
                 raise XuLyBookingLoi(TB_SAI_TRANG_THAI)  # dừng, báo lỗi
             if not da_den_gio_chup(booking):  # chưa tới giờ chụp
                 raise XuLyBookingLoi(TB_CHUA_DEN_GIO_CHUP)  # dừng, báo lỗi
             try:  # khối bắt lỗi "chuyển trạng thái sai luật" của hàm chung
                 # Bước 1: Chốt Booking -> Đã chụp (hàm chung tự ghi Lịch sử).
-                cap_nhat = chuyen_trang_thai_booking(booking, TrangThaiBooking.DA_CHUP, BenThucHien.NHIEP_ANH_GIA)  # đổi sang "Đã chụp", bên thực hiện = Nhiếp ảnh gia
+                #4 Nếu hợp lệ, hàm gọi chuyen_trang_thai_booking để chuyển Booking sang
+                # “Đã chụp” và ghi lịch sử trạng thái.
+                cap_nhat = chuyen_trang_thai_booking(booking, TrangThaiBooking.DA_CHUP, BenThucHien.NHIEP_ANH_GIA)
+                # đổi sang "Đã chụp", bên thực hiện = Nhiếp ảnh gia
+                #5 Sau đó, hệ thống kiểm tra loại hậu kỳ của gói dịch vụ.
+                #8 Nếu là hậu kỳ giới hạn số lượng ảnh,
+                #9 Booking dừng ở “Đã chụp” để chờ nhiếp ảnh gia tải ảnh lên.
                 # Bước 2 (chỉ gói Hậu kỳ toàn bộ): sang thẳng "Chờ hậu kỳ" - hàm chung tự chặn nếu gói không đúng loại.
-                if booking.MaGoi.LoaiHauKy == LoaiHauKy.TOAN_BO:  # gói là "Hậu kỳ toàn bộ ảnh"
-                    cap_nhat = chuyen_trang_thai_booking(  # đổi tiếp sang "Chờ hậu kỳ"
-                        cap_nhat, TrangThaiBooking.CHO_HAU_KY, BenThucHien.NHIEP_ANH_GIA, ly_do=LY_DO_BO_QUA_CHON_ANH)  # kèm lý do để ghi vào lịch sử
+                if booking.MaGoi.LoaiHauKy == LoaiHauKy.TOAN_BO:  #6 gói là "Hậu kỳ toàn bộ ảnh"
+                    cap_nhat = chuyen_trang_thai_booking(  #7 đổi tiếp sang "Chờ hậu kỳ"
+                        cap_nhat, TrangThaiBooking.CHO_HAU_KY, BenThucHien.NHIEP_ANH_GIA, ly_do=LY_DO_BO_QUA_CHON_ANH)
+                    # kèm lý do để ghi vào lịch sử
             except ValidationError as loi:  # hàm chung từ chối vì sai luật chuyển trạng thái
                 raise XuLyBookingLoi(' '.join(loi.messages))  # đổi thành lỗi nghiệp vụ, nối các câu lỗi lại
     except DatabaseError:  # cơ sở dữ liệu gặp sự cố
@@ -96,6 +111,9 @@ def danh_dau_da_chup(nag_user, ma_booking):  # service: đánh dấu Đã chụp
 # ---------------------------------------------------------------------
 @chi_nhiep_anh_gia_da_duyet  # chỉ Nhiếp ảnh gia đã duyệt
 @require_POST          # chỉ nhận POST + CSRF: không thể "Đã chụp" chỉ bằng cách mở một đường link
+#2 Khi nhiếp ảnh gia bấm nút, yêu cầu POST được gửi đến view da_chup.
+# View gọi hàm danh_dau_da_chup để kiểm tra Booking có thuộc đúng nhiếp ảnh gia,
+# đúng trạng thái và đã đến giờ chụp hay chưa.
 def da_chup(request, ma_booking):  # view: nhận POST từ nút Đã chụp
     """Nút 'Đã chụp' trên trang chi tiết Booking của Nhiếp ảnh gia."""
     try:  # thử thực hiện

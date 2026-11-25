@@ -287,6 +287,7 @@ def _thong_bao_khach(booking, tieu_de, noi_dung):
 
 
 # Phần DÙNG CHUNG của Chấp nhận và Từ chối: kiểm tra điều kiện rồi đổi trạng thái.
+#3 sau đó gọi _doi_trang_thai để kiểm tra Booking đang “Chờ xác nhận” và chưa quá giờ chụp.
 def _doi_trang_thai(nag_user, ma_booking, trang_thai_moi, ly_do=None, can_chua_qua_gio_chup=False):
     """Phần chung của UC4.4 và UC4.5: kiểm tra Booking đang “Chờ xác nhận” và chưa quá giờ chụp., rồi gọi hàm của nhóm để đổi trạng thái.
     Gọi trong transaction.atomic() của hàm ngoài. Trả về Booking đã cập nhật."""
@@ -306,6 +307,9 @@ def _doi_trang_thai(nag_user, ma_booking, trang_thai_moi, ly_do=None, can_chua_q
         # (khi từ chối) và chặn trường hợp hai người cùng đổi một lúc.
         # Thực hiện đổi trạng thái. Bên thực hiện ghi nhận là 'Nhiếp ảnh gia'; ly_do chỉ có khi từ chối.
         # Hàm này tự làm: đặt hạn đặt cọc +1 ngày (khi chấp nhận), ghi lý do từ chối, ghi lịch sử đổi trạng thái, trả khung giờ về 'Lịch trống' (khi từ chối).
+        #4 Tiếp theo, hàm chuyen_trang_thai_booking chuyển Booking sang “Chờ đặt cọc”.
+        # thiết lập hạn cọc 1 ngày và ghi lịch sử trạng thái.
+
         cap_nhat = chuyen_trang_thai_booking(booking, trang_thai_moi, BenThucHien.NHIEP_ANH_GIA, ly_do=ly_do)
     # Nếu hàm trên báo bước chuyển không hợp lệ...
     except ValidationError as loi:
@@ -340,7 +344,8 @@ def chap_nhan_booking(nag_user, ma_booking):
             coc = tinh_so_tien(booking.TongGiaTri, LoaiThanhToan.TIEN_COC)
             # Hạn đặt cọc (đã được đặt = lúc chấp nhận + 1 ngày), đổi sang giờ Việt Nam để ghi vào thông báo.
             han = timezone.localtime(booking.HanDatCoc)
-            # Gửi thông báo + Email cho Khách. Nội dung gồm: tên Nhiếp ảnh gia, mã Booking, mô tả buổi chụp, số tiền cọc và hạn cọc.
+            #5 Gửi thông báo + Email cho Khách. Nội dung gồm: tên Nhiếp ảnh gia, mã Booking,
+            # mô tả buổi chụp, số tiền cọc và hạn cọc.
             _thong_bao_khach(
                 booking, 'Booking đã được chấp nhận - vui lòng đặt cọc',
                 f'{_ten_hien_thi(nag_user)} đã chấp nhận Booking #{booking.pk} ({_mo_ta_booking(booking)}). '
@@ -357,6 +362,8 @@ def chap_nhan_booking(nag_user, ma_booking):
 
 
 # UC4.5 - TỪ CHỐI BOOKING: bắt buộc có lý do, đổi sang 'Đã từ chối', trả khung giờ về 'Lịch trống', báo Khách.
+#6 Khi từ chối, hàm tu_choi_booking kiểm tra lý do từ chối, sau đó gọi _doi_trang_thai và chuyen_trang_thai_booking
+# để chuyển Booking sang “Đã từ chối”, trả slot về “Lịch trống”, ghi lịch sử và thông báo cho khách kèm lý do.
 def tu_choi_booking(nag_user, ma_booking, ly_do):
     """UC4.5 bước 4-8: kiểm tra lý do (ngoại lệ 4a) -> Booking 'Đã từ chối' + slot về 'Lịch trống' ngay
     -> thông báo web + Email kèm lý do cho Khách. Trả về Booking đã cập nhật.
@@ -399,6 +406,7 @@ def tu_choi_booking(nag_user, ma_booking, ly_do):
 # Hai 'nhãn' đặt trên hàm xem trang: (1) chỉ Nhiếp ảnh gia đã được duyệt mới vào được; (2) chỉ cho phép cách truy cập GET (mở trang để xem).
 @chi_nhiep_anh_gia_da_duyet
 @require_GET
+#1 Đầu tiên, view danh_sach_yeu_cau gọi hàm lay_danh_sach_booking để hiển thị danh sách Booking.
 # TRANG 'QUẢN LÝ BOOKING' (UC4.3). Tham số 'request' chứa mọi thông tin về lần truy cập này: người dùng, các tham số trên địa chỉ...
 def danh_sach_yeu_cau(request): # view danh_sach_yeu_cau gọi hàm lay_danh_sach_booking (407)
     """UC4.3 bước 1-2 và luồng 2a. Tên URL 'manage_bookings' đã có sẵn trong menu Nhiếp ảnh gia (core/navigation.py)."""
@@ -519,6 +527,8 @@ def chi_tiet_yeu_cau(request, ma_booking):
 # Nút chấp nhận: chỉ Nhiếp ảnh gia đã duyệt, và chỉ nhận cách gửi POST.
 @chi_nhiep_anh_gia_da_duyet
 @require_POST
+#2 Khi chấp nhận, View chap_nhan gọi hàm chap_nhan_booking,
+
 # NÚT 'CHẤP NHẬN BOOKING' (UC4.4). Chỉ nhận POST (gửi lệnh kèm mã bảo mật CSRF) nên không thể chấp nhận chỉ bằng cách mở một đường link.
 def chap_nhan(request, ma_booking):
     """UC4.4: nút 'Chấp nhận Booking' trên trang chi tiết (chỉ nhận POST + CSRF, không chấp nhận bằng đường dẫn GET)."""
