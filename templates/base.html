@@ -1,27 +1,83 @@
-{% load static %}<!DOCTYPE html>
+{# Nạp thư viện static của Django để sử dụng các file CSS, JavaScript, hình ảnh #}
+{% load static %}
+
+{# Khai báo tài liệu sử dụng chuẩn HTML5 #}
+<!DOCTYPE html>
+
+{# Đặt ngôn ngữ trang web là tiếng Việt và chế độ màu mặc định là tối #}
 <html lang="vi" data-theme="dark">
+
+{# Bắt đầu phần chứa thông tin cấu hình của trang web #}
 <head>
+
+  {# Sử dụng bảng mã UTF-8 để hiển thị đúng tiếng Việt #}
   <meta charset="utf-8">
+
+  {# Điều chỉnh kích thước giao diện phù hợp với màn hình thiết bị #}
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="{% static 'js/theme.js' %}"></script>{# nạp ĐỒNG BỘ ở đầu trang để đặt chế độ màu trước khi vẽ, tránh chớp nền #}
+
+  {# Nạp file theme.js để thiết lập chế độ màu trước khi giao diện được hiển thị, tránh hiện tượng chớp nền #}
+  <script src="{% static 'js/theme.js' %}"></script>
+
+  {# Khai báo tiêu đề hiển thị trên tab trình duyệt. Template con có thể thay đổi nội dung block title #}
   <title>{% block title %}FRAMIE{% endblock %} · FRAMIE</title>
+
+  {# Thiết lập kết nối trước đến máy chủ Google Fonts để tăng tốc độ tải font chữ #}
   <link rel="preconnect" href="https://fonts.googleapis.com">
+
+  {# Thiết lập kết nối trước đến máy chủ lưu trữ font chữ của Google, hỗ trợ tải tài nguyên khác nguồn #}
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  {# Nạp font Be Vietnam Pro với độ đậm 400 và 600; hiển thị font thay thế trong lúc chờ tải #}
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&display=swap" rel="stylesheet">
+
+  {# Nạp file CSS chứa các biến thiết kế dùng chung như màu sắc, kích thước và khoảng cách #}
   <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+
+  {# Nạp file CSS định dạng giao diện cơ bản của website #}
   <link rel="stylesheet" href="{% static 'css/base.css' %}">
+
+  {# Nạp file CSS định dạng các thành phần giao diện như nút bấm, thẻ và biểu mẫu #}
   <link rel="stylesheet" href="{% static 'css/components.css' %}">
+
+  {# Cho phép template con bổ sung CSS hoặc các cấu hình riêng trong phần head #}
   {% block extra_head %}{% endblock %}
+
+{# Kết thúc phần head #}
 </head>
+
+{# Bắt đầu phần nội dung hiển thị. Template con có thể bổ sung class CSS riêng cho body #}
 <body class="{% block body_class %}{% endblock %}">
+
+  {# Tạo liên kết cho phép người dùng bỏ qua phần đầu trang và chuyển thẳng đến nội dung chính, hỗ trợ điều hướng bằng bàn phím #}
   <a class="skip-link" href="#main">Bỏ qua, đến nội dung chính</a>
+
+  {# Chèn nội dung file header.html để hiển thị phần đầu trang và thanh điều hướng dùng chung #}
   {% include "includes/header.html" %}
+
+  {# Chèn nội dung file messages.html để hiển thị các thông báo của hệ thống #}
   {% include "includes/messages.html" %}
+
+  {# Khai báo khu vực nội dung chính của trang web với id main và class site-main để định dạng CSS #}
   <main id="main" class="site-main">
+
+    {# Khai báo vị trí để template con đưa nội dung riêng của từng trang vào #}
     {% block content %}{% endblock %}
+
+  {# Kết thúc khu vực nội dung chính #}
   </main>
+
+  {# Chèn nội dung file footer.html để hiển thị phần chân trang dùng chung #}
   {% include "includes/footer.html" %}
+
+  {# Nạp file JavaScript dùng chung. Thuộc tính defer giúp script thực thi sau khi HTML được phân tích xong #}
   <script src="{% static 'js/app.js' %}" defer></script>
+
+  {# Cho phép template con bổ sung JavaScript phục vụ các chức năng riêng của từng trang #}
   {% block extra_js %}{% endblock %}
+
+{# Kết thúc phần nội dung hiển thị #}
 </body>
+
+{# Kết thúc tài liệu HTML #}
 </html>

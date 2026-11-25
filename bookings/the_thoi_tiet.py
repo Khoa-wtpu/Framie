@@ -99,7 +99,8 @@ def _khu_vuc_can_tra(booking):  # danh sách khu vực dùng để tra dự báo
     return khu_vuc_nag if len(khu_vuc_nag) == 1 else []
 
 
-def _lay_du_bao_theo_khu_vuc(booking):  # lấy dự báo đầu tiên có theo thứ tự ưu tiên của _khu_vuc_can_tra
+def _lay_du_bao_theo_khu_vuc(booking):
+    # sử dụng _khu_vuc_can_tra để xác định khu vực chụp -> gọi lay_du_bao_thoi_tiet trong file thoi_tiet.py.
     for khu_vuc in _khu_vuc_can_tra(booking):
         du_bao = lay_du_bao_thoi_tiet(khu_vuc, booking.NgayGioChup, booking.MaGoi.ThoiLuongChup)   # E7: không bao giờ ném lỗi
         if du_bao:  # có dự báo
@@ -130,8 +131,10 @@ def lay_the_thoi_tiet(booking, la_khach, la_nag):  # dữ liệu cho thẻ; None
     if booking.NgayGioChup <= timezone.now():  # buổi chụp đã diễn ra (hoặc đang diễn ra)
         return None
     du_bao = _lay_du_bao_theo_khu_vuc(booking)  # {} nếu không có dự báo
+    # Nếu xác suất mưa từ 60% trở lên, hệ thống gọi _nut_tro_chuyen để lấy đường dẫn trò chuyện
+    # và hiển thị cảnh báo khuyến khích hai bên trao đổi đổi lịch.
     mua_cao = bool(du_bao) and du_bao['xac_suat_mua'] >= NGUONG_MUA_CAO  # chỉ nhắc khi có dự báo và mưa cao
-    url_chat = _nut_tro_chuyen(booking, la_khach, la_nag) if mua_cao else None  # nút chỉ cần khi nhắc
+    url_chat = _nut_tro_chuyen(booking, la_khach, la_nag) if mua_cao else None  # nút chỉ cần khi nhắc đổi đổi lịch
     return {'du_bao': du_bao, 'mua_cao': mua_cao, 'url_chat': url_chat,
             'TB_CHUA_CO_DU_BAO': TB_CHUA_CO_DU_BAO, 'TB_NHAC_DOI_LICH': TB_NHAC_DOI_LICH}
 

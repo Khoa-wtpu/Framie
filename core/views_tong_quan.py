@@ -53,7 +53,8 @@ def _ten(user):  # tên hiển thị của một người
 
 # ---------------------------------------------------------------- Khách hàng
 def _du_lieu_khach_hang(user):  # gom dữ liệu cho trang của Khách hàng
-    dang_xu_ly = (booking_cua_nguoi_dung(user, VaiTro.KHACH_HANG)  # chỉ Booking do chính Khách này đặt (cửa ngõ BR4.7-1)
+    dang_xu_ly = (booking_cua_nguoi_dung(user, VaiTro.KHACH_HANG)
+                  # chỉ Booking do chính Khách này đặt (cửa ngõ BR4.7-1)
                   .exclude(TrangThai__in=TRANG_THAI_KET_THUC).order_by('-NgayTao', '-MaBooking'))  # bỏ Booking đã kết thúc; mới nhất lên đầu
     # Sắp xếp rõ ràng (mới nhất lên đầu) ngay tại đây, không dựa vào Meta.ordering của model, rồi mới cắt [:5].
     thong_bao = (ThongBao.objects.filter(MaNguoiNhan=user, TrangThaiDoc=TrangThaiDoc.CHUA_DOC)  # chỉ thông báo của chính Khách này và chưa đọc

@@ -288,7 +288,7 @@ def _thong_bao_khach(booking, tieu_de, noi_dung):
 
 # Phần DÙNG CHUNG của Chấp nhận và Từ chối: kiểm tra điều kiện rồi đổi trạng thái.
 def _doi_trang_thai(nag_user, ma_booking, trang_thai_moi, ly_do=None, can_chua_qua_gio_chup=False):
-    """Phần chung của UC4.4 và UC4.5: kiểm tra quyền sở hữu + trạng thái, rồi gọi hàm của nhóm để đổi trạng thái.
+    """Phần chung của UC4.4 và UC4.5: kiểm tra Booking đang “Chờ xác nhận” và chưa quá giờ chụp., rồi gọi hàm của nhóm để đổi trạng thái.
     Gọi trong transaction.atomic() của hàm ngoài. Trả về Booking đã cập nhật."""
     # Bước 1: lấy Booking và bảo đảm là của đúng Nhiếp ảnh gia này (không phải thì báo lỗi 'không tìm thấy').
     booking = lay_booking_cua_nag(nag_user, ma_booking)            # BR4.3-1
@@ -322,6 +322,10 @@ def _doi_trang_thai(nag_user, ma_booking, trang_thai_moi, ly_do=None, can_chua_q
 
 # UC4.4 - CHẤP NHẬN BOOKING: đổi sang 'Chờ đặt cọc' và báo Khách đặt cọc.
 def chap_nhan_booking(nag_user, ma_booking):
+    # Khi chấp nhận, View chap_nhan gọi hàm chap_nhan_booking, sau đó gọi _doi_trang_thai
+    # để kiểm tra Booking đang “Chờ xác nhận” và chưa quá giờ chụp.
+    # Tiếp theo, hàm chuyen_trang_thai_booking chuyển Booking sang “Chờ đặt cọc”, thiết lập hạn cọc 1 ngày và ghi lịch sử trạng thái.
+    # Hàm tinh_so_tien tính tiền cọc 40%, sau đó _thong_bao_khach gửi thông báo và email cho khách hàng.
     """UC4.4 bước 3-5: Booking 'Chờ xác nhận' -> 'Chờ đặt cọc' (HanDatCoc = bây giờ + 1 ngày), thông báo web
     + Email cho Khách yêu cầu đặt cọc 40% trong 1 ngày. Trả về Booking đã cập nhật.
     Báo XuLyBookingLoi khi: không phải Booking của mình (.khong_tim_thay), Booking không còn 'Chờ xác nhận',
@@ -396,7 +400,7 @@ def tu_choi_booking(nag_user, ma_booking, ly_do):
 @chi_nhiep_anh_gia_da_duyet
 @require_GET
 # TRANG 'QUẢN LÝ BOOKING' (UC4.3). Tham số 'request' chứa mọi thông tin về lần truy cập này: người dùng, các tham số trên địa chỉ...
-def danh_sach_yeu_cau(request):
+def danh_sach_yeu_cau(request): # view danh_sach_yeu_cau gọi hàm lay_danh_sach_booking (407)
     """UC4.3 bước 1-2 và luồng 2a. Tên URL 'manage_bookings' đã có sẵn trong menu Nhiếp ảnh gia (core/navigation.py)."""
     # Đọc bộ lọc từ thanh địa chỉ (ví dụ ?trang_thai=...&sap_xep=...); không có thì dùng mặc định; rồi làm sạch giá trị.
     trang_thai, sap_xep = chuan_hoa_bo_loc(request.GET.get('trang_thai', LOC_MAC_DINH),
@@ -404,7 +408,7 @@ def danh_sach_yeu_cau(request):
     # Từ khóa tìm kiếm trên thanh tìm kiếm (?q=...): cắt khoảng trắng hai đầu và giới hạn 100 ký tự.
     tu_khoa = request.GET.get('q', '').strip()[:100]
     # Lấy danh sách Booking của Nhiếp ảnh gia đang đăng nhập (request.user), đã lọc, tìm kiếm và sắp xếp.
-    ds = lay_danh_sach_booking(request.user, trang_thai, sap_xep, tu_khoa)
+    ds = lay_danh_sach_booking(request.user, trang_thai, sap_xep, tu_khoa) #Hàm hiện dsach booking
     # Chia thành từng trang 10 dòng và lấy trang số ?page=...; số trang lạ thì tự về trang hợp lệ.
     trang = Paginator(ds, SO_DONG_MOI_TRANG).get_page(request.GET.get('page'))
     # Dựng trang HTML từ file giao diện 'nag_danh_sach.html', kèm bộ dữ liệu bên dưới để file giao diện hiển thị.

@@ -8,7 +8,8 @@ from .navigation import (ACCOUNT_MENUS, CUSTOMER, GUEST, MENUS, PHOTOGRAPHER, PR
 
 def layout(request):
     user = request.user
-    role = get_role(user)
+    role = get_role(user) # sử dụng hàm getrole để
+    # xác định vai trò của người dùng dựa trên trạng thái đăng nhập và Group trong Django.
     preview = False
     key = request.GET.get("xem_voi_vai_tro") if settings.DEBUG else None
     # Xem thử riêng: Nhiếp ảnh gia chưa được duyệt (Chờ duyệt / Đã từ chối)
@@ -32,8 +33,9 @@ def layout(request):
             out.append({"label": label, "url": url, "active": is_active(request.path, url)})
         return out
 
-    # Kế hoạch (P5) và wireframe: Nhiếp ảnh gia "Chờ duyệt" / "Đã từ chối" chỉ được dùng chức năng theo dõi hồ sơ.
-    menu = MENUS[role]
+    # Kế hoạch (P5) và wireframe: Nhiếp ảnh gia "Chờ duyệt" / "Đã từ chối" chỉ được dùng
+    # “Hồ sơ của tôi” và “Giới thiệu”.
+    menu = MENUS[role] # hệ thống lấy danh sách menu tương ứng từ từ điển MENUS
     chua_duyet = pending_preview or (user.is_authenticated
                                      and user.trang_thai_ho_so != TrangThaiHoSo.DA_DUYET)
     if role == PHOTOGRAPHER and chua_duyet:
@@ -56,7 +58,8 @@ def layout(request):
         "display_name": name,
         "display_initial": name[:1].upper() if name else "",
         "unread_count": unread,
-        "nav_items": build(menu),
+        "nav_items": build(menu), # hàm layout đưa biến nav_items vào các
+        # template. File header.html sử dụng vòng lặp for để hiển thị từng mục menu.
         "account_items": build(ACCOUNT_MENUS.get(role, [])),
         "urls": {key: resolve(val) for key, val in URL_NAMES.items()},
         "site_name": "FRAMIE",

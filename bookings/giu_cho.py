@@ -296,8 +296,10 @@ def giu_cho_slot(khach_hang, ma_lich):
                 # Thông báo lỗi hệ thống cho view nếu không thể giải phóng slot cũ.
                 raise GiuChoLoi(TB_LOI_HE_THONG)
 
-            # 5. Đổi slot -> 'Đang giữ chỗ' bằng hàm của Khoa. Hàm này tự chặn slot đã qua giờ bắt đầu
+            # 5. Sau đó,  gọi doi_trang_thai_khung_gio để chuyển slot sang “Đang giữ chỗ” và tạo bản ghi GiuCho có thời hạn 5 phút.
+            #Đổi slot -> 'Đang giữ chỗ' bằng hàm của Khoa. Hàm này tự chặn slot đã qua giờ bắt đầu
             #    và dùng UPDATE có điều kiện nên nếu có người nhanh tay hơn thì báo lỗi.
+            # Nếu giữ chỗ thành công, chuyển đến màn hình giữ chỗ với mã lượt giữ vừa tạo gồm đồng hồ đếm ngược và nút tiếp tục gửi Booking.
             # Bắt lỗi khi chuyển trạng thái slot mới sang Đang giữ chỗ.
             try:
                 # Gọi service dùng chung của module schedule để chuyển slot sang Đang giữ chỗ.
@@ -509,7 +511,7 @@ def _ve_trang_lich(ma_nhiep_anh_gia):
 # Chỉ cho phép request GET vì view này chỉ đọc và hiển thị dữ liệu.
 @require_GET
 # Định nghĩa view trang lịch của một nhiếp ảnh gia, nhận mã nhiếp ảnh gia từ URL.
-def trang_lich_nhiep_anh_gia(request, ma_nhiep_anh_gia):
+def trang_lich_nhiep_anh_gia(request, ma_nhiep_anh_gia): #gọi render dòng 531
     # Docstring mô tả view hiển thị các slot còn trống theo đặc tả UC4.1.
     """Bước 1-2: trang lịch công khai, liệt kê các slot 'Lịch trống' của một nhiếp ảnh gia."""
     # Tìm hồ sơ nhiếp ảnh gia và tải sẵn tài khoản liên quan để giảm truy vấn.
@@ -546,6 +548,9 @@ def trang_lich_nhiep_anh_gia(request, ma_nhiep_anh_gia):
         # Truyền số phút giữ chỗ lấy từ THOI_GIAN_GIU_CHO để câu "giữ chỗ cho bạn N phút" tự đổi theo khi đổi hằng số.
         'so_phut_giu': THOI_GIAN_GIU_CHO.total_seconds() / 60,
     # Kết thúc dictionary dữ liệu và trả về trang HTML đã render.
+        # -> Khi khách chọn khung giờ, form gửi yêu cầu POST
+        # đến URL chon_slot. View chon_slot gọi hàm giu_cho_slot
+
     })
 
 
@@ -553,7 +558,7 @@ def trang_lich_nhiep_anh_gia(request, ma_nhiep_anh_gia):
 @khach_hang_required
 # Chỉ cho phép POST vì đây là thao tác làm thay đổi trạng thái dữ liệu.
 @require_POST
-# Định nghĩa view xử lý khi khách bấm chọn một slot.
+# Định nghĩa view xử lý khi khách bấm chọn một slot. -> gọi hàm giữ chỗ slot (569)
 def chon_slot(request, ma_lich):
     # Docstring mô tả: giữ chỗ thành công thì chuyển khách đến màn hình đếm ngược.
     """Bước 3: Khách bấm chọn một slot. Thành công -> sang màn hình đếm ngược (bước 6).
@@ -573,9 +578,9 @@ def chon_slot(request, ma_lich):
         return _ve_trang_lich(ma_nag)
     # Nhiếp ảnh gia lấy từ chính slot (không tin mã Nhiếp ảnh gia hay mã gói do trình duyệt gửi) để kiểm tra gói chọn sẵn.
     goi = goi_chon_san_hop_le(giu_cho.MaLich.MaNhiepAnhGia_id, request.POST.get('goi'))
-    # Nếu giữ thành công, chuyển đến màn hình giữ chỗ với mã lượt giữ vừa tạo hoặc tìm được (kèm ?goi= nếu có gói hợp lệ).
+    # Nếu giữ thành công, redirect màn hình giữ chỗ với mã lượt giữ vừa tạo hoặc tìm được (kèm ?goi= nếu có gói hợp lệ).
     url = reverse('man_hinh_giu_cho', kwargs={'ma_giu_cho': giu_cho.pk})
-    return redirect(f'{url}?{urlencode({"goi": goi.pk})}' if goi is not None else url)
+    return redirect(f'{url}?{urlencode({"goi": goi.pk})}' if goi is not None else url) # ham_giai_phong_giu_cho_het_han
 
 
 # Áp dụng kiểm tra quyền Khách hàng cho view hủy giữ chỗ.

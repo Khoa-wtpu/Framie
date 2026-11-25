@@ -8,7 +8,8 @@
 from django.shortcuts import redirect, render
 from django.urls import reverse
 
-
+# Khi xảy ra lỗi, Django gọi view loi_403, loi_404 hoặc loi_500. Các view sử dụng render()
+# để hiển thị template lỗi và trả về đúng mã trạng thái HTTP.
 def loi_403(request, exception=None):
     """403: đã đăng nhập nhưng không đủ quyền vào trang này."""
     return render(request, "core/loi_403.html", status=403)
@@ -20,7 +21,9 @@ def loi_404(request, exception=None):
 
 
 def loi_500(request):
-    """500: lỗi hệ thống. Template độc lập (không extends base) vì lúc này context processor có thể cũng đang lỗi."""
+    """500: lỗi hệ thống.
+    Template độc lập (không extends base)
+    vì lúc này context processor có thể cũng đang lỗi."""
     return render(request, "core/loi_500.html", status=500)
 
 

@@ -479,6 +479,8 @@ def _tao_booking(khach_hang, giu_cho, ma_goi, ngay_gio_chup, dia_diem, so_nguoi,
 
 def gui_yeu_cau_booking(khach_hang, ma_giu_cho, ma_goi, ngay_gio_chup, dia_diem, so_nguoi, concept,
                         yeu_cau_rieng=None):
+    # gui_yeu_cau_booking để kiểm tra
+    # lượt giữ chỗ có thuộc đúng khách hàng, chưa được sử dụng và còn trong thời hạn 5 phút.
     """Hàm nghiệp vụ chính (bước 4-8 của Basic Flow).
     Kiểm tra giữ chỗ + thông tin -> tạo Booking 'Chờ xác nhận'
     -> đánh dấu lượt giữ chỗ 'Đã hoàn tất Booking'
@@ -494,7 +496,8 @@ def gui_yeu_cau_booking(khach_hang, ma_giu_cho, ma_goi, ngay_gio_chup, dia_diem,
     # Nhả các lượt giữ chỗ đã quá hạn trước (BR4.2-1)
     giai_phong_giu_cho_het_han()
 
-    # Tìm lượt giữ chỗ thuộc về đúng khách hàng
+    # 1. Tìm lượt giữ chỗ thuộc về đúng khách hàng, c
+    # hưa được sử dụng và còn trong thời hạn 5 phút. ->  hàm _tao_booking khóa dòng slot,
     giu_cho = GiuCho.objects.filter(pk=ma_giu_cho, MaKhachHang=khach_hang).first()
     if giu_cho is None:
         raise GuiBookingLoi('Không tìm thấy lượt giữ chỗ.')
@@ -590,6 +593,19 @@ def _initial_goi_chon_san(request, nag, lich):
 @khach_hang_required                                          # Chỉ khách hàng mới vào được
 @require_http_methods(['GET', 'POST'])                        # Chỉ cho phép GET và POST
 def gui_booking(request, ma_giu_cho):
+    #  Nếu request là GET (664), view khởi tạo form từ class GuiBookingForm,
+    #  sau đó sử dụng render() để truyền form vào template gui_booking.html
+    #  và hiển thị cho khách hàng nhập thông tin.
+    #Khi khách hàng bấm gửi yêu cầu Booking, view tiếp nhận dữ liệu thông qua request.POST
+    # và gọi form.is_valid() để kiểm tra tính hợp lệ của dữ liệu.
+
+#Nếu dữ liệu hợp lệ, view gọi hàm gui_yeu_cau_booking để kiểm tra lượt giữ chỗ có thuộc
+    # đúng khách hàng, chưa được sử dụng và còn trong thời hạn 5 phút.
+#Sau đó, hàm _tao_booking khóa dòng slot, kiểm tra slot chưa có Booking còn hiệu lực,
+    # lấy giá gói từ database và tạo Booking với trạng thái “Chờ xác nhận”.
+    # Cuối cùng, hệ thống ghi lịch sử trạng thái và gọi _gui_thong_bao_booking_moi
+    # để gửi thông báo cho nhiếp ảnh gia qua website và email.
+
     """View chính của UC4.2 (bước 1-3 và 8).
     Hiển thị form điền thông tin buổi chụp + đếm ngược thời gian giữ chỗ.
     Tên URL phải là 'gui_booking' vì bookings/giu_cho.py gọi reverse('gui_booking')."""
@@ -623,7 +639,9 @@ def gui_booking(request, ma_giu_cho):
     if request.method == 'POST':
         # Khách bấm nút "Gửi yêu cầu Booking"
         form = GuiBookingForm(request.POST, lich=lich)
-        if form.is_valid():
+        if form.is_valid(): #Nếu dữ liệu hợp lệ, view gọi hàm gui_yeu_cau_booking để kiểm tra
+            # lượt giữ chỗ có thuộc đúng khách hàng, chưa được sử dụng và còn trong thời hạn 5 phút.
+
             du_lieu = form.cleaned_data
             # Ghép khu vực + địa chỉ cụ thể -> DiaDiem
             # Ghép phong cách + mô tả concept -> Concept
@@ -646,6 +664,8 @@ def gui_booking(request, ma_giu_cho):
     else:
         # Lần đầu mở form (GET)
         form = GuiBookingForm(lich=lich, initial=_initial_goi_chon_san(request, nag, lich))
+        # lich=lich: thông tin khung giờ đang giữ.
+        # initial: dữ liệu gói dịch vụ được chọn sẵn (nếu có).
 
     # Render trang form
     return render(request, 'bookings/gui_booking.html', {

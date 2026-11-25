@@ -192,7 +192,8 @@ def _noi_dung_huy(booking, ten_ben, ly_do, xu_ly, co_minh_chung=False, cho_nag=F
     return noi_dung  # trả nội dung hoàn chỉnh
 
 
-def huy_booking(user, ma_booking, ly_do):  # hàm chính: thực hiện hủy Booking
+def huy_booking(user, ma_booking, ly_do):  # hàm chính: thực hiện hủy Booking,
+    # xác định bên hủy (201), kiểm tra lý do (205) và lấy Booking thuộc quyền của người dùng (213)
     """UC4.6 bước 4-11. Trả về Booking đã hủy.
     Báo XuLyBookingLoi khi: thiếu lý do (4a), lý do quá dài, không phải Booking của mình (.khong_tim_thay),
     Booking không ở 'Chờ đặt cọc' / 'Chốt Booking', có người vừa đổi trạng thái trước, hoặc lỗi hệ thống.
@@ -222,7 +223,8 @@ def huy_booking(user, ma_booking, ly_do):  # hàm chính: thực hiện hủy Bo
             try:  # bắt lỗi do bảng chuyển trạng thái từ chối
                 # Hàm chung: kiểm tra bước chuyển, ghi Lịch sử (bên hủy + lý do), trả slot về 'Lịch trống',
                 # và chặn trường hợp hai người cùng đổi một lúc.
-                cap_nhat = chuyen_trang_thai_booking(booking, TrangThaiBooking.DA_HUY, ben, ly_do=ly_do)  # đổi Booking sang "Đã hủy" qua hàm chung của nhóm
+                cap_nhat = chuyen_trang_thai_booking(booking, TrangThaiBooking.DA_HUY, ben, ly_do=ly_do)
+                # đổi Booking sang "Đã hủy" qua hàm chung của nhóm, tạo bản ghi yeucauhuy (230) và gửi tbao cho 2 bên
             except ValidationError as loi:  # hàm chung từ chối (vd: có người vừa đổi trạng thái trước)
                 raise XuLyBookingLoi(' '.join(loi.messages))  # đổi lỗi đó thành lỗi nghiệp vụ, ghép các câu lại
             YeuCauHuy.objects.create(                                 # bước 9: ghi bên hủy, lý do, hệ quả tiền cọc
@@ -249,7 +251,7 @@ def _thong_bao_nguoi(nguoi_nhan, booking, tieu_de, noi_dung):  # gửi thông b�
     gui_email_sau_commit(tb, nguoi_nhan, tieu_de, noi_dung)  # hẹn gửi Email sau khi transaction lưu xong (tránh gửi mà dữ liệu bị hoàn tác)
 
 
-def xac_nhan_da_nhan_hoan_tien(khach_user, ma_booking):  # hàm chính: Khách xác nhận đã nhận lại cọc
+def xac_nhan_da_nhan_hoan_tien(khach_user, ma_booking):  # hàm chính 265 : Khách xác nhận đã nhận lại cọc
     """Khách bấm 'Tôi đã nhận lại tiền cọc': 'Chờ hoàn tiền' -> 'Đã hoàn tiền' (ghi thời điểm xác nhận), báo Nhiếp ảnh gia.
     Chỉ Khách của Booking đó; chỉ khi Nhiếp ảnh gia hủy sau khi đã cọc (XuLyTienCoc = 'Hoàn cọc')."""
     try:  # bắt lỗi cơ sở dữ liệu ở khối bên dưới
@@ -283,7 +285,7 @@ chi_khach_hang = vai_tro_required(VaiTro.KHACH_HANG)  # nhãn: chỉ Khách hàn
 
 @chi_khach_va_nag  # nhãn: chỉ Khách hàng / Nhiếp ảnh gia
 @require_http_methods(['GET', 'POST'])  # nhãn: chỉ nhận GET (xem) và POST (gửi form)
-def huy(request, ma_booking):  # view trang hủy Booking
+def huy(request, ma_booking):  # view trang hủy Booking gọi hàm huy_booking (302)
     """UC4.6: GET = hệ thống yêu cầu nhập lý do + giải thích hệ quả (bước 3); POST = xác nhận hủy (bước 4-11)."""
     vai_tro = lay_vai_tro(request.user)  # vai trò người đang đăng nhập
     try:  # thử lấy Booking của người này
