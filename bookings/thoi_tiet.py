@@ -166,7 +166,7 @@ def lay_du_bao_thoi_tiet(khu_vuc, ngay_gio_chup, thoi_luong_phut=None):
             return {}  # dự báo cho quá khứ vô nghĩa -> rỗng
         if gio_chup >= dau_ngay_nay + timedelta(days=SO_NGAY_DU_BAO):  # buổi chụp xa hơn 16 ngày so với ngày booking
             return {}  # quá xa ngày dự báo -> rỗng
-#3 Hàm lay_du_bao_thoi_tiet tra tọa độ khu vực và kiểm tra cache.
+#1 Hàm lay_du_bao_thoi_tiet tra tọa độ khu vực và kiểm tra cache.
         # Nếu đã có dữ liệu trong cache thì sử dụng lại,
         # nếu chưa có thì gọi hàm _goi_api để lấy dữ liệu từ Open-Meteo (175-176)
         khoa_cache = f'thoi_tiet:{toa_do[0]}:{toa_do[1]}'  # mỗi tọa độ một ô nhớ (cả bảng 16 ngày, nên nhiều Booking cùng khu vực dùng chung)
@@ -179,23 +179,30 @@ def lay_du_bao_thoi_tiet(khu_vuc, ngay_gio_chup, thoi_luong_phut=None):
                 logger.warning('Không lấy được dự báo thời tiết (%s): %s', ten, loi)  # chỉ ghi log, không báo lỗi lên trang
                 cache.set(khoa_cache, {}, GIAY_NHO_KHI_LOI)  # nhớ "đang lỗi" 1 phút để khỏi gọi lại liên tục
                 return {}  # trả rỗng
-#4 Sau đó, hệ thống lấy nhiệt độ, xác suất mưa lớn nhất trong khung giờ chụp và
+#2 Sau đó, hệ thống lấy nhiệt độ, xác suất mưa lớn nhất trong khung giờ chụp (192) và
         # mô tả thời tiết bằng tiếng Việt. (197-201)
         # Dữ liệu được trả về hàm lay_the_thoi_tiet.
-        cac_gio = _cac_gio_cua_buoi_chup(gio_chup, thoi_luong_phut)  # các giờ buổi chụp đi qua
-        mot_gio = bang_du_bao.get(cac_gio[0].strftime('%Y-%m-%dT%H:00'))  # giờ bắt đầu
+        cac_gio = _cac_gio_cua_buoi_chup(gio_chup, thoi_luong_phut)
+        #Hệ thống xác định các khung giờ mà buổi chụp diễn ra.
+        mot_gio = bang_du_bao.get(cac_gio[0].strftime('%Y-%m-%dT%H:00'))
+        #Hệ thống lấy nhiệt độ, xác suất mưa và mã thời tiết tại giờ bắt đầu buổi chụp.
         if mot_gio is None:  # không có giờ đó trong bảng (hoặc bảng rỗng vì đang lỗi)
             return {}  # trả rỗng
-        nhiet_do, xac_suat_mua, ma_thoi_tiet = mot_gio  # tách 3 giá trị của giờ bắt đầu
+        nhiet_do, xac_suat_mua, ma_thoi_tiet = mot_gio
+        #2.1 Hệ thống lấy nhiệt độ, xác suất mưa và mã thời tiết tại giờ bắt đầu buổi chụp.
         if nhiet_do is None or xac_suat_mua is None or ma_thoi_tiet is None:  # API đôi khi trả null cho giờ chưa có số liệu
             return {}  # giờ bắt đầu thiếu số liệu thì không hiện nửa vời -> rỗng
+        #2.2 Sau đó, hệ thống duyệt qua các giờ còn lại của buổi chụp để tìm xác suất mưa lớn nhất.
         for gio in cac_gio[1:]:  # các giờ sau trong buổi chụp: lấy xác suất mưa lớn nhất
             gio_sau = bang_du_bao.get(gio.strftime('%Y-%m-%dT%H:00'))
+
             if gio_sau is None or gio_sau[1] is None or gio_sau[2] is None:  # giờ ngoài bảng hoặc bị null: bỏ qua giờ đó
                 continue
+    # 2.3 Nếu xác suất mưa của giờ sau lớn hơn xác suất mưa đang lưu,
+    # hệ thống cập nhật lại xác suất mưa và mã thời tiết tương ứng.
             if gio_sau[1] > xac_suat_mua:  # CHỈ khi lớn hơn hẳn: bằng nhau thì giữ giờ sớm hơn
                 xac_suat_mua, ma_thoi_tiet = gio_sau[1], gio_sau[2]
-        return {  # kết quả trả cho E8
+        return {  #3 Cuối cùng, hệ thống trả về dữ liệu dự báo thời tiết.
             'nhiet_do': round(float(nhiet_do), 1),  # nhiệt độ (°C) ở giờ bắt đầu, làm tròn 1 chữ số thập phân
             'xac_suat_mua': int(round(xac_suat_mua)),  # khả năng mưa cao nhất trong buổi chụp (%), số nguyên
             'mo_ta': MO_TA_THEO_MA.get(int(ma_thoi_tiet), MO_TA_MAC_DINH),  # mô tả ngắn tiếng Việt theo giờ mưa cao nhất

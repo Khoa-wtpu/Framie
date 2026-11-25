@@ -100,7 +100,8 @@ def _khu_vuc_can_tra(booking):  # danh sách khu vực dùng để tra dự báo
 
 
 def _lay_du_bao_theo_khu_vuc(booking):
-    # sử dụng _khu_vuc_can_tra để xác định khu vực chụp -> gọi lay_du_bao_thoi_tiet trong file thoi_tiet.py.
+    #3 sử dụng _khu_vuc_can_tra để xác định khu vực chụp
+    # -> gọi lay_du_bao_thoi_tiet trong file thoi_tiet.py.
     for khu_vuc in _khu_vuc_can_tra(booking):
         du_bao = lay_du_bao_thoi_tiet(khu_vuc, booking.NgayGioChup, booking.MaGoi.ThoiLuongChup)   # E7: không bao giờ ném lỗi
         if du_bao:  # có dự báo
@@ -141,14 +142,14 @@ def lay_the_thoi_tiet(booking, la_khach, la_nag):  # dữ liệu cho thẻ; None
     du_bao = _lay_du_bao_theo_khu_vuc(booking)  # {} nếu không có dự báo
     # Nếu xác suất mưa từ 60% trở lên, hệ thống gọi _nut_tro_chuyen để lấy đường dẫn trò chuyện
     # và hiển thị cảnh báo khuyến khích hai bên trao đổi đổi lịch.
-    #4 # Nếu xác suất mưa từ 60% trở lên, hệ thống gọi _nut_tro_chuyen để lấy đường
+    #4 Nếu xác suất mưa từ 60% trở lên, hệ thống gọi _nut_tro_chuyen để lấy đường
     # dẫn trò chuyện và hiển thị cảnh báo khuyến khích hai bên trao đổi đổi lịch.
     mua_cao = bool(du_bao) and du_bao['xac_suat_mua'] >= NGUONG_MUA_CAO  # chỉ nhắc khi có dự báo và mưa cao
     url_chat = _nut_tro_chuyen(booking, la_khach, la_nag) if mua_cao else None
     # nút chỉ cần khi nhắc đổi đổi lịch
     return {'du_bao': du_bao, 'mua_cao': mua_cao, 'url_chat': url_chat,
             'TB_CHUA_CO_DU_BAO': TB_CHUA_CO_DU_BAO, 'TB_NHAC_DOI_LICH': TB_NHAC_DOI_LICH}
-#5 Cuối cùng, dữ liệu được hiển thị thông qua template bookings/includes/the_thoi_tiet.html. 
+#5 Cuối cùng, dữ liệu được hiển thị thông qua template bookings/includes/the_thoi_tiet.html.
 
 @vai_tro_required(VaiTro.NHIEP_ANH_GIA)  # chỉ Nhiếp ảnh gia (chưa đăng nhập -> trang đăng nhập; sai vai trò -> 403)
 @require_POST  # chỉ POST

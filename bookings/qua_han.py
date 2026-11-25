@@ -10,8 +10,10 @@
 #     5. Quá giờ chụp mà Nhiếp ảnh gia chưa xác nhận -> Booking 'Đã hủy' (Hệ thống tự hủy, không bắt Nhiếp ảnh gia từ chối), khung giờ về 'Lịch trống'
 #
 #   Được gọi từ 3 nơi:
-#     - bookings/nen_qua_han.py : luồng nền mở khi web server chạy, mỗi 60 giây (không cần ai mở web)
-#     - bookings/middleware.py : mỗi khi mở các trang liên quan (Booking, Tổng quan, Thanh toán, Bàn giao, Tìm kiếm)
+#     - bookings/nen_qua_han.py :
+#     luồng nền mở khi web server chạy, mỗi 60 giây (không cần ai mở web)
+#     - bookings/middleware.py :
+#     mỗi khi mở các trang liên quan (Booking, Tổng quan, Thanh toán, Bàn giao, Tìm kiếm)
 #     - lệnh  python manage.py xu_ly_qua_han  : chạy định kỳ (mỗi phút) bằng Task Scheduler / cron
 #   Hạn chót lấy từ cột trong database (HanDatCoc, HanThanhToanConLai, ThoiHanTaiAnh) do bookings/services.py gán,
 #   nên các con số 1 ngày / 2 ngày / 3 ngày chỉ khai báo một chỗ, không lặp lại ở đây.
@@ -186,13 +188,21 @@ def xu_ly_het_han_cho_xac_nhan(bay_gio=None):
 # ---------------------------------------------------------------------
 # Chạy cả năm việc
 # ---------------------------------------------------------------------
+#1 Dạ, chức năng tự động xử lý quá hạn được triển khai trong file
+# bookings/qua_han.py, với hàm chính xu_ly_qua_han() tại dòng 193.
 def xu_ly_qua_han():
     """Chạy cả 5 việc quá hạn. Việc nào lỗi thì ghi log rồi chạy tiếp việc sau. Trả về dict số mục đã xử lý."""
     ket_qua = {}
-    # Danh sách (tên việc, hàm) - thêm ('cho_xac_nhan', ...) là việc thứ 5: tự hủy Booking 'Chờ xác nhận' đã quá giờ chụp.
+    # Danh sách (tên việc, hàm) - thêm ('cho_xac_nhan', ...)
+    # là việc thứ 5: tự hủy Booking 'Chờ xác nhận' đã quá giờ chụp.
+    #2 Hàm này sử dụng vòng lặp for để gọi lần lượt 5 hàm xử lý: giữ chỗ hết hạn, h
+    # hết hạn đặt cọc, quá giờ chụp chưa xác nhận, quá hạn thanh toán 60% và hết hạn tải ảnh.
     for ten, ham in (('giu_cho', xu_ly_giu_cho_het_han), ('dat_coc', xu_ly_het_han_dat_coc),
                      ('cho_xac_nhan', xu_ly_het_han_cho_xac_nhan),
                      ('thanh_toan_60', xu_ly_qua_han_thanh_toan), ('xoa_anh', xu_ly_xoa_anh_het_han)):
+    #3 Trong mỗi lần xử lý, hệ thống sử dụng try-except để đảm bảo nếu một công việc xảy ra
+    # lỗi thì các công việc còn lại vẫn tiếp tục thực hiện.
+    # Cuối cùng, hàm trả về từ điển ket_qua chứa kết quả xử lý của từng công việc.
         try:
             ket_qua[ten] = ham()
         except Exception:  # noqa: BLE001  # lỗi ở một việc không được làm sập trang web hay các việc khác

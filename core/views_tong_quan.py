@@ -132,8 +132,8 @@ def _du_lieu_nhiep_anh_gia(user):  # gom dữ liệu cho trang của Nhiếp ả
 @login_required  # chưa đăng nhập -> trang đăng nhập
 @require_GET  # chỉ nhận GET
 def tong_quan(request):  # view của trang /tong-quan/
-    vai_tro = lay_vai_tro(request.user)  # biết người đang xem là ai
-    if vai_tro == VaiTro.QUAN_TRI_VIEN:      # Quản trị viên có trang tổng quan riêng (B7)
+    vai_tro = lay_vai_tro(request.user)  #1 biết người đang xem là ai
+    if vai_tro == VaiTro.QUAN_TRI_VIEN:      #2 Quản trị viên có trang tổng quan riêng (B7)
         return redirect(_url('admin_dashboard') or 'home')  # chuyển sang trang của Quản trị; chưa có thì về Trang chủ
     la_nag = vai_tro == VaiTro.NHIEP_ANH_GIA  # người xem có phải Nhiếp ảnh gia không (còn lại là Khách hàng)
     return render(request, 'core/tong_quan.html', {  # dựng trang từ template, kèm dữ liệu bên dưới
@@ -141,3 +141,9 @@ def tong_quan(request):  # view của trang /tong-quan/
         'khach': None if la_nag else _du_lieu_khach_hang(request.user),  # dữ liệu Khách (None nếu là Nhiếp ảnh gia)
         'nag': _du_lieu_nhiep_anh_gia(request.user) if la_nag else None,  # dữ liệu Nhiếp ảnh gia (None nếu là Khách)
     })
+#3 Nếu là khách hàng, view gọi _du_lieu_khach_hang.
+# Nếu là nhiếp ảnh gia, view gọi _du_lieu_nhiep_anh_gia để lấy dữ liệu tương ứng.
+#4 Hai vai trò này sử dụng chung template core/tong_quan.html
+# nhưng được truyền vào những dữ liệu khác nhau.
+#5 Đối với khách hàng,
+# hàm _du_lieu_khach_hang sử dụng booking_cua_nguoi_dung để lấy Booking của chính khách, loại bỏ Booking đã kết thúc và chỉ lấy tối đa 5 Booking mới nhất.

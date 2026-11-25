@@ -143,7 +143,7 @@ def _ket_thuc_luot_giu(giu_cho):
     return True
 
 
-# Định nghĩa hàm kiểm tra và giải phóng một lượt giữ đã quá hạn.
+#7 Định nghĩa hàm kiểm tra và giải phóng một lượt giữ đã quá hạn. (151-163)
 def _het_han_mot_luot(ma_giu_cho, bay_gio):
     # Docstring nêu điều kiện: lượt vẫn đang giữ và thời điểm hết hạn không muộn hơn thời điểm hiện tại.
     """Nhả MỘT lượt giữ nếu nó vẫn 'Đang giữ chỗ' và đã quá hạn. Trả True nếu đã nhả."""
@@ -301,7 +301,7 @@ def giu_cho_slot(khach_hang, ma_lich):
                 # Thông báo lỗi hệ thống cho view nếu không thể giải phóng slot cũ.
                 raise GiuChoLoi(TB_LOI_HE_THONG)
 
-            #4. Sau đó,  gọi doi_trang_thai_khung_gio để chuyển slot sang “Đang giữ chỗ” và
+            #4. Sau đó,  gọi doi_trang_thai_khung_gio (313) để chuyển slot sang “Đang giữ chỗ” và
             # tạo bản ghi GiuCho có thời hạn 5 phút.
             #Đổi slot -> 'Đang giữ chỗ' bằng hàm của Khoa. Hàm này tự chặn slot đã qua giờ bắt đầu
             #  và dùng UPDATE có điều kiện nên nếu có người nhanh tay hơn thì báo lỗi.
@@ -518,7 +518,8 @@ def _ve_trang_lich(ma_nhiep_anh_gia):
 # Chỉ cho phép request GET vì view này chỉ đọc và hiển thị dữ liệu.
 @require_GET
 # Định nghĩa view trang lịch của một nhiếp ảnh gia, nhận mã nhiếp ảnh gia từ URL.
-#1 Đầu tiên, view trang_lich_nhiep_anh_gia gọi render() để hiển thị trang lich_chon_slot.html.
+#1 Đầu tiên, view trang_lich_nhiep_anh_gia gọi render(542) để hiển thị
+# trang lich_chon_slot.html.
 #Khi khách chọn khung giờ, form gửi yêu cầu POST đến URL chon_slot
 def trang_lich_nhiep_anh_gia(request, ma_nhiep_anh_gia): #gọi render dòng 534
     # Docstring mô tả view hiển thị các slot còn trống theo đặc tả UC4.1.
@@ -568,7 +569,7 @@ def trang_lich_nhiep_anh_gia(request, ma_nhiep_anh_gia): #gọi render dòng 534
 # Chỉ cho phép POST vì đây là thao tác làm thay đổi trạng thái dữ liệu.
 @require_POST
 # Định nghĩa view xử lý khi khách bấm chọn một slot.
-# View chon_slot gọi hàm giu_cho_slot để xử lý nghiệp vụ giữ chỗ. -> 575
+#2 View chon_slot gọi hàm giu_cho_slot để xử lý nghiệp vụ giữ chỗ. -> 575
 def chon_slot(request, ma_lich):
     # Docstring mô tả: giữ chỗ thành công thì chuyển khách đến màn hình đếm ngược.
     """Bước 3: Khách bấm chọn một slot. Thành công -> sang màn hình đếm ngược (bước 6).
@@ -616,7 +617,8 @@ def huy_giu_cho_view(request, ma_giu_cho):
 # Chỉ cho phép GET vì view chỉ hiển thị thông tin.
 @require_GET
 # Định nghĩa view hiển thị thông tin slot đang giữ và bộ đếm ngược.
-#5 view man_hinh_giu_cho với mã lượt giữ vừa tạo gồm đồng hồ đếm ngược và nút tiếp tục gửi Booking.
+#5 Nếu giữ chỗ thành công, gọi view man_hinh_giu_cho với
+# mã lượt giữ vừa tạo gồm đồng hồ đếm ngược và nút tiếp tục gửi Booking.
 
 def man_hinh_giu_cho(request, ma_giu_cho):
     # Docstring mô tả nội dung màn hình và nút tiếp tục sang UC4.2.

@@ -5,6 +5,9 @@ from core.constants import TrangThaiHoSo
 from .navigation import (ACCOUNT_MENUS, CUSTOMER, GUEST, MENUS, PHOTOGRAPHER, PREVIEW_KEYS,
                          URL_NAMES, count_unread, get_role, is_active, resolve)
 
+#1 Đầu tiên, hàm layout trong file context_processors.py
+# sử dụng hàm get_role để xác định vai trò của người dùng dựa trên
+# trạng thái đăng nhập và Group trong Django.
 
 def layout(request):
     user = request.user
@@ -35,11 +38,14 @@ def layout(request):
 
     # Kế hoạch (P5) và wireframe: Nhiếp ảnh gia "Chờ duyệt" / "Đã từ chối" chỉ được dùng
     # “Hồ sơ của tôi” và “Giới thiệu”.
-    menu = MENUS[role] # hệ thống lấy danh sách menu tương ứng từ từ điển MENUS
+    menu = MENUS[role] #2 hệ thống lấy danh sách menu tương ứng từ từ điển MENUS
     chua_duyet = pending_preview or (user.is_authenticated
                                      and user.trang_thai_ho_so != TrangThaiHoSo.DA_DUYET)
     if role == PHOTOGRAPHER and chua_duyet:
-        menu = [m for m in menu if m[1] in ("photographer_profile", "about")]   # chỉ theo dõi hồ sơ + trang Giới thiệu (chỉ đọc)
+        #3 Nếu nhiếp ảnh gia chưa được duyệt, hệ thống giới hạn menu chỉ còn
+        # “Hồ sơ của tôi” và “Giới thiệu”.
+
+        menu = [m for m in menu if m[1] in ("photographer_profile", "about")]
 
     # Ảnh đại diện trên header: Nhiếp ảnh gia có AnhDaiDien thì hiện ảnh, không có thì hiện chữ cái đầu.
     avatar_url = ""
@@ -58,7 +64,7 @@ def layout(request):
         "display_name": name,
         "display_initial": name[:1].upper() if name else "",
         "unread_count": unread,
-        "nav_items": build(menu), # hàm layout đưa biến nav_items vào các
+        "nav_items": build(menu), #4 hàm layout đưa biến nav_items vào các
         # template. File header.html sử dụng vòng lặp for để hiển thị từng mục menu.
         "account_items": build(ACCOUNT_MENUS.get(role, [])),
         "urls": {key: resolve(val) for key, val in URL_NAMES.items()},

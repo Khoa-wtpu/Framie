@@ -109,8 +109,16 @@ def _khu_vuc_ds():
 
 
 # ▸ HÀM CHÍNH của file: Django gọi hàm này mỗi khi có khách mở Trang chủ. "request" là thông tin yêu cầu của khách (trình duyệt, tài khoản đăng nhập...).
+#1 Khi người dùng truy cập đường dẫn trang chủ,
+# URL trong core/urls.py gọi view trang_chu.
+#2 View này gọi các hàm _the_noi_bat (122),
+# _loai_hinh_kem_so_nguoi (123) và
+# _khu_vuc_ds (126) để lấy dữ liệu nhiếp ảnh gia nổi bật, loại hình chụp và khu vực.
+
 def trang_chu(request):
     # ▸ Dựng trang web: dùng file giao diện 'core/trang_chu.html' và truyền vào 3 gói dữ liệu dưới đây; kết quả trả thẳng về trình duyệt của khách.
+    #4 Cuối cùng, view sử dụng render() để truyền dữ liệu vào
+    # template core/trang_chu.html và hiển thị trang chủ.
     return render(request, 'core/trang_chu.html', {
         # ▸ Gói 1: các thẻ nhiếp ảnh gia nổi bật (khối số 2 trên trang).
         'noi_bat': _the_noi_bat(),
@@ -118,7 +126,8 @@ def trang_chu(request):
         'loai_hinh_ds': _loai_hinh_kem_so_nguoi(),
         # ▸ Gói 2b: danh sách khu vực cho bộ lọc trong ô tìm kiếm.
         'khu_vuc_ds': _khu_vuc_ds(),
-        # ▸ Gói 2c (F3): cũng danh sách đó nhưng chia nhóm Miền Bắc / Trung / Nam cho ô chọn có 34 tỉnh thành.
+        # ▸ Gói 2c (F3):
+        #3 cũng danh sách đó nhưng chia nhóm Miền Bắc / Trung / Nam cho ô chọn có 34 tỉnh thành.
         'khu_vuc_nhom': nhom_theo_mien(_khu_vuc_ds(), lay_ten=lambda kv: kv['ten']),
         # ▸ Gói 3: 5 bước đặt lịch (khối số 3).
         'buoc_dat_lich': BUOC_DAT_LICH,
