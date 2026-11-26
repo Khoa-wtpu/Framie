@@ -149,6 +149,9 @@
     capNhatHien();  // hiện ngày ngay khi mở trang (đáp án cũ hoặc để trống)
   }
 
+#sự kiện change để đếm số checkbox đang được tích.
+#Khi khách hàng chọn đủ 3 phong cách, hệ thống khóa các lựa chọn chưa tích
+#đồng thời cập nhật dòng đếm, ví dụ như Đã chọn 2/3 phong cách.
   // ---------- Bước 5: chọn tối đa N phong cách + bộ đếm ----------
   var nhom = goc.querySelector('[data-toi-da]');  // nhóm chip phong cách
   if (nhom) {  // chỉ có ở bước 5

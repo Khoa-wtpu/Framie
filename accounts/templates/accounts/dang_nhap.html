@@ -6,7 +6,7 @@
     <div class="card__body card__body--stretch">
       <h1 class="card__title">Đăng nhập</h1>{# tiêu đề trang #}
       {% for error in form.non_field_errors %}{% include "includes/alert.html" with level="danger" text=error %}{% endfor %}{# lỗi "Email hoặc mật khẩu không chính xác" hiện hộp đỏ #}
-      <form method="post" novalidate>{# gửi form bằng POST, tắt kiểm tra của trình duyệt để hiện lỗi của Django #}
+      <form method="post" novalidate>{# gửi form bằng POST, mật khẩu không lộ trên địa chỉ, tắt kiểm tra của trình duyệt để hiện lỗi của Django; Dùng GET thì email và mật khẩu hiện trên thanh địa chỉ. #}
         {% csrf_token %}{# mã chống giả mạo form, BẮT BUỘC có #}
         {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}{# giữ trang cần quay lại sau khi đăng nhập #}
         {% include "includes/form_field.html" with field=form.username %}{# ô Email #}
@@ -14,6 +14,10 @@
         <button class="btn btn--primary btn--block" type="submit">Đăng nhập</button>{# 1 nút chính duy nhất của màn hình #}
       </form>
       <p class="card__meta"><a href="{% url 'forgot_password' %}">Quên mật khẩu?</a>{# P6: tên URL do accounts/urls.py khai báo #} · <a href="{{ urls.register }}">Tạo tài khoản</a>{# urls.register do context processor cung cấp #}</p>
+      #Quên mật khẩu dùng lệnh url với tên forgot_password, tên này khai báo ở urls.py trỏ tới view quen_mat_khau
+      #Link Tạo tài khoản dùng biến urls.register do phần dùng chung của nhóm cung cấp cho mọi template
+      #href='/quen-mat-khau/
+      #gõ cứng-đổi đường dẫn là link hỏng. Dùng tên thì Django tự đổi tên thành đường dẫn hiện tại
     </div>
   </div>
 </div>

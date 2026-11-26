@@ -75,17 +75,23 @@ def hop_thu(request):  # màn hình danh sách cuộc trò chuyện, menu "Tin n
         raise PermissionDenied('Bạn không có quyền dùng mục Tin nhắn.')  # 403
     return render(request, 'chat/hop_thu.html', services.ngu_canh_danh_sach(request.user))  # cột trái dùng chung với trang chi tiết
 
-
+#Gọi kiểm quyền và lấy tin nhắn
+#View gọi Services để kiểm tra quyền trước. Nếu không đủ quyền thì hiển thị trang 404;
+# nếu hợp lệ thì tiếp tục lấy tin nhắn gần nhất
 @login_required  # chưa đăng nhập thì sang trang đăng nhập
 @require_safe  # chỉ GET/HEAD
 def chi_tiet_cuoc_tro_chuyen(request, ma_cuoc):  # SC8.2 + UC8.3: mở cuộc trò chuyện và xem lịch sử
     try:  # người ngoài cuộc và cuộc không tồn tại đều cho CÙNG một kết quả, không lộ cuộc có tồn tại hay không
+        #1Gọi hàm kiểm tra quyền truy cập
         cuoc = services.lay_cuoc_cua_nguoi_dung(request.user, ma_cuoc)  # người ngoài cuộc bị 404
+    #2Nếu không tìm thấy hoặc không đủ quyền, hiển thị trang thông báo không tìm thấy với mã trạng thái 404
     except Http404:  # trang 404 riêng của chat
         return render(request, 'chat/khong_tim_thay.html', status=404)  # "Không tìm thấy cuộc trò chuyện" + nút về hộp thư
     tin_nhan, con_cu, loi_tai, anh_chia_se, xoa_den, lien_ket = [], False, '', [], 0, []  # mặc định: chưa có tin, không còn tin cũ, không lỗi, chưa có ảnh chia sẻ, chưa xóa gì
     try:  # luồng ngoại lệ 2a của UC8.3: không truy xuất được lịch sử
         tham_gia = services.lay_tham_gia(cuoc, request.user)  # trạng thái riêng của mình (đã xóa tới tin nào...)
+        #3Sau khi kiểm quyền thành công, lấy danh sách tin nhắn để hiển thị - kbao trong services
+        #4sau_ma=tham_gia.XoaDenMaTin Chỉ lấy tin nhắn có mã lớn hơn mốc tin nhắn mà người tham gia đã xóa đến
         tin_nhan, con_cu = services.lay_tin_gan_nhat(cuoc, sau_ma=tham_gia.XoaDenMaTin)  # các tin gần nhất, bỏ phần đã xóa phía mình
         xoa_den = tham_gia.XoaDenMaTin  # mốc đã xóa phía mình, template dùng để che trích dẫn của tin đã xóa
         anh_chia_se = services.lay_anh_chia_se(cuoc, tham_gia.XoaDenMaTin)  # ảnh hiện ở cột phải (bỏ ảnh tin đã thu hồi và phần đã xóa phía mình)

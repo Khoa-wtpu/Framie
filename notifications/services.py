@@ -1,5 +1,16 @@
 # notifications/services.py - P2: hàm gửi thông báo dùng chung (Phanh)
 # Các bạn khác import hàm ở đây để gửi thông báo khi có sự kiện (Booking mới, duyệt hồ sơ...)
+#chuong: header.html unread + noti/services.py dem_chua_doc()
+#chu tha xuong: header.html khung_thong_bao + chuong.js function tai + noti/services.py lay_moi_nhat+_khung_chuong.html
+#chi tiet: urls + views.py chi_tiet() + services.py queryset_chi_tiet()/ tu_dong_danh_dau + chi_tiet.html
+#nut hành động dat_coc: services.py hanh_dong_thong_bao/_nut_khach/_dia_chi
+#gui email: services.py gui_email_sau_commit/_gui_email_va_ghi_ket_qua/gui_thong_bao_kem_email
+#ds tb bự: (views.py danh_sach(request)) + services.py lay_danh_sach/dem_theo_nhom(nguoi_dung) +danh_sach.html
+#Mỗi dòng thông báo _dong_thong_bao.html
+#notifications/views.py – Tiếp nhận thao tác đánh dấu đã đọc/chưa đọc def doi_trang_thai_doc doi_dau_sao
+#nut xoa tbao _dong_thong_bao.html xoa_thong_bao
+#danh_sach.html – Tạo hộp xác nhận, Xác nhận xóa
+#views.py – Tiếp nhận và xử lý yêu cầu xóa def xoa(request, ma_thong_bao)
 import logging  # thư viện ghi log: để in cảnh báo ra Terminal khi có lỗi, thay vì làm sập web
 
 from django.core.mail import send_mail  # hàm gửi email của Django (khi làm thử chỉ in ra Terminal, xem MAILERS trong settings.py)
@@ -58,7 +69,10 @@ def gui_thong_bao_nhieu_nguoi(ds_nguoi_nhan, tieu_de, noi_dung, booking=None, du
             ket_qua.append(thong_bao)  # thêm vào danh sách kết quả
     return ket_qua  # trả về danh sách
 
-
+#chuong: thực hiện việc đếm thông báo thực tế
+#kiểm tra người dùng đã đăng nhập chưa, nếu chưa thì trả về 0
+#đã đăng nhập, hệ thống truy vấn bảng ThongBao, lọc theo người nhận và trạng thái chưa đọc,
+# sau đó dùng .count() để đếm số bản ghi thỏa mãn hai điều kiện.
 def dem_chua_doc(user):  # đếm số thông báo chưa đọc của một người
     """Dùng cho số đỏ trên chuông ở đầu trang (header)."""  # mô tả hàm
     if user is None or not getattr(user, 'is_authenticated', False):  # chưa đăng nhập hoặc không có user
@@ -110,7 +124,10 @@ def ghim_sao_len_dau(ds):  # xếp thứ tự dùng chung cho trang danh sách V
         default=Value(1), output_field=IntegerField()),  # còn lại -> 1
     ).order_by('thu_tu_sao', '-NgayTao', '-MaThongBao')  # sao lên đầu, rồi mới nhất trước
 
-
+#Lọc và tìm kiếm thông báo
+#lấy thông báo của chính người dùng
+#lọc theo nhóm Chưa đọc hoặc Có sao, tìm từ khóa trong tiêu đề hoặc nội dung bằng Q và icontains
+# gọi ghim_sao_len_dau để đưa thông báo đã đánh dấu sao lên đầu.
 def lay_danh_sach(nguoi_dung, loc=LOC_TAT_CA, tu_khoa=''):  # danh sách cho trang SC9.1
     """Trả về QuerySet (chưa chạy truy vấn) đã lọc nhóm, tìm kiếm; thông báo có sao ghim lên đầu, sau đó mới nhất trước."""  # mô tả hàm
     ds = thong_bao_cua(nguoi_dung)  # bắt đầu từ thông báo của người này
@@ -124,7 +141,8 @@ def lay_danh_sach(nguoi_dung, loc=LOC_TAT_CA, tu_khoa=''):  # danh sách cho tra
         ds = ds.filter(Q(TieuDe__icontains=tu_khoa) | Q(NoiDung__icontains=tu_khoa))  # khớp tiêu đề HOẶC nội dung
     return ghim_sao_len_dau(ds)  # FR-38: có sao ghim lên đầu; trong mỗi nhóm thì mới nhất trước
 
-
+#Đếm số thông báo theo nhóm
+#aggregate kết hợp với Count để đếm tổng số thông báo, số chưa đọc và số đã đánh dấu sao
 def dem_theo_nhom(nguoi_dung):  # đếm số thông báo của 3 nhóm bằng ĐÚNG 1 câu truy vấn
     """Trả về dict {'tat_ca': n, 'chua_doc': n, 'sao': n}."""  # mô tả hàm
     ket_qua = thong_bao_cua(nguoi_dung).aggregate(  # gom đếm trong một lần chạy SQL
@@ -135,11 +153,17 @@ def dem_theo_nhom(nguoi_dung):  # đếm số thông báo của 3 nhóm bằng �
     return {khoa: ket_qua[khoa] or 0 for khoa in (LOC_TAT_CA, LOC_CHUA_DOC, LOC_SAO)}  # đảm bảo luôn là số nguyên
 
 
+#lấy danh sách thông báo để hiển thị trong khung chuông
+#thong_bao..lấy danh sách thông báo của người dùng
+#Sắp xếp thông báo được đánh dấu sao lên đầu danh sách
+#sl: Chỉ lấy số lượng thông báo theo giới hạn quy định, mặc định là 4.
+#list: Chuyển kết quả thành danh sách để sử dụng.
 def lay_moi_nhat(nguoi_dung, so_luong=SO_THONG_BAO_TRONG_KHUNG):  # dữ liệu cho khung chuông thả xuống
     """Trả về list 4 thông báo đầu theo cùng thứ tự với trang danh sách: có sao lên đầu, rồi mới nhất."""  # mô tả hàm
     return list(ghim_sao_len_dau(thong_bao_cua(nguoi_dung))[:so_luong])  # cắt lấy 4 dòng đầu
 
-
+#tập truy vấn chỉ gồm thông báo của người dùng hiện tại
+#select_re lấy trước các dữ liệu liên quan như Booking và Gói dịch vụ để giảm số lần truy vấn cơ sở dữ liệu
 def queryset_chi_tiet(nguoi_dung):  # nguồn dữ liệu cho trang chi tiết SC9.2
     """Dùng với get_object_or_404: thông báo của người khác sẽ thành 404, không lộ nội dung."""  # mô tả hàm
     return thong_bao_cua(nguoi_dung).select_related('MaBooking__MaGoi', 'MaDuyetHoSo')  # nạp sẵn Booking và Gói để trang chi tiết không truy vấn thêm
@@ -175,10 +199,11 @@ def xoa_thong_bao(nguoi_dung, ma_thong_bao):  # UC9.2 bổ sung: xóa MỘT thô
         return False  # báo thất bại, không ném lỗi ra ngoài
     return so_dong > 0  # xóa được ít nhất 1 dòng là thành công
 
+#tự động đánh dấu thông báo đã đọc khi mở
 def tu_dong_danh_dau_da_doc(nguoi_dung, thong_bao):  # UC9.2: mở xem thì tự chuyển Chưa đọc -> Đã đọc
     """Trả về True nếu thông báo đã (hoặc vừa được) chuyển sang Đã đọc; False nếu cập nhật lỗi."""  # mô tả hàm
     if thong_bao.TrangThaiDoc == TrangThaiDoc.DA_DOC:  # đã đọc từ trước
-        return True  # không cần làm gì
+        return True  # không cần cập nhật lại
     if dat_trang_thai_doc(nguoi_dung, thong_bao.pk, True):  # ghi 'Đã đọc' vào DB thành công
         thong_bao.TrangThaiDoc = TrangThaiDoc.DA_DOC  # cập nhật luôn bản đang cầm để trang hiển thị đúng
         return True  # thành công
@@ -209,25 +234,28 @@ def url_booking(thong_bao, nguoi_dung):  # địa chỉ trang Booking liên quan
 #     from notifications.services import gui_thong_bao_kem_email
 #     gui_thong_bao_kem_email(user, 'Tiêu đề', 'Nội dung', booking=bk)
 # =====================================================================
+#Hàm hẹn gửi email; sd transaction.on_commit để hẹn gửi email sau khi giao dịch cơ sở dữ liệu được lưu success
 def gui_email_sau_commit(thong_bao, nguoi_nhan, tieu_de, noi_dung):  # hẹn gửi email; cùng tên và cùng tham số với hàm của bookings/services.py
     """Hẹn gửi email cho nguoi_nhan SAU KHI transaction hiện tại commit, rồi ghi kết quả vào thong_bao (có thể None)."""  # mô tả hàm
     transaction.on_commit(  # nếu đang trong transaction.atomic thì chờ commit xong; nếu không thì chạy ngay
         lambda: _gui_email_va_ghi_ket_qua(thong_bao, nguoi_nhan, tieu_de, noi_dung)  # việc gửi thật nằm ở hàm bên dưới
     )  # hết đăng ký on_commit
 
-
+#Hàm gửi email và ghi nhận kết quả
 def _gui_email_va_ghi_ket_qua(thong_bao, nguoi_nhan, tieu_de, noi_dung):  # phần chạy thật: gửi mail rồi ghi TrangThaiGuiEmail
     """Không bao giờ ném lỗi ra ngoài."""  # mô tả hàm
     try:  # thử gửi; lỗi gì cũng nhảy xuống except
-        if not nguoi_nhan.email:  # người nhận chưa có địa chỉ email thì không gửi được
+        if not nguoi_nhan.email:  # 1kiểm tra người nhận đã có địa chỉ email chưa
             raise ValueError('Người nhận chưa có email')  # ném lỗi để nhảy xuống except và đánh dấu thất bại
+        #2hàm gửi email của Django, nhận tiêu đề, nội dung, người gửi, danh sách người nhận
         send_mail(tieu_de, noi_dung, None, [nguoi_nhan.email], fail_silently=False)  # None = DEFAULT_FROM_EMAIL; fail_silently=False để lỗi SMTP nổi lên và bị bắt
-        ket_qua = TrangThaiGuiEmail.THANH_CONG  # gửi được (khi làm thử thì nghĩa là đã in ra Terminal)
-    except Exception:  # noqa: BLE001  # SMTP, DNS, mất mạng... lỗi gì cũng không được làm sập web
+        ket_qua = TrangThaiGuiEmail.THANH_CONG  # 3ghi nhận gửi thành công nếu lệnh gửi không phát sinh lỗi
+    except Exception:  #4bắt lỗi gửi email, ghi log và chuyển trạng thái thành thất bại
         logger.exception('gui_email_sau_commit: gửi email thất bại (%s)', tieu_de)  # ghi log đầy đủ để sửa sau
         ket_qua = TrangThaiGuiEmail.THAT_BAI  # đánh dấu gửi thất bại
     if thong_bao is not None:  # có thông báo web đi kèm thì ghi kết quả vào đó
         try:  # ghi kết quả cũng có thể lỗi DB
+            #5cập nhật kết quả gửi email vào trường TrangThaiGuiEmail của thông báo tương ứng
             ThongBao.objects.filter(pk=thong_bao.pk).update(TrangThaiGuiEmail=ket_qua)  # UPDATE đúng một cột, không đụng cột khác
         except DatabaseError:  # lỗi cơ sở dữ liệu
             logger.exception('gui_email_sau_commit: không ghi được TrangThaiGuiEmail')  # chỉ ghi log
@@ -237,9 +265,10 @@ def _noi_dung_email(nguoi_nhan, noi_dung):  # ghép lời chào và chữ ký qu
     ten = (nguoi_nhan.get_full_name() or '').strip() or nguoi_nhan.email  # ưu tiên họ tên, không có thì dùng email
     return f'Xin chào {ten},\n\n{noi_dung}\n\nFRAMIE'  # cùng kiểu với email đăng ký ở accounts/services.py
 
-
+#Hàm kết hợp tạo thông báo web và gửi email
 def gui_thong_bao_kem_email(nguoi_nhan, tieu_de, noi_dung, booking=None, duyet_ho_so=None):  # HÀM CHÍNH P9: thông báo web + email
     """Tạo thông báo web (như gui_thong_bao) và hẹn gửi email cho cùng người nhận. Trả về ThongBao, hoặc None nếu không tạo được."""  # mô tả hàm
+    #1tao tb web
     thong_bao = gui_thong_bao(nguoi_nhan, tieu_de, noi_dung, booking=booking, duyet_ho_so=duyet_ho_so)  # bước 1: thông báo trên web (hàm này tự nuốt lỗi)
     if nguoi_nhan is None or getattr(nguoi_nhan, 'pk', None) is None:  # không có người nhận hợp lệ
         return thong_bao  # gui_thong_bao đã ghi cảnh báo, không có ai để gửi email
@@ -247,8 +276,9 @@ def gui_thong_bao_kem_email(nguoi_nhan, tieu_de, noi_dung, booking=None, duyet_h
     noi_dung = (noi_dung or '').strip()  # làm sạch nội dung giống gui_thong_bao
     if not tieu_de or not noi_dung:  # thiếu tiêu đề hoặc nội dung thì không có gì để gửi
         return thong_bao  # dừng, không gửi email rỗng
+    #2đăng ký việc gửi email sau khi giao dịch gửi đi
     gui_email_sau_commit(thong_bao, nguoi_nhan, tieu_de, _noi_dung_email(nguoi_nhan, noi_dung))  # bước 2: hẹn gửi email sau commit
-    return thong_bao  # trả về thông báo web (có thể None nếu lưu web lỗi; email vẫn được gửi)
+    return thong_bao  #3trả về thông báo vừa tạo (có thể None nếu lưu web lỗi; email vẫn được gửi)
 
 
 def gui_thong_bao_nhieu_nguoi_kem_email(ds_nguoi_nhan, tieu_de, noi_dung, booking=None, duyet_ho_so=None):  # như gui_thong_bao_nhieu_nguoi nhưng có email
@@ -301,7 +331,7 @@ def _nut_ho_so_cua_toi(nguoi_dung):  # nút cho Nhiếp ảnh gia khi thông bá
         return [_nut('Chỉnh sửa hồ sơ', 'cap_nhat_ho_so')]  # dẫn thẳng tới trang cập nhật hồ sơ
     return [_nut('Xem hồ sơ của tôi', 'photographer_profile')]  # các trường hợp còn lại: xem trang Hồ sơ của tôi
 
-
+#Hàm chọn nút cho Khách hàng
 def _nut_khach(booking):  # nút cho Khách hàng theo trạng thái hiện tại của Booking
     from bookings.models import YeuCauHuy  # các import dưới đây nằm trong hàm để tránh import vòng giữa các app
     from delivery.models import Anh, BanGiao
@@ -314,6 +344,7 @@ def _nut_khach(booking):  # nút cho Khách hàng theo trạng thái hiện tạ
         tinh_trang = _tinh_trang_minh_chung(coc)  # đã tải minh chứng chưa
         if tinh_trang == 'chua_tai':  # chưa tải gì
             return [_nut('Đặt cọc', 'tai_len_minh_chung', ma_booking=ma)]  # trang tải minh chứng cọc (payments)
+
         if tinh_trang == 'can_bo_sung':  # Nhiếp ảnh gia yêu cầu bổ sung
             return [_nut('Tải lại minh chứng', 'tai_len_minh_chung', ma_booking=ma)]  # cùng trang tải minh chứng
     elif trang_thai == TrangThaiBooking.CHO_XAC_NHAN_THANH_TOAN:  # đang chờ thanh toán 60%
@@ -364,20 +395,21 @@ def _nut_nag(booking):  # nút cho Nhiếp ảnh gia theo trạng thái hiện t
         return [_nut('Tải ảnh lên', 'tai_anh_len', ma_booking=ma)]  # trang tải ảnh của Nhiếp ảnh gia (delivery N4)
     return [_nut('Xem Booking', 'chi_tiet_yeu_cau_booking', ma_booking=ma)]  # mặc định: trang chi tiết Booking của Nhiếp ảnh gia
 
-
+#Hàm chính chọn nút theo vai trò
 def hanh_dong_thong_bao(thong_bao, nguoi_dung):  # HÀM CHÍNH P12: các nút hiện trong trang chi tiết thông báo
     """Trả về list nút (nút chính đứng đầu). Rỗng nếu không có nút nào hợp lý. Không bao giờ ném lỗi ra trang."""  # mô tả hàm
     try:  # lỗi gì khi dựng nút cũng không được làm sập trang chi tiết
-        vai_tro = get_role(nguoi_dung)  # vai trò người đang xem
-        if thong_bao.MaDuyetHoSo_id is not None:  # thông báo về một lượt duyệt hồ sơ
+        vai_tro = get_role(nguoi_dung)  # 1xd vai trò người đang xem
+        if thong_bao.MaDuyetHoSo_id is not None:  # 2thông báo về một lượt duyệt hồ sơ, only qtv
             return _nut_duyet_ho_so(thong_bao.MaDuyetHoSo) if vai_tro == VaiTro.QUAN_TRI_VIEN else []  # chỉ Quản trị viên có nút này
-        if thong_bao.MaBooking_id is None:  # không gắn Booking cũng không gắn lượt duyệt
+        if thong_bao.MaBooking_id is None:  # 3không gắn Booking cũng không gắn lượt duyệt
             return _nut_ho_so_cua_toi(nguoi_dung) if vai_tro == VaiTro.NHIEP_ANH_GIA else []  # thông báo hồ sơ của Nhiếp ảnh gia
+        #4gọi hàm dựng nút riêng theo từng vai trò
         if vai_tro == VaiTro.KHACH_HANG:  # Khách hàng xem thông báo Booking
             return _nut_khach(thong_bao.MaBooking)  # nút theo trạng thái Booking
         if vai_tro == VaiTro.NHIEP_ANH_GIA:  # Nhiếp ảnh gia xem thông báo Booking
             return _nut_nag(thong_bao.MaBooking)  # nút theo trạng thái Booking
         return []  # Quản trị viên chưa có trang Booking
-    except Exception:  # noqa: BLE001  # mọi lỗi đều chỉ ghi log
+    except Exception:  # noqa: BLE001  #ghi lỗi vào log và trả về danh sách rỗng
         logger.exception('hanh_dong_thong_bao: dựng nút thất bại (thông báo %s)', thong_bao.pk)  # ghi log để sửa sau
         return []  # trang vẫn mở được, chỉ không có nút

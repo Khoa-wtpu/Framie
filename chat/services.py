@@ -1,3 +1,7 @@
+#1. Mở màn chat:kiểm quyền rồi lấy 30 tin gần nhất: services.py lay_cuoc_cua_nguoi_dung + views.py chi_tiet_cuoc_tro_chuyen
+#1. services.py lay_tin_gan_nhat --> Hiển thị tin nhắn thành các bong bóng chat _tin_nhan.html
+#2. chat.js – form.addEventListener
+
 # chat/services.py - P10 (UC8.1), P11 (UC8.2, UC8.3) và nâng cấp chat (bước 1 đến 6): logic nghiệp vụ. View và template chỉ gọi các hàm ở đây.
 import os  # lấy tên file an toàn
 import re  # tìm đường link trong tin nhắn (góp ý C2)
@@ -98,16 +102,20 @@ def mo_hoac_tao_cuoc_tro_chuyen(khach, nag):
 # ---------------------------------------------------------------------------------------------
 # P11 - UC8.2 và UC8.3
 # ---------------------------------------------------------------------------------------------
-
+#Kiểm tra quyền truy cập
 def lay_cuoc_cua_nguoi_dung(user, ma_cuoc):  # lấy cuộc trò chuyện nếu user là người trong cuộc, ngược lại báo 404
-    cuoc = get_object_or_404(  # không có cuộc này thì 404
+    cuoc = get_object_or_404(  # 1Tìm cuộc trò chuyện theo mã, không tồn tại thì trả về 404
         CuocTroChuyen.objects.select_related('MaKhachHang', 'MaNhiepAnhGia__MaTaiKhoan'),  # nạp sẵn hai người trong cuộc, đỡ truy vấn thêm
         pk=ma_cuoc,  # theo mã cuộc trò chuyện
     )  # hết get_object_or_404
+    #2Kiểm tra người đang đăng nhập có phải khách hàng của cuộc trò chuyện không
     la_khach = cuoc.MaKhachHang_id == user.pk  # user là Khách hàng của cuộc này
+    #3Kiểm tra người đó có phải nhiếp ảnh gia phụ trách cuộc trò chuyện không
     la_nag = cuoc.MaNhiepAnhGia.MaTaiKhoan_id == user.pk  # user là tài khoản của Nhiếp ảnh gia trong cuộc này
+    #4Nếu không thuộc một trong hai vai trò trên thì từ chối truy cập bằng lỗi 404
     if not (la_khach or la_nag):  # người ngoài cuộc trò chuyện
         raise Http404('Không tìm thấy cuộc trò chuyện.')  # trả 404 (không báo 403) để không lộ việc cuộc này có tồn tại
+    #5Nếu là nhiếp ảnh gia nhưng chưa đủ điều kiện sử dụng trò chuyện thì cũng bị từ chối
     if la_nag and not duoc_dung_tro_chuyen(user):  # Nhiếp ảnh gia chưa được duyệt hồ sơ
         raise Http404('Không tìm thấy cuộc trò chuyện.')  # theo README: chỉ được dùng "Hồ sơ của tôi"
     return cuoc  # hợp lệ
@@ -145,11 +153,17 @@ def thong_tin_doi_phuong(cuoc, user):  # tên, ảnh, chữ cái đầu và link
 def _nap_tin(truy_van):  # nạp sẵn ảnh đính kèm và tin được trả lời, tránh truy vấn lặp cho từng tin
     return truy_van.select_related('MaTinTraLoi').prefetch_related('dinh_kem', 'MaTinTraLoi__dinh_kem')  # 1 truy vấn cho mỗi quan hệ
 
-
+#Lấy 30 tin nhắn gần nhất
 def lay_tin_gan_nhat(cuoc, so_luong=SO_TIN_MOI_LAN, sau_ma=0):  # UC8.3: các tin gần nhất; sau_ma = mã tin đã xóa phía mình (chỉ lấy tin có mã lớn hơn)
+    #filter (..) Chỉ lấy tin nhắn có mã lớn hơn mốc đã xóa
+    #order_by Sắp xếp mã tin nhắn giảm dần, tức tin mới nhất đứng trước
+    #[:so_luong + 1]: Lấy tối đa 31 tin thay vì 30 để kiểm tra còn tin cũ hơn hay không
     moi_nhat = list(_nap_tin(cuoc.tin_nhan.filter(MaTinNhan__gt=sau_ma)).order_by('-MaTinNhan')[:so_luong + 1])  # lấy dư 1 tin để biết còn tin cũ hơn không
+    #Nếu có 31 tin thì xác định vẫn còn tin cũ hơn để tải tiếp
     con_cu = len(moi_nhat) > so_luong  # còn tin cũ hơn phần đang hiện
+    #Chỉ giữ lại 30 tin mới nhất
     danh_sach = moi_nhat[:so_luong]  # chỉ giữ đúng số lượng cần hiện
+    #Đảo thứ tự để hiển thị từ tin cũ đến tin mới
     danh_sach.reverse()  # đảo lại: cũ trước, mới sau (đúng thứ tự đọc)
     return danh_sach, con_cu  # trả về danh sách và cờ còn tin cũ
 

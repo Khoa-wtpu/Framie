@@ -1,3 +1,5 @@
+#ds tb bự: (views.py danh_sach(request)) + services.py lay_danh_sach/dem_theo_nhom(nguoi_dung) +danh_sach.html
+
 {# SC9.1 Danh sách thông báo (3 vai trò dùng chung). Có 4 trạng thái: bình thường, Rỗng, Lỗi tải, Không có kết quả lọc #}
 {% extends "base.html" %}
 {% load static ui %}
@@ -8,6 +10,10 @@
    <h1>Thông báo</h1>
    {# Hàng công cụ: ô tìm kiếm và nút lọc. Rỗng hoặc Lỗi tải thì làm mờ (đúng wireframe) #}
    <div class="tb-dau__cong-cu">
+
+#dsach bự: Hiển thị ô tìm kiếm, menu lọc và danh sách
+     #1Ô tìm kiếm gửi từ khóa bằng GET và giữ lại nhóm lọc hiện tại.
+     #2Menu lọc cho phép người dùng chuyển giữa các nhóm.
      <form class="tb-tim" method="get" role="search">
        <input type="hidden" name="loc" value="{{ loc }}">
        <label class="sr-only" for="tb-q">Tìm kiếm thông báo</label>
@@ -17,6 +23,7 @@
      <div class="dropdown" data-dropdown>
        <button class="btn btn--primary" type="button" data-dropdown-toggle aria-haspopup="true" aria-expanded="false"{% if loi_tai or khong_co_gi %} disabled{% endif %}>Lọc thông báo</button>
        <div class="dropdown__menu" data-dropdown-menu hidden>
+         #3template lặp qua danh sách thông báo để hiển thị từng dòng
          {% for nhom in cac_nhom %}
          <a class="dropdown__item{% if nhom.khoa == loc %} is-active{% endif %}" href="?loc={{ nhom.khoa }}{% if q %}&amp;q={{ q|urlencode }}{% endif %}"{% if nhom.khoa == loc %} aria-current="true"{% endif %}>{{ nhom.nhan }} ({{ nhom.so }})</a>
          {% endfor %}
@@ -51,6 +58,7 @@
        {% for tb in page_obj %}{% include "notifications/_dong_thong_bao.html" with tb=tb quay_lai=quay_lai %}{% endfor %}
      </ul>
      {% include "includes/pagination.html" with page_obj=page_obj %}
+ #
    {% else %}
      {# Có thông báo nhưng bộ lọc hoặc từ khóa không khớp dòng nào #}
      <div class="panel tb-trong">

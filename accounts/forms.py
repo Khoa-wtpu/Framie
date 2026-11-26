@@ -23,7 +23,7 @@ class DangNhapForm(AuthenticationForm):  # kế thừa form mẫu, chỉ đổi 
     error_messages = {  # các câu báo lỗi của form
         'invalid_login': 'Email hoặc mật khẩu không chính xác',  # đúng chữ trong đặc tả, dùng cho cả sai email lẫn sai mật khẩu
         'inactive': 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Quản trị viên.',  # tài khoản bị khóa (P7 sẽ dùng)
-    }  # hết danh sách lỗi
+    }  # hết danh sách lỗi #insd mã lỗi inactive để hiển thị câu thông báo tương ứng/islưu trạng thái hoạt động của tài khoản.
 
     username = forms.EmailField(  # ô email (name vẫn là username để backend nhận được)
         label='Email',  # nhãn hiển thị
@@ -33,7 +33,7 @@ class DangNhapForm(AuthenticationForm):  # kế thừa form mẫu, chỉ đổi 
     )  # hết ô email
     password = forms.CharField(  # ô mật khẩu
         label='Mật khẩu',  # nhãn hiển thị
-        strip=False,  # không tự cắt khoảng trắng đầu/cuối mật khẩu
+        strip=False ,  # không tự cắt khoảng trắng đầu/cuối mật khẩu
         widget=forms.PasswordInput(attrs={'autocomplete': 'current-password'}),  # ô ẩn ký tự, gợi ý trình duyệt điền mật khẩu đã lưu
     )  # hết ô mật khẩu
 

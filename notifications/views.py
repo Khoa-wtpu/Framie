@@ -1,4 +1,7 @@
 # notifications/views.py - P8: UC9.1 Xem thông báo, UC9.2 Đánh dấu thông báo (Phanh)
+#chi tiet: urls + views.py chi_tiet() + services.py queryset_chi_tiet()/ tu_dong_danh_dau + chi_tiet.html
+#ds tb bự: (views.py danh_sach(request)) + services.py lay_danh_sach/dem_theo_nhom(nguoi_dung) +danh_sach.html
+
 import logging  # ghi log lỗi ra Terminal thay vì làm sập trang
 
 from django.contrib import messages  # hộp thông báo ngắn trên đầu trang (lỗi hiện màu đỏ nhờ MESSAGE_TAGS)
@@ -39,12 +42,16 @@ def _trang_quay_lai(request, mac_dinh):  # quyết định sau khi bấm nút PO
         return dich  # an toàn thì quay về đúng trang cũ (giữ nguyên bộ lọc, số trang)
     return mac_dinh  # không hợp lệ thì dùng địa chỉ mặc định
 
-
-@dang_nhap_bat_buoc  # phải đăng nhập
-@require_GET  # trang xem chỉ nhận GET
+#Tiếp nhận yêu cầu từ trang thông báo, 4 lấy nhóm lọc và từ khóa tìm kiếm từ URL
+# gọi các hàm trong services để lấy dữ liệu
+#đếm số thông báo theo nhóm và sử dụng Paginator để chia danh sách thành nhiều trang
+@dang_nhap_bat_buoc  # 1yêu cầu người dùng đăng nhập mới được truy cập
+@require_GET  # 2trang chỉ tiếp nhận phương thức GET
 def danh_sach(request):  # SC9.1 Danh sách thông báo
     """UC9.1 bước 1 đến 3: danh sách của người đang đăng nhập, có nhóm lọc, tìm kiếm, phân trang."""  # mô tả hàm
+    #3chuẩn hóa giá trị lọc để đưa về nhóm hợp lệ
     loc = services.chuan_hoa_loc(request.GET.get('loc'))  # nhóm đang chọn (Tất cả / Chưa đọc / Đã đánh dấu sao)
+    #4lấy nhóm lọc từ địa chỉ URL, ví dụ chua_doc
     tu_khoa = (request.GET.get('q') or '').strip()[:services.DO_DAI_TU_KHOA_TOI_DA]  # từ khóa tìm kiếm đã làm sạch
     ngu_canh = {  # dữ liệu chung gửi sang template
         'loc': loc,  # nhóm đang chọn
@@ -71,14 +78,19 @@ def danh_sach(request):  # SC9.1 Danh sách thông báo
     ngu_canh['khong_co_gi'] = so_nhom[services.LOC_TAT_CA] == 0  # người dùng chưa từng có thông báo nào (màn hình Rỗng)
     ngu_canh['page_obj'] = page_obj  # trang hiện tại
     ngu_canh['so_trong_nhom'] = page_obj.paginator.count  # số thông báo khớp bộ lọc, hiện cạnh tiêu đề nhóm
+
     ngu_canh['quay_lai'] = request.get_full_path()  # địa chỉ trang này, để các nút POST quay về đúng chỗ
     return render(request, 'notifications/danh_sach.html', ngu_canh)  # dựng trang
 
-
-@dang_nhap_bat_buoc  # phải đăng nhập
+#view nvu lấy thông báo mà khách hàng muốn xem
+@dang_nhap_bat_buoc  # 1Yêu cầu người dùng phải đăng nhập mới được xem thông báo
 @require_GET  # trang xem chỉ nhận GET
 def chi_tiet(request, ma_thong_bao):  # SC9.2 Chi tiết thông báo
     """UC9.1 bước 4 đến 5 và UC9.2 bước 6: xem chi tiết, tự chuyển Chưa đọc sang Đã đọc."""  # mô tả hàm
+    #2tìm thông báo trong danh sách thuộc về chính người dùng bằng et_object_or_44()
+    #->nếu mã thông báo không tồn tại hoặc thuộc người khác thì trả về 404
+    #3nếu không có tham số giu thì hệ thống tự đánh dấu Đã đọc
+    #render truyền thông tin thông báo và Booking liên quan sang Template
     thong_bao = get_object_or_404(services.queryset_chi_tiet(request.user), pk=ma_thong_bao)  # của người khác hoặc không có thì 404
     if request.GET.get('giu'):  # người dùng vừa chủ động đổi trạng thái (nút ở trang này) nên KHÔNG tự đánh dấu Đã đọc
         da_cap_nhat = True  # không có gì cần cập nhật, nên không hiện hộp lỗi
@@ -104,7 +116,12 @@ def _ket_qua_doi_trang_thai(request, thanh_cong, mac_dinh):  # phần kết thú
 def _la_ajax(request):  # MỚI: True nếu do JS gọi ngầm bằng fetch (có header X-Requested-With)
     return request.headers.get('X-Requested-With') == 'XMLHttpRequest'  # chuong.js và thong_bao.js đều gửi header này
 
-
+#Tiếp nhận thao tác đánh dấu đã đọc/chưa đọc
+#View tiếp nhận yêu cầu POST, tìm thông báo thuộc về người đang đăng nhập
+#kiểm tra giá trị trạng thái được gửi lên
+#View gọi hàm dat_trang_thai_doc trong Services để cập nhật
+#Nếu thao tác được gửi bằng AJAX thì trả mã 204 khi thành công
+#nếu là form thông thường thì xử lý kết quả và chuyển trang quay lại.
 @dang_nhap_bat_buoc  # phải đăng nhập
 @require_POST  # CHỈ nhận POST (kèm csrf_token) nên không đổi trạng thái được bằng cách mở link
 def doi_trang_thai_doc(request, ma_thong_bao):  # nút "Đánh dấu đã đọc" / "Đánh dấu chưa đọc"
@@ -121,7 +138,8 @@ def doi_trang_thai_doc(request, ma_thong_bao):  # nút "Đánh dấu đã đọc
         return HttpResponse(status=204 if thanh_cong else 500)  # MỚI: 204 = xong, 500 = lỗi để JS xử lý
     return _ket_qua_doi_trang_thai(request, thanh_cong, mac_dinh)  # gọi kiểu cũ: báo lỗi nếu có rồi quay lại
 
-
+#view đổi dấu sao - người dùng bấm, form gửi giá trị co hoặc khong đến View doi_dau_sao
+# view gọi Services để cập nhật trạng thái đánh dấu sao của đúng thông báo
 @dang_nhap_bat_buoc  # phải đăng nhập
 @require_POST  # chỉ nhận POST
 def doi_dau_sao(request, ma_thong_bao):  # nút ★ và mục "Đánh dấu sao" / "Bỏ đánh dấu sao"

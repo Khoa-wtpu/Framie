@@ -10,6 +10,11 @@
 #   - Session chỉ lưu được JSON, nên ngày lưu thành chuỗi 'YYYY-MM-DD', ngân sách lưu thành chuỗi số ('' = không giới hạn).
 #     Trước khi gọi hàm của Khoa mới đổi lại thành date và Decimal (hàm _tra_loi_cho_goi_y).
 #   - Mỗi khung giờ là một nút POST tới chon_slot, kèm ma_nhiep_anh_gia (giống trang lich_chon_slot). Không viết lại luồng giữ chỗ.
+
+#bỏ qua: tro_ly.py --> tro_ly.html
+#tong cau hoi, pr: tro_ly.py --> tro_ly.html
+#khai báo nội dung câu hỏi và hướng dẫn phụ trong form, cụ thể --> class BuocLoaiHinhForm
+#thẻ: fieldset trong tro_ly.html
 # =====================================================================
 from datetime import date, timedelta  # date: ngày chụp; timedelta: cộng ngày để tính ngày xa nhất được chọn
 from decimal import Decimal  # Decimal: ngân sách phải là Decimal, không dùng float (E1, mục 2.2)
@@ -35,8 +40,12 @@ from search.services import dinh_dang_tien  # đổi số tiền thành chữ, v
 # Hằng số
 # ---------------------------------------------------------------------
 KHOA_SESSION = 'tro_ly_tra_loi'  # khóa lưu câu trả lời trong session (E1 chốt tên này)
+
+#tong1 --> 'buoc': buoc
 CAC_CAU = ('loai_hinh', 'khu_vuc', 'ngan_sach', 'ngay_chup', 'phong_cach')  # khóa của 5 câu, đúng thứ tự bước 1 đến 5 (trùng khóa hợp đồng E1)
 TONG_BUOC = len(CAC_CAU)  # tổng số bước = 5
+
+#Khai báo bốn mức ngân sách với giá trị lưu và nhãn hiển thị
 MUC_NGAN_SACH = (  # 4 mức ngân sách chọn sẵn (E1, mục 2.1): (giá trị lưu, chữ hiện cho khách)
     ('2000000', 'Dưới 2 triệu'),  # mức 1: 2.000.000đ
     ('3000000', 'Dưới 3 triệu'),  # mức 2: 3.000.000đ
@@ -62,7 +71,7 @@ def _ngay_hop_le(ngay):  # True nếu ngày nằm trong khoảng được chọn
 THU_VIET = ('T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN')  # nhãn thứ viết tắt, thứ tự theo date.weekday() (0 = thứ Hai)
 SO_NGAY_NHANH = 7  # số ngày hiện ở hàng chọn nhanh (từ hôm nay)
 
-
+#Tạo danh sách tối đa bảy ngày để khách chọn nhanh
 def _ngay_nhanh():  # danh sách ngày chọn nhanh cho bước 4: [{'iso','thu','so'}]
     hom_nay = timezone.localdate()  # hôm nay theo múi giờ dự án
     ds = []  # kết quả
@@ -77,7 +86,11 @@ def _ngay_nhanh():  # danh sách ngày chọn nhanh cho bước 4: [{'iso','thu'
 # ---------------------------------------------------------------------
 # Form: mỗi bước một form, mỗi form đúng một ô tên 'dap_an' (để template dùng chung cho cả 5 bước)
 # ---------------------------------------------------------------------
-class _FormChonMot(forms.Form):  # lớp cha cho các câu "chọn 1 trong danh sách"
+#-> tro_ly.html (h1 id="tro-ly-hoi")
+class _FormChonMot(forms.Form):  # lớp cha xd cấu trúc cho các câu "chọn 1 trong danh sách"
+#dap_an được khai báo bằng ChoiceField
+#khi form được khởi tạo, hàm _init_ lấy trường này và gán NHAN_label, GOI_Y vào help_text
+#nội dung câu hỏi và hướng dẫn phụ của class con được đưa vào trường đáp án
     KIEU = 'chon_mot'  # cho template biết cách vẽ: nhóm nút chọn một
     NHAN = ''  # câu hỏi (lớp con điền)
     TB_THIEU = ''  # câu báo khi khách chưa chọn (lớp con điền)
@@ -94,26 +107,30 @@ class _FormChonMot(forms.Form):  # lớp cha cho các câu "chọn 1 trong danh 
         truong = self.fields['dap_an']  # lấy ô đáp án của form này (mỗi form có bản sao riêng)
         truong.label = self.NHAN  # đặt câu hỏi làm nhãn
         truong.help_text = self.GOI_Y  # dòng phụ hiện dưới câu hỏi
+#gọi hàm lua_chon() tương ứng với class form hiện tại, sau đó gán danh sách đáp án nhận được vào trường dap_an
         truong.choices = self.lua_chon()  # đọc danh mục tại thời điểm mở trang, không đọc lúc import
         truong.error_messages['required'] = self.TB_THIEU  # câu báo khi bỏ trống
         truong.error_messages['invalid_choice'] = self.TB_SAI  # câu báo khi chọn giá trị lạ
 
-
+#khai báo nội dung câu hỏi và hướng dẫn phụ trong form, cụ thể --> formchonmot
 class BuocLoaiHinhForm(_FormChonMot):  # câu 1
     NHAN = 'Bạn muốn chụp loại hình nào?'  # câu hỏi
+    GOI_Y = 'Chọn một loại hình để Trợ lý gợi ý đúng chuyên môn.'  # dòng phụ
     TB_THIEU = 'Vui lòng chọn một loại hình chụp.'  # báo khi bỏ trống
     TB_SAI = 'Loại hình chụp không hợp lệ.'  # báo khi chọn sai
-    GOI_Y = 'Chọn một loại hình để Trợ lý gợi ý đúng chuyên môn.'  # dòng phụ
 
+#danh sach dap an c1. lấy danh sách loại hình chụp từ bảng LoaiHinhChuip trong database,
+# sắp xếp theo tên (và chỉ lấy hai thông tin là mã loại hình với tên loại hình.
     def lua_chon(self):  # danh sách đáp án lấy từ bảng Loại hình chụp
         return list(LoaiHinhChup.objects.order_by('TenLoaiHinh').values_list('pk', 'TenLoaiHinh'))  # [(mã, tên)]
 
 
 class BuocKhuVucForm(_FormChonMot):  # câu 2
     NHAN = 'Bạn chụp ở khu vực nào?'  # câu hỏi
+    GOI_Y = 'Nhiếp ảnh gia được lọc theo khu vực hoạt động.'  # dòng phụ
     TB_THIEU = 'Vui lòng chọn một khu vực.'  # báo khi bỏ trống
     TB_SAI = 'Khu vực không hợp lệ.'  # báo khi chọn sai
-    GOI_Y = 'Nhiếp ảnh gia được lọc theo khu vực hoạt động.'  # dòng phụ
+    # Chọn bố cục hiển thị tỉnh thành theo miền
     BO_CUC = 'nhom_mien'  # F3: 34 tỉnh thành xếp theo Miền Bắc / Trung / Nam, có ô tìm (không dùng lưới 3 cột đánh số nữa)
 
     def lua_chon(self):  # danh sách đáp án lấy từ bảng Khu vực
@@ -127,10 +144,13 @@ class BuocNganSachForm(_FormChonMot):  # câu 3
     GOI_Y = 'Chọn mức trần giá gói bạn sẵn sàng chi.'  # dòng phụ
     BO_CUC = 'danh_sach'  # 4 mức ngân sách xếp thành danh sách dọc
 
+#hàm Trả về danh sách bốn mức ngân sách cố định
     def lua_chon(self):  # 4 mức cố định
         return list(MUC_NGAN_SACH)  # [(giá trị, chữ)]
 
-
+#DateField để nhận dữ liệu ngày.
+# Trong hàm khởi tạo, thiết lập ngày nhỏ nhất là hôm nay và ngày lớn nhất theo giới hạn của hệ thống.
+#Đối với hàng ngày nhanh, hàm _ngay_nhanh() để tạo danh sách tối đa bảy ngày
 class BuocNgayForm(forms.Form):  # câu 4
     KIEU = 'ngay'  # cho template biết: vẽ ô chọn ngày bằng form_field.html
     dap_an = forms.DateField(  # ô chọn ngày
@@ -152,7 +172,10 @@ class BuocNgayForm(forms.Form):  # câu 4
             raise ValidationError(f'Chỉ chọn được ngày từ hôm nay đến {_ngay_toi_da():%d/%m/%Y}.')  # báo lỗi ngay dưới ô
         return ngay  # hợp lệ thì trả lại ngày
 
-
+#JS bộ đếm, tro_ly.js data-toi-da
+#MultipleChoiceField-chọn nhiều phong cách
+#CheckboxSelectMultiple để hiển thị các lựa chọn dưới dạng hộp tích
+#Giới hạn tối đa là 3, được lấy từ hằng TOI_DA_PHONG_CACH của hệ thống
 class BuocPhongCachForm(forms.Form):  # câu 5
     KIEU = 'chon_nhieu'  # cho template biết: vẽ nhóm nút chọn nhiều
     dap_an = forms.MultipleChoiceField(  # ô chọn nhiều
@@ -271,22 +294,28 @@ def assistant(request):  # name='assistant', URL /tro-ly/
     return render(request, 'search/tro_ly.html', {  # POST sai hoặc GET: hiện form
         'form': form,  # form của bước hiện tại
         'kieu': lop_form.KIEU,  # cách vẽ ô trả lời
-        'buoc': buoc,  # số bước hiện tại
-        'tong_buoc': TONG_BUOC,  # tổng số bước
-        'cac_buoc': list(range(1, TONG_BUOC + 1)),  # [1..5] để vẽ thanh tiến độ
+#tong2 chuẩn bị dữ liệu và truyền sang Template; View truyền ba dữ liệu sang Template --> tro_ly.html (tro-ly__nhan)
+#-> nơi hiển thị câu hỏi
+        'buoc': buoc,  # số câu hiện tại
+        'tong_buoc': TONG_BUOC,  # tổng số câu
+        'cac_buoc': list(range(1, TONG_BUOC + 1)),  # dsach từ [1..5] để template sd vẽ thanh tiến độ
         'bo_cuc': getattr(lop_form, 'BO_CUC', 'luoi'),  # cách xếp đáp án (lưới hoặc danh sách)
         'ngay_nhanh': _ngay_nhanh() if lop_form.KIEU == 'ngay' else [],  # hàng ngày chọn nhanh (chỉ bước 4)
         'toi_da_phong_cach': TOI_DA_PHONG_CACH,  # số phong cách tối đa cho bộ đếm ở bước 5 (lấy từ hằng của Khoa)
         'la_buoc_cuoi': buoc == TONG_BUOC,  # bước cuối có nút "Chưa rõ, bỏ qua" và nút "Xem gợi ý"
         'url_hien_tai': _url_buoc(buoc),  # nơi form gửi tới (giữ ?buoc=...)
         'url_quay_lai': _url_buoc(buoc - 1) if buoc > 1 else '',  # nút Quay lại (bước 1 không có)
-        'url_bo_qua': url_trang_chu(request.user),  # nút "Bỏ qua Trợ lý" về trang tổng quan
+#bqua1 --> trợ lý html
+        'url_bo_qua': url_trang_chu(request.user),  # tạo đường dẫn nút "Bỏ qua Trợ lý" về trang tổng quan
+        #gọi url_trang_chu và truyền vào tài khoản hiện tại, đường dẫn trang chủ tương ứng vai trò
+        #lưu vào url_bq - chuyển sang templ
     })  # hết dict
 
 
 # ---------------------------------------------------------------------
 # View 2: trang kết quả
 # ---------------------------------------------------------------------
+#lấy đường dẫn ảnh đại diện của nhiếp ảnh gia
 def _url_anh(nag):  # địa chỉ ảnh đại diện; trả '' nếu chưa có ảnh (tránh lỗi khi lấy .url của ô trống)
     anh = nag.AnhDaiDien  # trường ảnh đại diện của Nhiếp ảnh gia
     try:  # lấy .url có thể báo lỗi nếu trường rỗng
@@ -294,7 +323,8 @@ def _url_anh(nag):  # địa chỉ ảnh đại diện; trả '' nếu chưa có
     except (ValueError, AttributeError):  # trường rỗng hoặc không phải ImageField
         return ''  # không hiện ảnh
 
-
+#Hàm này nhận một kết quả gợi ý do Khoa trả về
+#sau đó chuyển thành một dictionary (từ điển) chứa các thông tin cần thiết để hiển thị trên thẻ.
 def _the_ket_qua(ket_qua):  # đổi một KetQuaGoiY thành dict đơn giản cho template
     nag = ket_qua.nhiep_anh_gia  # hồ sơ Nhiếp ảnh gia
     tai_khoan = nag.MaTaiKhoan  # tài khoản của họ (goi_y.py đã select_related nên không tốn thêm truy vấn)
@@ -302,6 +332,7 @@ def _the_ket_qua(ket_qua):  # đổi một KetQuaGoiY thành dict đơn giản c
         'ma': nag.pk,  # mã Nhiếp ảnh gia (gửi kèm khi bấm chọn giờ)
         'ten': tai_khoan.get_full_name() or tai_khoan.username,  # tên hiển thị
         'anh': _url_anh(nag),  # ảnh đại diện
+      #tạo địa chỉ trang hồ sơ cho từng Nhiếp ảnh gia, sau đó lưu vào dict kết quả với khóa url_ho_so
         'url_ho_so': reverse('photographer_detail', args=[nag.pk]),  # trang hồ sơ công khai (tên URL lấy từ profiles/urls_cong_khai.py)
         'diem': ket_qua.diem,  # số nguyên 0-100, hiện "Phù hợp x%"
         'ly_do': [ly for ly in ket_qua.ly_do if ly != CHIP_CHUA_CO_DANH_GIA],  # bỏ chip "Chưa có đánh giá" vì thẻ có dòng riêng (chip có thể bị cắt do giới hạn 3 chip)
@@ -327,7 +358,8 @@ def _nut_goi_y(cau):  # ghép một câu gợi ý với nút dẫn tới đúng 
             return {'cau': cau, 'url': _url_buoc(buoc), 'nhan': nhan}  # có nút
     return {'cau': cau, 'url': '', 'nhan': ''}  # không có nút
 
-
+#Nhận dữ liệu câu trả lời đã được kiểm tra và tạo danh sách tóm tắt gồm 5 tiêu chí.
+#nhan..:Tra cứu tên ngân sách tương ứng với mức tiền đã chọn; nếu không có thì dùng dinh_dang_tien() để định dạng số tiền.
 def _tom_tat(c):  # các dòng "câu hỏi: đáp án" hiện đầu trang kết quả; c là CauTraLoi do kiem_tra_cau_tra_loi trả về
     if c.ngan_sach is None:  # khách chọn không giới hạn
         ngan_sach = 'Không giới hạn'  # chữ hiện
@@ -337,13 +369,18 @@ def _tom_tat(c):  # các dòng "câu hỏi: đáp án" hiện đầu trang kết
         ('Loại hình', c.loai_hinh.TenLoaiHinh),  # câu 1
         ('Khu vực', c.khu_vuc.TenKhuVuc),  # câu 2
         ('Ngân sách', ngan_sach),  # câu 3
-        ('Ngày chụp', c.ngay_chup.strftime('%d/%m/%Y')),  # câu 4
+        ('Ngày chụp', c.ngay_chup.strftime('%d/%m/%Y')),  # câu 4 Chuyển ngày thành định dạng ngày/tháng/năm.
         ('Phong cách', ', '.join(p.TenPhongCach for p in c.phong_cach) or 'Chưa rõ'),  # câu 5; rỗng = chưa rõ
     ]  # hết danh sách
 
 
 @khach_hang_required  # chỉ Khách hàng đã đăng nhập
 @require_GET  # trang kết quả chỉ để xem; việc chọn giờ gửi tới chon_slot
+#xử lý dữ liệu trước khi hiển thị trang kết quả.
+#hệ thống đọc câu trả lời từ session,
+# chuyển đổi kiểu dữ liệu và kiểm tra xem người dùng đã trả lời đầy đủ, ngày chụp còn hợp lệ hay chưa
+#View gọi các hàm của bạn Khoa để kiểm tra câu trả lời và lấy danh sách nhiếp ảnh gia phù hợp
+#render() để truyền danh sách kết quả
 def assistant_result(request):  # name='assistant_result', URL /tro-ly/ket-qua/
     tra_loi = _doc_tra_loi(request.session)  # câu trả lời đã lưu
     cau_tra_loi = _tra_loi_cho_goi_y(tra_loi)  # đổi sang đúng kiểu hàm của Khoa

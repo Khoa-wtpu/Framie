@@ -1,4 +1,6 @@
 // notifications/static/notifications/chuong.js - P8: khung chuông thả xuống (tải bằng fetch khi bấm chuông)
+#chu tha xuong: header.html khung_thong_bao + chuong.js function tai + noti/services.py lay_moi_nhat+_khung_chuong.html
+
 (function () {  // bọc trong hàm để biến không rò ra ngoài
   var goc = document.querySelector('[data-bell]');  // khối chứa chuông trong header
   if (!goc) return;  // không có chuông (chưa đăng nhập) thì thôi
@@ -18,6 +20,9 @@
       '<a class="tb-khung__chan" href="' + nut.getAttribute('href') + '">Xem tất cả thông báo</a>';  // vẫn có đường sang trang danh sách
   }
 
+#khung tha xuong: Xử lý thao tác bấm chuông và tải dữ liệu. JavaScript đảm nhiệm việc xử lý khi người dùng bấm chuông.
+#sử dụng fetch() để gửi yêu cầu lên server, nhận về nội dung HTML rồi gắn vào khung bằng innerHTML
+#danh sách thông báo được tải mà không cần tải lại toàn bộ trang
   function tai() {  // lấy danh sách mới nhất từ server
     menu.innerHTML = '<p class="tb-khung__rong muted">Đang tải...</p>';  // chữ chờ
     fetch(url, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })  // gọi server kèm cookie đăng nhập
@@ -37,6 +42,7 @@
     nut.setAttribute('aria-expanded', 'true');  // báo trình đọc màn hình là đang mở
     tai();  // lấy dữ liệu mới
   });
+#
 
   menu.addEventListener('click', function (e) {  // bấm bên trong khung
     if (e.target.closest('[data-bell-retry]')) tai();  // bấm "Thử lại" thì tải lại
