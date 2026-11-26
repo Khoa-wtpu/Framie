@@ -30,6 +30,9 @@ from bookings.thoi_tiet import lay_du_bao_thoi_tiet  # E7: trả {'nhiet_do', 'x
 import unicodedata  # bỏ dấu tiếng Việt để so tên địa điểm
 import re  # tách chữ theo dấu câu
 
+# BR4.7-4 (UC4.7): Ngưỡng nhắc đổi lịch là khả năng mưa từ 60%; lời nhắc chỉ mang tính gợi ý trao đổi,
+# hệ thống không tự đổi hay hủy lịch.
+# Keyword tra cứu: ngưỡng mưa 60% | NGUONG_MUA_CAO | khả năng mưa cao | nhắc đổi lịch
 NGUONG_MUA_CAO = 60  # khả năng mưa từ mức này (%) trở lên thì nhắc trao đổi đổi lịch
 TB_CHUA_CO_DU_BAO = 'Chưa có dự báo'  # câu hiện khi E7 không trả được dự báo
 TB_NHAC_DOI_LICH = ('Khả năng mưa cao vào giờ chụp. Khách hàng và Nhiếp ảnh gia nên trao đổi '

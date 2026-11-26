@@ -28,6 +28,9 @@ logger = logging.getLogger(__name__)  # "cây bút ghi log" mang tên file này
 
 URL_API = 'https://api.open-meteo.com/v1/forecast'  # địa chỉ API dự báo của Open-Meteo (E6: miễn phí, không cần khóa)
 MUI_GIO = 'Asia/Ho_Chi_Minh'  # múi giờ Việt Nam (E6: API nhận tên này)
+# BR4.7-5 (UC4.7): Dự báo chỉ có cho các buổi chụp trong vòng 16 ngày tới; dữ liệu được lưu tạm 30 phút.
+# Timeout gọi Open-Meteo 3 giây; lỗi thì nhớ 1 phút để tránh gọi liên tục.
+# Keyword tra cứu: 16 ngày dự báo | cache 30 phút | timeout 3 giây | SO_NGAY_DU_BAO | GIAY_NHO_KET_QUA
 GIAY_CHO_TOI_DA = 3  # chờ API tối đa 3 giây, quá thì bỏ cuộc (theo yêu cầu E7)
 SO_NGAY_DU_BAO = 16  # API dự báo theo giờ tối đa 16 ngày (kết quả E6)
 CAC_BIEN_THEO_GIO = 'temperature_2m,precipitation_probability,weather_code'  # 3 thứ cần lấy: nhiệt độ, % mưa, mã thời tiết

@@ -50,7 +50,12 @@ USER_MODEL = settings.AUTH_USER_MODEL  # bảng User của Django (tài khoản)
 NHOM_KHACH_HANG = VaiTro.KHACH_HANG  # tên Group "Khách hàng" để kiểm tra quyền
 
 
-THOI_GIAN_GIU_CHO = timedelta(minutes=5)  # giữ chỗ tối đa 5 phút (quy tắc BR4.1-1)
+# BR4.1-1 (UC4.1): Slot được giữ tối đa 5 phút kể từ thời điểm Khách hàng chọn.
+# Hết thời hạn mà Booking chưa được gửi, hệ thống tự động giải phóng slot về "Lịch trống"
+# (xử lý định kỳ 60 giây một lần + mỗi khi có truy cập liên quan). Đây cũng là thời hạn dự phòng
+# khi hệ thống không nhận được yêu cầu nhả giữ chỗ lúc Khách hàng rời trang.
+# Keyword tra cứu: tối đa 5 phút giữ chỗ | thời hạn giữ chỗ 5 phút | THOI_GIAN_GIU_CHO
+THOI_GIAN_GIU_CHO = timedelta(minutes=5)
 
 
 # ---------------------------------------------------------------------------
@@ -82,7 +87,8 @@ def gio_chup_muon_nhat(lich, goi):
 
 
 def kiem_tra_goi_vua_slot(lich, goi, ngay_gio_chup=None):
-   """Kiểm tra quy tắc NgayGioChup + ThoiLuongChup <= giờ kết thúc slot.
+   """Kiểm tra quy tắc NgayGioChup + ThoiLuongChup <= giờ kết thúc slot (UC4.2 Basic Flow bước 4).
+   Keyword tra cứu: gói vừa khung giờ | gói vừa slot | kiem_tra_goi_vua_slot | thời lượng gói không vượt slot
    Trả về None nếu hợp lệ, ngược lại trả về (tên field của Booking, câu lỗi):
      - ('MaGoi', ...)        : cả khung giờ ngắn hơn thời lượng gói (đổi giờ bắt đầu cũng không cứu được);
      - ('NgayGioChup', ...)  : gói vừa slot nhưng giờ bắt đầu muộn quá (chỉ kiểm tra khi có ngay_gio_chup)."""
@@ -170,7 +176,10 @@ class GiuCho(models.Model):  # kế thừa models.Model => đây là một bản
        verbose_name = "Giữ chỗ"  # tên số ít hiển thị ở admin
        verbose_name_plural = "Giữ chỗ"  # tên số nhiều hiển thị ở admin
        constraints = [  # các ràng buộc do DATABASE kiểm tra, sai là không cho lưu
-           # BR4.1-2: mỗi slot chỉ có MỘT lượt đang giữ tại một thời điểm
+           # BR4.1-2 (UC4.1): Tại một thời điểm, mỗi slot chỉ được giữ bởi một Khách hàng.
+           # Việc kiểm tra và đổi trạng thái slot được thực hiện trong một giao dịch (select_for_update)
+           # để tránh hai Khách hàng cùng giữ một slot. Ràng buộc unique partial trên database là lớp bảo vệ cuối.
+           # Keyword tra cứu: mỗi slot một lượt đang giữ | một slot chỉ một khách giữ | BR4.1-2
            models.UniqueConstraint(  # ràng buộc "không được trùng"
                fields=["MaLich"],  # cột không được trùng là MaLich...
                condition=Q(TrangThai=TrangThaiGiuCho.DANG_GIU),  # ...nhưng chỉ xét các dòng đang "Đang giữ chỗ"

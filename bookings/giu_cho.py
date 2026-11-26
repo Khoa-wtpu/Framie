@@ -82,8 +82,10 @@ TB_HET_HAN = 'Thời gian giữ chỗ đã hết hạn. Khung giờ đã đượ
 # Thông báo khi người truy cập không thuộc nhóm Khách hàng.
 TB_KHONG_PHAI_KHACH = 'Chỉ tài khoản Khách hàng mới được chọn lịch và giữ chỗ.'
 
-# Giới hạn trang lịch chỉ hiển thị các slot trong 30 ngày tiếp theo.
-SO_NGAY_HIEN_THI_LICH = 30   # trang lịch chỉ liệt kê slot trống trong 30 ngày tới
+# BR4.1-4 (UC4.1): Chỉ slot chưa qua giờ bắt đầu mới được hiển thị và được giữ;
+# trang lịch chỉ liệt kê slot trong 30 ngày tới.
+# Keyword tra cứu: 30 ngày lịch | SO_NGAY_HIEN_THI_LICH | slot trong 30 ngày tới
+SO_NGAY_HIEN_THI_LICH = 30
 
 
 # Khai báo ngoại lệ riêng cho lỗi nghiệp vụ của chức năng giữ chỗ.
@@ -250,8 +252,10 @@ def giu_cho_slot(khach_hang, ma_lich):
         giai_phong_giu_cho_het_han()          # nhả slot quá hạn trước, để slot đó chọn được lại
         # Mở transaction bao trọn quá trình đổi slot cũ và giữ slot mới.
         with transaction.atomic():
-            # Khóa dòng slot: hai khách bấm cùng lúc thì lần lượt từng người (BR4.1-2).
-            # Bắt riêng lỗi khi tìm slot theo mã.
+            # BR4.1-2 (UC4.1): Tại một thời điểm mỗi slot chỉ được giữ bởi một Khách hàng.
+            # select_for_update() khóa dòng slot trong transaction → hai khách bấm cùng lúc
+            # sẽ lần lượt từng người, tránh race condition hai người cùng giữ một slot.
+            # Keyword tra cứu: khóa dòng slot | select_for_update slot | tránh hai khách cùng giữ
             try:
                 # Lấy slot cần giữ và khóa bản ghi để tránh hai khách cùng giữ một slot tại cùng thời điểm.
                 lich = LichKhaDung.objects.select_for_update().get(pk=ma_lich)
@@ -267,9 +271,13 @@ def giu_cho_slot(khach_hang, ma_lich):
             # Ghi nhận thời điểm hiện tại để kiểm tra hạn của lượt giữ cũ.
             bay_gio = timezone.now()
 
-            # Chú thích cho thao tác lấy các lượt đang giữ của chính khách hàng.
-            # Các lượt đang giữ của chính khách này.
-            # Truy vấn các lượt giữ và khóa các bản ghi tương ứng để tránh cập nhật đồng thời.
+            # =====================================================================
+            # BR4.1-3 (UC4.1): Mỗi Khách hàng chỉ có tối đa một lượt giữ chỗ đang hiệu lực.
+            # Keyword tra cứu: tối đa 1 lượt giữ / khách | mỗi khách một lượt giữ | BR4.1-3
+            # - Chọn lại đúng slot đang giữ còn hạn → dùng lại lượt cũ, KHÔNG gia hạn thời gian.
+            # - Chọn slot khác → nhả lượt cũ (đưa slot cũ về "Lịch trống"), rồi giữ slot mới.
+            # =====================================================================
+            # Các lượt đang giữ của chính khách này (khóa dòng để tránh race condition).
             luot_cu = list(GiuCho.objects.select_for_update()
                            # Chỉ lấy những lượt thuộc khách hàng hiện tại và vẫn ở trạng thái Đang giữ chỗ.
                            .filter(MaKhachHang=khach_hang, TrangThai=TrangThaiGiuCho.DANG_GIU))
@@ -277,7 +285,8 @@ def giu_cho_slot(khach_hang, ma_lich):
             for cu in luot_cu:
                 # Kiểm tra lượt đang giữ có phải đúng slot vừa chọn và vẫn còn hạn hay không.
                 if cu.MaLich_id == lich.pk and cu.ThoiDiemHetHan > bay_gio:
-                    # Nếu đúng, trả lại lượt hiện tại để không tạo lượt mới hoặc gia hạn thời gian.
+                    # 3b: Chọn lại đúng slot đang giữ còn hạn → dùng lại lượt hiện có, không gia hạn.
+                    # Keyword: không gia hạn thời gian giữ chỗ khi chọn lại cùng slot
                     return cu                 # đang giữ đúng slot này và còn hạn: dùng lại
 
             # Chú thích bước kiểm tra trạng thái của slot mà khách muốn chọn.
@@ -287,8 +296,10 @@ def giu_cho_slot(khach_hang, ma_lich):
                 # Nếu slot không trống, báo lỗi vì có thể đã được người khác giữ hoặc đặt.
                 raise GiuChoLoi(TB_SLOT_KHONG_KHA_DUNG)       # 4a: người khác giữ/đặt rồi
 
-            # 3a. Chọn slot khác: nhả slot cũ của chính khách này.
-            # Bắt lỗi trong quá trình giải phóng slot cũ của khách.
+            # 3a (UC4.1 Alternative Flow): Khách hàng đang giữ một slot khác và chọn slot khả dụng mới.
+            # Hệ thống chuyển lượt giữ cũ sang "Hết hạn", trả slot cũ về "Lịch trống",
+            # rồi giữ slot mới. Đảm bảo vẫn tuân thủ "tối đa 1 lượt giữ / khách" (BR4.1-3).
+            # Keyword tra cứu: chọn slot khác | nhả slot cũ | Alternative Flow 3a
             try:
                 # Duyệt từng lượt giữ cũ của khách hàng.
                 for cu in luot_cu:

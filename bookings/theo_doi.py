@@ -71,13 +71,16 @@ TB_KHONG_KHOP_BO_LOC = 'Không có Booking nào khớp bộ lọc.'      # câu 
 # Giá trị đặc biệt của bộ lọc, nghĩa là "xem tất cả trạng thái" (mặc định của "Booking của tôi").
 LOC_TAT_CA = 'tat_ca'  # chữ quy ước cho lựa chọn "Tất cả trạng thái" của ô lọc
 
-# Số dòng trên mỗi trang danh sách.
+# UC4.6 Basic Flow bước 2: danh sách chia tab + 10 Booking mỗi trang.
+# Keyword tra cứu: 10 Booking mỗi trang | SO_DONG_MOI_TRANG | phân trang danh sách Booking
 SO_DONG_MOI_TRANG = 10  # mỗi trang danh sách hiện tối đa 10 Booking
 
 # Tab nhóm trạng thái ở đầu trang danh sách (giống tab "Chờ xử lý / Đã xử lý" của trang Duyệt hồ sơ).
 TAB_TAT_CA = 'tat_ca'  # tab "Tất cả": không lọc theo nhóm
 TAB_DANG_XU_LY = 'dang_xu_ly'  # tab "Đang xử lý": Booking chưa kết thúc
 TAB_KET_THUC = 'ket_thuc'  # tab "Đã kết thúc": Booking đã xong hoặc không còn tiếp tục
+# BR4.6-3 (UC4.6): Các trạng thái kết thúc gồm “Hoàn thành”, “Đã từ chối”, “Hết thời hạn đặt cọc” và “Đã hủy”.
+# Keyword tra cứu: trạng thái kết thúc | TRANG_THAI_KET_THUC | tab Đã kết thúc
 TRANG_THAI_KET_THUC = (TrangThaiBooking.HOAN_THANH, TrangThaiBooking.DA_TU_CHOI,  # 4 trạng thái kết thúc:
                        TrangThaiBooking.HET_THOI_HAN_DAT_COC, TrangThaiBooking.DA_HUY)  # hoàn thành + 3 trạng thái không thành công
 
@@ -136,8 +139,11 @@ def _tien(so):  # định dạng tiền kiểu Việt Nam
 
 
 def booking_cua_nguoi_dung(user, vai_tro):  # cửa ngõ lấy Booking đúng phạm vi của người dùng
-    """HÀM 'CỬA NGÕ' LẤY DỮ LIỆU của UC4.7 - mọi truy vấn của file này đều đi qua đây nên không thể xem lọt
-    Booking của người khác (BR4.7-1).
+    """HÀM 'CỬA NGÕ' LẤY DỮ LIỆU của UC4.6 - mọi truy vấn của file này đều đi qua đây nên không thể xem lọt
+    Booking của người khác.
+    BR4.6-1 (UC4.6): Khách hàng/Nhiếp ảnh gia chỉ được xem các Booking liên quan đến chính mình.
+    BR4.6-4: Quản trị viên xem được mọi Booking tại trang quản trị (chức năng riêng, không thuộc Actor UC4.6).
+    Keyword tra cứu: chỉ xem Booking của mình | phạm vi theo vai trò | BR4.6-1 | booking_cua_nguoi_dung
       Khách hàng     -> chỉ Booking do chính mình đặt.
       Nhiếp ảnh gia  -> chỉ Booking gửi đến chính mình.
       Quản trị viên  -> tất cả Booking.

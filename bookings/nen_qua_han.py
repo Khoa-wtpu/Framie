@@ -11,6 +11,8 @@
 # chương trình tạo một luồng nền (daemon thread).
 # Luồng này gọi hàm bookings.qua_han.xu_ly_qua_han() định kỳ theo số giây được cấu hình.
 # Mặc định là 60 giây, giúp slot được giải phóng chậm nhất khoảng 1 phút sau khi hết hạn.
+# BR4.1-1 (UC4.1): Xử lý định kỳ 60 giây một lần + mỗi khi có truy cập liên quan.
+# Keyword tra cứu: chu kỳ 60 giây | giải phóng slot quá hạn định kỳ | NEN_MAC_DINH_GIAY = 60
 #
 # Middleware và lệnh xu_ly_qua_han vẫn được giữ nguyên.
 # Các cơ chế này có thể chạy song song vì đều kiểm tra lại trạng thái trước khi cập nhật.

@@ -514,7 +514,8 @@ def gui_yeu_cau_booking(khach_hang, ma_giu_cho, ma_goi, ngay_gio_chup, dia_diem,
     try:
         with transaction.atomic():
             try:
-                # BR4.2-2: chỉ tạo Booking khi lượt giữ còn trong 5 phút.
+                # Pre-condition UC4.2 + BR liên quan: lượt giữ chỗ phải còn trong 5 phút (THOI_GIAN_GIU_CHO).
+                # Keyword tra cứu: lượt giữ còn 5 phút | hoan_tat_giu_cho | kiểm tra hạn giữ chỗ trước khi tạo Booking
                 # Hàm của UC4.1 sẽ khóa dòng và đổi trạng thái lượt giữ -> 'Đã hoàn tất Booking'.
                 # Nếu quá hạn thì nó nhả slot rồi ném GiuChoLoi.
                 hoan_tat_giu_cho(khach_hang, ma_giu_cho)
