@@ -18,7 +18,8 @@ def _duong_dan_ho_so(ma):
             continue
     return ''
 
-
+# Hàm _the(nag) có chức năng chuyển thông tin nhiếp ảnh gia thành dữ liệu hiển thị trên thẻ kết quả,
+# bao gồm mã, tên, ảnh đại diện, mô tả, giá dịch vụ, điểm đánh giá và đường dẫn hồ sơ.
 def _the(nag):
     user = nag.MaTaiKhoan
     loai = [m.TenLoaiHinh for m in nag.loai_hinh_chup.all()]
@@ -41,6 +42,8 @@ def _the(nag):
 O_GIA = ('gia_tu', 'gia_den', '__all__')            # '__all__' = lỗi khoảng giá (giá từ lớn hơn giá đến)
 O_LOC_KHAC = ('loai_hinh', 'phong_cach', 'khu_vuc')
 
+#tim_kiem() là View trung gian giữa người dùng và hệ thống tìm kiếm. View tiếp nhận dữ liệu GET, làm sạch và kiểm tra Form,
+# xử lý lỗi nếu có; nếu hợp lệ thì thực hiện tìm kiếm, phân trang và gửi kết quả sang template để hiển thị.
 def tim_kiem(request):
     du_lieu = request.GET.copy()             # bản sao có thể sửa của dữ liệu trên URL
     for ten in ('loai_hinh', 'phong_cach', 'khu_vuc'):   # trang chủ gửi ô chọn để trống thành ?loai_hinh=  -> bỏ giá trị rỗng, kẻo bị báo "không hợp lệ"
@@ -61,7 +64,7 @@ def tim_kiem(request):
         ngu_canh['mo_bang'] = bool(ngu_canh['loi_gia'] or ngu_canh['loi_bo_loc'])  # chỉ mở bảng khi lỗi nằm trong bảng
         return render(request, 'search/tim_kiem.html', ngu_canh)
 
-    ket_qua = tim_kiem_nhiep_anh_gia(form.cleaned_data)
+    ket_qua = tim_kiem_nhiep_anh_gia(form.cleaned_data) # hàm logic trong services.py
     trang = Paginator(ket_qua, SO_MOI_TRANG).get_page(request.GET.get('page'))   # page sai -> về trang hợp lệ
     ngu_canh.update(
         trang=trang, cac_the=[_the(n) for n in trang.object_list], tong=trang.paginator.count,

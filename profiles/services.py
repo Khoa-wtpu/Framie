@@ -17,16 +17,6 @@ def nhiep_anh_gia_noi_bat(so_luong=3, diem_toi_thieu=4):
     Điều kiện: hồ sơ 'Đã duyệt' và điểm đánh giá trung bình >= diem_toi_thieu (4 -> 5 sao).
     Xếp: điểm trung bình giảm dần, rồi số lượt đánh giá giảm dần, rồi mã tăng dần (kết quả ổn định).
 
-    Mỗi phần tử là một dict, dùng thẳng trong template:
-        nhiep_anh_gia   : đối tượng NhiepAnhGia
-        ten             : tên hiển thị
-        anh_dai_dien    : ImageField ảnh đại diện (dùng .url)
-        anh_portfolio   : ảnh bìa project mới nhất; nếu chưa có project thì dùng ảnh đại diện
-        loai_hinh       : chuỗi "Cưới, Chân dung"
-        khu_vuc         : chuỗi "TP.HCM, Đà Lạt"
-        diem_trung_binh : số, làm tròn 1 chữ số (ví dụ 4.8)
-        so_danh_gia     : số lượt đánh giá
-        so_khung_gio_trong : số khung giờ trống trong 7 ngày tới
     """
     ds = (NhiepAnhGia.objects
           .filter(MaTaiKhoan__trang_thai_ho_so=TrangThaiHoSo.DA_DUYET)

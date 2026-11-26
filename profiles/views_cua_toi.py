@@ -1,4 +1,4 @@
-# profiles/views_cua_toi.py - K3b: "Hồ sơ của tôi & trạng thái duyệt" (SC1.2, Khoa). Chỉ Nhiếp ảnh gia.
+# profiles/views_cua_toi.py - K3b: S"Hồ sơ của tôi & trạng thái duyệt" (C1.2, Khoa). Chỉ Nhiếp ảnh gia.
 # Trang này chỉ XEM và dẫn sang trang cập nhật của K4 (name='cap_nhat_ho_so'). Sau khi gửi lại ở K4 sẽ quay về đây.
 # Trạng thái hiển thị lấy từ LƯỢT DUYỆT MỚI NHẤT (không chỉ User.trang_thai_ho_so), vì hồ sơ bị "Yêu cầu chỉnh sửa"
 # vẫn là 'Chờ duyệt' ở User nhưng đã được sửa và nộp lại (giống ho_so_dang_cho_duyet của K4).
@@ -15,7 +15,8 @@ CAN_CHINH_SUA = 'can_chinh_sua'         # Quản trị viên yêu cầu chỉnh 
 DA_TU_CHOI = 'da_tu_choi'
 DA_DUYET = 'da_duyet'
 
-
+# Xác định trạng thái hồ sơ dựa trên kết quả lượt duyệt mới nhất, gồm 4 trạng thái: Chờ duyệt, Cần chỉnh sửa, Đã từ chối
+# và Đã duyệt. Nếu chưa có lượt duyệt hoặc chưa có kết quả xử lý, mặc định là Chờ duyệt.
 def xac_dinh_trang_thai(luot_moi_nhat):
     """Trả về một trong 4 hằng số trên theo lượt duyệt mới nhất (None = chưa có lượt nào -> coi như đang chờ)."""
     if luot_moi_nhat is None or luot_moi_nhat.KetQua is None:
@@ -45,7 +46,9 @@ def _noi(danh_sach, mac_dinh='Chưa chọn'):
     ten = [str(x) for x in danh_sach]
     return ', '.join(ten) if ten else mac_dinh
 
-
+# Hiển thị trang hồ sơ cá nhân của Nhiếp ảnh gia, bao gồm thông tin hồ sơ, danh mục hoạt động và trạng thái xét duyệt.
+# Hàm xử lý các trường hợp chưa có hồ sơ, đang chờ duyệt, cần chỉnh sửa, bị từ chối hoặc đã được duyệt; đồng thời hiển thị thông báo,
+# hướng dẫn và trạng thái các nút thao tác tương ứng.
 @vai_tro_required(VaiTro.NHIEP_ANH_GIA)        # chưa đăng nhập -> trang đăng nhập; vai trò khác -> 403
 def ho_so_cua_toi(request):
     nag = (NhiepAnhGia.objects.select_related('MaTaiKhoan').filter(MaTaiKhoan=request.user).first())

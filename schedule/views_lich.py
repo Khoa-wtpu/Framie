@@ -11,7 +11,9 @@ from schedule import quan_ly
 from schedule.forms import KhungGioForm
 from schedule.quan_ly import CHE_DO_THANG, CHE_DO_TUAN, LichLoi, url_lich
 
-
+# Hiển thị lịch làm việc của Nhiếp ảnh gia theo chế độ tuần hoặc tháng. Hàm kiểm tra và cập nhật các lượt giữ chỗ đã hết hạn
+# để đảm bảo trạng thái lịch chính xác tại thời điểm xem. Đồng thời, hàm xử lý ngày được chọn, xây dựng dữ liệu lịch tương ứng
+# và cung cấp các đường dẫn điều hướng như chuyển tuần/tháng, quay về hôm nay và thêm khung giờ mới.
 @nhiep_anh_gia_da_duyet
 @require_GET
 def quan_ly_lich(request, nag):
@@ -39,7 +41,8 @@ def _url_them(ngay, hom_nay):
     url = reverse('lich_them')
     return f'{url}?ngay={ngay.isoformat()}' if ngay >= hom_nay else url
 
-
+# Hiển thị biểu mẫu thêm khung giờ làm việc cho Nhiếp ảnh gia, kiểm tra dữ liệu khi gửi và lưu khung giờ hợp lệ.
+# Nếu xảy ra lỗi, hệ thống hiển thị thông báo; nếu thành công, chuyển về lịch tuần tương ứng.
 @nhiep_anh_gia_da_duyet
 @require_http_methods(['GET', 'POST'])
 def lich_them(request, nag):
@@ -62,7 +65,8 @@ def lich_them(request, nag):
         'url_quay_lai': url_lich(CHE_DO_TUAN, quan_ly.bay_gio().date()),
     })
 
-
+# Cho phép Nhiếp ảnh gia chỉnh sửa khung giờ còn trống và chưa bắt đầu. Hàm kiểm tra quyền sở hữu, trạng thái khung giờ
+# và tính hợp lệ của dữ liệu trước khi lưu thay đổi; đồng thời xử lý lỗi và thông báo kết quả.
 @nhiep_anh_gia_da_duyet
 @require_http_methods(['GET', 'POST'])
 def lich_sua(request, nag, pk):
@@ -81,7 +85,7 @@ def lich_sua(request, nag, pk):
         form = KhungGioForm(request.POST, instance=lich, nag=nag)
         if form.is_valid():
             try:
-                lich = quan_ly.luu_khung_gio_sua(nag, form)
+                lich = quan_ly.luu_khung_gio_sua(nag, form) # có hàm logic trong quan_ly.py
             except LichLoi as loi:
                 if loi.khong_tim_thay:
                     raise Http404(loi.thong_bao)
@@ -95,7 +99,8 @@ def lich_sua(request, nag, pk):
         'form': form, 'tieu_de': 'Chỉnh sửa khung giờ', 'url_quay_lai': url_quay_lai,
     })
 
-
+# Xử lý yêu cầu xóa khung giờ, kiểm tra quyền sở hữu và điều kiện được xóa. Hỗ trợ xác nhận xóa qua POST hoặc hiển thị
+# trang xác nhận dự phòng qua GET; đồng thời thông báo kết quả và điều hướng về lịch tuần.
 @nhiep_anh_gia_da_duyet
 @require_http_methods(['GET', 'POST'])
 def lich_xoa(request, nag, pk):
@@ -108,7 +113,7 @@ def lich_xoa(request, nag, pk):
     url_quay_lai = url_lich(CHE_DO_TUAN, lich.Ngay)
     if request.method == 'POST':
         try:
-            ngay = quan_ly.xoa_khung_gio(nag, pk)
+            ngay = quan_ly.xoa_khung_gio(nag, pk) # hàm logic trong quan_ly.py
         except LichLoi as loi:
             if loi.khong_tim_thay:
                 raise Http404(loi.thong_bao)

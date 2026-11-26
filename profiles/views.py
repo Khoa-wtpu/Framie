@@ -15,7 +15,7 @@ def _ve_ho_so_cua_toi():
     # Đích quay về = trang "Hồ sơ của tôi" khi trang đó có (name='photographer_profile' trong menu);
     # chưa có thì về trang tạm sau đăng nhập.
     try:
-        return redirect(reverse('photographer_profile'))
+        return redirect(reverse('photographer_profile')) #reverse đổi tên đường dẫn 'photographer_profile' thành địa chỉ thật (/ho-so/cua-toi/)
     except NoReverseMatch:
         return redirect('trang_tam')
 
@@ -44,6 +44,7 @@ def cap_nhat_ho_so(request):
         messages.info(request, 'Hồ sơ đang chờ duyệt, bạn có thể cập nhật sau.')
         return _ve_ho_so_cua_toi()
     form = CapNhatHoSoForm(request.POST or None, request.FILES or None, instance=nag)
+    #Tạo form: request.POST là dữ liệu chữ gửi lên, request.FILES là file ảnh; instance=nag nghĩa là sửa hồ sơ có sẵn. Lần đầu mở trang (GET) thì cả hai là None nên form hiện giá trị cũ.
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, 'Đã gửi lại hồ sơ, trạng thái "Chờ duyệt".')

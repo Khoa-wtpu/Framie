@@ -19,7 +19,9 @@ def _chon_nhieu(model, nhan):
                         'invalid_pk_value': f'{nhan} đã chọn không hợp lệ.',
                         'invalid_list': f'{nhan} đã chọn không hợp lệ.'})
 
-
+# TimKiemForm có chức năng khai báo các trường tìm kiếm và bộ lọc nhiếp ảnh gia, kiểm tra tính hợp lệ và chuẩn hóa dữ liệu đầu vào.
+# Form sử dụng clean_<field>() để kiểm tra từng trường, clean() để kiểm tra tổng thể và so_bo_loc() để đếm số nhóm bộ lọc
+# đang được kích hoạt.
 class TimKiemForm(forms.Form):
     q = forms.CharField(
         label='Từ khóa hoặc ID', required=False, max_length=100,

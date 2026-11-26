@@ -56,7 +56,8 @@ def nhiep_anh_gia_cong_khai():
 def _goi_ap_dung():
     return GoiDichVu.objects.filter(MaNhiepAnhGia=OuterRef('pk'), TrangThai=TrangThaiGoi.DANG_AP_DUNG)
 
-
+# Tìm kiếm Nhiếp ảnh gia theo từ khóa không phân biệt dấu tiếng Việt, dựa trên tên, giới thiệu, loại hình chụp,
+# phong cách và khu vực hoạt động. Hỗ trợ tìm chính xác theo mã ID và trả về danh sách mã Nhiếp ảnh gia phù hợp.
 def _ma_theo_tu_khoa(tu_khoa, goc):
     """Danh sách mã nhiếp ảnh gia khớp từ khóa. Dữ liệu ít nên so khớp trong Python để bỏ được dấu
     (SQLite chỉ phân biệt hoa/thường đúng với chữ không dấu)."""
@@ -77,7 +78,8 @@ def _ma_theo_tu_khoa(tu_khoa, goc):
     cac_tu = chuan.split()
     return [ma for ma, chu in van_ban.items() if all(tu in bo_dau(chu) for tu in cac_tu)]
 
-
+# Hàm tim_kiem_nhiep_anh_gia() lọc danh sách nhiếp ảnh gia theo từ khóa, loại hình, phong cách, khu vực và khoảng giá;
+# đồng thời tính điểm đánh giá, sắp xếp và tối ưu truy vấn kết quả.
 def tim_kiem_nhiep_anh_gia(tieu_chi):
     """tieu_chi: dict đã làm sạch (cleaned_data của TimKiemForm); khóa nào thiếu/rỗng thì bỏ qua."""
     goc = nhiep_anh_gia_cong_khai()
@@ -92,7 +94,8 @@ def tim_kiem_nhiep_anh_gia(tieu_chi):
     tu_khoa = (tieu_chi.get('q') or '').strip()
     if tu_khoa:
         ds = ds.filter(pk__in=_ma_theo_tu_khoa(tu_khoa, goc))
-
+# dùng vòng lặp để lọc nhiếp ảnh gia theo loại hình chụp, phong cách và khu vực. Nếu người dùng có chọn tiêu chí nào,
+    # hệ thống lấy mã nhiếp ảnh gia thỏa mãn tiêu chí đó và cập nhật danh sách kết quả ds.
     for khoa, bang_noi, cot in (('loai_hinh', NhiepAnhGia_LoaiHinhChup, 'MaLoaiHinh'),
                                 ('phong_cach', NhiepAnhGia_PhongCach, 'MaPhongCach'),
                                 ('khu_vuc', NhiepAnhGia_KhuVuc, 'MaKhuVuc')):
@@ -101,6 +104,8 @@ def tim_kiem_nhiep_anh_gia(tieu_chi):
             ds = ds.filter(pk__in=bang_noi.objects.filter(**{cot + '__in': da_chon})
                            .values('MaNhiepAnhGia'))
 
+# Đoạn code lọc danh sách nhiếp ảnh gia theo khoảng giá. Hệ thống kiểm tra giá từ (gia_tu), giá đến (gia_den)
+# và chỉ giữ lại nhiếp ảnh gia có gói dịch vụ đang áp dụng thỏa mãn điều kiện.
     gia_tu, gia_den = tieu_chi.get('gia_tu'), tieu_chi.get('gia_den')
     if gia_tu is not None or gia_den is not None:
         goi = _goi_ap_dung()
@@ -109,7 +114,8 @@ def tim_kiem_nhiep_anh_gia(tieu_chi):
         if gia_den is not None:
             goi = goi.filter(Gia__lte=gia_den)
         ds = ds.filter(Exists(goi))
-
+# Đoạn code xác định thứ tự sắp xếp theo lựa chọn của người dùng (hoặc mặc định), sau đó tối ưu truy vấn bằng select_related()
+    # và prefetch_related() trước khi trả về danh sách nhiếp ảnh gia đã sắp xếp.
     thu_tu = SAP_XEP[tieu_chi.get('sap_xep') or SAP_XEP_MAC_DINH][1]
     return (ds.select_related('MaTaiKhoan')
             .prefetch_related('loai_hinh_chup', 'khu_vuc')

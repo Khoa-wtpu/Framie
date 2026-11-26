@@ -206,7 +206,9 @@ def _diem_ngan_sach(gia_tu, ngan_sach):
         return Decimal(DIEM_NGAN_SACH) / 2, 'gan'
     return Decimal(0), 'vuot'
 
-
+# Thu thập các Nhiếp ảnh gia có hồ sơ công khai và gói dịch vụ đang áp dụng, sau đó chấm điểm theo 5 tiêu chí:
+# loại hình chụp, khu vực hoạt động, ngân sách, phong cách và đánh giá của khách hàng. Hàm tính tỷ lệ phù hợp (%),
+# tổng hợp lý do gợi ý và tạo danh sách ứng viên để phục vụ quá trình xếp hạng.
 def _danh_sach_ung_vien(c, bo_gioi_han_ngan_sach=False):
     """Chấm điểm mọi Nhiếp ảnh gia công khai có gói đang áp dụng. Chưa lọc ngưỡng, chưa lọc khung giờ."""
     ngan_sach = None if bo_gioi_han_ngan_sach else c.ngan_sach
@@ -293,10 +295,12 @@ def _xep_hang(c, toi_da, bo_gioi_han_ngan_sach=False):
 # ---------------------------------------------------------------------
 # Hai hàm công khai cho giao diện (E4, E5)
 # ---------------------------------------------------------------------
+# Tiếp nhận câu trả lời của Khách hàng, kiểm tra tính hợp lệ và gọi hàm xếp hạng để trả về danh sách Nhiếp ảnh gia phù hợp.
+# Mỗi kết quả bao gồm thông tin Nhiếp ảnh gia, tỷ lệ phù hợp, lý do gợi ý, khung giờ trống, giá dịch vụ và điểm đánh giá trung bình.
 def goi_y_nhiep_anh_gia(cau_tra_loi, toi_da=TOI_DA_KET_QUA):
     """Danh sách KetQuaGoiY đã xếp hạng (tối đa toi_da người). Rỗng = không có ai phù hợp."""
     c = kiem_tra_cau_tra_loi(cau_tra_loi)
-    return [KetQuaGoiY(nhiep_anh_gia=uv.nag, diem=uv.phan_tram, ly_do=uv.ly_do, khung_gio=khung,
+    return [KetQuaGoiY( nhiep_anh_gia=uv.nag, diem=uv.phan_tram, ly_do=uv.ly_do, khung_gio=khung,
                        gia_tu=uv.gia_tu, diem_tb=None if uv.diem_tb is None else float(uv.diem_tb),
                        so_danh_gia=uv.so_dg)
             for uv, khung in _xep_hang(c, toi_da)]

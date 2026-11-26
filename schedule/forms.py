@@ -19,7 +19,8 @@ def _chon_gio(nhan, thieu):
         widget=forms.Select(choices=[('', 'Chọn giờ')] + _cac_gio()),
         error_messages={'required': thieu, 'invalid': 'Giờ không hợp lệ.'})
 
-
+# Xây dựng biểu mẫu thêm và chỉnh sửa khung giờ làm việc, tự động gắn lịch với Nhiếp ảnh gia đang đăng nhập.
+# Form kiểm tra ngày, giờ bắt đầu và kết thúc, ngăn nhập lịch trong quá khứ, sai thứ tự thời gian hoặc trùng lịch;
 class KhungGioForm(forms.ModelForm):
     Ngay = forms.DateField(
         label='Ngày',
@@ -53,7 +54,8 @@ class KhungGioForm(forms.ModelForm):
                 cac_lua_chon.append((ma, gia_tri.strftime('%H:%M')))
                 cac_lua_chon = cac_lua_chon[:1] + sorted(cac_lua_chon[1:])
                 self.fields[ten].widget.choices = cac_lua_chon
-
+# Kiểm tra tính hợp lệ của ngày và giờ, đảm bảo ngày không thuộc quá khứ, giờ bắt đầu sau thời điểm hiện tại
+# và giờ kết thúc sau giờ bắt đầu.
     def clean(self):
         du_lieu = super().clean()
         ngay, bat_dau, ket_thuc = du_lieu.get('Ngay'), du_lieu.get('GioBatDau'), du_lieu.get('GioKetThuc')
@@ -66,6 +68,7 @@ class KhungGioForm(forms.ModelForm):
             self.add_error('GioKetThuc', 'Giờ kết thúc phải sau giờ bắt đầu.')
         return du_lieu
 
+# Chỉ thực hiện kiểm tra bổ sung của Model khi dữ liệu không có lỗi, tránh phát sinh thông báo lỗi trùng lặp hoặc sai lệch.
     def _post_clean(self):
         # Đã có lỗi nhập liệu ở trên thì dừng, không chạy tiếp kiểm tra của model: tránh báo lỗi chồng giờ
         # dựa trên dữ liệu chưa hợp lệ, và tránh báo hai lần cùng một lỗi "giờ kết thúc".

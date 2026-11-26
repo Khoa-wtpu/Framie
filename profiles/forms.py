@@ -36,7 +36,8 @@ NGAN_HANG = [
     'VPBank', 'Sacombank', 'TPBank', 'VIB', 'HDBank', 'SHB', 'OCB', 'MSB', 'SeABank',
 ]
 
-
+# Tạo trường chọn nhiều bằng hộp tích (checkbox), bắt buộc người dùng chọn ít nhất một mục và hiển thị thông báo lỗi
+# tương ứng nếu chưa chọn.
 def _chon_nhieu(model, nhan):
     # Ô chọn nhiều (hộp tích), bắt buộc chọn ít nhất một.
     return forms.ModelMultipleChoiceField(
@@ -44,7 +45,8 @@ def _chon_nhieu(model, nhan):
         widget=forms.CheckboxSelectMultiple,
         error_messages={'required': f'Vui lòng chọn ít nhất một {nhan.lower()}.'})
 
-
+# Xây dựng biểu mẫu đăng ký và cập nhật hồ sơ Nhiếp ảnh gia, bao gồm thông tin cá nhân, ảnh đại diện, thông tin ngân hàng,
+# mã QR, loại hình chụp, phong cách và khu vực hoạt động.
 class NhiepAnhGiaForm(forms.ModelForm):
     loai_hinh = _chon_nhieu(LoaiHinhChup, 'Loại hình chụp')
     phong_cach = _chon_nhieu(PhongCach, 'Phong cách')
@@ -83,8 +85,10 @@ class NhiepAnhGiaForm(forms.ModelForm):
             'AnhDaiDien': {'required': 'Vui lòng tải ảnh đại diện.'},
             'AnhMaQR': {'required': 'Vui lòng tải ảnh mã QR.'},
         }
-
+# Khởi tạo biểu mẫu, xác định tài khoản sở hữu hồ sơ, bổ sung ngân hàng cũ nếu không còn trong danh sách và điền sẵn dữ liệu
+    # khi chỉnh sửa.
     def __init__(self, *args, user=None, **kwargs):
+    # Hồ sơ của tôi: các ô tích đã được tích sẵn theo dữ liệu cũ.
         super().__init__(*args, **kwargs)
         # user: tài khoản sở hữu hồ sơ. Khi sửa hồ sơ có sẵn thì lấy từ chính hồ sơ.
         self.user = user or (self.instance.MaTaiKhoan if self.instance.pk else None)
@@ -96,20 +100,20 @@ class NhiepAnhGiaForm(forms.ModelForm):
             self.initial['loai_hinh'] = list(self.instance.loai_hinh_chup.values_list('pk', flat=True))
             self.initial['phong_cach'] = list(self.instance.phong_cach.values_list('pk', flat=True))
             self.initial['khu_vuc'] = list(self.instance.khu_vuc.values_list('pk', flat=True))
-
+# Kiểm tra dung lượng ảnh mới tải lên, không cho phép vượt quá 5 MB.
     def _kiem_tra_dung_luong(self, ten_truong):
         tep = self.cleaned_data.get(ten_truong)
         # Chỉ kiểm tra file MỚI tải lên (khi giữ ảnh cũ thì tep không phải UploadedFile).
         if isinstance(tep, UploadedFile) and tep.size > TOI_DA_ANH:
             raise forms.ValidationError('Ảnh không được lớn hơn 5MB.')
         return tep
-
+# Kiểm tra dung lượng ảnh đại diện.
     def clean_AnhDaiDien(self):
         return self._kiem_tra_dung_luong('AnhDaiDien')
-
+# Kiểm tra dung lượng ảnh mã QR.
     def clean_AnhMaQR(self):
         return self._kiem_tra_dung_luong('AnhMaQR')
-
+# Kiểm tra tài khoản được cung cấp và đảm bảo tài khoản thuộc nhóm Nhiếp ảnh gia.
     def clean(self):
         data = super().clean()
         # Phải là tài khoản thuộc nhóm Nhiếp ảnh gia (Data Dictionary: kiểm tra ở tầng ứng dụng).
@@ -119,7 +123,7 @@ class NhiepAnhGiaForm(forms.ModelForm):
         if not self.user.groups.filter(name=VaiTro.NHIEP_ANH_GIA).exists():
             raise forms.ValidationError('Tài khoản này không thuộc nhóm Nhiếp ảnh gia.')
         return data
-
+# Lưu hồ sơ, đồng bộ các bảng liên kết và tạo lượt gửi duyệt trong cùng một giao dịch để đảm bảo tính toàn vẹn dữ liệu.
     def save(self, commit=True):
         # Lưu hồ sơ + 3 bảng nối + tạo lượt duyệt trong CÙNG một giao dịch: lỗi giữa chừng thì hoàn tác hết.
         with transaction.atomic():
@@ -132,7 +136,7 @@ class NhiepAnhGiaForm(forms.ModelForm):
             self._luu_lien_ket(nag, NhiepAnhGia_KhuVuc, 'MaKhuVuc', 'khu_vuc')
             self._nop_ho_so(nag)
         return nag
-
+# Đồng bộ các bảng liên kết theo lựa chọn hiện tại, xóa mục đã bỏ chọn và bổ sung mục mới.
     def _luu_lien_ket(self, nag, bang_noi, cot, ten_truong):
         # Đồng bộ bảng nối với các mục đã chọn: xóa mục bỏ chọn, thêm mục mới chọn.
         da_chon = list(self.cleaned_data[ten_truong])
@@ -140,7 +144,7 @@ class NhiepAnhGiaForm(forms.ModelForm):
         da_co = set(bang_noi.objects.filter(MaNhiepAnhGia=nag).values_list(cot, flat=True))
         bang_noi.objects.bulk_create([
             bang_noi(MaNhiepAnhGia=nag, **{cot: muc}) for muc in da_chon if muc.pk not in da_co])
-
+# Tạo lượt duyệt hồ sơ mới nếu không có lượt nào đang chờ xử lý, đồng thời tăng số lần nộp.
     def _nop_ho_so(self, nag):
         # Gửi / cập nhật hồ sơ -> trạng thái 'Chờ duyệt'.
         # DuyetHoSo.save() tự đồng bộ User.trang_thai_ho_so = 'Chờ duyệt'.
@@ -151,7 +155,7 @@ class NhiepAnhGiaForm(forms.ModelForm):
                .aggregate(m=Max('LanNop'))['m'] or 0) + 1
         luot = DuyetHoSo.objects.create(MaNhiepAnhGia=nag, LanNop=lan)
         self._bao_quan_tri_vien(nag, lan, luot)
-
+# Gửi thông báo kèm email đến các Quản trị viên khi có hồ sơ mới hoặc hồ sơ được cập nhật và cần duyệt lại.
     def _bao_quan_tri_vien(self, nag, lan, luot=None):
         # K3: có lượt duyệt mới thì báo cho mọi Quản trị viên (nhóm Quản trị viên hoặc superuser).
         # gui_thong_bao_nhieu_nguoi không ném lỗi: thông báo hỏng không làm hỏng việc lưu hồ sơ.
@@ -170,6 +174,7 @@ class NhiepAnhGiaForm(forms.ModelForm):
 # =====================================================================
 # K4 - Cập nhật hồ sơ cá nhân (UC1.2)
 # =====================================================================
+# Kiểm tra lượt duyệt hồ sơ mới nhất của Nhiếp ảnh gia, xác định hồ sơ có đang chờ Quản trị viên xử lý hay không.
 def ho_so_dang_cho_duyet(nag):
     """True nếu hồ sơ đang có lượt duyệt CHƯA có kết quả (Quản trị viên chưa xử lý).
 
@@ -179,7 +184,8 @@ def ho_so_dang_cho_duyet(nag):
     moi_nhat = DuyetHoSo.objects.filter(MaNhiepAnhGia=nag).order_by('-LanNop').first()
     return moi_nhat is not None and moi_nhat.KetQua is None
 
-
+# Xây dựng biểu mẫu cập nhật hồ sơ Nhiếp ảnh gia, bổ sung các trường họ tên, số điện thoại và email bên cạnh những
+# thông tin hồ sơ có sẵn.
 class CapNhatHoSoForm(NhiepAnhGiaForm):
     """Form sửa hồ sơ có sẵn: dùng chung phần hồ sơ của K3, thêm 3 ô tài khoản theo wireframe."""
     ho_ten = forms.CharField(
@@ -197,7 +203,7 @@ class CapNhatHoSoForm(NhiepAnhGiaForm):
         widget=forms.EmailInput(attrs={'autocomplete': 'email'}),
         help_text='Email này cũng là tên đăng nhập của bạn.',
         error_messages={'required': 'Vui lòng nhập email.', 'invalid': 'Email không đúng định dạng.'})
-
+# Khởi tạo biểu mẫu, điền thông tin tài khoản hiện tại và lưu tên các file ảnh cũ để xử lý khi thay ảnh.
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.user is None or not self.instance.pk:
@@ -212,7 +218,7 @@ class CapNhatHoSoForm(NhiepAnhGiaForm):
     def clean_ho_ten(self):
         ho_ten = unicodedata.normalize('NFC', self.cleaned_data['ho_ten'])
         ho_ten = ' '.join(ho_ten.split())
-        if not re.fullmatch(r'[^\W\d_]+(?: [^\W\d_]+)*', ho_ten):    # cùng luật với form đăng ký (P4)
+        if not re.fullmatch(r'[^\W\d_]+(?: [^\W\d_]+)*', ho_ten):    # cùng luật với form đăng ký (P4) CHỈ CHỮ CÁI KHOẢNG TRẮNG, KHÔNG SỐ, KÝ HIỆU
             raise forms.ValidationError('Họ và tên chỉ gồm chữ cái và khoảng trắng.')
         return ho_ten
 
@@ -231,7 +237,7 @@ class CapNhatHoSoForm(NhiepAnhGiaForm):
         if trung.exists():
             raise forms.ValidationError('Email này đã được đăng ký.')
         return email
-
+# Ngăn cập nhật hồ sơ khi lượt duyệt gần nhất vẫn đang chờ Quản trị viên xử lý.
     def clean(self):
         data = super().clean()
         # Đang chờ Quản trị viên duyệt thì chỉ được theo dõi, chưa được sửa (wireframe SC "Chờ duyệt").
@@ -240,7 +246,8 @@ class CapNhatHoSoForm(NhiepAnhGiaForm):
                 'Hồ sơ đang chờ Quản trị viên duyệt, chưa thể cập nhật. '
                 'Bạn có thể cập nhật sau khi có kết quả.')
         return data
-
+# Cập nhật thông tin tài khoản và hồ sơ trong cùng một giao dịch, đồng bộ danh mục, tạo lượt duyệt mới và thông báo cho
+    # Quản trị viên.
     def save(self, commit=True):
         with transaction.atomic():
             # Lưu tài khoản TRƯỚC: bước nộp hồ sơ bên dưới đồng bộ trạng thái vào cùng User này.
@@ -256,20 +263,21 @@ class CapNhatHoSoForm(NhiepAnhGiaForm):
             nag = super().save(commit)       # lưu hồ sơ + 3 danh mục + lượt duyệt mới + báo Quản trị viên
         self._don_anh_cu(nag)
         return nag
-
+# Xóa file ảnh cũ khi ảnh được thay thế, chỉ thực hiện sau khi giao dịch lưu thành công và đảm bảo không xóa file
+    # đang được hồ sơ khác sử dụng.
     def _don_anh_cu(self, nag):
         # Thay ảnh thì xóa file cũ khỏi ổ đĩa (nếu không còn hồ sơ nào dùng chung file đó).
         # Chạy sau khi giao dịch xong (on_commit): lưu lỗi thì file cũ vẫn còn nguyên.
         for ten, ten_cu in self._anh_cu.items():
-            if not ten_cu or getattr(nag, ten).name == ten_cu:
+            if not ten_cu or getattr(nag, ten).name == ten_cu: # Không có ảnh cũ hoặc ảnh không đổi thì bỏ qua.
                 continue
-            if NhiepAnhGia.objects.filter(Q(AnhDaiDien=ten_cu) | Q(AnhMaQR=ten_cu)).exists():
+            if NhiepAnhGia.objects.filter(Q(AnhDaiDien=ten_cu) | Q(AnhMaQR=ten_cu)).exists(): # Còn hồ sơ khác dùng file này thì giữ lại.
                 continue
-            kho = nag._meta.get_field(ten).storage
+            kho = nag._meta.get_field(ten).storage # Lấy nơi lưu file của trường ảnh.
 
             def xoa(kho=kho, ten_cu=ten_cu):
                 try:
-                    kho.delete(ten_cu)
+                    kho.delete(ten_cu) # Xóa file khỏi ổ đĩa.
                 except OSError:
                     pass                     # không xóa được file cũ thì bỏ qua, không làm hỏng việc lưu
-            transaction.on_commit(xoa)
+            transaction.on_commit(xoa) # Chỉ chạy việc xóa sau khi giao dịch lưu thành công.

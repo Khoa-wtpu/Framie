@@ -38,7 +38,8 @@ CHE_DO_THANG = 'thang'
 TEN_THU = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']    # date.weekday(): thứ Hai = 0 ... Chủ nhật = 6
 SO_NAM_TOI_DA = 3                                       # chỉ cho xem lịch trong khoảng 3 năm trước / sau hôm nay
 
-
+# Định nghĩa ngoại lệ nghiệp vụ cho chức năng quản lý lịch, lưu thông báo lỗi bằng tiếng Việt và xác định trường hợp
+# không tìm thấy khung giờ hoặc khung giờ không thuộc Nhiếp ảnh gia đang thao tác để xử lý lỗi 404.
 class LichLoi(Exception):
     """Lỗi nghiệp vụ của UC3.1. .thong_bao: câu tiếng Việt cho người dùng;
     .khong_tim_thay: True khi khung giờ không tồn tại HOẶC không phải của Nhiếp ảnh gia này (view trả 404)."""
@@ -108,6 +109,8 @@ def kiem_tra_duoc_xoa(lich):
 # ---------------------------------------------------------------------
 # Thêm / sửa / xóa (đều trong một transaction; lỗi cơ sở dữ liệu -> UC3.1 ngoại lệ 6a)
 # ---------------------------------------------------------------------
+# Lưu khung giờ mới vào cơ sở dữ liệu trong một transaction để đảm bảo tính toàn vẹn dữ liệu. Nếu xảy ra lỗi lưu,
+# hệ thống ghi log và trả về thông báo lỗi.
 def luu_khung_gio_moi(form):
     """Lưu form thêm khung giờ (form đã hợp lệ). Trả về LichKhaDung vừa tạo, trạng thái mặc định 'Lịch trống'."""
     try:
@@ -117,7 +120,8 @@ def luu_khung_gio_moi(form):
         logger.exception('luu_khung_gio_moi: lỗi lưu dữ liệu')
         raise LichLoi(TB_LOI_LUU)
 
-
+# Lưu thông tin chỉnh sửa khung giờ trong transaction, khóa bản ghi và kiểm tra lại trạng thái trước khi cập nhật để
+# tránh xung đột khi Khách hàng đồng thời giữ chỗ. Chỉ cập nhật ngày và giờ, giữ nguyên trạng thái khung giờ.
 def luu_khung_gio_sua(nag, form):
     """Lưu form sửa khung giờ (form đã hợp lệ). Khóa dòng rồi kiểm tra lại trạng thái, phòng khi một Khách
     vừa giữ chỗ đúng lúc Nhiếp ảnh gia bấm Lưu. Chỉ ghi ba cột ngày / giờ, không đụng tới trạng thái."""
@@ -132,7 +136,8 @@ def luu_khung_gio_sua(nag, form):
         logger.exception('luu_khung_gio_sua: lỗi lưu dữ liệu (khung giờ %s)', form.instance.pk)
         raise LichLoi(TB_LOI_LUU)
 
-
+# Thực hiện xóa khung giờ trong transaction, khóa bản ghi và kiểm tra lại điều kiện trước khi xóa nhằm tránh xung đột
+# với Booking đang phát sinh. Trả về ngày của khung giờ đã xóa để điều hướng chính xác.
 def xoa_khung_gio(nag, ma_lich):
     """Xóa khung giờ. Trả về NGÀY của khung giờ đã xóa (để quay lại đúng tuần đang xem)."""
     try:
@@ -150,6 +155,7 @@ def xoa_khung_gio(nag, ma_lich):
 # ---------------------------------------------------------------------
 # Dựng dữ liệu cho màn hình lịch (tuần / tháng)
 # ---------------------------------------------------------------------
+# Kiểm tra và chuyển đổi ngày từ URL, tự động trả về ngày hiện tại nếu dữ liệu không hợp lệ hoặc vượt quá giới hạn cho phép.
 def phan_tich_ngay(chuoi, hom_nay=None):
     """Đọc ?ngay=YYYY-MM-DD trên thanh địa chỉ. Gõ bậy hoặc quá xa hôm nay -> về hôm nay (không gây lỗi)."""
     hom_nay = hom_nay or bay_gio().date()
@@ -171,7 +177,7 @@ def nhan_ngay(ngay):
     """'T2 05/10'."""
     return f'{TEN_THU[ngay.weekday()]} {ngay:%d/%m}'
 
-
+# Tạo URL truy cập trang quản lý lịch theo chế độ tuần/tháng và ngày được chọn.
 def url_lich(che_do, ngay):
     """Địa chỉ màn hình lịch ở chế độ và ngày cho trước."""
     return reverse('my_calendar') + '?' + urlencode({'che_do': che_do, 'ngay': ngay.isoformat()})
@@ -184,7 +190,8 @@ def _lay_lich(nag, tu_ngay, den_ngay):
         .annotate(so_giu_cho=Count('giu_cho', distinct=True), so_booking=Count('booking', distinct=True))
         .order_by('Ngay', 'GioBatDau'))
 
-
+# Lấy danh sách Booking còn hiệu lực tương ứng với các khung giờ không còn trống, tạo ánh xạ giữa mã khung giờ và
+# mã Booking để liên kết đến trang chi tiết.
 def _booking_theo_khung_gio(ds_lich):
     """{mã khung giờ: mã Booking còn hiệu lực} cho các khung giờ không còn trống (để dẫn tới chi tiết Booking)."""
     from bookings.models import Booking, TRANG_THAI_HET_HIEU_LUC     # import trong hàm để tránh phụ thuộc vòng giữa các app
@@ -204,7 +211,8 @@ def _url_booking(ma_booking):
     except NoReverseMatch:
         return None
 
-
+# Tổng hợp thông tin hiển thị của từng khung giờ, xác định trạng thái, màu sắc, khả năng chỉnh sửa hoặc xóa
+# và đường dẫn đến Booking liên quan.
 def _mo_ta_khung_gio(lich, bg, ma_booking):
     trong = lich.TrangThai == TrangThaiSlot.TRONG
     qua = da_bat_dau(lich, bg)
@@ -219,7 +227,8 @@ def _mo_ta_khung_gio(lich, bg, ma_booking):
         'url_booking': _url_booking(ma_booking) if ma_booking else None,
     }
 
-
+# Tạo dữ liệu lịch Nhiếp ảnh gia theo tuần, hiển thị 7 ngày cùng các khung giờ và trạng thái tương ứng.
+# Đồng thời, cung cấp tổng số khung giờ và chức năng chuyển tuần trước/sau.
 def dung_tuan(nag, ngay_neo):
     """Dữ liệu tuần (thứ Hai - Chủ nhật) chứa ngay_neo."""
     bg = bay_gio()
@@ -247,7 +256,8 @@ def dung_tuan(nag, ngay_neo):
         'nhan_sau': 'Tuần sau',
     }
 
-
+# Tạo dữ liệu lịch Nhiếp ảnh gia theo tháng, hiển thị các tuần và số lượng khung giờ theo từng trạng thái trong mỗi ngày.
+# Đồng thời, cung cấp tổng số khung giờ và chức năng chuyển tháng trước/sau.
 def dung_thang(nag, ngay_neo):
     """Dữ liệu tháng chứa ngay_neo: lưới các tuần, mỗi ô ngày có số khung giờ theo từng trạng thái."""
     bg = bay_gio()

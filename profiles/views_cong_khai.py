@@ -156,6 +156,9 @@ def _vai_tro_xem(user):
 # ---------------------------------------------------------------------
 # View
 # ---------------------------------------------------------------------
+# Hiển thị hồ sơ công khai của Nhiếp ảnh gia, bao gồm thông tin cá nhân, gói dịch vụ, dự án, đánh giá và lịch khả dụng.
+# Đồng thời, xử lý giữ chỗ hết hạn, lựa chọn gói dịch vụ, điều hướng lịch tuần và hiển thị chức năng đặt lịch phù hợp
+# với vai trò người xem.
 def photographer_detail(request, ma_nhiep_anh_gia):
     nag = _lay_nhiep_anh_gia(ma_nhiep_anh_gia)
     quan_ly.nha_giu_cho_het_han()          # nhả các lượt giữ quá 5 phút để lịch hiện đúng (BR4.1-1)
@@ -216,7 +219,8 @@ def photographer_detail(request, ma_nhiep_anh_gia):
         'mo_ta_lich': MO_TA_LICH,
     })
 
-
+# Hiển thị chi tiết dự án của Nhiếp ảnh gia, bao gồm danh sách hình ảnh và chức năng chuyển đến dự án trước hoặc sau.
+# Đảm bảo chỉ truy cập được dự án thuộc Nhiếp ảnh gia tương ứng.
 def photographer_project(request, ma_nhiep_anh_gia, ma_project):
     nag = _lay_nhiep_anh_gia(ma_nhiep_anh_gia)
     cac_project = nag.projects.select_related('MaLoaiHinh').order_by('-NgayTao', '-pk')

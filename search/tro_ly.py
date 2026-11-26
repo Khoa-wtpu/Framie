@@ -243,6 +243,9 @@ def _tra_loi_cho_goi_y(tra_loi):  # đổi dữ liệu session thành dict đún
 
 # ---------------------------------------------------------------------
 # View 1: form 5 bước
+# Xử lý quy trình Trợ lý chọn Nhiếp ảnh gia gồm 5 bước. Hàm kiểm tra quyền truy cập và vai trò Khách hàng,
+# tiếp nhận câu trả lời qua biểu mẫu, kiểm tra tính hợp lệ
+# Sau khi hoàn thành 5 bước, hệ thống chuyển sang trang kết quả gợi ý Nhiếp ảnh gia.
 # ---------------------------------------------------------------------
 @khach_hang_required  # chưa đăng nhập -> trang đăng nhập; sai vai trò -> 403
 @require_http_methods(['GET', 'POST'])  # chỉ nhận mở trang và gửi form
@@ -341,7 +344,8 @@ def _tom_tat(c):  # các dòng "câu hỏi: đáp án" hiện đầu trang kết
         ('Phong cách', ', '.join(p.TenPhongCach for p in c.phong_cach) or 'Chưa rõ'),  # câu 5; rỗng = chưa rõ
     ]  # hết danh sách
 
-
+# Xử lý và hiển thị kết quả gợi ý Nhiếp ảnh gia dựa trên 5 câu trả lời của Khách hàng. Hàm kiểm tra tính hợp lệ của dữ liệu
+# và ngày chụp, gọi thuật toán xếp hạng, đồng thời cung cấp gợi ý nới lỏng tiêu chí nếu không tìm thấy kết quả phù hợp.
 @khach_hang_required  # chỉ Khách hàng đã đăng nhập
 @require_GET  # trang kết quả chỉ để xem; việc chọn giờ gửi tới chon_slot
 def assistant_result(request):  # name='assistant_result', URL /tro-ly/ket-qua/
