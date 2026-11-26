@@ -9,20 +9,13 @@
     <h1>Tìm kiếm Nhiếp ảnh gia</h1>
       </header>
 
-#H1. Khối "cbca" và nút tly 1 --> 2.trolytags.py: quyết định có hiện kh
-
   {% if user|hien_tro_ly %}{# E5: khối gợi ý Trợ lý, Khách chưa đăng nhập và Khách hàng thấy; Nhiếp ảnh gia, Quản trị viên không thấy (CSS ở search/css/tro_ly.css) #}
-  #bộ lọc hien_tro_ly để kiểm tra người dùng có được phép nhìn thấy khối Trợ lý hay không; (True: hiện, False: ẩn)
   <section class="panel tro-ly__goc tro-ly-moi" aria-labelledby="tro-ly-moi-tieu-de">
-   #Tạo vùng nội dung; class: CSS; ar: trỏ tới tiêu đề (d15) để trình đọc màn hình biết khối này tên gì
     <div>
       <h2 id="tro-ly-moi-tieu-de" class="tro-ly-moi__tieu-de">Chưa biết chọn ai?</h2>
-      #tạo tiêu đề cho khối TL. id dùng để định danh tiêu đề; lk aria-labelledby
       <p class="tro-ly-moi__mo-ta">Trả lời 5 câu hỏi, Trợ lý gợi ý nhiếp ảnh gia phù hợp.{% if not user.is_authenticated %} Cần đăng nhập.{% endif %}</p>
-#mô tả, {% if not user.is_authenticated %}
     </div>
     <a class="btn btn--secondary" href="{% if user.is_authenticated %}{% url 'assistant' %}{% else %}{% url 'login' %}?next={% url 'assistant' %}{% endif %}">Trợ lý chọn Nhiếp ảnh gia</a>
-#nút:liên kết dạng nút;if-else đã log; chưa-login + tham số next quay lại Trợ lý.
   </section>
   {% endif %}
 

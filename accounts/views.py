@@ -13,19 +13,9 @@ from .forms import DangKyForm, DangNhapForm  # form đăng ký (P4) và form đ�
 from .permissions import lay_vai_tro, url_trang_chu, vai_tro_required  # công cụ kiểm tra quyền
 from .services import gui_email_dang_ky_thanh_cong, tao_tai_khoan  # tạo tài khoản và gửi email (P4)
 from profiles.forms import NhiepAnhGiaForm  # form hồ sơ Nhiếp ảnh gia của Khoa (P5)
-#H3. đăng ký xong → lưu dấu → đăng nhập → kiểm tra dấu → chuyển trang
-#gd2 login succly co_co
-#gd1.1 dat ten - ghi co session - chuyen login
 
-##1. accounts/views.py DangNhapView(LoginView) + accounts/backends.py User.objects.get(email__iexact
-#views.py get_default_redirect_url
+KHOA_CO_TRO_LY = 'tro_ly_sau_dang_ky'  # khóa cờ trong session: vừa đăng ký Khách hàng xong (E5)
 
-#DANG KY
-#views.py form = DangKyForm(request.POST)
-#accounts/forms.py def clean_email(self)
-#accounts/services.py with transaction.atomic
-KHOA_CO_TRO_LY = 'tro_ly_sau_dang_ky'  # tên khóa cờ trong session: vừa đăng ký Khách hàng xong (E5)
-#vị trí cần gọi chung một tên/viết lại chuỗi ký tự
 class HoSoKhongHopLe(Exception):  # lỗi tự đặt, chỉ để "ném" ra khỏi khối atomic nhằm hoàn tác việc tạo User
     pass  # không cần thêm gì, chỉ cần có tên
 
@@ -40,32 +30,21 @@ class DangNhapView(LoginView):  # trang đăng nhập (UC7.2)
     chuyen_tro_ly = False  # E5: True khi lần đăng nhập này phải chuyển sang Trợ lý (đặt trong form_valid)
 
     def get_default_redirect_url(self):  # trang đến khi URL không có ?next=
-        #Quyết định gọi hàm nào để tìm trang đích.
-        #Nếu self.chuyen_tro_ly bật: chuyển đến Trợ lý.
-        #- Nếu không: gọi url_trang_chu() để tìm trang theo vai trò của người vừa đăng nhập.
-#2.3 qdinh: công tắc, bật --> trang Trợ lý; không - chuyển về trang chủ tương ứng với vai trò của tài khoản
         if self.chuyen_tro_ly:  # Khách hàng vừa đăng ký xong
             return reverse('assistant')  # sang Trợ lý chọn Nhiếp ảnh gia
-        return url_trang_chu(self.request.user)  # còn lại chuyển theo vai trò như cũ, permission
+        return url_trang_chu(self.request.user)  # còn lại chuyển theo vai trò như cũ
 
     def form_valid(self, form):  # chạy khi email và mật khẩu đúng
-#gd2.1 lấy, xóa cờ - ktra đk - qđ trang chuyển/ sau khi login tc, lấy giá trị cờ từ session. nếu kh, false
-        co_co = self.request.session.pop(KHOA_CO_TRO_LY, False)  # đọc và XÓA cờ ngay,pop vừa đọc vừa xóa, nên lần đăng nhập sau không bị chuyển lại. kể cả khi URL có ?next= (cờ chỉ dùng một lần)
-        #cờ này chỉ dùng một lần để chuyển Khách hàng vừa đăng ký sang Trợ lý
-        user = form.get_user()  # Lấy tài khoản vừa xác thực. tài khoản sắp đăng nhập
-#2.2
+        co_co = self.request.session.pop(KHOA_CO_TRO_LY, False)  # đọc và XÓA cờ ngay, kể cả khi URL có ?next= (cờ chỉ dùng một lần)
+        user = form.get_user()  # tài khoản sắp đăng nhập
         self.chuyen_tro_ly = bool(co_co) and user.groups.filter(name=VaiTro.KHACH_HANG).exists()  # chỉ Khách hàng, cùng quy tắc khach_hang_required
-        #Bật công tắc khi cả hai đúng: có cờ, và user thuộc nhóm Khách hàng. hỏi "user có thuộc nhóm này không", trả đúng hoặc sai.
         response = super().form_valid(form)  # Django thực hiện đăng nhập và tạo phản hồi chuyển trang
-        #gọi lại hàm gốc của class cha. Ở đây là form_valid gốc của LoginView
-        #super().form_valid đăng nhập xong sẽ gọi hàm chọn trang đích. Hàm đó đọc chuyen_tro_ly, nên phải gán xong trước.
-        messages.success(self.request, f'Xin chào, {user.get_full_name()}.')  # lời chào ở đầu trang kế tiếp
+        messages.success(self.request, f'Xin chào, {user.get_full_name() or user.email}.')  # lời chào ở đầu trang kế tiếp
         return response  # trả phản hồi chuyển trang
-#url_trang_chu chuyển người dùng về trang theo vai trò
-    def dang_ky(request):  # P4: trang đăng ký Khách hàng (UC7.1a)
-    if request.user.is_authenticated:  # đã đăng nhập rồi thì không cần đăng ký nữa
-        return redirect(url_trang_chu(request.user))  #chuyển về trang theo vai trò, giống trang đăng nhập
 
+def dang_ky(request):  # P4: trang đăng ký Khách hàng (UC7.1a)
+    if request.user.is_authenticated:  # đã đăng nhập rồi thì không cần đăng ký nữa
+        return redirect(url_trang_chu(request.user))  # chuyển về trang theo vai trò, giống trang đăng nhập
     form = DangKyForm(request.POST) if request.method == 'POST' else DangKyForm()  # POST: form có dữ liệu người dùng; GET: form trống
     if request.method == 'POST' and form.is_valid():  # người dùng bấm Đăng ký và mọi ô hợp lệ
         d = form.cleaned_data  # dữ liệu đã kiểm tra và làm sạch
@@ -78,10 +57,7 @@ class DangNhapView(LoginView):  # trang đăng nhập (UC7.2)
             messages.success(request, 'Đăng ký thành công. Vui lòng đăng nhập để tiếp tục.')  # tài khoản đã tạo xong dù email có gửi được hay không
             if not da_gui:  # email gửi lỗi (mất mạng, sai mật khẩu SMTP...)
                 messages.warning(request, 'Tài khoản đã được tạo nhưng chưa gửi được email xác nhận.')  # báo nhẹ, không làm hỏng đăng ký
-
-#gd1.2,.3
-            request.session[KHOA_CO_TRO_LY] = True  # E5: Ghi nhớ vừa đăng ký thành công, cần chuyển sang Trợ lý
-            #tạo tk kh, lưu True vào session
+            request.session[KHOA_CO_TRO_LY] = True  # E5: đánh dấu để lần đăng nhập đầu tiên chuyển sang Trợ lý
             return redirect('login')  # chuyển sang trang đăng nhập
     return render(request, 'accounts/dang_ky.html', {'form': form})  # GET hoặc form còn lỗi: hiện lại trang kèm thông báo lỗi
 

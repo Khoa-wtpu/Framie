@@ -1,23 +1,14 @@
-#chu tha xuong: header.html khung_thong_bao + chuong.js function tai + noti/services.py lay_moi_nhat+_khung_chuong.html
-
 {# Mảnh HTML cho khung chuông thả xuống. JS (chuong.js) nạp mảnh này vào menu khi người dùng bấm chuông #}
 {% load thong_bao_tags %}
-#hiển thị nhãn số chưa đọc, dùng vòng lặp for để tạo từng mục thông báo gồm tiêu đề và thời gian
-#Mỗi mục có liên kết đến trang chi tiết tương ứng
-#phía dưới có liên kết để xem toàn bộ thông báo.
 <div class="tb-khung__dau">
   <strong>Thông báo</strong>
-  #Chỉ hiển thị nhãn số thông báo chưa đọc khi số lượng lớn hơn 0
   {% if so_chua_doc %}<span class="badge badge--blue">{{ so_chua_doc }} chưa đọc</span>{% endif %}
 </div>
 {% if ds %}
 <ul class="tb-khung__ds">
-  #Duyệt qua từng thông báo để hiển thị tiêu đề và thời gian
   {% for tb in ds %}
   <li class="tb-khung__dong">
     {# Bấm chữ: sang trang chi tiết (trang đó tự chuyển sang Đã đọc) #}
-
-    #Tạo đường dẫn đến trang chi tiết của từng thông báo theo mã thông báo
     <a class="tb-khung__muc{% if tb|chua_doc %} is-unread{% endif %}" href="{% url 'chi_tiet_thong_bao' tb.MaThongBao %}">
       <span class="tb-dong__cham" aria-hidden="true"></span>
       <span class="tb-khung__chu">
@@ -28,8 +19,6 @@
     {# Nút sao nằm NGOÀI thẻ <a> (HTML không cho lồng nút trong link). chuong.js bắt submit, gửi fetch rồi tải lại khung #}
     <form class="tb-khung__sao-form" method="post" action="{% url 'doi_dau_sao' tb.MaThongBao %}" data-bell-star>
       {% csrf_token %}
-
-      #Tạo đường dẫn đến trang danh sách toàn bộ thông báo
       <input type="hidden" name="next" value="{% url 'notifications' %}">
       <input type="hidden" name="gia_tri" value="{% if tb|co_sao %}khong{% else %}co{% endif %}">
       <button class="tb-sao{% if tb|co_sao %} is-on{% endif %}" type="submit" aria-label="{% if tb|co_sao %}Bỏ đánh dấu sao{% else %}Đánh dấu sao{% endif %}">{% if tb|co_sao %}★{% else %}☆{% endif %}</button>

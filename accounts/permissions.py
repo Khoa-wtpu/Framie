@@ -26,17 +26,14 @@ def lay_vai_tro(user):  # trả về vai trò chính của một User
             return vai_tro  # trả vai trò tìm được
     return VaiTro.KHACH_HANG  # đã đăng nhập mà chưa có nhóm: coi là Khách hàng, giống hệt core/navigation.py
 
-#Xác định vai trò và tìm trang tương ứng. Hệ thống có một từ điển quy định mỗi vai trò sẽ ưu tiên những trang nào
+
 def url_trang_chu(user):  # đường dẫn trang đích sau khi đăng nhập
     for ten_url in TRANG_CHU_THEO_VAI_TRO.get(lay_vai_tro(user), []):  # duyệt các tên URL của vai trò
-        #lấy vai trò của người dùng bằng lay_vai_tro (xác định vai trò), tra từ điển TRANG_CHU_THEO_VAI_TRO ra danh sách tên URL
-        #rồi thử từng tên bằng reverse
         try:  # thử đổi tên URL thành đường dẫn
             return reverse(ten_url)  # URL tồn tại thì dùng ngay
-        #rv: đổi tên URL thành đường dẫn thật. Gọi theo tên thì sau này đổi đường dẫn không phải sửa code.
-        except NoReverseMatch:  #Tmột số trang có thể chưa được khai báo URL (trang của bạn khác chưa làm) thì báo NoReverseMatch
-            continue  # bỏ qua thử tên tiếp theo, tránh làm gián đoạn quá trình đăng nhập
-    return reverse('trang_tam')  # chưa có trang nào thì về trang tạm của accounts (không bị lỗi) - views.py
+        except NoReverseMatch:  # URL này của bạn khác chưa làm xong
+            continue  # thử tên tiếp theo
+    return reverse('trang_tam')  # chưa có trang nào thì về trang tạm của accounts (không bị lỗi)
 
 
 def vai_tro_required(*vai_tro_cho_phep):  # decorator cho view dạng hàm: @vai_tro_required(VaiTro.KHACH_HANG)

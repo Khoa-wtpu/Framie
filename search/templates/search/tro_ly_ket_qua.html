@@ -1,6 +1,3 @@
-#tro_ly_py: assistant_result xử lý dữ liệu trước khi hiển thị trang kết quả
-#tro_ly_py: ham _tom_tat() chuyển dữ liệu 5 câu trả lời thành danh sách nội dung dễ đọc để hiển thị trên trang kết quả.
-
 {% extends "base.html" %}{# E4 - UC2.3: trang kết quả của Trợ lý (giao diện v2). Dùng bởi search/tro_ly.py (view assistant_result). #}
 {% load static ui %}{# static: nạp CSS riêng #}
 {% block title %}Gợi ý Nhiếp ảnh gia{% endblock %}{# chữ trên tab trình duyệt #}
@@ -8,30 +5,21 @@
 
 {% block content %}
 <div class="container tro-ly">
-#Trang kết quả: tiêu đề, tóm tắt câu trả lời, "Sửa câu trả lời", "Tự tìm kiếm"
-#Kiểm tra danh sách kết quả có nhiếp ảnh gia hay không; nếu có thì hiển thị phần đầu trang kết quả.
   {% if cac_the %}{# ======== CÓ KẾT QUẢ: tối đa 5 thẻ ======== #}
   <header class="tro-ly__dau tro-ly__dau--kq">
-    #Dùng bộ lọc length để đếm số nhiếp ảnh gia được gợi ý
     <p class="tro-ly__nhan">Gợi ý · {{ cac_the|length }} Nhiếp ảnh gia</p>{# số người được gợi ý #}
     <h1 class="tro-ly__tieu-de">Nhiếp ảnh gia phù hợp với bạn</h1>{# tiêu đề chữ gradient #}
     <div class="tro-ly__thanh-tt">
       <ul class="tro-ly__tom-tat" aria-label="Câu trả lời của bạn">
-        #Lặp qua danh sách 5 cặp nhãn – giá trị do hàm _tom_tat() cung cấp để tạo 5 chip tóm tắt.
         {% for nhan, gia_tri in tom_tat %}<li class="tro-ly__tt"><span>{{ nhan }}</span><strong>{{ gia_tri }}</strong></li>{% endfor %}{# 5 đáp án khách đã chọn, mỗi đáp án một chip #}
       </ul>
       <div class="tro-ly__nut-phai">
-        #Liên kết quay lại câu hỏi đầu tiên để chỉnh sửa câu trả lời.
         <a class="btn btn--ghost tro-ly__vien" href="{{ url_sua }}">Sửa câu trả lời</a>{# các nút chọn giờ là hành động chính nên nút này chỉ là phụ #}
-        #Liên kết chuyển sang trang tìm kiếm thông thường.
         <a class="btn btn--ghost tro-ly__vien" href="{{ url_tim_kiem }}">Tự tìm kiếm</a>
       </div>
     </div>
   </header>
 
-#Thẻ Nhiếp ảnh gia: ảnh, tên, thanh "Phù hợp x%", giá từ, chip lý do
-#Dữ liệu mỗi thẻ do _the_ket_qua tạo, search/tro_ly.py
-#_url_anh() có nhiệm vụ lấy đường dẫn ảnh đại diện của nhiếp ảnh gia.
   <ul class="tro-ly__ds">
     {% for the in cac_the %}
     <li>
@@ -51,10 +39,6 @@
             {% for ly in the.ly_do %}<li class="tro-ly__chip">{{ ly }}</li>{% endfor %}{# tối đa 3 chip; có thể ít hơn (chọn Không giới hạn thì không có chip ngân sách) #}
           </ul>
           {% endif %}
-
-#Các nút khung giờ trống
-#vòng lặp for để duyệt danh sách khung giờ trống và tạo một nút tương ứng cho mỗi khung giờ
-#mỗi nút nằm trong một form POST gửi đến View chon_slot Tuyen (kèm mã khung giờ và mã nhiếp ảnh gia.
           <p class="tro-ly__nhan">Bấm để chọn khung giờ trống ngày {{ ngay_chup|date:"d/m/Y" }}</p>{# nhãn nhỏ trên hàng khung giờ #}
           <ul class="tro-ly__gio-ds" aria-label="Khung giờ trống">
             {% for lich in the.khung_gio %}
@@ -67,9 +51,6 @@
             </li>
             {% endfor %}
           </ul>
-
-#Nút Xem hồ sơ
-#tro_ly.py – Tạo đường dẫn hồ sơ url_ho_so
           <div class="tro-ly__the-nut"><a class="btn btn--soft" href="{{ the.url_ho_so }}">Xem hồ sơ</a></div>{# sang trang hồ sơ công khai; btn--soft = nền trắng gradient, là nút phụ "nhấn vừa phải" theo README (không dùng btn--primary để mỗi màn hình chỉ có 1 nút chính) #}
         </div>
       </article>

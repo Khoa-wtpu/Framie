@@ -848,13 +848,7 @@
     if (!nutGui.disabled) form.requestSubmit();  // nút đang khóa (trống hoặc đang gửi) thì Enter không làm gì
   });
 
-#View tiếp nhận yêu cầu POST, kiểm tra người dùng còn đăng nhập và có quyền truy cập cuộc trò chuyện hay không
-#View lấy nội dung và danh sách ảnh gửi đến Services để xử lý
-#dữ liệu không hợp lệ thì trả về lỗi 400, nếu có lỗi cơ sở dữ liệu thì trả về lỗi 500
-  #còn thành công thì trả về json chứa mã tin nhắn
-
-  form.addEventListener(
-      'submit', function (e) {  // gửi tin
+  form.addEventListener('submit', function (e) {  // gửi tin
     e.preventDefault();  // gửi ngầm, không tải lại trang; app.js thấy defaultPrevented nên không thêm is-loading lần nữa
     var noiDung = oNhap.value.trim();  // bỏ khoảng trắng hai đầu
     if (!noiDung && !dsAnh.length) { capNhatNutGui(); return; }  // không chữ cũng không ảnh thì không gửi (nút đã khóa sẵn)

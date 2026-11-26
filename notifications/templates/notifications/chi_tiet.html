@@ -1,6 +1,3 @@
-#chi tiet: urls + views.py chi_tiet() + services.py queryset_chi_tiet()/ tu_dong_danh_dau + chi_tiet.html
-##nut hành động dat_coc: services.py hanh_dong_thong_bao/_nut_khach/_dia_chi
-
 {# SC9.2 Chi tiết thông báo (3 vai trò dùng chung) #}
 {% extends "base.html" %}
 {% load static ui thong_bao_tags %}
@@ -17,9 +14,6 @@
  <article class="panel tb-chi-tiet">
    <header class="tb-chi-tiet__dau">
      <div>
-
-<!-- Hiển thị tiêu đề, thời gian, trạng thái, nội dung và Booking liên quan. -->
-     #status_badge tb.TrangThaiDoc %: Gọi thẻ template dùng chung để hiển thị nhãn trạng thái Đã đọc hoặc Chưa đọc
        <h2 class="tb-chi-tiet__tieu-de">{{ tb.TieuDe }}</h2>
        <p class="muted"><time datetime="{{ tb.NgayTao|date:'c' }}">{{ tb.NgayTao|thoi_gian_day_du }}</time></p>
      </div>
@@ -28,14 +22,13 @@
        {% if tb|co_sao %}<span class="badge badge--amber">Đã đánh dấu sao</span>{% endif %}
      </div>
    </header>
-#Hiển thị nội dung và giữ các dòng xuống hàng
+
    {# linebreaks: giữ xuống dòng của nội dung, đồng thời tự thoát ký tự HTML nên an toàn #}
    <div class="tb-chi-tiet__noi-dung">{{ tb.NoiDung|linebreaks }}</div>
-#Chỉ hiển thị khối Booking liên quan khi thông báo có gắn Booking
+
    {% if booking %}
    <section class="tb-booking" aria-labelledby="tb-booking-tieu-de">
      <h3 id="tb-booking-tieu-de">Booking liên quan</h3>
-#
      <dl class="tb-booking__luoi">
        <div><dt class="muted">Mã Booking</dt><dd>#{{ booking.MaBooking }}</dd></div>
        <div><dt class="muted">Gói dịch vụ</dt><dd>{{ booking.MaGoi.TenGoi }}</dd></div>
@@ -62,12 +55,8 @@
          <button class="btn btn--secondary tb-nut-sao{% if tb|co_sao %} is-on{% endif %}" type="submit"><span class="tb-nut-sao__icon" aria-hidden="true">{% if tb|co_sao %}★{% else %}☆{% endif %}</span>{% if tb|co_sao %}Bỏ đánh dấu sao{% else %}Đánh dấu sao{% endif %}</button>
        </form>
      </div>
-
-#Hiển thị nút hành động
-#nút chưa có đường dẫn thì hiển thị ở trạng thái vô hiệu hóa
-     # nếu có đường dẫn thì tạo liên kết và dựa vào thuộc tính chinh để phân biệt nút chính với nút phụ
      {# P12: nút hành động theo vai trò và trạng thái hiện tại (nút chính đứng đầu danh sách nên đảo lại để nút chính nằm bên phải). '#' nghĩa là trang chưa được làm: hiện mờ, chưa bấm được #}
-     {% if hanh_dong %} #chỉ hiển thị khu vực nút khi có dữ liệu nút hành động
+     {% if hanh_dong %}
      <div class="tb-chi-tiet__nut-trai">
        {% for nut in hanh_dong reversed %}
          {% if nut.url == '#' %}

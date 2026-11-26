@@ -16,4 +16,3 @@ class EmailBackend(ModelBackend):  # backend mới: cho phép đăng nhập bằ
         if user.check_password(password):  # so mật khẩu người dùng nhập với mật khẩu đã mã hóa trong DB
             return user  # đúng thì trả User; KHÔNG kiểm tra is_active ở đây để form còn báo "tài khoản bị khóa" (xem forms.py)
         return None  # sai mật khẩu thì thất bại
-    #form_valid views.py

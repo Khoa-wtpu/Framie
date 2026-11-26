@@ -1,5 +1,4 @@
 {# MỘT bong bóng tin nhắn, dùng chung cho trang (vòng for) và JSON polling. Cần biến: tin, nguoi_xem_id, doi_phuong. chat.js đọc data-nguoi/data-ngay/data-ts để nhóm tin và chèn dòng ngày. #}
-#So sánh người gửi tin nhắn với người đang xem
 {% if tin.MaNguoiGui_id == nguoi_xem_id %}
 <article class="tn tn--cua-toi" data-id="{{ tin.pk }}" data-nguoi="toi" data-ngay="{{ tin.ThoiGianGui|date:'Y-m-d' }}" data-ts="{{ tin.ThoiGianGui|date:'U' }}">
   <div class="tn__khoi">{# khối tin (không gồm giờ): các nút Trả lời / Thu hồi căn giữa theo khối này #}
